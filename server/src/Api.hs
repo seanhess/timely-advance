@@ -1,44 +1,28 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds         #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
 module Api where
 
-import           Prelude
+import AppM (AppM, nt)
+import Control.Monad.Reader (ask)
+import Control.Monad.Except (throwError, MonadError)
+import Control.Monad.State (runStateT, get, put)
 
-import           Control.Monad.Reader (ReaderT, runReaderT, ask)
-import           Data.Aeson
-import           Data.Proxy
-import           Data.Text
-import           GHC.Generics
-import           Network.Wai
-import           qualified Network.Wai.Handler.Warp as Warp
+import Data.Account
+import Endpoint.Accounts
+import GHC.Generics (Generic)
 
-import           Servant
-import           Servant.API.Generic ((:-), ToServantApi, genericApi, toServant)
-import           Servant.Server.Generic (AsServerT, genericServe)
+import Data.Proxy (Proxy(..))
+import Data.Text (Text)
+import qualified Network.Wai.Handler.Warp as Warp
 
--- * Example
-
-data AccountInfo = AccountInfo
-    { firstName :: Text
-    , lastName :: Text
-    , email :: Text
-    } deriving (Generic, Show)
-
-instance FromJSON AccountInfo
-instance ToJSON AccountInfo
-
-
-data Account = Account
-    { accountId   :: Text
-    , accountInfo :: AccountInfo
-    } deriving (Generic, Show)
-
-instance ToJSON Account
-instance FromJSON Account
+import Servant
+import Servant.API.Generic ((:-), ToServantApi, genericApi, toServant)
+import Servant.Server.Generic (AsServerT, genericServe)
 
 
 -- API specification
@@ -47,6 +31,7 @@ type BaseApi =
     :<|> "accounts" :> ToServantApi AccountsApi -- Get '[JSON] Text
 
 
+-- Accounts
 data AccountsApi route = AccountsApi
     { _all :: route :- Get '[JSON] [Account]
     , _post :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] Account
@@ -55,39 +40,27 @@ data AccountsApi route = AccountsApi
     } deriving (Generic)
 
 
--- TODO make the API clickable from the browser! You can click on links in the responses
--- but it doesn't help THAT much because it can't post for you :(
-
+-- TODO: not servant errors
+-- TODO: this approach isn't going to work, you'd need to lift all the monads when you assemble this. You would need to put it here for each function
 accountsApi :: AccountsApi (AsServerT AppM)
 accountsApi = AccountsApi
-    { _all = allAccounts
-    , _post = newAccount
-    , _get = getAccount
-    , _put = saveAccount
+    { _all  = runState allAccounts
+    , _post = \a -> runState $ newAccount a
+    , _get  = \i -> runState (getAccount i) >>= notFound
+    , _put  = \i a -> runState $ saveAccount i a
     }
   where
-    allAccounts = return [ Account "123" fakeAccount ]
-    newAccount a = return $ Account "asdf123" a
-    getAccount i = return $ Account i fakeAccount
-    saveAccount i a = return $ Account i a
-    fakeAccount = AccountInfo "Bob" "Lewis" "bob@gmail.com"
+    runState action = do
+      (a, _) <- runStateT action []
+      return a
+
 
 
 baseApi :: ServerT BaseApi AppM
-baseApi = home :<|> toServant accountsApi
+baseApi = home :<|> accounts
   where
     home = ask
-
-
-type AppCustomState = Text
-
-
-type AppM = ReaderT AppCustomState Handler
-
-
-nt :: AppCustomState -> AppM a -> Handler a
-nt s x = runReaderT x s
-
+    accounts = toServant accountsApi
 
 
 apiProxy :: Proxy BaseApi
@@ -104,4 +77,9 @@ run :: Warp.Port -> IO ()
 run port = do
     putStrLn $ "Running on " ++ (show port)
     Warp.run port test
+
+
+notFound :: (MonadError ServantErr m) => Maybe a -> m a
+notFound (Just a) = return a
+notFound Nothing = throwError err404
 

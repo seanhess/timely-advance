@@ -25,6 +25,7 @@ dependencies:
 - mtl
 - servant
 - servant-server
+- string-conversions
 - text
 - wai
 - warp
