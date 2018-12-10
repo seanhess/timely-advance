@@ -4,13 +4,15 @@ Pages
 
 ### Setup
 
-Elm Live
+Install dependencies
+
+    elm install
+
+Elm Live - Development rebuilding
 
     npm install --global elm elm-live
-
-Development
-
     elm-live src/Main.elm --pushstate --open -- --debug
+
 
 ### Onboarding
 

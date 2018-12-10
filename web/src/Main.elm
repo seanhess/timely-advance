@@ -2,13 +2,14 @@ module Main exposing (Model, Msg(..), PageModel(..), changeRouteTo, init, main, 
 
 import Browser exposing (Document)
 import Browser.Navigation as Nav
+import Element
 import Html exposing (Html, a, b, button, div, li, text, ul)
 import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (Value)
-import Page.Home as Home
 import Page.Onboard as Onboard
-import Route exposing (Route, routeToString)
+import Page.Signup as Signup
+import Route exposing (Route)
 import Url exposing (Url)
 
 
@@ -26,7 +27,7 @@ type alias Model =
 type PageModel
     = NotFound
     | Onboard Onboard.Model
-    | Home Home.Model
+    | Signup Signup.Model
 
 
 init : flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -53,13 +54,13 @@ type Msg
     | ChangedUrl Url
     | ClickedLink Browser.UrlRequest
     | GotOnboardMsg Onboard.Msg
-    | GotHomeMsg Home.Msg
+    | GotSignupMsg Signup.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     Debug.log (Debug.toString msg) <|
-        case ( msg, model ) of
+        case ( msg, model.page ) of
             ( Ignored, _ ) ->
                 ( model, Cmd.none )
 
@@ -79,11 +80,28 @@ update msg model =
                     Browser.External href ->
                         ( model, Nav.load href )
 
-            ( GotHomeMsg _, _ ) ->
-                ( model, Cmd.none )
-
             ( GotOnboardMsg _, _ ) ->
                 ( model, Cmd.none )
+
+            ( GotSignupMsg sub, Signup m ) ->
+                Signup.update sub m
+                    |> updateWith Signup GotSignupMsg model
+
+            ( _, _ ) ->
+                -- Disregard messages that arrived for the wrong page.
+                ( model, Cmd.none )
+
+
+
+-- Signup.update sub m
+--     |> updateWith Signup GotSignupMsg (Signup m)
+
+
+updateWith : (subModel -> PageModel) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
+updateWith toModel toMsg model ( subModel, subCmd ) =
+    ( { model | page = toModel subModel }
+    , Cmd.map toMsg subCmd
+    )
 
 
 changeRouteTo : Maybe Route -> PageModel -> ( PageModel, Cmd Msg )
@@ -92,16 +110,11 @@ changeRouteTo maybeRoute model =
         Nothing ->
             ( NotFound, Cmd.none )
 
-        Just Route.Home ->
-            ( Home Home.init, Cmd.none )
-
         Just Route.Onboard ->
             ( Onboard Onboard.init, Cmd.none )
 
-
-
--- |> updateWith Home GotHomeMsg model
--- VIEW
+        Just Route.Signup ->
+            ( Signup Signup.init, Cmd.none )
 
 
 view : Model -> Browser.Document Msg
@@ -113,23 +126,19 @@ view model =
         pageView page =
             case page of
                 NotFound ->
-                    div [] [ text "Not found" ]
+                    Element.text "Not Found"
 
                 Onboard o ->
-                    Html.map GotOnboardMsg <| Onboard.view o
+                    Element.map GotOnboardMsg <| Onboard.view o
 
-                Home h ->
-                    Html.map GotHomeMsg <| Home.view h
+                Signup s ->
+                    Element.map GotSignupMsg <| Signup.view s
     in
     { title = "URL Interceptor"
     , body =
         [ text "The URL is: "
         , b [] [ text (Url.toString model.url) ]
-        , ul []
-            [ viewLink (routeToString Route.Home)
-            , viewLink (routeToString Route.Onboard)
-            ]
-        , div [] [ pageView model.page ]
+        , div [] [ Element.layout [] (pageView model.page) ]
         ]
     }
 
@@ -137,14 +146,11 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.page of
-        NotFound ->
-            Sub.none
-
         Onboard onboard ->
             Sub.map GotOnboardMsg (Onboard.subscriptions onboard)
 
-        Home home ->
-            Sub.map GotHomeMsg (Home.subscriptions home)
+        _ ->
+            Sub.none
 
 
 main : Program Value Model Msg

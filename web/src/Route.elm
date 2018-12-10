@@ -1,4 +1,4 @@
-module Route exposing (Route(..), fromUrl, href, replaceUrl, routeToString)
+module Route exposing (Route(..), fromUrl, href, replaceUrl, url)
 
 -- import Article.Slug as Slug exposing (Slug)
 -- import Profile exposing (Profile)
@@ -15,8 +15,8 @@ import Url.Parser as Parser exposing ((</>), Parser, oneOf, s, string)
 
 
 type Route
-    = Home
-    | Onboard
+    = Onboard
+    | Signup
 
 
 
@@ -29,8 +29,8 @@ type Route
 parser : Parser (Route -> a) a
 parser =
     oneOf
-        [ Parser.map Home Parser.top
-        , Parser.map Onboard (s "onboard")
+        [ Parser.map Onboard Parser.top
+        , Parser.map Signup (s "signup")
 
         -- , Parser.map Profile (s "profile" </> Username.urlParser)
         -- , Parser.map Article (s "article" </> Slug.urlParser)
@@ -45,41 +45,36 @@ parser =
 
 href : Route -> Attribute msg
 href targetRoute =
-    Attr.href (routeToString targetRoute)
+    Attr.href (url targetRoute)
 
 
 replaceUrl : Nav.Key -> Route -> Cmd msg
 replaceUrl key route =
-    Nav.replaceUrl key (routeToString route)
+    Nav.replaceUrl key (url route)
 
 
 fromUrl : Url -> Maybe Route
-fromUrl url =
+fromUrl u =
     -- The RealWorld spec treats the fragment like a path.
     -- This makes it *literally* the path, so we can proceed
     -- with parsing as if it had been a normal path all along.
-    { url | path = Maybe.withDefault "" url.fragment, fragment = Nothing }
+    { u | path = Maybe.withDefault "" u.fragment, fragment = Nothing }
         |> Parser.parse parser
-
-
-woot : String
-woot =
-    "Hello"
 
 
 
 -- INTERNAL
 
 
-routeToString : Route -> String
-routeToString page =
+url : Route -> String
+url page =
     let
         pieces =
             case page of
-                Home ->
+                Onboard ->
                     []
 
-                Onboard ->
-                    [ "onboard" ]
+                Signup ->
+                    [ "signup" ]
     in
     "#/" ++ String.join "/" pieces
