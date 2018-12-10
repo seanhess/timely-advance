@@ -1,4 +1,4 @@
-module Nimble.Style exposing (blue, button, darkBlue, grey, red, white)
+module Nimble.Style exposing (blue, button, darkBlue, formPage, grey, header, red, white)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -36,3 +36,13 @@ button =
     , Border.rounded 3
     , width fill
     ]
+
+
+formPage : List (Attribute msg)
+formPage =
+    [ height shrink, centerY, centerX, width (fill |> maximum 800), spacing 36, padding 20 ]
+
+
+header : List (Attribute msg)
+header =
+    [ Region.heading 1, Font.size 36, alignLeft ]

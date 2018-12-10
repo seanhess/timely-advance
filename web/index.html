@@ -6291,12 +6291,16 @@ var author$project$Main$updateWith = F4(
 	});
 var author$project$Page$Signup$update = F2(
 	function (msg, model) {
-		var a = msg.a;
-		return _Utils_Tuple2(
-			_Utils_update(
-				model,
-				{account: a}),
-			elm$core$Platform$Cmd$none);
+		if (msg.$ === 'Update') {
+			var a = msg.a;
+			return _Utils_Tuple2(
+				_Utils_update(
+					model,
+					{account: a}),
+				elm$core$Platform$Cmd$none);
+		} else {
+			return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+		}
 	});
 var elm$browser$Browser$External = function (a) {
 	return {$: 'External', a: a};
@@ -15445,21 +15449,8 @@ var author$project$Page$Onboard$view = function (_n0) {
 				})
 			]));
 };
-var author$project$Page$Signup$Update = function (a) {
-	return {$: 'Update', a: a};
-};
 var mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
 	return {$: 'AlignX', a: a};
-};
-var mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
-var mdgriffith$elm_ui$Element$alignRight = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Right);
-var mdgriffith$elm_ui$Internal$Model$Below = {$: 'Below'};
-var mdgriffith$elm_ui$Internal$Model$Nearby = F2(
-	function (a, b) {
-		return {$: 'Nearby', a: a, b: b};
-	});
-var mdgriffith$elm_ui$Element$below = function (element) {
-	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$Below, element);
 };
 var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
 var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
@@ -15468,24 +15459,26 @@ var mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
 };
 var mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
 var mdgriffith$elm_ui$Element$centerY = mdgriffith$elm_ui$Internal$Model$AlignY(mdgriffith$elm_ui$Internal$Model$CenterY);
-var mdgriffith$elm_ui$Internal$Flag$moveY = mdgriffith$elm_ui$Internal$Flag$flag(26);
-var mdgriffith$elm_ui$Internal$Model$MoveY = function (a) {
-	return {$: 'MoveY', a: a};
-};
-var mdgriffith$elm_ui$Internal$Model$TransformComponent = F2(
+var mdgriffith$elm_ui$Internal$Model$Max = F2(
 	function (a, b) {
-		return {$: 'TransformComponent', a: a, b: b};
+		return {$: 'Max', a: a, b: b};
 	});
-var mdgriffith$elm_ui$Element$moveDown = function (y) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$TransformComponent,
-		mdgriffith$elm_ui$Internal$Flag$moveY,
-		mdgriffith$elm_ui$Internal$Model$MoveY(y));
-};
-var mdgriffith$elm_ui$Internal$Model$Px = function (a) {
-	return {$: 'Px', a: a};
-};
-var mdgriffith$elm_ui$Element$px = mdgriffith$elm_ui$Internal$Model$Px;
+var mdgriffith$elm_ui$Element$maximum = F2(
+	function (i, l) {
+		return A2(mdgriffith$elm_ui$Internal$Model$Max, i, l);
+	});
+var author$project$Nimble$Style$formPage = _List_fromArray(
+	[
+		mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+		mdgriffith$elm_ui$Element$centerY,
+		mdgriffith$elm_ui$Element$centerX,
+		mdgriffith$elm_ui$Element$width(
+		A2(mdgriffith$elm_ui$Element$maximum, 800, mdgriffith$elm_ui$Element$fill)),
+		mdgriffith$elm_ui$Element$spacing(36),
+		mdgriffith$elm_ui$Element$padding(20)
+	]);
+var mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
+var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Left);
 var mdgriffith$elm_ui$Internal$Flag$fontSize = mdgriffith$elm_ui$Internal$Flag$flag(4);
 var mdgriffith$elm_ui$Internal$Model$FontSize = function (a) {
 	return {$: 'FontSize', a: a};
@@ -15496,17 +15489,140 @@ var mdgriffith$elm_ui$Element$Font$size = function (i) {
 		mdgriffith$elm_ui$Internal$Flag$fontSize,
 		mdgriffith$elm_ui$Internal$Model$FontSize(i));
 };
-var mdgriffith$elm_ui$Element$Input$Above = {$: 'Above'};
-var mdgriffith$elm_ui$Element$Input$Label = F3(
-	function (a, b, c) {
-		return {$: 'Label', a: a, b: b, c: c};
+var author$project$Nimble$Style$header = _List_fromArray(
+	[
+		mdgriffith$elm_ui$Element$Region$heading(1),
+		mdgriffith$elm_ui$Element$Font$size(36),
+		mdgriffith$elm_ui$Element$alignLeft
+	]);
+var author$project$Page$Signup$Submit = {$: 'Submit'};
+var author$project$Page$Signup$Update = function (a) {
+	return {$: 'Update', a: a};
+};
+var elm$json$Json$Encode$bool = _Json_wrap;
+var elm$html$Html$Attributes$boolProperty = F2(
+	function (key, bool) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			elm$json$Json$Encode$bool(bool));
 	});
-var mdgriffith$elm_ui$Element$Input$labelAbove = mdgriffith$elm_ui$Element$Input$Label(mdgriffith$elm_ui$Element$Input$Above);
-var mdgriffith$elm_ui$Element$Input$Placeholder = F2(
+var elm$html$Html$Attributes$disabled = elm$html$Html$Attributes$boolProperty('disabled');
+var elm$html$Html$Attributes$tabindex = function (n) {
+	return A2(
+		_VirtualDom_attribute,
+		'tabIndex',
+		elm$core$String$fromInt(n));
+};
+var mdgriffith$elm_ui$Internal$Flag$cursor = mdgriffith$elm_ui$Internal$Flag$flag(21);
+var mdgriffith$elm_ui$Internal$Model$Class = F2(
 	function (a, b) {
-		return {$: 'Placeholder', a: a, b: b};
+		return {$: 'Class', a: a, b: b};
 	});
-var mdgriffith$elm_ui$Element$Input$placeholder = mdgriffith$elm_ui$Element$Input$Placeholder;
+var mdgriffith$elm_ui$Element$pointer = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$cursor, mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
+var mdgriffith$elm_ui$Element$Events$onClick = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Events$onClick);
+var mdgriffith$elm_ui$Element$Input$hasFocusStyle = function (attr) {
+	if (((attr.$ === 'StyleClass') && (attr.b.$ === 'PseudoSelector')) && (attr.b.a.$ === 'Focus')) {
+		var _n1 = attr.b;
+		var _n2 = _n1.a;
+		return true;
+	} else {
+		return false;
+	}
+};
+var mdgriffith$elm_ui$Internal$Model$NoAttribute = {$: 'NoAttribute'};
+var mdgriffith$elm_ui$Element$Input$focusDefault = function (attrs) {
+	return A2(elm$core$List$any, mdgriffith$elm_ui$Element$Input$hasFocusStyle, attrs) ? mdgriffith$elm_ui$Internal$Model$NoAttribute : mdgriffith$elm_ui$Internal$Model$htmlClass('focusable');
+};
+var mdgriffith$elm_ui$Element$Input$enter = 'Enter';
+var elm$virtual_dom$VirtualDom$MayPreventDefault = function (a) {
+	return {$: 'MayPreventDefault', a: a};
+};
+var elm$html$Html$Events$preventDefaultOn = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$MayPreventDefault(decoder));
+	});
+var elm$json$Json$Decode$andThen = _Json_andThen;
+var elm$json$Json$Decode$fail = _Json_fail;
+var mdgriffith$elm_ui$Element$Input$onKey = F2(
+	function (desiredCode, msg) {
+		var decode = function (code) {
+			return _Utils_eq(code, desiredCode) ? elm$json$Json$Decode$succeed(msg) : elm$json$Json$Decode$fail('Not the enter key');
+		};
+		var isKey = A2(
+			elm$json$Json$Decode$andThen,
+			decode,
+			A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
+		return mdgriffith$elm_ui$Internal$Model$Attr(
+			A2(
+				elm$html$Html$Events$preventDefaultOn,
+				'keyup',
+				A2(
+					elm$json$Json$Decode$map,
+					function (fired) {
+						return _Utils_Tuple2(fired, true);
+					},
+					isKey)));
+	});
+var mdgriffith$elm_ui$Element$Input$onEnter = function (msg) {
+	return A2(mdgriffith$elm_ui$Element$Input$onKey, mdgriffith$elm_ui$Element$Input$enter, msg);
+};
+var mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
+var mdgriffith$elm_ui$Element$Input$button = F2(
+	function (attrs, _n0) {
+		var onPress = _n0.onPress;
+		var label = _n0.label;
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asEl,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentCenterX + (' ' + (mdgriffith$elm_ui$Internal$Style$classes.contentCenterY + (' ' + (mdgriffith$elm_ui$Internal$Style$classes.seButton + (' ' + mdgriffith$elm_ui$Internal$Style$classes.noTextSelection)))))),
+						A2(
+							elm$core$List$cons,
+							mdgriffith$elm_ui$Element$pointer,
+							A2(
+								elm$core$List$cons,
+								mdgriffith$elm_ui$Element$Input$focusDefault(attrs),
+								A2(
+									elm$core$List$cons,
+									mdgriffith$elm_ui$Internal$Model$Describe(mdgriffith$elm_ui$Internal$Model$Button),
+									A2(
+										elm$core$List$cons,
+										mdgriffith$elm_ui$Internal$Model$Attr(
+											elm$html$Html$Attributes$tabindex(0)),
+										function () {
+											if (onPress.$ === 'Nothing') {
+												return A2(
+													elm$core$List$cons,
+													mdgriffith$elm_ui$Internal$Model$Attr(
+														elm$html$Html$Attributes$disabled(true)),
+													attrs);
+											} else {
+												var msg = onPress.a;
+												return A2(
+													elm$core$List$cons,
+													mdgriffith$elm_ui$Element$Events$onClick(msg),
+													A2(
+														elm$core$List$cons,
+														mdgriffith$elm_ui$Element$Input$onEnter(msg),
+														attrs));
+											}
+										}()))))))),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(
+				_List_fromArray(
+					[label])));
+	});
 var mdgriffith$elm_ui$Element$Input$TextInputNode = function (a) {
 	return {$: 'TextInputNode', a: a};
 };
@@ -15564,6 +15680,10 @@ var mdgriffith$elm_ui$Element$alpha = function (o) {
 			transparency));
 };
 var mdgriffith$elm_ui$Internal$Model$InFront = {$: 'InFront'};
+var mdgriffith$elm_ui$Internal$Model$Nearby = F2(
+	function (a, b) {
+		return {$: 'Nearby', a: a, b: b};
+	});
 var mdgriffith$elm_ui$Element$inFront = function (element) {
 	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$InFront, element);
 };
@@ -15702,19 +15822,6 @@ var mdgriffith$elm_ui$Element$Input$defaultTextBoxStyle = _List_fromArray(
 		mdgriffith$elm_ui$Element$spacing(3),
 		mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 	]);
-var mdgriffith$elm_ui$Element$Input$hasFocusStyle = function (attr) {
-	if (((attr.$ === 'StyleClass') && (attr.b.$ === 'PseudoSelector')) && (attr.b.a.$ === 'Focus')) {
-		var _n1 = attr.b;
-		var _n2 = _n1.a;
-		return true;
-	} else {
-		return false;
-	}
-};
-var mdgriffith$elm_ui$Internal$Model$NoAttribute = {$: 'NoAttribute'};
-var mdgriffith$elm_ui$Element$Input$focusDefault = function (attrs) {
-	return A2(elm$core$List$any, mdgriffith$elm_ui$Element$Input$hasFocusStyle, attrs) ? mdgriffith$elm_ui$Internal$Model$NoAttribute : mdgriffith$elm_ui$Internal$Model$htmlClass('focusable');
-};
 var mdgriffith$elm_ui$Internal$Model$Label = function (a) {
 	return {$: 'Label', a: a};
 };
@@ -15756,14 +15863,6 @@ var mdgriffith$elm_ui$Element$Input$isHiddenLabel = function (label) {
 		return false;
 	}
 };
-var elm$json$Json$Encode$bool = _Json_wrap;
-var elm$html$Html$Attributes$boolProperty = F2(
-	function (key, bool) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			elm$json$Json$Encode$bool(bool));
-	});
 var elm$html$Html$Attributes$spellcheck = elm$html$Html$Attributes$boolProperty('spellcheck');
 var mdgriffith$elm_ui$Element$Input$spellcheck = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Attributes$spellcheck);
 var elm$core$String$lines = _String_lines;
@@ -15803,11 +15902,6 @@ var elm$html$Html$Attributes$value = elm$html$Html$Attributes$stringProperty('va
 var mdgriffith$elm_ui$Element$Input$value = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Attributes$value);
 var mdgriffith$elm_ui$Internal$Model$LivePolite = {$: 'LivePolite'};
 var mdgriffith$elm_ui$Element$Region$announce = mdgriffith$elm_ui$Internal$Model$Describe(mdgriffith$elm_ui$Internal$Model$LivePolite);
-var mdgriffith$elm_ui$Internal$Flag$cursor = mdgriffith$elm_ui$Internal$Flag$flag(21);
-var mdgriffith$elm_ui$Internal$Model$Class = F2(
-	function (a, b) {
-		return {$: 'Class', a: a, b: b};
-	});
 var mdgriffith$elm_ui$Internal$Model$filter = function (attrs) {
 	return A3(
 		elm$core$List$foldr,
@@ -16255,6 +16349,18 @@ var mdgriffith$elm_ui$Element$Input$textHelper = F3(
 			textOptions.label,
 			inputElement);
 	});
+var mdgriffith$elm_ui$Element$Input$email = mdgriffith$elm_ui$Element$Input$textHelper(
+	{
+		autofill: elm$core$Maybe$Just('email'),
+		spellchecked: false,
+		type_: mdgriffith$elm_ui$Element$Input$TextInputNode('email')
+	});
+var mdgriffith$elm_ui$Element$Input$Above = {$: 'Above'};
+var mdgriffith$elm_ui$Element$Input$Label = F3(
+	function (a, b, c) {
+		return {$: 'Label', a: a, b: b, c: c};
+	});
+var mdgriffith$elm_ui$Element$Input$labelAbove = mdgriffith$elm_ui$Element$Input$Label(mdgriffith$elm_ui$Element$Input$Above);
 var mdgriffith$elm_ui$Element$Input$text = mdgriffith$elm_ui$Element$Input$textHelper(
 	{
 		autofill: elm$core$Maybe$Nothing,
@@ -16264,34 +16370,18 @@ var mdgriffith$elm_ui$Element$Input$text = mdgriffith$elm_ui$Element$Input$textH
 var author$project$Page$Signup$form = function (account) {
 	return A2(
 		mdgriffith$elm_ui$Element$column,
+		author$project$Nimble$Style$formPage,
 		_List_fromArray(
 			[
-				mdgriffith$elm_ui$Element$width(
-				mdgriffith$elm_ui$Element$px(800)),
-				mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-				mdgriffith$elm_ui$Element$centerY,
-				mdgriffith$elm_ui$Element$centerX,
-				mdgriffith$elm_ui$Element$spacing(36),
-				mdgriffith$elm_ui$Element$padding(10)
-			]),
-		_List_fromArray(
-			[
-				mdgriffith$elm_ui$Element$text('Hello'),
+				A2(
+				mdgriffith$elm_ui$Element$el,
+				author$project$Nimble$Style$header,
+				mdgriffith$elm_ui$Element$text('Create an Account')),
 				A2(
 				mdgriffith$elm_ui$Element$Input$text,
 				_List_fromArray(
 					[
-						mdgriffith$elm_ui$Element$spacing(12),
-						mdgriffith$elm_ui$Element$below(
-						A2(
-							mdgriffith$elm_ui$Element$el,
-							_List_fromArray(
-								[
-									mdgriffith$elm_ui$Element$Font$size(14),
-									mdgriffith$elm_ui$Element$alignRight,
-									mdgriffith$elm_ui$Element$moveDown(6)
-								]),
-							mdgriffith$elm_ui$Element$text('This one is wrong')))
+						mdgriffith$elm_ui$Element$spacing(12)
 					]),
 				{
 					label: A2(
@@ -16307,19 +16397,14 @@ var author$project$Page$Signup$form = function (account) {
 								account,
 								{firstName: _new}));
 					},
-					placeholder: elm$core$Maybe$Just(
-						A2(
-							mdgriffith$elm_ui$Element$Input$placeholder,
-							_List_Nil,
-							mdgriffith$elm_ui$Element$text('First Name '))),
+					placeholder: elm$core$Maybe$Nothing,
 					text: account.firstName
 				}),
 				A2(
 				mdgriffith$elm_ui$Element$Input$text,
 				_List_fromArray(
 					[
-						mdgriffith$elm_ui$Element$spacing(12),
-						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink)
+						mdgriffith$elm_ui$Element$spacing(12)
 					]),
 				{
 					label: A2(
@@ -16337,6 +16422,36 @@ var author$project$Page$Signup$form = function (account) {
 					},
 					placeholder: elm$core$Maybe$Nothing,
 					text: account.lastName
+				}),
+				A2(
+				mdgriffith$elm_ui$Element$Input$email,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$spacing(12)
+					]),
+				{
+					label: A2(
+						mdgriffith$elm_ui$Element$Input$labelAbove,
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$Font$size(14)
+							]),
+						mdgriffith$elm_ui$Element$text('Email')),
+					onChange: function (_new) {
+						return author$project$Page$Signup$Update(
+							_Utils_update(
+								account,
+								{email: _new}));
+					},
+					placeholder: elm$core$Maybe$Nothing,
+					text: account.email
+				}),
+				A2(
+				mdgriffith$elm_ui$Element$Input$button,
+				author$project$Nimble$Style$button,
+				{
+					label: mdgriffith$elm_ui$Element$text('Create Account'),
+					onPress: elm$core$Maybe$Just(author$project$Page$Signup$Submit)
 				})
 			]));
 };
@@ -16694,7 +16809,7 @@ var author$project$Main$view = function (model) {
 var elm$browser$Browser$application = _Browser_application;
 var author$project$Main$main = elm$browser$Browser$application(
 	{init: author$project$Main$init, onUrlChange: author$project$Main$ChangedUrl, onUrlRequest: author$project$Main$ClickedLink, subscriptions: author$project$Main$subscriptions, update: author$project$Main$update, view: author$project$Main$view});
-_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Main.Msg","aliases":{"Page.Onboard.Msg":{"args":[],"type":"()"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Page.Signup.Account":{"args":[],"type":"{ firstName : String.String, lastName : String.String, email : String.String }"}},"unions":{"Main.Msg":{"args":[],"tags":{"Ignored":[],"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"],"GotOnboardMsg":["Page.Onboard.Msg"],"GotSignupMsg":["Page.Signup.Msg"]}},"Page.Signup.Msg":{"args":[],"tags":{"Update":["Page.Signup.Account"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}}}}})}});}(this));
+_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Main.Msg","aliases":{"Page.Onboard.Msg":{"args":[],"type":"()"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Page.Signup.Account":{"args":[],"type":"{ firstName : String.String, lastName : String.String, email : String.String }"}},"unions":{"Main.Msg":{"args":[],"tags":{"Ignored":[],"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"],"GotOnboardMsg":["Page.Onboard.Msg"],"GotSignupMsg":["Page.Signup.Msg"]}},"Page.Signup.Msg":{"args":[],"tags":{"Update":["Page.Signup.Account"],"Submit":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}}}}})}});}(this));
 
 var app = Elm.Main.init({ node: document.getElementById("elm-f0111bc4e658d0f98db96260c16f7e49") });
 if (document.getElementById("elm-f0111bc4e658d0f98db96260c16f7e49"))
