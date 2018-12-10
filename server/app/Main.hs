@@ -1,6 +1,8 @@
 module Main where
 
-import Lib
+import qualified Api
 
 main :: IO ()
-main = someFunc
+main = do
+    Api.run 3001
+
