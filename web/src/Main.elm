@@ -31,11 +31,15 @@ type PageModel
 
 init : flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ url key =
+    let
+        ( page, cmd ) =
+            changeRouteTo (Route.fromUrl url) NotFound
+    in
     ( { key = key
       , url = url
-      , page = Onboard Onboard.init
+      , page = page
       }
-    , Cmd.none
+    , cmd
     )
 
 
@@ -48,6 +52,8 @@ type Msg
       -- | ChangedRoute (Maybe Route)
     | ChangedUrl Url
     | ClickedLink Browser.UrlRequest
+    | GotOnboardMsg Onboard.Msg
+    | GotHomeMsg Home.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -73,6 +79,12 @@ update msg model =
                     Browser.External href ->
                         ( model, Nav.load href )
 
+            ( GotHomeMsg _, _ ) ->
+                ( model, Cmd.none )
+
+            ( GotOnboardMsg _, _ ) ->
+                ( model, Cmd.none )
+
 
 changeRouteTo : Maybe Route -> PageModel -> ( PageModel, Cmd Msg )
 changeRouteTo maybeRoute model =
@@ -97,6 +109,17 @@ view model =
     let
         viewLink path =
             li [] [ a [ href path ] [ text path ] ]
+
+        pageView page =
+            case page of
+                NotFound ->
+                    div [] [ text "Not found" ]
+
+                Onboard o ->
+                    Html.map GotOnboardMsg <| Onboard.view o
+
+                Home h ->
+                    Html.map GotHomeMsg <| Home.view h
     in
     { title = "URL Interceptor"
     , body =
@@ -106,13 +129,22 @@ view model =
             [ viewLink (routeToString Route.Home)
             , viewLink (routeToString Route.Onboard)
             ]
+        , div [] [ pageView model.page ]
         ]
     }
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.none
+subscriptions model =
+    case model.page of
+        NotFound ->
+            Sub.none
+
+        Onboard onboard ->
+            Sub.map GotOnboardMsg (Onboard.subscriptions onboard)
+
+        Home home ->
+            Sub.map GotHomeMsg (Home.subscriptions home)
 
 
 main : Program Value Model Msg

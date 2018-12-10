@@ -4903,6 +4903,10 @@ var author$project$Main$ChangedUrl = function (a) {
 var author$project$Main$ClickedLink = function (a) {
 	return {$: 'ClickedLink', a: a};
 };
+var author$project$Main$NotFound = {$: 'NotFound'};
+var author$project$Main$Home = function (a) {
+	return {$: 'Home', a: a};
+};
 var author$project$Main$Onboard = function (a) {
 	return {$: 'Onboard', a: a};
 };
@@ -4986,6 +4990,7 @@ var elm$core$Set$toList = function (_n0) {
 	var dict = _n0.a;
 	return elm$core$Dict$keys(dict);
 };
+var author$project$Page$Home$init = _Utils_Tuple0;
 var author$project$Page$Onboard$init = _Utils_Tuple0;
 var elm$core$Basics$False = {$: 'False'};
 var elm$core$Basics$True = {$: 'True'};
@@ -5384,26 +5389,6 @@ var elm$json$Json$Decode$errorToStringHelp = F2(
 	});
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
-var author$project$Main$init = F3(
-	function (_n0, url, key) {
-		return _Utils_Tuple2(
-			{
-				key: key,
-				page: author$project$Main$Onboard(author$project$Page$Onboard$init),
-				url: url
-			},
-			elm$core$Platform$Cmd$none);
-	});
-var elm$core$Platform$Sub$batch = _Platform_batch;
-var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
-var author$project$Main$subscriptions = function (_n0) {
-	return elm$core$Platform$Sub$none;
-};
-var author$project$Main$Home = function (a) {
-	return {$: 'Home', a: a};
-};
-var author$project$Main$NotFound = {$: 'NotFound'};
-var author$project$Page$Home$init = _Utils_Tuple0;
 var author$project$Main$changeRouteTo = F2(
 	function (maybeRoute, model) {
 		if (maybeRoute.$ === 'Nothing') {
@@ -6252,6 +6237,52 @@ var author$project$Route$fromUrl = function (url) {
 				fragment: elm$core$Maybe$Nothing,
 				path: A2(elm$core$Maybe$withDefault, '', url.fragment)
 			}));
+};
+var author$project$Main$init = F3(
+	function (_n0, url, key) {
+		var _n1 = A2(
+			author$project$Main$changeRouteTo,
+			author$project$Route$fromUrl(url),
+			author$project$Main$NotFound);
+		var page = _n1.a;
+		var cmd = _n1.b;
+		return _Utils_Tuple2(
+			{key: key, page: page, url: url},
+			cmd);
+	});
+var author$project$Main$GotHomeMsg = function (a) {
+	return {$: 'GotHomeMsg', a: a};
+};
+var author$project$Main$GotOnboardMsg = function (a) {
+	return {$: 'GotOnboardMsg', a: a};
+};
+var elm$core$Platform$Sub$batch = _Platform_batch;
+var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
+var author$project$Page$Home$subscriptions = function (_n0) {
+	return elm$core$Platform$Sub$none;
+};
+var author$project$Page$Onboard$subscriptions = function (_n0) {
+	return elm$core$Platform$Sub$none;
+};
+var elm$core$Platform$Sub$map = _Platform_map;
+var author$project$Main$subscriptions = function (model) {
+	var _n0 = model.page;
+	switch (_n0.$) {
+		case 'NotFound':
+			return elm$core$Platform$Sub$none;
+		case 'Onboard':
+			var onboard = _n0.a;
+			return A2(
+				elm$core$Platform$Sub$map,
+				author$project$Main$GotOnboardMsg,
+				author$project$Page$Onboard$subscriptions(onboard));
+		default:
+			var home = _n0.a;
+			return A2(
+				elm$core$Platform$Sub$map,
+				author$project$Main$GotHomeMsg,
+				author$project$Page$Home$subscriptions(home));
+	}
 };
 var elm$browser$Browser$External = function (a) {
 	return {$: 'External', a: a};
@@ -8494,7 +8525,6 @@ var elm$browser$Debugger$Main$getLatestModel = function (state) {
 		return model;
 	}
 };
-var elm$core$Platform$Sub$map = _Platform_map;
 var elm$browser$Debugger$Main$wrapSubs = F2(
 	function (subscriptions, model) {
 		return A2(
@@ -9992,7 +10022,7 @@ var author$project$Main$update = F2(
 								model,
 								{page: page, url: url}),
 							cmd);
-					default:
+					case 'ClickedLink':
 						var urlRequest = _n0.a.a;
 						if (urlRequest.$ === 'Internal') {
 							var url = urlRequest.a;
@@ -10008,9 +10038,31 @@ var author$project$Main$update = F2(
 								model,
 								elm$browser$Browser$Navigation$load(href));
 						}
+					case 'GotHomeMsg':
+						return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+					default:
+						return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 				}
 			}());
 	});
+var author$project$Page$Home$view = function (_n0) {
+	return A2(
+		elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				elm$html$Html$text('Home')
+			]));
+};
+var author$project$Page$Onboard$view = function (_n0) {
+	return A2(
+		elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				elm$html$Html$text('Onboard')
+			]));
+};
 var author$project$Route$routeToString = function (page) {
 	var pieces = function () {
 		if (page.$ === 'Home') {
@@ -10042,6 +10094,30 @@ var author$project$Main$view = function (model) {
 						]))
 				]));
 	};
+	var pageView = function (page) {
+		switch (page.$) {
+			case 'NotFound':
+				return A2(
+					elm$html$Html$div,
+					_List_Nil,
+					_List_fromArray(
+						[
+							elm$html$Html$text('Not found')
+						]));
+			case 'Onboard':
+				var o = page.a;
+				return A2(
+					elm$html$Html$map,
+					author$project$Main$GotOnboardMsg,
+					author$project$Page$Onboard$view(o));
+			default:
+				var h = page.a;
+				return A2(
+					elm$html$Html$map,
+					author$project$Main$GotHomeMsg,
+					author$project$Page$Home$view(h));
+		}
+	};
 	return {
 		body: _List_fromArray(
 			[
@@ -10063,6 +10139,13 @@ var author$project$Main$view = function (model) {
 						author$project$Route$routeToString(author$project$Route$Home)),
 						viewLink(
 						author$project$Route$routeToString(author$project$Route$Onboard))
+					])),
+				A2(
+				elm$html$Html$div,
+				_List_Nil,
+				_List_fromArray(
+					[
+						pageView(model.page)
 					]))
 			]),
 		title: 'URL Interceptor'
@@ -10071,7 +10154,7 @@ var author$project$Main$view = function (model) {
 var elm$browser$Browser$application = _Browser_application;
 var author$project$Main$main = elm$browser$Browser$application(
 	{init: author$project$Main$init, onUrlChange: author$project$Main$ChangedUrl, onUrlRequest: author$project$Main$ClickedLink, subscriptions: author$project$Main$subscriptions, update: author$project$Main$update, view: author$project$Main$view});
-_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Main.Msg","aliases":{"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"}},"unions":{"Main.Msg":{"args":[],"tags":{"Ignored":[],"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}}}}})}});}(this));
+_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Main.Msg","aliases":{"Page.Home.Msg":{"args":[],"type":"()"},"Page.Onboard.Msg":{"args":[],"type":"()"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"}},"unions":{"Main.Msg":{"args":[],"tags":{"Ignored":[],"ChangedUrl":["Url.Url"],"ClickedLink":["Browser.UrlRequest"],"GotOnboardMsg":["Page.Onboard.Msg"],"GotHomeMsg":["Page.Home.Msg"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}}}}})}});}(this));
 
 var app = Elm.Main.init({ node: document.getElementById("elm-f0111bc4e658d0f98db96260c16f7e49") });
 if (document.getElementById("elm-f0111bc4e658d0f98db96260c16f7e49"))

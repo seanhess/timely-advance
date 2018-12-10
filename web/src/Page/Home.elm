@@ -1,4 +1,4 @@
-module Page.Home exposing (Model, init, view)
+module Page.Home exposing (Model, Msg, init, subscriptions, view)
 
 import Html exposing (Html, button, div, text)
 import Html.Events exposing (onClick)
@@ -8,6 +8,15 @@ type alias Model =
     ()
 
 
+type alias Msg =
+    ()
+
+
+subscriptions : Model -> Sub msg
+subscriptions _ =
+    Sub.none
+
+
 init : Model
 init =
     ()
@@ -15,4 +24,4 @@ init =
 
 view : Model -> Html msg
 view _ =
-    div [] [ text "Onboard" ]
+    div [] [ text "Home" ]
