@@ -2,6 +2,16 @@ Pages
 -----
 
 
+### Setup
+
+Elm Live
+
+    npm install --global elm elm-live
+
+Development
+
+    elm-live src/Main.elm --pushstate --open -- --debug
+
 ### Onboarding
 
 Launch image (native)

@@ -1,6 +1,20 @@
 Nimble Finance
 ==============
 
+
+
+Todo
+----
+
+- [ ] CRUD app
+- [ ] Plaid Bank Integration
+- [ ] Bank Service
+- [ ] Fake authentication - enter phone number, fake code, etc
+- [ ] Fake Experience
+- [ ] Two-factor authentication
+- [ ] iOS app (after full fake experience)
+
+
 Design Goals
 ------------
 
@@ -9,9 +23,17 @@ Design Goals
 * Mobile applications are thin wrappers around the web.
 
 
-
 Workflows
 ---------
+
+CRUD App
+* Create Account: Email, First Name, Last Name
+* List of all accounts in the system
+* Details
+
+Plaid Bank Integration
+* Uses plaid to fetch bank details
+* Get bank and transaction information
 
 Make a whole "fake experience" to connect all the systems
 * Account: Email, Phone -> Text
@@ -20,6 +42,9 @@ Make a whole "fake experience" to connect all the systems
 * Approval: always approved
 * Evaluate: If their balance is less than $X send them money
 
+iOS app
+* How does navigation work?
+* Save authenticaiton token and pass to the app
 
 
 System Diagram

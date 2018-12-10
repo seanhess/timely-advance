@@ -1,67 +1,118 @@
-module Main exposing (..)
+module Main exposing (Model, Msg(..), PageModel(..), changeRouteTo, init, main, subscriptions, update, view)
 
 import Browser exposing (Document)
 import Browser.Navigation as Nav
-import Html exposing (Html, button, div, text)
+import Html exposing (Html, a, b, button, div, li, text, ul)
+import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (Value)
-import Page.Onboard as Onboard
 import Page.Home as Home
+import Page.Onboard as Onboard
+import Route exposing (Route, routeToString)
 import Url exposing (Url)
-
 
 
 
 -- MODEL -- sub-views? Nested?
 
-type Model
-  = NotFound
-  | Onboard Onboard.Model
-  | Home Home.Model
 
-init : flags -> Url -> Nav.Key -> (Model, Cmd Msg)
-init _ _ _ =
-  (Onboard Onboard.init, Cmd.none)
+type alias Model =
+    { key : Nav.Key
+    , url : Url
+    , page : PageModel
+    }
+
+
+type PageModel
+    = NotFound
+    | Onboard Onboard.Model
+    | Home Home.Model
+
+
+init : flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init _ url key =
+    ( { key = key
+      , url = url
+      , page = Onboard Onboard.init
+      }
+    , Cmd.none
+    )
+
 
 
 -- UPDATE
 
+
 type Msg
     = Ignored
-    -- | ChangedRoute (Maybe Route)
+      -- | ChangedRoute (Maybe Route)
     | ChangedUrl Url
     | ClickedLink Browser.UrlRequest
 
 
-update : Msg -> Model -> (Model, Cmd Msg)
-update msg model = (model, Cmd.none)
-  -- case msg of
-  --   Increment ->
-  --     model + 1
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    Debug.log (Debug.toString msg) <|
+        case ( msg, model ) of
+            ( Ignored, _ ) ->
+                ( model, Cmd.none )
 
-  --   Decrement ->
-  --     model - 1
+            ( ChangedUrl url, _ ) ->
+                let
+                    ( page, cmd ) =
+                        changeRouteTo (Route.fromUrl url) model.page
+                in
+                ( { model | page = page, url = url }, cmd )
+
+            -- this allows us to intercept the url, I think
+            ( ClickedLink urlRequest, _ ) ->
+                case urlRequest of
+                    Browser.Internal url ->
+                        ( model, Nav.pushUrl model.key (Url.toString url) )
+
+                    Browser.External href ->
+                        ( model, Nav.load href )
 
 
+changeRouteTo : Maybe Route -> PageModel -> ( PageModel, Cmd Msg )
+changeRouteTo maybeRoute model =
+    case maybeRoute of
+        Nothing ->
+            ( NotFound, Cmd.none )
+
+        Just Route.Home ->
+            ( Home Home.init, Cmd.none )
+
+        Just Route.Onboard ->
+            ( Onboard Onboard.init, Cmd.none )
+
+
+
+-- |> updateWith Home GotHomeMsg model
 -- VIEW
 
-view : Model -> Document Msg
-view model =
-  { title = "a title", body = [ div [] [ text "ok" ] ] }
-  -- { title = "A title:"
-  -- , body = div [] [ text "ok" ]
-  -- }
 
-  -- div []
-  --   [ button [ onClick Decrement ] [ text "click me" ]
-  --   -- , div [] [ text (String.fromInt model) ]
-  --   -- , button [ onClick Increment ] [ text "+" ]
-  --   ]
+view : Model -> Browser.Document Msg
+view model =
+    let
+        viewLink path =
+            li [] [ a [ href path ] [ text path ] ]
+    in
+    { title = "URL Interceptor"
+    , body =
+        [ text "The URL is: "
+        , b [] [ text (Url.toString model.url) ]
+        , ul []
+            [ viewLink (routeToString Route.Home)
+            , viewLink (routeToString Route.Onboard)
+            ]
+        ]
+    }
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ = Sub.none
-
+subscriptions _ =
+    Sub.none
 
 
 main : Program Value Model Msg
