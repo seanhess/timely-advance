@@ -52,11 +52,11 @@ type BaseApi =
 
 
 data AccountsApi route = AccountsApi
-    { _test :: route :- Get '[JSON] Text
+    { _all :: route :- Get '[JSON] [Account]
+    , _post :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] Account
+    , _get :: route :- Capture "id" Text :> Get '[JSON] Account
+    , _put :: route :- Capture "id" Text :> ReqBody '[JSON] AccountInfo :> Put '[JSON] Account
     } deriving (Generic)
-
-    -- { _post :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] Account
-    -- }
 
 
        -- GET /hello/:name?capital={true, false}  returns a Greet as JSON
@@ -73,13 +73,21 @@ data AccountsApi route = AccountsApi
 --     , _accounts = accountsApi
 --     }
 
+-- TODO make the API clickable from the browser! You can click on links in the responses
 
 accountsApi :: AccountsApi AsServer
 accountsApi = AccountsApi
-    { _test = return "woot"
+    { _all = allAccounts
+    , _post = newAccount
+    , _get = getAccount
+    , _put = saveAccount
     }
-  -- where
-    -- newAccount a = return $ Account a "asdf123"
+  where
+    allAccounts = return [ Account fakeAccount "1234"]
+    newAccount a = return $ Account a "asdf123"
+    getAccount i = return $ Account fakeAccount i
+    saveAccount i a = return $ Account a i
+    fakeAccount = AccountInfo "Bob" "Lewis" "bob@gmail.com"
 
 
 -- api :: Proxy (ToServantApi BaseApi)
@@ -87,12 +95,9 @@ accountsApi = AccountsApi
 
 
 server :: Server BaseApi
-server = home :<|> test
+server = home :<|> toServant accountsApi
   where
     home = return "home"
-
-    test :: Handler Text
-    test = toServant accountsApi
 
 
 apiProxy :: Proxy BaseApi
