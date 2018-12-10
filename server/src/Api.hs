@@ -8,6 +8,7 @@ module Api where
 
 import           Prelude
 
+import           Control.Monad.Reader (ReaderT, runReaderT, ask)
 import           Data.Aeson
 import           Data.Proxy
 import           Data.Text
@@ -17,7 +18,7 @@ import           qualified Network.Wai.Handler.Warp as Warp
 
 import           Servant
 import           Servant.API.Generic ((:-), ToServantApi, genericApi, toServant)
-import           Servant.Server.Generic (AsServer, genericServe)
+import           Servant.Server.Generic (AsServerT, genericServe)
 
 -- * Example
 
@@ -31,12 +32,9 @@ instance FromJSON AccountInfo
 instance ToJSON AccountInfo
 
 
--- the official account might have all kinds of metadata
--- multiple rows, etc
--- what other info will it have?
 data Account = Account
-    { accountInfo :: AccountInfo
-    , accountId   :: Text
+    { accountId   :: Text
+    , accountInfo :: AccountInfo
     } deriving (Generic, Show)
 
 instance ToJSON Account
@@ -47,8 +45,6 @@ instance FromJSON Account
 type BaseApi =
          Get '[JSON] Text
     :<|> "accounts" :> ToServantApi AccountsApi -- Get '[JSON] Text
-    -- , _accounts :: route :- "accounts" :> ToServantApi AccountsApi
-    -- , _put :: route :- ReqBody '[JSON] Int :> Put '[JSON] Bool
 
 
 data AccountsApi route = AccountsApi
@@ -59,23 +55,10 @@ data AccountsApi route = AccountsApi
     } deriving (Generic)
 
 
-       -- GET /hello/:name?capital={true, false}  returns a Greet as JSON
-       -- "accounts" :> Capture "name" Text :> QueryParam "capital" Bool :> Get '[JSON] Greet
-
-       -- POST /greet with a Greet as JSON in the request body,
-       --             returns a Greet as JSON
-       -- DELETE /greet/:greetid
-  -- :<|> "greet" :> Capture "greetid" Text :> Delete '[JSON] NoContent
-
--- baseApi :: BaseApi AsServer
--- baseApi = BaseApi
---     { _test = return "Hello"
---     , _accounts = accountsApi
---     }
-
 -- TODO make the API clickable from the browser! You can click on links in the responses
+-- but it doesn't help THAT much because it can't post for you :(
 
-accountsApi :: AccountsApi AsServer
+accountsApi :: AccountsApi (AsServerT AppM)
 accountsApi = AccountsApi
     { _all = allAccounts
     , _post = newAccount
@@ -83,21 +66,28 @@ accountsApi = AccountsApi
     , _put = saveAccount
     }
   where
-    allAccounts = return [ Account fakeAccount "1234"]
-    newAccount a = return $ Account a "asdf123"
-    getAccount i = return $ Account fakeAccount i
-    saveAccount i a = return $ Account a i
+    allAccounts = return [ Account "123" fakeAccount ]
+    newAccount a = return $ Account "asdf123" a
+    getAccount i = return $ Account i fakeAccount
+    saveAccount i a = return $ Account i a
     fakeAccount = AccountInfo "Bob" "Lewis" "bob@gmail.com"
 
 
--- api :: Proxy (ToServantApi BaseApi)
--- api = genericApi (Proxy :: Proxy BaseApi)
-
-
-server :: Server BaseApi
-server = home :<|> toServant accountsApi
+baseApi :: ServerT BaseApi AppM
+baseApi = home :<|> toServant accountsApi
   where
-    home = return "home"
+    home = ask
+
+
+type AppCustomState = Text
+
+
+type AppM = ReaderT AppCustomState Handler
+
+
+nt :: AppCustomState -> AppM a -> Handler a
+nt s x = runReaderT x s
+
 
 
 apiProxy :: Proxy BaseApi
@@ -105,7 +95,9 @@ apiProxy = Proxy
 
 
 test :: Application
-test = serve apiProxy server
+test = do
+    let cfg = "config"
+    serve apiProxy $ hoistServer apiProxy (nt cfg) baseApi
 
 
 run :: Warp.Port -> IO ()
