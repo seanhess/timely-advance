@@ -7,8 +7,12 @@
 {-# LANGUAGE TypeOperators     #-}
 module Api where
 
-import AppM (AppM, nt)
-import Control.Monad.Reader (ask)
+import AppM (AppM, nt, AppState(..), newState)
+import Control.Monad.Reader (asks)
+import Control.Monad.State (StateT)
+import Control.Monad.STM (atomically)
+import Control.Monad.IO.Class (liftIO)
+import Control.Concurrent.STM.TVar (readTVar, writeTVar)
 import Control.Monad.Except (throwError, MonadError)
 import Control.Monad.State (runStateT, get, put)
 
@@ -50,8 +54,14 @@ accountsApi = AccountsApi
     , _put  = \i a -> runState $ saveAccount i a
     }
   where
+    -- runState :: AppM a -> Handler a
+    runState :: StateT [Account] AppM a -> AppM a
     runState action = do
-      (a, _) <- runStateT action []
+      var <- asks appAccounts
+      as <- liftIO $ atomically $ readTVar var
+      (a, as') <- runStateT action as
+      liftIO $ print as'
+      liftIO $ atomically $ writeTVar var as'
       return a
 
 
@@ -59,7 +69,7 @@ accountsApi = AccountsApi
 baseApi :: ServerT BaseApi AppM
 baseApi = home :<|> accounts
   where
-    home = ask
+    home = asks appMessage
     accounts = toServant accountsApi
 
 
@@ -67,16 +77,16 @@ apiProxy :: Proxy BaseApi
 apiProxy = Proxy
 
 
-test :: Application
-test = do
-    let cfg = "config"
-    serve apiProxy $ hoistServer apiProxy (nt cfg) baseApi
+application :: AppState -> Application
+application st = do
+    serve apiProxy $ hoistServer apiProxy (nt st) baseApi
 
 
 run :: Warp.Port -> IO ()
 run port = do
+    state <- newState "a message"
     putStrLn $ "Running on " ++ (show port)
-    Warp.run port test
+    Warp.run port (application state)
 
 
 notFound :: (MonadError ServantErr m) => Maybe a -> m a

@@ -34,7 +34,9 @@ allAccounts = get
 newAccount :: (MonadState [Account] m) => AccountInfo -> m Account
 newAccount a = do
   i <- newId
-  return $ Account i a
+  let account = Account i a
+  modify $ (account:)
+  return account
 
 
 getAccount :: (MonadState [Account] m) => Text -> m (Maybe Account)
