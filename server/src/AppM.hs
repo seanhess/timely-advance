@@ -4,7 +4,7 @@ import Control.Monad.Reader (ReaderT, runReaderT)
 import Control.Monad.STM (atomically)
 import Control.Concurrent.STM.TVar (TVar, newTVar)
 import Data.Text (Text)
-import Data.Account (Account)
+import Types.Account (Account)
 import Servant (Handler)
 
 

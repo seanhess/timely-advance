@@ -16,7 +16,7 @@ import Control.Concurrent.STM.TVar (readTVar, writeTVar)
 import Control.Monad.Except (throwError, MonadError)
 import Control.Monad.State (runStateT, get, put)
 
-import Data.Account
+import Types.Account
 import Endpoint.Accounts
 import GHC.Generics (Generic)
 
@@ -35,7 +35,7 @@ type BaseApi =
     :<|> "accounts" :> ToServantApi AccountsApi -- Get '[JSON] Text
 
 
--- Accounts
+-- Accounts --------------------------------------------------------
 data AccountsApi route = AccountsApi
     { _all :: route :- Get '[JSON] [Account]
     , _post :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] Account
@@ -44,8 +44,6 @@ data AccountsApi route = AccountsApi
     } deriving (Generic)
 
 
--- TODO: not servant errors
--- TODO: this approach isn't going to work, you'd need to lift all the monads when you assemble this. You would need to put it here for each function
 accountsApi :: AccountsApi (AsServerT AppM)
 accountsApi = AccountsApi
     { _all  = runState allAccounts
@@ -54,13 +52,11 @@ accountsApi = AccountsApi
     , _put  = \i a -> runState $ saveAccount i a
     }
   where
-    -- runState :: AppM a -> Handler a
     runState :: StateT [Account] AppM a -> AppM a
     runState action = do
       var <- asks appAccounts
       as <- liftIO $ atomically $ readTVar var
       (a, as') <- runStateT action as
-      liftIO $ print as'
       liftIO $ atomically $ writeTVar var as'
       return a
 

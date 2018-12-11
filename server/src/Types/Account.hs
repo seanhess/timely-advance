@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric     #-}
-module Data.Account where
+module Types.Account where
 
 import Data.Aeson (ToJSON, FromJSON)
 import Data.Text (Text)

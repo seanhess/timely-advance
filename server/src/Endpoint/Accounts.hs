@@ -9,7 +9,7 @@ module Endpoint.Accounts where
 
 import Control.Monad.State (MonadState, get, put, modify, gets)
 import Control.Monad.Except (throwError, MonadError)
-import Data.Account (Account(..), AccountInfo(..))
+import Types.Account (Account(..), AccountInfo(..))
 import Data.String.Conversions (cs)
 import Data.List (find)
 import Data.Text (Text)
