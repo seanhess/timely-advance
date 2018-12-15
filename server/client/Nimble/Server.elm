@@ -24,6 +24,14 @@ decodeAccount =
         |> required "accountId" string
         |> required "accountInfo" decodeAccountInfo
 
+encodeAccountInfo : AccountInfo -> Json.Encode.Value
+encodeAccountInfo x =
+    Json.Encode.object
+        [ ( "firstName", Json.Encode.string x.firstName )
+        , ( "lastName", Json.Encode.string x.lastName )
+        , ( "email", Json.Encode.string x.email )
+        ]
+
 decodeAccountInfo : Decoder AccountInfo
 decodeAccountInfo =
     decode AccountInfo

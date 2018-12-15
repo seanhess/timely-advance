@@ -5,8 +5,7 @@
 
 module ElmClient where
 
-import           Elm          (Spec (Spec), specsToDir, toElmDecoderSource,
-                               toElmTypeSource)
+import           Elm          (Spec (Spec), specsToDir, toElmDecoderSource, toElmEncoderSource, toElmTypeSource)
 import           GHC.Generics (Generic)
 import           Servant.API  ((:>), Capture, Get, JSON)
 import           Servant.Elm  (ElmType, Proxy (Proxy), defElmImports,
@@ -35,9 +34,10 @@ spec = Spec ["Nimble", "Server"]
              : toElmTypeSource    (Proxy :: Proxy Account)
              : toElmTypeSource    (Proxy :: Proxy AccountInfo)
              : toElmDecoderSource (Proxy :: Proxy Account)
+             : toElmEncoderSource (Proxy :: Proxy AccountInfo)
              : toElmDecoderSource (Proxy :: Proxy AccountInfo)
              : generateElmForAPI  (Proxy :: Proxy BaseApi))
 
 main :: IO ()
 main = do
-    specsToDir [spec] "../web/src"
+    specsToDir [spec] "client"
