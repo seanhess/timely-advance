@@ -25,6 +25,7 @@ dependencies:
 # - beam-core
 # - beam-migrate
 # - beam-postgres
+- elm-export
 - mtl
 - monad-control
 - servant
