@@ -22,14 +22,16 @@ description:         Please see the README on GitHub at <https://github.com/sean
 dependencies:
 - aeson
 - base >= 4.7 && < 5
-- beam-core
-- beam-migrate
-- beam-postgres
+# - beam-core
+# - beam-migrate
+# - beam-postgres
 - mtl
 - monad-control
 - servant
 - servant-server
-# - servant-elm
+- servant-elm
+- selda
+- selda-postgresql
 - string-conversions
 - stm
 - text

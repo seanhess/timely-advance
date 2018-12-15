@@ -1,7 +1,7 @@
 module Main where
 
 import qualified Api
-import qualified BeamTutorial
+import SeldaTutorial
 
 main :: IO ()
 main = do
