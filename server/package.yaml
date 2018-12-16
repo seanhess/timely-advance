@@ -28,6 +28,7 @@ dependencies:
 - elm-export
 - mtl
 - monad-control
+- random
 - servant
 - servant-server
 - servant-elm

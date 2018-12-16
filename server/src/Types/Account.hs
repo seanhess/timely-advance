@@ -4,21 +4,18 @@ module Types.Account where
 import Data.Aeson (ToJSON, FromJSON)
 import Data.Text (Text)
 import GHC.Generics (Generic)
+import Database.Selda (SqlRow)
+import Types.Id (Id)
 
-data AccountInfo = AccountInfo
-    { firstName :: Text
+
+
+data Account = Account
+    { accountId :: Id Account
+    , firstName :: Text
     , lastName :: Text
     , email :: Text
     } deriving (Generic, Show)
 
-instance FromJSON AccountInfo
-instance ToJSON AccountInfo
-
-
-data Account = Account
-    { accountId   :: Text
-    , accountInfo :: AccountInfo
-    } deriving (Generic, Show)
-
+instance SqlRow Account
 instance ToJSON Account
 instance FromJSON Account

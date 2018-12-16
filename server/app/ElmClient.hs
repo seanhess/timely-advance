@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators     #-}
 
@@ -13,7 +12,8 @@ import           Servant.Elm  (ElmType, Proxy (Proxy), defElmImports,
 
 
 import Api (Api)
-import Types.Account (Account, AccountInfo)
+import Types.Account (Account)
+import Types.AccountInfo (AccountInfo)
 
 
 

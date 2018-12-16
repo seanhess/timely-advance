@@ -1,64 +1,75 @@
 {-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds         #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLabels  #-}
 module Endpoint.Accounts where
 
-import Control.Monad.State (MonadState, get, put, modify, gets)
-import Control.Monad.Except (throwError, MonadError)
-import Types.Account (Account(..), AccountInfo(..))
-import Data.String.Conversions (cs)
-import Data.List (find)
+import Types.Account (Account(..))
+import Types.AccountInfo (AccountInfo)
+import qualified Types.AccountInfo as AccountInfo
+import Types.Id (Id(..), randomId)
+import Data.Maybe (listToMaybe)
+-- import Data.String.Conversions (cs)
+-- import Data.List (find)
 import Data.Text (Text)
-import GHC.Generics (Generic)
-import Servant
-import Servant.API.Generic ((:-), ToServantApi, genericApi, toServant)
-import Servant.Server.Generic (AsServerT, genericServe)
+import Database.Selda
 
 
 
--- see now we've arrived back at the model or data store
--- sort of.. actually, no
--- we just have business logic
--- not sure where to put this stuff
--- but it should be the main entry point
+
+accounts :: Table Account
+accounts = table "accounts" [#accountId :- primary]
 
 
-allAccounts :: (MonadState [Account] m) => m [Account]
-allAccounts = get
+
+allAccounts :: (MonadSelda m) => m [Account]
+allAccounts = query $ select accounts
 
 
-newAccount :: (MonadState [Account] m) => AccountInfo -> m Account
-newAccount a = do
-  i <- newId
-  let account = Account i a
-  modify $ (account:)
-  return account
+
+newAccount :: (MonadSelda m) => AccountInfo -> m Account
+newAccount ai = do
+    i <- randomId
+    let account = fromAccountInfo i ai
+    insert accounts [account]
+    pure account
 
 
-getAccount :: (MonadState [Account] m) => Text -> m (Maybe Account)
-getAccount i =
-  gets $ find (isAccount i)
+findAccount :: (MonadSelda m) => Id Account -> m (Maybe Account)
+findAccount i = do
+    as <- query $ do
+      account <- select accounts
+      restrict (account ! #accountId .== literal i)
+      return account
+    pure $ listToMaybe as
 
 
-saveAccount :: (MonadState [Account] m) => Text -> AccountInfo -> m (Account)
+saveAccount :: (MonadSelda m) => Id Account -> AccountInfo -> m Account
 saveAccount i ai = do
-  let new = Account i ai
-  modify $ update (isAccount i) (\_ -> new)
-  return new
-
-
-newId :: MonadState [Account] m => m Text
-newId = gets (cs.show.length)
-
-
-isAccount i a = accountId a == i
-
-update p f = map each
+    let newAccount = fromAccountInfo i ai
+    upsert accounts
+      (\account -> account ! #accountId .== literal i)
+      (\account -> account `with` updates newAccount)
+      [newAccount]
+    return newAccount
   where
-    each a
-      | p a = f a
-      | otherwise = a
+    updates a =
+      [ #firstName := literal (firstName a)
+      , #lastName := literal (lastName a)
+      , #email := literal (email a)
+      ]
+
+
+
+
+fromAccountInfo :: Id Account -> AccountInfo -> Account
+fromAccountInfo i ai = Account
+    { accountId = i
+    , firstName = AccountInfo.firstName ai
+    , lastName = AccountInfo.lastName ai
+    , email = AccountInfo.email ai
+    }
+

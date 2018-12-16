@@ -7,16 +7,15 @@
 {-# LANGUAGE TypeOperators     #-}
 module Api where
 
-import AppM (AppM, nt, AppState(..), newState)
+import AppM (AppM, nt, AppState(..))
 import Control.Monad.Reader (asks)
-import Control.Monad.State (StateT)
-import Control.Monad.STM (atomically)
-import Control.Monad.IO.Class (liftIO)
-import Control.Concurrent.STM.TVar (readTVar, writeTVar)
+-- import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Except (throwError, MonadError)
-import Control.Monad.State (runStateT, get, put)
+import Database.Selda.PostgreSQL (pgOpen, PGConnectInfo(..))
 
 import Types.Account
+import Types.AccountInfo
+import Types.Id
 import Endpoint.Accounts
 import GHC.Generics (Generic)
 
@@ -25,8 +24,8 @@ import Data.Text (Text)
 import qualified Network.Wai.Handler.Warp as Warp
 
 import Servant
-import Servant.API.Generic ((:-), ToServantApi, genericApi, toServant, ToServant, AsApi)
-import Servant.Server.Generic (AsServerT, genericServe, AsServer, genericServerT)
+import Servant.API.Generic ((:-), ToServantApi, ToServant, AsApi)
+import Servant.Server.Generic (AsServerT, genericServerT)
 
 
 type Api = ToServant BaseApi AsApi
@@ -44,27 +43,29 @@ data BaseApi route = BaseApi
 data AccountsApi route = AccountsApi
     { _all :: route :- Get '[JSON] [Account]
     , _post :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] Account
-    , _get :: route :- Capture "id" Text :> Get '[JSON] Account
-    , _put :: route :- Capture "id" Text :> ReqBody '[JSON] AccountInfo :> Put '[JSON] Account
+    , _get :: route :- Capture "id" (Id Account) :> Get '[JSON] Account
+    , _put :: route :- Capture "id" (Id Account) :> ReqBody '[JSON] AccountInfo :> Put '[JSON] Account
     } deriving (Generic)
 
 
-
+-- wait, does everything have the ability to run database code?
+-- 1. I could just put the connection in the AppState, then write an adapter, like runState. I like that
+-- 2. 
 accountsApi :: ToServant AccountsApi (AsServerT AppM)
 accountsApi = genericServerT AccountsApi
-    { _all  = runState allAccounts
-    , _post = \a -> runState $ newAccount a
-    , _get  = \i -> runState (getAccount i) >>= notFound
-    , _put  = \i a -> runState $ saveAccount i a
+    { _all  = undefined -- runState allAccounts
+    , _post = undefined -- \a -> runState $ newAccount a
+    , _get  = undefined -- \i -> runState (getAccount i) >>= notFound
+    , _put  = undefined -- \i a -> runState $ saveAccount i a
     }
-  where
-    runState :: StateT [Account] AppM a -> AppM a
-    runState action = do
-      var <- asks appAccounts
-      as <- liftIO $ atomically $ readTVar var
-      (a, as') <- runStateT action as
-      liftIO $ atomically $ writeTVar var as'
-      return a
+  -- where
+  --   runState :: StateT [Account] AppM a -> AppM a
+  --   runState action = do
+  --     var <- asks appAccounts
+  --     as <- liftIO $ atomically $ readTVar var
+  --     (a, as') <- runStateT action as
+  --     liftIO $ atomically $ writeTVar var as'
+  --     return a
 
 
 baseApi :: ToServant BaseApi (AsServerT AppM)
@@ -79,14 +80,15 @@ apiProxy = Proxy
 
 
 application :: AppState -> Application
-application st = do
-    serve apiProxy $ hoistServer apiProxy (nt st) baseApi
+application st =
+    serve apiProxy $ hoistServer apiProxy (nt undefined st) baseApi
 
 
 run :: Warp.Port -> IO ()
 run port = do
-    state <- newState "a message"
-    putStrLn $ "Running on " ++ (show port)
+    -- conn <- pgOpen $ PGConnectInfo "localhost" 5432 "postgres" Nothing Nothing Nothing
+    let state = AppState "hello world"  ---conn
+    putStrLn $ "Running on " ++ show port
     Warp.run port (application state)
 
 

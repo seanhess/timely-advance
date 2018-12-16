@@ -1,30 +1,36 @@
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 module AppM where
 
-import Control.Monad.Reader (ReaderT, runReaderT)
-import Control.Monad.STM (atomically)
-import Control.Concurrent.STM.TVar (TVar, newTVar)
+import Control.Monad.Reader (ReaderT, runReaderT, asks)
+import Database.Selda (MonadMask(..))
+import Database.Selda.Backend (SeldaConnection, MonadSelda(..), SeldaT, runSeldaT)
 import Data.Text (Text)
-import Types.Account (Account)
 import Servant (Handler)
 
 
 data AppState = AppState
     { appMessage :: Text
-    , appAccounts :: TVar [ Account ]
     }
-
-
-newState :: Text -> IO AppState
-newState m = do
-    as <- atomically $ newTVar []
-    return $ AppState m as
-
 
 
 
 type AppM = ReaderT AppState Handler
+-- type AppM = SeldaT (ReaderT AppState Handler)
 
 
-nt :: AppState -> AppM a -> Handler a
-nt s x = runReaderT x s
 
+-- that's not hte issue. We need to make Handler an instance of it. 
+-- instance MonadMask Handler where
+--     mask = liftIO . mask
+--     uninterruptibleMask = liftIO . uninterruptibleMask
+--     mask = liftIO . mask
+
+
+nt :: SeldaConnection -> AppState -> AppM a -> Handler a
+nt conn s x = undefined -- runReaderT (runSeldaT x conn) s
+
+
+
+-- Handler = ExceptT ServantErr IO a
+-- wrapped up
