@@ -25,14 +25,19 @@ import Data.Text (Text)
 import qualified Network.Wai.Handler.Warp as Warp
 
 import Servant
-import Servant.API.Generic ((:-), ToServantApi, genericApi, toServant)
-import Servant.Server.Generic (AsServerT, genericServe)
+import Servant.API.Generic ((:-), ToServantApi, genericApi, toServant, ToServant, AsApi)
+import Servant.Server.Generic (AsServerT, genericServe, AsServer, genericServerT)
 
 
--- API specification
-type BaseApi =
-         Get '[JSON] Text
-    :<|> "accounts" :> ToServantApi AccountsApi -- Get '[JSON] Text
+type Api = ToServant BaseApi AsApi
+
+
+data BaseApi route = BaseApi
+    { _info ::     route :- Get '[JSON] Text
+    , _accounts :: route :- "accounts" :> ToServantApi AccountsApi -- Get '[JSON] Text
+    } deriving (Generic)
+
+
 
 
 -- Accounts --------------------------------------------------------
@@ -44,8 +49,9 @@ data AccountsApi route = AccountsApi
     } deriving (Generic)
 
 
-accountsApi :: AccountsApi (AsServerT AppM)
-accountsApi = AccountsApi
+
+accountsApi :: ToServant AccountsApi (AsServerT AppM)
+accountsApi = genericServerT AccountsApi
     { _all  = runState allAccounts
     , _post = \a -> runState $ newAccount a
     , _get  = \i -> runState (getAccount i) >>= notFound
@@ -61,15 +67,14 @@ accountsApi = AccountsApi
       return a
 
 
+baseApi :: ToServant BaseApi (AsServerT AppM)
+baseApi = genericServerT BaseApi
+    { _info = asks appMessage
+    , _accounts = accountsApi
+    }
 
-baseApi :: ServerT BaseApi AppM
-baseApi = home :<|> accounts
-  where
-    home = asks appMessage
-    accounts = toServant accountsApi
 
-
-apiProxy :: Proxy BaseApi
+apiProxy :: Proxy Api
 apiProxy = Proxy
 
 

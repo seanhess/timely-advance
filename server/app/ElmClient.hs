@@ -12,7 +12,7 @@ import           Servant.Elm  (ElmType, Proxy (Proxy), defElmImports,
                                generateElmForAPI)
 
 
-import Api (BaseApi)
+import Api (Api)
 import Types.Account (Account, AccountInfo)
 
 
@@ -36,7 +36,7 @@ spec = Spec ["Nimble", "Server"]
              : toElmDecoderSource (Proxy :: Proxy Account)
              : toElmEncoderSource (Proxy :: Proxy AccountInfo)
              : toElmDecoderSource (Proxy :: Proxy AccountInfo)
-             : generateElmForAPI  (Proxy :: Proxy BaseApi))
+             : generateElmForAPI  (Proxy :: Proxy Api))
 
 main :: IO ()
 main = do
