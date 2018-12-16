@@ -33,6 +33,7 @@ dependencies:
 - servant-elm
 - selda
 - selda-postgresql
+- selda-sqlite
 - string-conversions
 - stm
 - text

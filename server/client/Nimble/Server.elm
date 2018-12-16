@@ -1,9 +1,9 @@
-module Nimble.Server exposing (..)
+module Nimble.Server exposing (Account, AccountInfo, decodeAccount, decodeAccountInfo, encodeAccountInfo, get, getAccounts, getAccountsById, postAccounts, putAccountsById)
 
+import Http
 import Json.Decode exposing (..)
 import Json.Decode.Pipeline exposing (..)
 import Json.Encode
-import Http
 import String
 
 
@@ -12,17 +12,20 @@ type alias Account =
     , accountInfo : AccountInfo
     }
 
+
 type alias AccountInfo =
     { firstName : String
     , lastName : String
     , email : String
     }
 
+
 decodeAccount : Decoder Account
 decodeAccount =
-    decode Account
+    Json.Decode.succeed Account
         |> required "accountId" string
         |> required "accountInfo" decodeAccountInfo
+
 
 encodeAccountInfo : AccountInfo -> Json.Encode.Value
 encodeAccountInfo x =
@@ -32,14 +35,16 @@ encodeAccountInfo x =
         , ( "email", Json.Encode.string x.email )
         ]
 
+
 decodeAccountInfo : Decoder AccountInfo
 decodeAccountInfo =
-    decode AccountInfo
+    Json.Decode.succeed AccountInfo
         |> required "firstName" string
         |> required "lastName" string
         |> required "email" string
 
-get : Http.Request (String)
+
+get : Http.Request String
 get =
     Http.request
         { method =
@@ -60,7 +65,8 @@ get =
             False
         }
 
-getAccounts : Http.Request (List (Account))
+
+getAccounts : Http.Request (List Account)
 getAccounts =
     Http.request
         { method =
@@ -82,7 +88,8 @@ getAccounts =
             False
         }
 
-postAccounts : AccountInfo -> Http.Request (Account)
+
+postAccounts : AccountInfo -> Http.Request Account
 postAccounts body =
     Http.request
         { method =
@@ -104,7 +111,8 @@ postAccounts body =
             False
         }
 
-getAccountsById : String -> Http.Request (Account)
+
+getAccountsById : String -> Http.Request Account
 getAccountsById capture_id =
     Http.request
         { method =
@@ -127,7 +135,8 @@ getAccountsById capture_id =
             False
         }
 
-putAccountsById : String -> AccountInfo -> Http.Request (Account)
+
+putAccountsById : String -> AccountInfo -> Http.Request Account
 putAccountsById capture_id body =
     Http.request
         { method =
