@@ -41,8 +41,8 @@ extra-deps:
 - selda-0.3.4.0
 - selda-postgresql-0.1.7.3
 - selda-sqlite-0.1.6.1
-- git: https://github.com/NoRedInk/servant-elm.git
-  commit: 96bafc59c87b72606a75dfff3188002d90680735
+# - git: https://github.com/NoRedInk/servant-elm.git
+#   commit: 96bafc59c87b72606a75dfff3188002d90680735
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

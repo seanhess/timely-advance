@@ -7,7 +7,8 @@ import Html exposing (Html, a, b, button, div, li, text, ul)
 import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (Value)
-import Nimble.Server exposing (Account)
+import Nimble.Api exposing (Account)
+import Page.Accounts as Accounts
 import Page.Onboard as Onboard
 import Page.Signup as Signup
 import Route exposing (Route)
@@ -29,6 +30,7 @@ type PageModel
     = NotFound
     | Onboard Onboard.Model
     | Signup Signup.Model
+    | Accounts Accounts.Model
 
 
 init : flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -56,41 +58,46 @@ type Msg
     | ClickedLink Browser.UrlRequest
     | GotOnboardMsg Onboard.Msg
     | GotSignupMsg Signup.Msg
+    | GotAccountsMsg Accounts.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    Debug.log (Debug.toString msg) <|
-        case ( msg, model.page ) of
-            ( Ignored, _ ) ->
-                ( model, Cmd.none )
+    -- Debug.log (Debug.toString msg) <|
+    case ( msg, model.page ) of
+        ( Ignored, _ ) ->
+            ( model, Cmd.none )
 
-            ( ChangedUrl url, _ ) ->
-                let
-                    ( page, cmd ) =
-                        changeRouteTo (Route.fromUrl url) model.page
-                in
-                ( { model | page = page, url = url }, cmd )
+        ( ChangedUrl url, _ ) ->
+            let
+                ( page, cmd ) =
+                    changeRouteTo (Route.fromUrl url) model.page
+            in
+            ( { model | page = page, url = url }, cmd )
 
-            -- this allows us to intercept the url, I think
-            ( ClickedLink urlRequest, _ ) ->
-                case urlRequest of
-                    Browser.Internal url ->
-                        ( model, Nav.pushUrl model.key (Url.toString url) )
+        -- this allows us to intercept the url, I think
+        ( ClickedLink urlRequest, _ ) ->
+            case urlRequest of
+                Browser.Internal url ->
+                    ( model, Nav.pushUrl model.key (Url.toString url) )
 
-                    Browser.External href ->
-                        ( model, Nav.load href )
+                Browser.External href ->
+                    ( model, Nav.load href )
 
-            ( GotOnboardMsg _, _ ) ->
-                ( model, Cmd.none )
+        ( GotOnboardMsg _, _ ) ->
+            ( model, Cmd.none )
 
-            ( GotSignupMsg sub, Signup m ) ->
-                Signup.update sub m
-                    |> updateWith Signup GotSignupMsg model
+        ( GotSignupMsg sub, Signup m ) ->
+            Signup.update sub m
+                |> updateWith Signup GotSignupMsg model
 
-            ( _, _ ) ->
-                -- Disregard messages that arrived for the wrong page.
-                ( model, Cmd.none )
+        ( GotAccountsMsg acc, Accounts m ) ->
+            Accounts.update acc m
+                |> updateWith Accounts GotAccountsMsg model
+
+        ( _, _ ) ->
+            -- Disregard messages that arrived for the wrong page.
+            ( model, Cmd.none )
 
 
 
@@ -117,6 +124,9 @@ changeRouteTo maybeRoute model =
         Just Route.Signup ->
             ( Signup Signup.init, Cmd.none )
 
+        Just Route.Accounts ->
+            ( Accounts Accounts.init, Cmd.none )
+
 
 view : Model -> Browser.Document Msg
 view model =
@@ -134,6 +144,9 @@ view model =
 
                 Signup s ->
                     Element.map GotSignupMsg <| Signup.view s
+
+                Accounts s ->
+                    Element.map GotAccountsMsg <| Accounts.view s
     in
     { title = "URL Interceptor"
     , body =

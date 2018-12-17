@@ -17,6 +17,7 @@ import Url.Parser as Parser exposing ((</>), Parser, oneOf, s, string)
 type Route
     = Onboard
     | Signup
+    | Accounts
 
 
 
@@ -31,6 +32,7 @@ parser =
     oneOf
         [ Parser.map Onboard Parser.top
         , Parser.map Signup (s "signup")
+        , Parser.map Accounts (s "accounts")
 
         -- , Parser.map Profile (s "profile" </> Username.urlParser)
         -- , Parser.map Article (s "article" </> Slug.urlParser)
@@ -76,5 +78,8 @@ url page =
 
                 Signup ->
                     [ "signup" ]
+
+                Accounts ->
+                    [ "accounts" ]
     in
     "#/" ++ String.join "/" pieces
