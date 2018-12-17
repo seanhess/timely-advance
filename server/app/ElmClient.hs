@@ -4,11 +4,13 @@
 
 module ElmClient where
 
-import           Elm          (Spec (Spec), specsToDir, toElmDecoderSource, toElmEncoderSource, toElmTypeSource)
+import           Elm          (Spec (Spec), specsToDir, toElmDecoderSource, toElmEncoderSource, toElmTypeSource, ElmType(..))
 import           GHC.Generics (Generic)
 import           Servant.API  ((:>), Capture, Get, JSON)
-import           Servant.Elm  (ElmType, Proxy (Proxy), defElmImports,
-                               generateElmForAPI)
+import           Servant.Elm  (Proxy (Proxy), defElmImports, generateElmForAPI)
+
+import Data.UUID (UUID)
+import qualified Data.UUID as UUID
 
 
 import Api (Api)
@@ -19,6 +21,8 @@ import Types.AccountInfo (AccountInfo)
 
 instance ElmType Account
 instance ElmType AccountInfo
+instance ElmType UUID where
+    toElmType u = toElmType $ UUID.toText u
 
 -- data Book = Book
 --     { name :: String

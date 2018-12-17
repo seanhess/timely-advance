@@ -12,11 +12,12 @@ import Control.Monad.Reader (asks)
 -- import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Except (throwError, MonadError)
 import Database.Selda.PostgreSQL (pgOpen, PGConnectInfo(..))
+import Database.Selda.Backend (runSeldaT)
 
 import Types.Account
 import Types.AccountInfo
 import Types.Id
-import Endpoint.Accounts
+import qualified Endpoint.Accounts as Accounts
 import GHC.Generics (Generic)
 
 import Data.Proxy (Proxy(..))
@@ -53,19 +54,11 @@ data AccountsApi route = AccountsApi
 -- 2. 
 accountsApi :: ToServant AccountsApi (AsServerT AppM)
 accountsApi = genericServerT AccountsApi
-    { _all  = undefined -- runState allAccounts
-    , _post = undefined -- \a -> runState $ newAccount a
-    , _get  = undefined -- \i -> runState (getAccount i) >>= notFound
-    , _put  = undefined -- \i a -> runState $ saveAccount i a
+    { _all  = Accounts.allAccounts
+    , _post = Accounts.newAccount
+    , _get  = \i -> Accounts.findAccount i >>= notFound
+    , _put  = Accounts.saveAccount
     }
-  -- where
-  --   runState :: StateT [Account] AppM a -> AppM a
-  --   runState action = do
-  --     var <- asks appAccounts
-  --     as <- liftIO $ atomically $ readTVar var
-  --     (a, as') <- runStateT action as
-  --     liftIO $ atomically $ writeTVar var as'
-  --     return a
 
 
 baseApi :: ToServant BaseApi (AsServerT AppM)
@@ -81,13 +74,18 @@ apiProxy = Proxy
 
 application :: AppState -> Application
 application st =
-    serve apiProxy $ hoistServer apiProxy (nt undefined st) baseApi
+    serve apiProxy $ hoistServer apiProxy (nt st) baseApi
 
 
 run :: Warp.Port -> IO ()
 run port = do
-    -- conn <- pgOpen $ PGConnectInfo "localhost" 5432 "postgres" Nothing Nothing Nothing
-    let state = AppState "hello world"  ---conn
+    conn <- pgOpen $ PGConnectInfo "localhost" 5432 "postgres" Nothing (Just "postgres") Nothing
+    let state = AppState "hello world"  conn
+
+    runSeldaT Accounts.initialize conn
+
+    putStrLn "Initialized"
+
     putStrLn $ "Running on " ++ show port
     Warp.run port (application state)
 

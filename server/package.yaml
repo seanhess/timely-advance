@@ -38,6 +38,7 @@ dependencies:
 - string-conversions
 - stm
 - text
+- uuid
 - wai
 - warp
 

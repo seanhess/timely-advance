@@ -73,3 +73,10 @@ fromAccountInfo i ai = Account
     , email = AccountInfo.email ai
     }
 
+
+
+initialize :: MonadSelda m => m ()
+initialize = do
+    tryDropTable accounts
+    tryCreateTable accounts
+
