@@ -8,10 +8,10 @@ Install dependencies
 
     elm install
 
-Elm Live - Development rebuilding
+Elm Live - Development rebuilding: Make sure you run the server in another terminal window
 
     npm install --global elm elm-live
-    elm-live src/Main.elm --pushstate --open -- --debug
+    elm-live src/Main.elm --proxyHost http://localhost:3001 --proxyPrefix /v1 --pushstate --open -- --debug
 
 
 ### Onboarding

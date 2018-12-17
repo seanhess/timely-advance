@@ -34,9 +34,13 @@ type Api = ToServant BaseApi AsApi
 
 data BaseApi route = BaseApi
     { _info ::     route :- Get '[JSON] Text
-    , _accounts :: route :- "accounts" :> ToServantApi AccountsApi -- Get '[JSON] Text
+    , _versioned :: route :- "v1" :> ToServantApi VersionedApi
     } deriving (Generic)
 
+
+newtype VersionedApi route = VersionedApi
+    { _accounts :: route :- "accounts" :> ToServantApi AccountsApi
+    } deriving (Generic)
 
 
 
@@ -64,7 +68,12 @@ accountsApi = genericServerT AccountsApi
 baseApi :: ToServant BaseApi (AsServerT AppM)
 baseApi = genericServerT BaseApi
     { _info = asks appMessage
-    , _accounts = accountsApi
+    , _versioned = versionedApi
+    }
+
+versionedApi :: ToServant VersionedApi (AsServerT AppM)
+versionedApi = genericServerT VersionedApi
+    { _accounts = accountsApi
     }
 
 

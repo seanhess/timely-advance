@@ -53,7 +53,7 @@ getAccounts toMsg =
     Http.request
         { method = "GET"
         , headers = []
-        , url = String.join "/" [ "", "accounts" ]
+        , url = String.join "/" [ "", "v1", "accounts" ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg (list decodeAccount)
         , timeout = Nothing
@@ -66,7 +66,7 @@ postAccounts toMsg body =
     Http.request
         { method = "POST"
         , headers = []
-        , url = String.join "/" [ "", "accounts" ]
+        , url = String.join "/" [ "", "v1", "accounts" ]
         , body = Http.jsonBody (encodeAccountInfo body)
         , expect = Http.expectJson toMsg decodeAccount
         , timeout = Nothing
@@ -79,7 +79,7 @@ getAccountsById toMsg id =
     Http.request
         { method = "GET"
         , headers = []
-        , url = String.join "/" [ "", "accounts", id ]
+        , url = String.join "/" [ "", "v1", "accounts", id ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg decodeAccount
         , timeout = Nothing
@@ -92,7 +92,7 @@ putAccountsById toMsg id body =
     Http.request
         { method = "PUT"
         , headers = []
-        , url = String.join "/" [ "", "accounts", id ]
+        , url = String.join "/" [ "", "v1", "accounts", id ]
         , body = Http.jsonBody (encodeAccountInfo body)
         , expect = Http.expectJson toMsg decodeAccount
         , timeout = Nothing

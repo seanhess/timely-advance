@@ -37,7 +37,7 @@ init : flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ url key =
     let
         ( page, cmd ) =
-            changeRouteTo (Route.fromUrl url) NotFound
+            changeRouteTo key (Route.fromUrl url)
     in
     ( { key = key
       , url = url
@@ -71,7 +71,7 @@ update msg model =
         ( ChangedUrl url, _ ) ->
             let
                 ( page, cmd ) =
-                    changeRouteTo (Route.fromUrl url) model.page
+                    changeRouteTo model.key (Route.fromUrl url)
             in
             ( { model | page = page, url = url }, cmd )
 
@@ -112,8 +112,8 @@ updateWith toModel toMsg model ( subModel, subCmd ) =
     )
 
 
-changeRouteTo : Maybe Route -> PageModel -> ( PageModel, Cmd Msg )
-changeRouteTo maybeRoute model =
+changeRouteTo : Nav.Key -> Maybe Route -> ( PageModel, Cmd Msg )
+changeRouteTo key maybeRoute =
     case maybeRoute of
         Nothing ->
             ( NotFound, Cmd.none )
@@ -122,10 +122,14 @@ changeRouteTo maybeRoute model =
             ( Onboard Onboard.init, Cmd.none )
 
         Just Route.Signup ->
-            ( Signup Signup.init, Cmd.none )
+            ( Signup (Signup.init key), Cmd.none )
 
         Just Route.Accounts ->
-            ( Accounts Accounts.init, Cmd.none )
+            let
+                ( mod, cmd ) =
+                    Accounts.init
+            in
+            ( Accounts mod, Cmd.map GotAccountsMsg cmd )
 
 
 view : Model -> Browser.Document Msg

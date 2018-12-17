@@ -1,15 +1,18 @@
 module Page.Signup exposing (Model, Msg, init, update, view)
 
+import Browser.Navigation as Nav
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
 import Http
 import Nimble.Api as Api exposing (Account, AccountInfo)
 import Nimble.Style as Style
+import Route
 
 
 type alias Model =
     { account : AccountInfo
+    , key : Nav.Key
     , status : Status
     }
 
@@ -30,9 +33,9 @@ type Msg
     | CompletedSignup (Result Http.Error Account)
 
 
-init : Model
-init =
-    { account = { firstName = "", lastName = "", email = "" }, status = Editing }
+init : Nav.Key -> Model
+init key =
+    { account = { firstName = "", lastName = "", email = "" }, status = Editing, key = key }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -49,7 +52,7 @@ update msg model =
 
         CompletedSignup (Ok a) ->
             -- TODO redirect to accounts page
-            ( { model | status = Complete [] }, Cmd.none )
+            ( { model | status = Complete [] }, Nav.pushUrl model.key (Route.url Route.Accounts) )
 
 
 view : Model -> Element Msg
@@ -96,7 +99,7 @@ submit status =
             el [] (text "Loading...")
 
         Complete problems ->
-            el [] (text (String.concat problems))
+            el [] (text <| "Complete: " ++ String.concat problems)
 
 
 big : List (Attribute msg)
