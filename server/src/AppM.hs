@@ -24,10 +24,9 @@ type AppM = ReaderT AppState Handler
 
 instance MonadSelda AppM where
     seldaConnection = asks connection
-    -- wrapTransaction = error "TODO: upgrade servant to get this for free"
 
+-- TODO upgrade to servant 0.15 and remove this
 deriving instance MonadMask Handler
--- instance MonadMask Handler where
 
 
 

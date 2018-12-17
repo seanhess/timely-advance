@@ -1,7 +1,5 @@
 module Main exposing (Model, Msg(..), PageModel(..), changeRouteTo, init, main, subscriptions, update, view)
 
--- import Nimble.Server exposing (Account)
-
 import Browser exposing (Document)
 import Browser.Navigation as Nav
 import Element
@@ -9,6 +7,7 @@ import Html exposing (Html, a, b, button, div, li, text, ul)
 import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (Value)
+import Nimble.Server exposing (Account)
 import Page.Onboard as Onboard
 import Page.Signup as Signup
 import Route exposing (Route)
