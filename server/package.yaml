@@ -31,7 +31,7 @@ dependencies:
 - random
 - servant
 - servant-server
-# - servant-elm
+- servant-elm
 - selda
 - selda-postgresql
 - selda-sqlite
