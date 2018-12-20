@@ -17,14 +17,6 @@ import Url exposing (Url)
 
 
 
--- Port:
--- I'm not sure what I'm passing here...
-
-
-port plaidLinkOpen : Encode.Value -> Cmd msg
-
-
-
 -- MODEL -- sub-views? Nested?
 
 
@@ -97,12 +89,8 @@ update msg model =
             ( model, Cmd.none )
 
         ( GotSignupMsg sub, Signup m ) ->
-            let
-                onEvent Signup.PlaidLinkOpen =
-                    plaidLinkOpen Encode.null
-            in
             Signup.update sub m
-                |> runUpdates onEvent Signup GotSignupMsg model
+                |> runUpdates (always Cmd.none) Signup GotSignupMsg model
 
         -- |> updateWith Signup GotSignupMsg model
         ( GotAccountsMsg acc, Accounts m ) ->
@@ -197,8 +185,11 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.page of
-        Onboard onboard ->
-            Sub.map GotOnboardMsg (Onboard.subscriptions onboard)
+        Onboard mod ->
+            Sub.map GotOnboardMsg (Onboard.subscriptions mod)
+
+        Signup mod ->
+            Sub.map GotSignupMsg (Signup.subscriptions mod)
 
         _ ->
             Sub.none

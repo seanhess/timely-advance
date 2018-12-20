@@ -1,13 +1,24 @@
-module Page.Signup exposing (Evt(..), Model, Msg, init, update, view)
+port module Page.Signup exposing (Model, Msg, init, subscriptions, update, view)
 
 import Browser.Navigation as Nav
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
 import Http
+import Json.Encode as Encode
 import Nimble.Api as Api exposing (Account, AccountInfo)
 import Nimble.Style as Style
+import Platform.Updates exposing (Updates, base, command, set)
 import Route
+
+
+port plaidLinkOpen : Encode.Value -> Cmd msg
+
+
+port plaidLinkExit : (Encode.Value -> msg) -> Sub msg
+
+
+port plaidLinkDone : (String -> msg) -> Sub msg
 
 
 type alias Model =
@@ -17,9 +28,14 @@ type alias Model =
     }
 
 
+type alias PublicToken =
+    String
+
+
 type Status
     = Editing
-    | Loading
+    | Plaid
+    | Saving PublicToken
     | Complete (List Problem)
 
 
@@ -30,11 +46,9 @@ type alias Problem =
 type Msg
     = Update AccountInfo
     | Submit
+    | PlaidExited
+    | PlaidDone String
     | CompletedSignup (Result Http.Error Account)
-
-
-type Evt
-    = PlaidLinkOpen
 
 
 init : Nav.Key -> Model
@@ -45,46 +59,15 @@ init key =
     }
 
 
-
--- now it can run global commands, no?
--- we can have different types of events?
--- can we add events with .?
-
-
-type alias Updates model msg event =
-    ( model, Cmd msg, Event event )
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch
+        [ plaidLinkExit (always PlaidExited)
+        , plaidLinkDone PlaidDone
+        ]
 
 
-type alias Event a =
-    Maybe a
-
-
-base : model -> Updates model msg event
-base mod =
-    ( mod, Cmd.none, Nothing )
-
-
-set : model -> Updates model msg event -> Updates model msg event
-set mod ( _, msg, ev ) =
-    ( mod, msg, ev )
-
-
-modify : (model -> model) -> Updates model msg event -> Updates model msg event
-modify up ( mod, cmd, ev ) =
-    ( up mod, cmd, ev )
-
-
-command : Cmd msg -> Updates model msg event -> Updates model msg event
-command cmd2 ( mod, cmd1, ev ) =
-    ( mod, Cmd.batch [ cmd1, cmd2 ], ev )
-
-
-event : evt -> Updates model msg evt -> Updates model msg evt
-event evt ( mod, cmd, _ ) =
-    ( mod, cmd, Just evt )
-
-
-update : Msg -> Model -> Updates Model Msg Evt
+update : Msg -> Model -> Updates Model Msg ()
 update msg model =
     let
         updates =
@@ -97,8 +80,16 @@ update msg model =
 
         Submit ->
             updates
-                |> set { model | status = Loading }
-                |> event PlaidLinkOpen
+                |> set { model | status = Plaid }
+                |> command (plaidLinkOpen Encode.null)
+
+        PlaidExited ->
+            updates
+                |> set { model | status = Editing }
+
+        PlaidDone token ->
+            updates
+                |> set { model | status = Saving token }
 
         CompletedSignup (Err e) ->
             updates
@@ -151,8 +142,11 @@ submit status =
                 , label = Element.text "Create Account"
                 }
 
-        Loading ->
-            el [] (text "Loading...")
+        Plaid ->
+            el [] (text "Plaid...")
+
+        Saving token ->
+            el [] (text <| "Saving: " ++ token)
 
         Complete problems ->
             el [] (text <| "Complete: " ++ String.concat problems)

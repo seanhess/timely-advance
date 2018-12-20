@@ -21,6 +21,7 @@ var handler = Plaid.create({
   },
   onSuccess: function(public_token) {
     console.log("GOT PUBLIC TOKEN", public_token)
+    app.ports.plaidLinkDone.send(public_token);
     // $.post('/get_access_token', {
     //   public_token: public_token
     // }, function(data) {
@@ -34,6 +35,7 @@ var handler = Plaid.create({
   },
   onExit: function(err, metadata) {
     console.log("On Exit", err, metadata)
+    app.ports.plaidLinkExit.send();
   }
 });
 
