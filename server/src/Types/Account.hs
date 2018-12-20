@@ -14,8 +14,10 @@ data Account = Account
     , firstName :: Text
     , lastName :: Text
     , email :: Text
+    , plaidToken :: Text
     } deriving (Generic, Show)
 
 instance SqlRow Account
 instance ToJSON Account
 instance FromJSON Account
+

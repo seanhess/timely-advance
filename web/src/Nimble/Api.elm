@@ -1,4 +1,4 @@
-module Nimble.Api exposing (Account, AccountInfo, decodeAccount, decodeAccountInfo, encodeAccountInfo, getAccounts, getAccountsById, postAccounts, putAccountsById)
+module Nimble.Api exposing (Account, AccountInfo, decodeAccount, encodeAccountInfo, getAccounts, getAccountsById, postAccounts, putAccountsById)
 
 import Http exposing (Error)
 import Json.Decode as Decode exposing (Decoder, list, string)
@@ -19,6 +19,7 @@ type alias AccountInfo =
     { firstName : String
     , lastName : String
     , email : String
+    , plaidToken : String
     }
 
 
@@ -37,15 +38,17 @@ encodeAccountInfo x =
         [ ( "firstName", Json.Encode.string x.firstName )
         , ( "lastName", Json.Encode.string x.lastName )
         , ( "email", Json.Encode.string x.email )
+        , ( "plaidToken", Json.Encode.string x.plaidToken )
         ]
 
 
-decodeAccountInfo : Decoder AccountInfo
-decodeAccountInfo =
-    Decode.succeed AccountInfo
-        |> required "firstName" string
-        |> required "lastName" string
-        |> required "email" string
+
+-- decodeAccountInfo : Decoder AccountInfo
+-- decodeAccountInfo =
+--     Decode.succeed AccountInfo
+--         |> required "firstName" string
+--         |> required "lastName" string
+--         |> required "email" string
 
 
 getAccounts : (Result Error (List Account) -> msg) -> Cmd msg

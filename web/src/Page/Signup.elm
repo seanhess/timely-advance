@@ -21,8 +21,15 @@ port plaidLinkExit : (Encode.Value -> msg) -> Sub msg
 port plaidLinkDone : (String -> msg) -> Sub msg
 
 
+type alias Form =
+    { firstName : String
+    , lastName : String
+    , email : String
+    }
+
+
 type alias Model =
-    { account : AccountInfo
+    { form : Form
     , key : Nav.Key
     , status : Status
     }
@@ -44,7 +51,7 @@ type alias Problem =
 
 
 type Msg
-    = Update AccountInfo
+    = Update Form
     | Submit
     | PlaidExited
     | PlaidDone String
@@ -53,7 +60,7 @@ type Msg
 
 init : Nav.Key -> Model
 init key =
-    { account = { firstName = "", lastName = "", email = "" }
+    { form = { firstName = "", lastName = "", email = "" }
     , status = Editing
     , key = key
     }
@@ -72,11 +79,18 @@ update msg model =
     let
         updates =
             base model
+
+        newAccount token =
+            { firstName = model.form.firstName
+            , lastName = model.form.lastName
+            , email = model.form.email
+            , plaidToken = token
+            }
     in
     case msg of
-        Update a ->
+        Update f ->
             updates
-                |> set { model | account = a }
+                |> set { model | form = f }
 
         Submit ->
             updates
@@ -90,13 +104,13 @@ update msg model =
         PlaidDone token ->
             updates
                 |> set { model | status = Saving token }
+                |> command (Api.postAccounts CompletedSignup <| newAccount token)
 
         CompletedSignup (Err e) ->
             updates
                 |> set { model | status = Complete [ "Signup server error" ] }
 
         CompletedSignup (Ok a) ->
-            -- TODO redirect to accounts page
             updates
                 |> set { model | status = Complete [] }
                 |> command (Nav.pushUrl model.key (Route.url Route.Accounts))
@@ -104,29 +118,29 @@ update msg model =
 
 view : Model -> Element Msg
 view model =
-    form model.status model.account
+    form model.status model.form
 
 
-form : Status -> AccountInfo -> Element Msg
-form status account =
+form : Status -> Form -> Element Msg
+form status frm =
     Element.column Style.formPage
         [ el Style.header (text "Create an Account")
         , Input.text [ spacing 12 ]
-            { text = account.firstName
+            { text = frm.firstName
             , placeholder = Nothing
-            , onChange = \new -> Update { account | firstName = new }
+            , onChange = \new -> Update { frm | firstName = new }
             , label = Input.labelAbove [ Font.size 14 ] (text "First Name")
             }
         , Input.text [ spacing 12 ]
-            { text = account.lastName
+            { text = frm.lastName
             , placeholder = Nothing
-            , onChange = \new -> Update { account | lastName = new }
+            , onChange = \new -> Update { frm | lastName = new }
             , label = Input.labelAbove [ Font.size 14 ] (text "Last Name")
             }
         , Input.email [ spacing 12 ]
-            { text = account.email
+            { text = frm.email
             , placeholder = Nothing
-            , onChange = \new -> Update { account | email = new }
+            , onChange = \new -> Update { frm | email = new }
             , label = Input.labelAbove [ Font.size 14 ] (text "Email")
             }
         , submit status

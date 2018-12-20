@@ -5,10 +5,13 @@
 {-# LANGUAGE TypeOperators     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedLabels  #-}
+{-# LANGUAGE RecordWildCards  #-}
+{-# LANGUAGE DuplicateRecordFields  #-}
 module Endpoint.Accounts where
 
 import Types.Account (Account(..))
-import Types.AccountInfo (AccountInfo)
+import qualified Types.Account as Account
+import Types.AccountInfo (AccountInfo(..))
 import qualified Types.AccountInfo as AccountInfo
 import Types.Id (Id(..), randomId)
 import Data.Maybe (listToMaybe)
@@ -56,27 +59,25 @@ saveAccount i ai = do
       [newAccount]
     return newAccount
   where
+    -- you aren't allowed to replace the public key (for now)
     updates a =
-      [ #firstName := literal (firstName a)
-      , #lastName := literal (lastName a)
-      , #email := literal (email a)
+      [ #firstName := literal (Account.firstName a)
+      , #lastName := literal (Account.lastName a)
+      , #email := literal (Account.email a)
       ]
 
 
 
 
 fromAccountInfo :: Id Account -> AccountInfo -> Account
-fromAccountInfo i ai = Account
-    { accountId = i
-    , firstName = AccountInfo.firstName ai
-    , lastName = AccountInfo.lastName ai
-    , email = AccountInfo.email ai
-    }
+fromAccountInfo i AccountInfo {..} = Account {..}
+  where
+    accountId = i
 
 
 
 initialize :: MonadSelda m => m ()
-initialize = do
-    tryDropTable accounts
+initialize =
+    -- drop the table / db first to run migrations
     tryCreateTable accounts
 
