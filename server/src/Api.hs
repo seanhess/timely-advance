@@ -17,6 +17,7 @@ import Database.Selda.Backend (runSeldaT)
 import Types.Account
 import Types.AccountInfo
 import Types.Id
+import Types.Config
 import qualified Endpoint.Accounts as Accounts
 import GHC.Generics (Generic)
 
@@ -26,6 +27,7 @@ import qualified Network.Wai.Handler.Warp as Warp
 
 import Servant
 import Servant.API.Generic ((:-), ToServantApi, ToServant, AsApi)
+import Servant.API.ContentTypes.JS (JS)
 import Servant.Server.Generic (AsServerT, genericServerT)
 
 
@@ -33,13 +35,15 @@ type Api = ToServant BaseApi AsApi
 
 
 data BaseApi route = BaseApi
-    { _info ::     route :- Get '[JSON] Text
+    { _info ::      route :- Get '[JSON] Text
     , _versioned :: route :- "v1" :> ToServantApi VersionedApi
     } deriving (Generic)
 
 
-newtype VersionedApi route = VersionedApi
-    { _accounts :: route :- "accounts" :> ToServantApi AccountsApi
+data VersionedApi route = VersionedApi
+    { _accounts :: route :- "accounts"  :> ToServantApi AccountsApi
+    , _config   :: route :- "config"    :> Get '[JSON] ClientConfig
+    , _config'  :: route :- "config.js" :> Get '[JS "CONFIG"] ClientConfig
     } deriving (Generic)
 
 
@@ -74,6 +78,8 @@ baseApi = genericServerT BaseApi
 versionedApi :: ToServant VersionedApi (AsServerT AppM)
 versionedApi = genericServerT VersionedApi
     { _accounts = accountsApi
+    , _config  = asks client
+    , _config' = asks client
     }
 
 
@@ -89,7 +95,10 @@ application st =
 run :: Warp.Port -> IO ()
 run port = do
     conn <- pgOpen $ PGConnectInfo "localhost" 5432 "postgres" Nothing (Just "postgres") Nothing
-    let state = AppState "hello world"  conn
+
+    -- TODO env config
+    let config = ClientConfig (PlaidConfig "447ab26f3980c45b7202e2006dd9bf")
+        state = AppState "hello world" conn config
 
     runSeldaT Accounts.initialize conn
 

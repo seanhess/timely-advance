@@ -27,13 +27,14 @@ instance ElmType UUID where
 
 spec :: Spec
 spec = Spec ["Nimble", "Api"]
-            (defElmImports
-             : toElmTypeSource    (Proxy :: Proxy Account)
-             : toElmTypeSource    (Proxy :: Proxy AccountInfo)
-             : toElmDecoderSource (Proxy :: Proxy Account)
-             : toElmEncoderSource (Proxy :: Proxy AccountInfo)
-             : toElmDecoderSource (Proxy :: Proxy AccountInfo)
-             : generateElmForAPI  (Proxy :: Proxy Api))
+            [ defElmImports
+             , toElmTypeSource    (Proxy :: Proxy Account)
+             , toElmTypeSource    (Proxy :: Proxy AccountInfo)
+             , toElmDecoderSource (Proxy :: Proxy Account)
+             , toElmEncoderSource (Proxy :: Proxy AccountInfo)
+             , toElmDecoderSource (Proxy :: Proxy AccountInfo)
+             -- : generateElmForAPI  (Proxy :: Proxy Api))
+            ]
 
 main :: IO ()
 main = do

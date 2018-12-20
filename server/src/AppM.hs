@@ -9,11 +9,13 @@ import Database.Selda (MonadMask(..))
 import Database.Selda.Backend (SeldaConnection, MonadSelda(..), SeldaT, runSeldaT)
 import Data.Text (Text)
 import Servant (Handler(..), runHandler)
+import Types.Config
 
 
 data AppState = AppState
     { appMessage :: Text
     , connection :: SeldaConnection
+    , client :: ClientConfig
     }
 
 
