@@ -1,4 +1,4 @@
-module Page.Signup exposing (Model, Msg, init, update, view)
+module Page.Signup exposing (Evt(..), Model, Msg, init, update, view)
 
 import Browser.Navigation as Nav
 import Element exposing (..)
@@ -33,26 +33,82 @@ type Msg
     | CompletedSignup (Result Http.Error Account)
 
 
+type Evt
+    = PlaidLinkOpen
+
+
 init : Nav.Key -> Model
 init key =
-    { account = { firstName = "", lastName = "", email = "" }, status = Editing, key = key }
+    { account = { firstName = "", lastName = "", email = "" }
+    , status = Editing
+    , key = key
+    }
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+
+-- now it can run global commands, no?
+-- we can have different types of events?
+-- can we add events with .?
+
+
+type alias Updates model msg event =
+    ( model, Cmd msg, Event event )
+
+
+type alias Event a =
+    Maybe a
+
+
+base : model -> Updates model msg event
+base mod =
+    ( mod, Cmd.none, Nothing )
+
+
+set : model -> Updates model msg event -> Updates model msg event
+set mod ( _, msg, ev ) =
+    ( mod, msg, ev )
+
+
+modify : (model -> model) -> Updates model msg event -> Updates model msg event
+modify up ( mod, cmd, ev ) =
+    ( up mod, cmd, ev )
+
+
+command : Cmd msg -> Updates model msg event -> Updates model msg event
+command cmd2 ( mod, cmd1, ev ) =
+    ( mod, Cmd.batch [ cmd1, cmd2 ], ev )
+
+
+event : evt -> Updates model msg evt -> Updates model msg evt
+event evt ( mod, cmd, _ ) =
+    ( mod, cmd, Just evt )
+
+
+update : Msg -> Model -> Updates Model Msg Evt
 update msg model =
+    let
+        updates =
+            base model
+    in
     case msg of
         Update a ->
-            ( { model | account = a }, Cmd.none )
+            updates
+                |> set { model | account = a }
 
         Submit ->
-            ( { model | status = Loading }, Api.postAccounts CompletedSignup model.account )
+            updates
+                |> set { model | status = Loading }
+                |> event PlaidLinkOpen
 
         CompletedSignup (Err e) ->
-            ( { model | status = Complete [ "Signup server error" ] }, Cmd.none )
+            updates
+                |> set { model | status = Complete [ "Signup server error" ] }
 
         CompletedSignup (Ok a) ->
             -- TODO redirect to accounts page
-            ( { model | status = Complete [] }, Nav.pushUrl model.key (Route.url Route.Accounts) )
+            updates
+                |> set { model | status = Complete [] }
+                |> command (Nav.pushUrl model.key (Route.url Route.Accounts))
 
 
 view : Model -> Element Msg

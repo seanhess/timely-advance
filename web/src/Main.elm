@@ -1,4 +1,4 @@
-module Main exposing (Model, Msg(..), PageModel(..), changeRouteTo, init, main, subscriptions, update, view)
+port module Main exposing (Model, Msg(..), PageModel(..), changeRouteTo, init, main, subscriptions, update, view)
 
 import Browser exposing (Document)
 import Browser.Navigation as Nav
@@ -7,12 +7,21 @@ import Html exposing (Html, a, b, button, div, li, text, ul)
 import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (Value)
+import Json.Encode as Encode
 import Nimble.Api exposing (Account)
 import Page.Accounts as Accounts
 import Page.Onboard as Onboard
 import Page.Signup as Signup
 import Route exposing (Route)
 import Url exposing (Url)
+
+
+
+-- Port:
+-- I'm not sure what I'm passing here...
+
+
+port plaidLinkOpen : Encode.Value -> Cmd msg
 
 
 
@@ -88,9 +97,14 @@ update msg model =
             ( model, Cmd.none )
 
         ( GotSignupMsg sub, Signup m ) ->
+            let
+                onEvent Signup.PlaidLinkOpen =
+                    plaidLinkOpen Encode.null
+            in
             Signup.update sub m
-                |> updateWith Signup GotSignupMsg model
+                |> runUpdates onEvent Signup GotSignupMsg model
 
+        -- |> updateWith Signup GotSignupMsg model
         ( GotAccountsMsg acc, Accounts m ) ->
             Accounts.update acc m
                 |> updateWith Accounts GotAccountsMsg model
@@ -101,8 +115,29 @@ update msg model =
 
 
 
--- Signup.update sub m
---     |> updateWith Signup GotSignupMsg (Signup m)
+-- when we have Updates in this format:
+
+
+type alias Event a =
+    Maybe a
+
+
+type alias Updates model msg event =
+    ( model, Cmd msg, Event event )
+
+
+runUpdates : (event -> Cmd Msg) -> (model -> PageModel) -> (msg -> Msg) -> Model -> ( model, Cmd msg, Event event ) -> ( Model, Cmd Msg )
+runUpdates eventToMessage toModel toMsg model ( subModel, subCmd, subEvent ) =
+    ( { model | page = toModel subModel }
+    , Cmd.batch
+        [ Cmd.map toMsg subCmd
+        , Maybe.withDefault Cmd.none (Maybe.map eventToMessage subEvent)
+        ]
+    )
+
+
+
+-- TODO change everything to use this and just apply it
 
 
 updateWith : (subModel -> PageModel) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
@@ -152,11 +187,9 @@ view model =
                 Accounts s ->
                     Element.map GotAccountsMsg <| Accounts.view s
     in
-    { title = "URL Interceptor"
+    { title = "TODO: Title"
     , body =
-        [ text "The URL is: "
-        , b [] [ text (Url.toString model.url) ]
-        , div [] [ Element.layout [] (pageView model.page) ]
+        [ div [] [ Element.layout [] (pageView model.page) ]
         ]
     }
 

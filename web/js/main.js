@@ -1,5 +1,14 @@
+
+// Load Elm App
+var app = Elm.Main.init({
+  node: document.getElementById('elm')
+});
+
+
+// Config loaded?
 console.log("Javascript!", CONFIG)
 
+// Plaid Link
 var handler = Plaid.create({
   apiVersion: 'v2',
   clientName: 'Plaid Quickstart',
@@ -29,4 +38,13 @@ var handler = Plaid.create({
 });
 
 
-handler.open();
+// to open it!
+// handler.open();
+
+
+// PORTS
+console.log("PORTS", app.ports)
+app.ports.plaidLinkOpen.subscribe(function(data) {
+  console.log("Plaid Link Open")
+  handler.open()
+})
