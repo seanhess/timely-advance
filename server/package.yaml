@@ -20,8 +20,10 @@ extra-source-files:
 description:         Please see the README on GitHub at <https://github.com/seanhess/server#readme>
 
 dependencies:
-- aeson
 - base >= 4.7 && < 5
+- aeson
+- amqp
+- amqp-worker
 - elm-export
 - http-media
 - mtl
@@ -35,6 +37,7 @@ dependencies:
 - selda-sqlite
 - string-conversions
 - stm
+- time
 - text
 - uuid
 - wai

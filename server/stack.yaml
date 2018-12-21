@@ -41,6 +41,7 @@ extra-deps:
 - selda-0.3.4.0
 - selda-postgresql-0.1.7.3
 - selda-sqlite-0.1.6.1
+- amqp-worker-0.2.5
 # - git: https://github.com/NoRedInk/servant-elm.git
 #   commit: 96bafc59c87b72606a75dfff3188002d90680735
 

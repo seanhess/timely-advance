@@ -38,6 +38,10 @@ newAccount ai = do
     i <- randomId
     let account = fromAccountInfo i ai
     insert accounts [account]
+    -- TODO send a message to "accounts.created"
+    -- TODO create a worker that picks that up
+    -- TODO write a driver that can call plaid to get the bank info
+    -- TODO update the bank balance here
     pure account
 
 
@@ -50,6 +54,9 @@ findAccount i = do
     pure $ listToMaybe as
 
 
+-- TODO you probably can't save the account directly
+-- save consumer
+-- save bank info
 saveAccount :: (MonadSelda m) => Id Account -> AccountInfo -> m Account
 saveAccount i ai = do
     let newAccount = fromAccountInfo i ai
@@ -73,6 +80,8 @@ fromAccountInfo :: Id Account -> AccountInfo -> Account
 fromAccountInfo i AccountInfo {..} = Account {..}
   where
     accountId = i
+    bankBalance = 0
+
 
 
 
