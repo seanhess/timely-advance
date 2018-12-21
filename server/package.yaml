@@ -26,12 +26,16 @@ dependencies:
 - amqp-worker
 - elm-export
 - http-media
+- http-client
+- http-client-tls
 - mtl
 - monad-control
 - random
+- pretty-show
 - servant
 - servant-server
 - servant-elm
+- servant-client
 - selda
 - selda-postgresql
 - selda-sqlite
