@@ -8,13 +8,16 @@ import Control.Monad.Reader (ReaderT, runReaderT, asks)
 import Database.Selda (MonadMask(..))
 import Database.Selda.Backend (SeldaConnection, MonadSelda(..), SeldaT, runSeldaT)
 import Data.Text (Text)
+import qualified Network.AMQP.Worker as Worker
+import Network.AMQP.Worker.Monad (MonadWorker(..))
 import Servant (Handler(..), runHandler)
 import Types.Config
 
 
 data AppState = AppState
     { appMessage :: Text
-    , connection :: SeldaConnection
+    , db :: SeldaConnection
+    , amqp :: Worker.Connection
     , client :: ClientConfig
     }
 
@@ -25,7 +28,10 @@ type AppM = ReaderT AppState Handler
 
 
 instance MonadSelda AppM where
-    seldaConnection = asks connection
+    seldaConnection = asks db
+
+instance MonadWorker AppM where
+    amqpConnection = asks amqp
 
 -- TODO upgrade to servant 0.15 and remove this
 deriving instance MonadMask Handler

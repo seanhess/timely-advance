@@ -9,6 +9,10 @@
 {-# LANGUAGE DuplicateRecordFields  #-}
 module Endpoint.Accounts where
 
+import Network.AMQP.Worker (Queue, Direct, Exchange)
+import Network.AMQP.Worker.Monad (MonadWorker)
+import qualified Network.AMQP.Worker.Monad as MWorker
+import qualified Network.AMQP.Worker as Worker
 import Types.Account (Account(..))
 import qualified Types.Account as Account
 import Types.AccountInfo (AccountInfo(..))
@@ -22,6 +26,14 @@ import Database.Selda
 
 
 
+-- AMQP Stuff
+exchange :: Exchange
+exchange = Worker.exchange "app"
+
+queueAccountsCreated :: Queue Direct Account
+queueAccountsCreated = Worker.queue exchange "accounts.created"
+
+
 
 accounts :: Table Account
 accounts = table "accounts" [#accountId :- primary]
@@ -33,11 +45,18 @@ allAccounts = query $ select accounts
 
 
 
-newAccount :: (MonadSelda m) => AccountInfo -> m Account
+newAccount :: (MonadWorker m, MonadSelda m) => AccountInfo -> m Account
 newAccount ai = do
     i <- randomId
     let account = fromAccountInfo i ai
     insert accounts [account]
+
+    -- publish our message!
+    -- TODO where do these belong? Not here, it's the consumer who is responsible to initialize queues. This is obviously BS. It should be automatic
+    MWorker.initQueue queueAccountsCreated
+
+    MWorker.publish queueAccountsCreated account
+
     -- TODO send a message to "accounts.created"
     -- TODO create a worker that picks that up
     -- TODO write a driver that can call plaid to get the bank info
@@ -85,8 +104,10 @@ fromAccountInfo i AccountInfo {..} = Account {..}
 
 
 
-initialize :: MonadSelda m => m ()
+initialize :: (MonadSelda m, MonadIO m) => m ()
 initialize =
     -- drop the table / db first to run migrations
     tryCreateTable accounts
+
+
 

@@ -24,6 +24,7 @@ import GHC.Generics (Generic)
 import Data.Proxy (Proxy(..))
 import Data.Text (Text)
 import qualified Network.Wai.Handler.Warp as Warp
+import qualified Network.AMQP.Worker as Worker
 
 import Servant
 import Servant.API.Generic ((:-), ToServantApi, ToServant, AsApi)
@@ -94,13 +95,14 @@ application st =
 
 run :: Warp.Port -> IO ()
 run port = do
-    conn <- pgOpen $ PGConnectInfo "localhost" 5432 "postgres" Nothing (Just "postgres") Nothing
+    amqp <- Worker.connect (Worker.fromURI "amqp://guest:guest@localhost:5672")
+    db <- pgOpen $ PGConnectInfo "localhost" 5432 "postgres" Nothing (Just "postgres") Nothing
 
     -- TODO env config
     let config = ClientConfig (PlaidConfig "447ab26f3980c45b7202e2006dd9bf")
-        state = AppState "hello world" conn config
+        state = AppState "hello world" db amqp config
 
-    runSeldaT Accounts.initialize conn
+    runSeldaT Accounts.initialize db
 
     putStrLn "Initialized"
 

@@ -41,6 +41,7 @@ dependencies:
 - selda-sqlite
 - string-conversions
 - stm
+- transformers-base
 - time
 - text
 - uuid
