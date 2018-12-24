@@ -6,7 +6,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Http
 import Json.Encode as Encode
-import Nimble.Api as Api exposing (Account, AccountInfo)
+import Nimble.Api as Api exposing (AccountInfo, Application)
 import Nimble.Style as Style
 import Platform.Updates exposing (Updates, base, command, set)
 import Route
@@ -55,7 +55,7 @@ type Msg
     | Submit
     | PlaidExited
     | PlaidDone String
-    | CompletedSignup (Result Http.Error Account)
+    | CompletedSignup (Result Http.Error Application)
 
 
 init : Nav.Key -> Model
@@ -80,7 +80,7 @@ update msg model =
         updates =
             base model
 
-        newAccount token =
+        newApplication token =
             { firstName = model.form.firstName
             , lastName = model.form.lastName
             , email = model.form.email
@@ -104,7 +104,7 @@ update msg model =
         PlaidDone token ->
             updates
                 |> set { model | status = Saving token }
-                |> command (Api.postAccounts CompletedSignup <| newAccount token)
+                |> command (Api.postApplications CompletedSignup <| newApplication token)
 
         CompletedSignup (Err e) ->
             updates

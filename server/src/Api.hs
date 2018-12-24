@@ -15,6 +15,7 @@ import Control.Monad.Except (throwError, MonadError)
 import Database.Selda.PostgreSQL (pgOpen, PGConnectInfo(..))
 import Database.Selda.Backend (runSeldaT)
 
+import Types.Application as App
 import Types.Account
 import Types.AccountInfo
 import Types.Id
@@ -43,31 +44,36 @@ data BaseApi route = BaseApi
 
 
 data VersionedApi route = VersionedApi
-    { _accounts :: route :- "accounts"  :> ToServantApi AccountsApi
-    , _config   :: route :- "config"    :> Get '[JSON] ClientConfig
-    , _config'  :: route :- "config.js" :> Get '[JS "CONFIG"] ClientConfig
+    { _accounts :: route :- "accounts"     :> ToServantApi AccountsApi
+    , _apps     :: route :- "applications" :> ToServantApi AppsApi
+    , _config   :: route :- "config"       :> Get '[JSON] ClientConfig
+    , _config'  :: route :- "config.js"    :> Get '[JS "CONFIG"] ClientConfig
     } deriving (Generic)
 
 
 
 -- Accounts --------------------------------------------------------
 data AccountsApi route = AccountsApi
-    { _all :: route :- Get '[JSON] [Account]
-    , _post :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] Account
-    , _get :: route :- Capture "id" (Id Account) :> Get '[JSON] Account
-    , _put :: route :- Capture "id" (Id Account) :> ReqBody '[JSON] AccountInfo :> Put '[JSON] Account
+    { _get :: route :- Capture "id" (Id Account) :> Get '[JSON] Account
+    -- , _put :: route :- Capture "id" (Id Account) :> ReqBody '[JSON] AccountInfo :> Put '[JSON] Account
     } deriving (Generic)
 
 
--- wait, does everything have the ability to run database code?
--- 1. I could just put the connection in the AppState, then write an adapter, like runState. I like that
--- 2. 
+data AppsApi route = AppsApi
+    { _post :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] App.Application
+    } deriving (Generic)
+
+
 accountsApi :: ToServant AccountsApi (AsServerT AppM)
 accountsApi = genericServerT AccountsApi
-    { _all  = Accounts.allAccounts
-    , _post = Accounts.newAccount
-    , _get  = \i -> Accounts.findAccount i >>= notFound
-    , _put  = Accounts.saveAccount
+    { _get  = \i -> Accounts.getAccount i >>= notFound
+    -- , _put  = Accounts.saveAccount
+    }
+
+
+appsApi :: ToServant AppsApi (AsServerT AppM)
+appsApi = genericServerT AppsApi
+    { _post = Accounts.newApplication
     }
 
 
@@ -80,8 +86,9 @@ baseApi = genericServerT BaseApi
 versionedApi :: ToServant VersionedApi (AsServerT AppM)
 versionedApi = genericServerT VersionedApi
     { _accounts = accountsApi
-    , _config  = asks client
-    , _config' = asks client
+    , _apps     = appsApi
+    , _config   = asks client
+    , _config'  = asks client
     }
 
 
@@ -89,7 +96,7 @@ apiProxy :: Proxy Api
 apiProxy = Proxy
 
 
-application :: AppState -> Application
+application :: AppState -> Servant.Application
 application st =
     serve apiProxy $ hoistServer apiProxy (nt st) baseApi
 

@@ -1,12 +1,16 @@
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Worker.OnboardAccount where
 
 
-import Events (accountsNew, appExchange)
-import qualified Endpoint.Accounts as Accounts
+import qualified Events
+import qualified Accounts.Account as Account
 import Types.Account (Account(..))
+import Types.Customer (Customer(..))
+import Types.Bank (Bank(..))
+import Types.Application (Application(..))
 import Control.Exception (SomeException(..))
 import Control.Monad.Reader (ReaderT, runReaderT, asks)
 import Control.Monad.IO.Class (liftIO)
@@ -21,24 +25,35 @@ import Database.Selda.Backend (SeldaConnection, MonadSelda(..), SeldaT, runSelda
 
 connect :: (MonadSelda m, MonadWorker m) => m ()
 connect = do
-    let queue = Worker.topic accountsNew "app.onboardAccount"
+    let queue = Worker.topic Events.applicationsNew "app.onboardAccount"
     Worker.bindQueue queue
     Worker.worker def queue onError onboardAccount
 
 
 
-onboardAccount :: (MonadSelda m, MonadWorker m) => Message Account -> m ()
+onboardAccount :: (MonadSelda m, MonadWorker m) => Message Application -> m ()
 onboardAccount m = do
-    let account = value m
-    liftIO $ putStrLn "NEW ACCOUNT :)"
-    liftIO $ print account
+    let app = value m
+    liftIO $ putStrLn "NEW APPLICATION :)"
+    liftIO $ print app
 
-    liftIO $ getLine
+    -- create the customer record
+    Account.createCustomer $ newCustomer app
 
-    Accounts.saveBankBalance (accountId account) 200
+    -- TODO call plaid
+    Account.createBank $ newBank app
+
     liftIO $ putStrLn " - done"
 
-    -- wait for a minute, then update the bank balance :)
+
+newCustomer :: Application -> Customer
+newCustomer Application {..} = Customer {..}
+
+newBank :: Application -> Bank
+newBank Application {..} = Bank {..}
+  where
+    balance = 200
+    accessToken = "fake-access-token"
 
 
 onError :: MonadWorker m => WorkerException SomeException -> m ()
@@ -74,6 +89,6 @@ run :: IO ()
 run = do
     conn <- Worker.connect (Worker.fromURI "amqp://guest:guest@localhost:5672")
     db <- pgOpen $ PGConnectInfo "localhost" 5432 "postgres" Nothing (Just "postgres") Nothing
-    let state = AppState db conn appExchange
+    let state = AppState db conn Events.appExchange
     putStrLn "Running worker"
     runReaderT connect state

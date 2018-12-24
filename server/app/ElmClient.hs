@@ -15,11 +15,17 @@ import qualified Data.UUID as UUID
 
 import Api (Api)
 import Types.Account (Account)
+import Types.Application (Application)
+import Types.Bank (Bank)
+import Types.Customer (Customer)
 import Types.AccountInfo (AccountInfo)
 
 
 
 instance ElmType Account
+instance ElmType Application
+instance ElmType Bank
+instance ElmType Customer
 instance ElmType AccountInfo
 instance ElmType UUID where
     toElmType u = toElmType $ UUID.toText u
@@ -30,9 +36,15 @@ spec = Spec ["Nimble", "Api"]
             [ defElmImports
              , toElmTypeSource    (Proxy :: Proxy Account)
              , toElmTypeSource    (Proxy :: Proxy AccountInfo)
-             , toElmDecoderSource (Proxy :: Proxy Account)
+             , toElmTypeSource    (Proxy :: Proxy Application)
+             , toElmTypeSource    (Proxy :: Proxy Bank)
+             , toElmTypeSource    (Proxy :: Proxy Customer)
              , toElmEncoderSource (Proxy :: Proxy AccountInfo)
              , toElmDecoderSource (Proxy :: Proxy AccountInfo)
+             , toElmDecoderSource (Proxy :: Proxy Account)
+             , toElmDecoderSource (Proxy :: Proxy Bank)
+             , toElmDecoderSource (Proxy :: Proxy Customer)
+             , toElmDecoderSource (Proxy :: Proxy Application)
              -- : generateElmForAPI  (Proxy :: Proxy Api))
             ]
 

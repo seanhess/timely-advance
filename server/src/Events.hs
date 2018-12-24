@@ -6,12 +6,13 @@ import Data.Function ((&))
 import Network.AMQP.Worker (key, word, Key, Routing, Exchange)
 import qualified Network.AMQP.Worker as Worker
 import Types.Account (Account)
+import Types.Application (Application)
 
 
 appExchange :: Exchange
 appExchange = Worker.exchange "app"
 
 
-accountsNew :: Key Routing Account
-accountsNew = key "accounts" & word "new"
+applicationsNew :: Key Routing Application
+applicationsNew = key "applications" & word "new"
 

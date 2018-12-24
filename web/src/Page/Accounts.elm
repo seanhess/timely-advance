@@ -29,7 +29,11 @@ type Msg
 
 init : ( Model, Cmd Msg )
 init =
-    ( { accounts = [], status = Loading }, Api.getAccounts LoadComplete )
+    ( { accounts = [], status = Loading }, Cmd.none )
+
+
+
+--Api.getAccounts LoadComplete )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -54,7 +58,7 @@ accountView : Account -> Element Msg
 accountView account =
     Element.row [ spacing 8, padding 4 ]
         [ el [] (text account.accountId)
-        , el [] (text account.firstName)
-        , el [] (text account.lastName)
-        , el [] (text account.email)
+        , el [] (text account.customer.firstName)
+        , el [] (text account.customer.lastName)
+        , el [] (text account.customer.email)
         ]

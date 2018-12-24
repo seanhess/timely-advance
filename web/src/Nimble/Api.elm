@@ -1,7 +1,7 @@
-module Nimble.Api exposing (Account, AccountInfo, decodeAccount, encodeAccountInfo, getAccounts, getAccountsById, postAccounts, putAccountsById)
+module Nimble.Api exposing (Account, AccountInfo, Application, Bank, Customer, decodeAccount, encodeAccountInfo, getAccountsById, postApplications)
 
 import Http exposing (Error)
-import Json.Decode as Decode exposing (Decoder, list, string)
+import Json.Decode as Decode exposing (Decoder, int, list, string)
 import Json.Decode.Pipeline exposing (..)
 import Json.Encode
 import String
@@ -9,9 +9,8 @@ import String
 
 type alias Account =
     { accountId : String
-    , firstName : String
-    , lastName : String
-    , email : String
+    , bank : Bank
+    , customer : Customer
     }
 
 
@@ -23,13 +22,28 @@ type alias AccountInfo =
     }
 
 
-decodeAccount : Decoder Account
-decodeAccount =
-    Decode.succeed Account
-        |> required "accountId" string
-        |> required "firstName" string
-        |> required "lastName" string
-        |> required "email" string
+type alias Application =
+    { accountId : String
+    , firstName : String
+    , lastName : String
+    , email : String
+    , plaidToken : String
+    }
+
+
+type alias Bank =
+    { accountId : String
+    , balance : Int
+    , accessToken : String
+    }
+
+
+type alias Customer =
+    { accountId : String
+    , firstName : String
+    , lastName : String
+    , email : String
+    }
 
 
 encodeAccountInfo : AccountInfo -> Json.Encode.Value
@@ -42,36 +56,72 @@ encodeAccountInfo x =
         ]
 
 
-
--- decodeAccountInfo : Decoder AccountInfo
--- decodeAccountInfo =
---     Decode.succeed AccountInfo
---         |> required "firstName" string
---         |> required "lastName" string
---         |> required "email" string
-
-
-getAccounts : (Result Error (List Account) -> msg) -> Cmd msg
-getAccounts toMsg =
-    Http.request
-        { method = "GET"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "accounts" ]
-        , body = Http.emptyBody
-        , expect = Http.expectJson toMsg (list decodeAccount)
-        , timeout = Nothing
-        , tracker = Nothing
-        }
+decodeAccountInfo : Decoder AccountInfo
+decodeAccountInfo =
+    Decode.succeed AccountInfo
+        |> required "firstName" string
+        |> required "lastName" string
+        |> required "email" string
+        |> required "plaidToken" string
 
 
-postAccounts : (Result Error Account -> msg) -> AccountInfo -> Cmd msg
-postAccounts toMsg body =
+decodeAccount : Decoder Account
+decodeAccount =
+    Decode.succeed Account
+        |> required "accountId" string
+        |> required "bank" decodeBank
+        |> required "customer" decodeCustomer
+
+
+decodeBank : Decoder Bank
+decodeBank =
+    Decode.succeed Bank
+        |> required "accountId" string
+        |> required "balance" int
+        |> required "accessToken" string
+
+
+decodeCustomer : Decoder Customer
+decodeCustomer =
+    Decode.succeed Customer
+        |> required "accountId" string
+        |> required "firstName" string
+        |> required "lastName" string
+        |> required "email" string
+
+
+decodeApplication : Decoder Application
+decodeApplication =
+    Decode.succeed Application
+        |> required "accountId" string
+        |> required "firstName" string
+        |> required "lastName" string
+        |> required "email" string
+        |> required "plaidToken" string
+
+
+
+-- getAccounts : (Result Error (List Account) -> msg) -> Cmd msg
+-- getAccounts toMsg =
+--     Http.request
+--         { method = "GET"
+--         , headers = []
+--         , url = String.join "/" [ "", "v1", "accounts" ]
+--         , body = Http.emptyBody
+--         , expect = Http.expectJson toMsg (list decodeAccount)
+--         , timeout = Nothing
+--         , tracker = Nothing
+--         }
+
+
+postApplications : (Result Error Application -> msg) -> AccountInfo -> Cmd msg
+postApplications toMsg body =
     Http.request
         { method = "POST"
         , headers = []
-        , url = String.join "/" [ "", "v1", "accounts" ]
+        , url = String.join "/" [ "", "v1", "applications" ]
         , body = Http.jsonBody (encodeAccountInfo body)
-        , expect = Http.expectJson toMsg decodeAccount
+        , expect = Http.expectJson toMsg decodeApplication
         , timeout = Nothing
         , tracker = Nothing
         }
@@ -90,14 +140,15 @@ getAccountsById toMsg id =
         }
 
 
-putAccountsById : (Result Error Account -> msg) -> String -> AccountInfo -> Cmd msg
-putAccountsById toMsg id body =
-    Http.request
-        { method = "PUT"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "accounts", id ]
-        , body = Http.jsonBody (encodeAccountInfo body)
-        , expect = Http.expectJson toMsg decodeAccount
-        , timeout = Nothing
-        , tracker = Nothing
-        }
+
+-- putAccountsById : (Result Error Account -> msg) -> String -> AccountInfo -> Cmd msg
+-- putAccountsById toMsg id body =
+--     Http.request
+--         { method = "PUT"
+--         , headers = []
+--         , url = String.join "/" [ "", "v1", "accounts", id ]
+--         , body = Http.jsonBody (encodeAccountInfo body)
+--         , expect = Http.expectJson toMsg decodeAccount
+--         , timeout = Nothing
+--         , tracker = Nothing
+--         }

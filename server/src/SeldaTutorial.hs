@@ -40,8 +40,8 @@ selda = withSQLite "people3.sqlite" $ do
 
   -- _ <- ageEveryone
 
-  -- ps <- insertThenInspect
-  -- liftIO $ print ps
+  ps <- insertThenInspect
+  liftIO $ print ps
   -- insertSara
 
 
