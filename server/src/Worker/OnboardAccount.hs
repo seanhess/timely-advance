@@ -8,8 +8,8 @@ module Worker.OnboardAccount where
 import qualified Events
 import qualified Accounts.Account as Account
 import Types.Account (Account(..))
-import Types.Customer (Customer(..))
-import Types.Bank (Bank(..))
+import Types.Account.Customer (Customer(..))
+import Types.Account.Bank (Bank(..))
 import Types.Application (Application(..))
 import Control.Exception (SomeException(..))
 import Control.Monad.Reader (ReaderT, runReaderT, asks)

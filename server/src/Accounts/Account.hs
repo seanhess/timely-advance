@@ -13,8 +13,8 @@ import Data.Text (Text)
 import GHC.Generics (Generic)
 
 import Types.Account (Account(..))
-import Types.Bank
-import Types.Customer
+import Types.Account.Bank
+import Types.Account.Customer
 import Types.Id (Id)
 
 

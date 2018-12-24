@@ -17,7 +17,7 @@ import Database.Selda.Backend (runSeldaT)
 
 import Types.Application as App
 import Types.Account
-import Types.AccountInfo
+import Types.Account.AccountInfo
 import Types.Id
 import Types.Config
 import qualified Endpoint.Accounts as Accounts

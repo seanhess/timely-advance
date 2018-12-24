@@ -23,8 +23,8 @@ import qualified Network.AMQP.Worker as Worker hiding (publish)
 import Types.Application (Application)
 import Types.Account (Account(..))
 import qualified Types.Account as Account
-import Types.AccountInfo (AccountInfo(..))
-import qualified Types.AccountInfo as AccountInfo
+import Types.Account.AccountInfo (AccountInfo(..))
+import qualified Types.Account.AccountInfo as AccountInfo
 import Types.Id (Id(..), randomId)
 import Data.Maybe (listToMaybe)
 -- import Data.String.Conversions (cs)

@@ -1,7 +1,10 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE DuplicateRecordFields     #-}
-module Types.Account where
+module Types.Account
+    ( Account(..)
+    , AccountId
+    ) where
 
 import Data.Function ((&))
 import Data.Aeson (ToJSON, FromJSON)
@@ -9,9 +12,9 @@ import Data.Text (Text)
 import GHC.Generics (Generic)
 import Database.Selda (SqlRow)
 import Types.Id (Id)
-import Types.AccountId (AccountId)
-import Types.Customer (Customer)
-import Types.Bank (Bank)
+import Types.Account.AccountId
+import Types.Account.Customer (Customer)
+import Types.Account.Bank (Bank)
 
 
 

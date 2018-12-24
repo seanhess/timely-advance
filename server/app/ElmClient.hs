@@ -16,9 +16,9 @@ import qualified Data.UUID as UUID
 import Api (Api)
 import Types.Account (Account)
 import Types.Application (Application)
-import Types.Bank (Bank)
-import Types.Customer (Customer)
-import Types.AccountInfo (AccountInfo)
+import Types.Account.Bank (Bank)
+import Types.Account.Customer (Customer)
+import Types.Account.AccountInfo (AccountInfo)
 
 
 

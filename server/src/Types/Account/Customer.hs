@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings  #-}
-module Types.Customer where
+module Types.Account.Customer where
 
 
 import Database.Selda
@@ -10,7 +10,7 @@ import Data.Text (Text)
 import Database.Selda (SqlRow)
 import GHC.Generics (Generic)
 import Types.Id (Id)
-import Types.AccountId (AccountId)
+import Types.Account.AccountId (AccountId)
 
 data Customer = Customer
     { accountId :: Id AccountId

@@ -10,8 +10,8 @@ import Data.Maybe (listToMaybe)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
-import Types.AccountInfo (AccountInfo(..))
 import Types.Account (Account)
+import Types.Account.AccountInfo (AccountInfo(..))
 import Types.Id (Id)
 
 

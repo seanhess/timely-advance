@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings  #-}
-module Types.Bank where
+module Types.Account.Bank where
 
 
 import Database.Selda
@@ -10,7 +10,7 @@ import Data.Text (Text)
 import Database.Selda (SqlRow)
 import GHC.Generics (Generic)
 import Types.Id (Id)
-import Types.AccountId (AccountId)
+import Types.Account.AccountId (AccountId)
 
 data Bank = Bank
     { accountId :: Id AccountId
