@@ -23,7 +23,6 @@ resolver: lts-12.21
 # Various formats can be used as shown in the example below.
 #
 # packages:
-# - some-directory
 # - https://example.com/foo/bar/baz-0.0.2.tar.gz
 # - location:
 #    git: https://github.com/commercialhaskell/stack.git
@@ -34,6 +33,9 @@ resolver: lts-12.21
 #  - wai
 packages:
 - .
+- location: "../../amqp-worker"
+  extra-dep: true
+
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
@@ -41,7 +43,7 @@ extra-deps:
 - selda-0.3.4.0
 - selda-postgresql-0.1.7.3
 - selda-sqlite-0.1.6.1
-- amqp-worker-0.2.5
+# - amqp-worker-0.2.5
 # - git: https://github.com/NoRedInk/servant-elm.git
 #   commit: 96bafc59c87b72606a75dfff3188002d90680735
 

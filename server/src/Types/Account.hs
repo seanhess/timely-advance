@@ -1,7 +1,9 @@
 {-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE DuplicateRecordFields     #-}
 module Types.Account where
 
+import Data.Function ((&))
 import Data.Aeson (ToJSON, FromJSON)
 import Data.Text (Text)
 import GHC.Generics (Generic)

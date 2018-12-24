@@ -18,6 +18,7 @@ data AppState = AppState
     { appMessage :: Text
     , db :: SeldaConnection
     , amqp :: Worker.Connection
+    , exchange :: Worker.Exchange
     , client :: ClientConfig
     }
 
@@ -32,6 +33,7 @@ instance MonadSelda AppM where
 
 instance MonadWorker AppM where
     amqpConnection = asks amqp
+    amqpExchange = asks exchange
 
 -- TODO upgrade to servant 0.15 and remove this
 deriving instance MonadMask Handler

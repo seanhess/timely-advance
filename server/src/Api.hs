@@ -8,6 +8,7 @@
 module Api where
 
 import AppM (AppM, nt, AppState(..))
+import Events (appExchange)
 import Control.Monad.Reader (asks)
 -- import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Except (throwError, MonadError)
@@ -100,7 +101,7 @@ run port = do
 
     -- TODO env config
     let config = ClientConfig (PlaidConfig "447ab26f3980c45b7202e2006dd9bf")
-        state = AppState "hello world" db amqp config
+        state = AppState "hello world" db amqp appExchange config
 
     runSeldaT Accounts.initialize db
 

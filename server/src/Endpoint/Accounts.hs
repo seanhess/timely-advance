@@ -9,10 +9,11 @@
 {-# LANGUAGE DuplicateRecordFields  #-}
 module Endpoint.Accounts where
 
-import Network.AMQP.Worker (Queue, Direct, Exchange)
+import Events (accountsNew)
+import Network.AMQP.Worker (Queue, Exchange)
 import Network.AMQP.Worker.Monad (MonadWorker)
-import qualified Network.AMQP.Worker.Monad as MWorker
-import qualified Network.AMQP.Worker as Worker
+import qualified Network.AMQP.Worker.Monad as Worker
+import qualified Network.AMQP.Worker as Worker hiding (publish)
 import Types.Account (Account(..))
 import qualified Types.Account as Account
 import Types.AccountInfo (AccountInfo(..))
@@ -26,12 +27,6 @@ import Database.Selda
 
 
 
--- AMQP Stuff
-exchange :: Exchange
-exchange = Worker.exchange "app"
-
-queueAccountsCreated :: Queue Direct Account
-queueAccountsCreated = Worker.queue exchange "accounts.created"
 
 
 
@@ -47,15 +42,13 @@ allAccounts = query $ select accounts
 
 newAccount :: (MonadWorker m, MonadSelda m) => AccountInfo -> m Account
 newAccount ai = do
+    -- save the account
     i <- randomId
     let account = fromAccountInfo i ai
     insert accounts [account]
 
-    -- publish our message!
-    -- TODO where do these belong? Not here, it's the consumer who is responsible to initialize queues. This is obviously BS. It should be automatic
-    MWorker.initQueue queueAccountsCreated
-
-    MWorker.publish queueAccountsCreated account
+    -- send to onboardNewAccount (as a command)
+    Worker.publish accountsNew account
 
     -- TODO send a message to "accounts.created"
     -- TODO create a worker that picks that up
@@ -90,7 +83,16 @@ saveAccount i ai = do
       [ #firstName := literal (Account.firstName a)
       , #lastName := literal (Account.lastName a)
       , #email := literal (Account.email a)
+      , #bankBalance := literal (Account.bankBalance a)
       ]
+
+
+saveBankBalance :: (MonadSelda m) => Id Account -> Int -> m ()
+saveBankBalance i b = do
+    update accounts
+      (\account -> account ! #accountId .== literal i)
+      (\account -> account `with` [#bankBalance := literal b])
+    pure ()
 
 
 
