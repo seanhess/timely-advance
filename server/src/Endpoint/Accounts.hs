@@ -9,6 +9,8 @@
 {-# LANGUAGE DuplicateRecordFields  #-}
 module Endpoint.Accounts
     ( newApplication
+    , App.allApplications
+    , App.findApplication
     , getAccount
     , allAccounts
     , initialize

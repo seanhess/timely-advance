@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -12,11 +13,22 @@ import Data.Aeson (encode, ToJSON)
 import Data.Proxy (Proxy(..))
 import Data.Text (Text)
 import GHC.TypeLits (KnownSymbol, symbolVal, Symbol)
+import GHC.Generics (Generic)
 import Network.HTTP.Media ((//), (/:))
 import Servant.API.ContentTypes
 
 
 data HTML
+
+
+newtype Link = Link Text
+    deriving (Generic)
+
+instance ToJSON Link
+
+
+instance Linkable Link where
+    linkId (Link a) = a <> "/"
 
 
 class Linkable a where

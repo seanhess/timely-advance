@@ -39,3 +39,8 @@ findApplication i = do
       restrict (app ! #accountId .== literal i)
       return app
     pure $ listToMaybe as
+
+
+allApplications :: (MonadSelda m) => m [Application]
+allApplications =
+    query $ select applications

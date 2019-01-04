@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE PolyKinds         #-}
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
@@ -27,10 +28,10 @@ import Data.Text (Text)
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.AMQP.Worker as Worker
 
-import Servant
+import Servant hiding (Link)
 import Servant.API.Generic ((:-), ToServantApi, ToServant, AsApi)
 import Servant.API.ContentTypes.JS (JS)
-import Servant.API.ContentTypes.HTML (HTML)
+import Servant.API.ContentTypes.HTML (HTML, Link(..))
 import Servant.Server.Generic (AsServerT, genericServerT)
 
 
@@ -44,7 +45,8 @@ data BaseApi route = BaseApi
 
 
 data VersionedApi route = VersionedApi
-    { _accounts :: route :- "accounts"     :> ToServantApi AccountsApi
+    { _info     :: route :- Get '[HTML] [Link]
+    , _accounts :: route :- "accounts"     :> ToServantApi AccountsApi
     , _apps     :: route :- "applications" :> ToServantApi AppsApi
     , _config   :: route :- "config"       :> Get '[JSON] ClientConfig
     , _config'  :: route :- "config.js"    :> Get '[JS "CONFIG"] ClientConfig
@@ -62,7 +64,9 @@ data AccountsApi route = AccountsApi
 
 
 data AppsApi route = AppsApi
-    { _post :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] App.Application
+    { _all :: route :- Get '[JSON, HTML] [App.Application]
+    , _get :: route :- Capture "id" (Id Account) :> Get '[JSON, HTML] App.Application
+    , _post :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] App.Application
     } deriving (Generic)
 
 
@@ -76,7 +80,9 @@ accountsApi = genericServerT AccountsApi
 
 appsApi :: ToServant AppsApi (AsServerT AppM)
 appsApi = genericServerT AppsApi
-    { _post = Accounts.newApplication
+    { _all = Accounts.allApplications
+    , _get = \i -> Accounts.findApplication i >>= notFound
+    , _post = Accounts.newApplication
     }
 
 
@@ -92,6 +98,7 @@ versionedApi = genericServerT VersionedApi
     , _apps     = appsApi
     , _config   = asks client
     , _config'  = asks client
+    , _info     = pure $ [Link "accounts", Link "applications", Link "config"]
     }
 
 
