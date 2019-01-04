@@ -10,13 +10,14 @@
 module Endpoint.Accounts
     ( newApplication
     , getAccount
+    , allAccounts
     , initialize
     ) where
 
 import qualified Accounts.Application as App
-import Accounts.Account (getAccount, initialize)
+import Accounts.Account (getAccount, allAccounts, initialize)
 import qualified Events (applicationsNew)
-import Network.AMQP.Worker (Queue, Exchange)
+import Network.AMQP.Worker (Queue)
 import Network.AMQP.Worker.Monad (MonadWorker)
 import qualified Network.AMQP.Worker.Monad as Worker
 import qualified Network.AMQP.Worker as Worker hiding (publish)

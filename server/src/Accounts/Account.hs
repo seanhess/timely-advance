@@ -33,15 +33,25 @@ banks = table "accounts_banks" [#accountId :- primary]
 
 
 
--- allAccounts :: (MonadSelda m) => m [Account]
--- allAccounts = query $ select accounts
+allAccounts :: (MonadSelda m) => m [Account]
+allAccounts = do
+    as <- query $ do
+      c <- select customers
+      b <- select banks
+      restrict (c ! #accountId .== b ! #accountId)
+      pure (c ! #accountId :*: b :*: c)
+    pure $ fmap account as
+  where
+    account (i :*: b :*: c) = Account i b c
+
 
 getAccount :: MonadSelda m => Id Account -> m (Maybe Account)
 getAccount i = do
     as <- query $ do
       c <- select customers
       b <- select banks
-      restrict (c ! #accountId .== b ! #accountId)
+      restrict (c ! #accountId .== literal i)
+      restrict (b ! #accountId .== literal i)
       pure (b :*: c)
     pure $ fmap account $ listToMaybe as
   where

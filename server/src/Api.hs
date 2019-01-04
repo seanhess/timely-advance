@@ -8,7 +8,6 @@
 module Api where
 
 import AppM (AppM, nt, AppState(..))
-import Events (appExchange)
 import Control.Monad.Reader (asks)
 -- import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Except (throwError, MonadError)
@@ -31,6 +30,7 @@ import qualified Network.AMQP.Worker as Worker
 import Servant
 import Servant.API.Generic ((:-), ToServantApi, ToServant, AsApi)
 import Servant.API.ContentTypes.JS (JS)
+import Servant.API.ContentTypes.HTML (HTML)
 import Servant.Server.Generic (AsServerT, genericServerT)
 
 
@@ -52,9 +52,11 @@ data VersionedApi route = VersionedApi
 
 
 
+
 -- Accounts --------------------------------------------------------
 data AccountsApi route = AccountsApi
-    { _get :: route :- Capture "id" (Id Account) :> Get '[JSON] Account
+    { _all :: route :- Get '[JSON, HTML] [Account]
+    , _get :: route :- Capture "id" (Id Account) :> Get '[JSON, HTML] (Account)
     -- , _put :: route :- Capture "id" (Id Account) :> ReqBody '[JSON] AccountInfo :> Put '[JSON] Account
     } deriving (Generic)
 
@@ -66,7 +68,8 @@ data AppsApi route = AppsApi
 
 accountsApi :: ToServant AccountsApi (AsServerT AppM)
 accountsApi = genericServerT AccountsApi
-    { _get  = \i -> Accounts.getAccount i >>= notFound
+    { _all = Accounts.allAccounts
+    , _get  = \i -> Accounts.getAccount i >>= notFound
     -- , _put  = Accounts.saveAccount
     }
 
@@ -108,7 +111,7 @@ run port = do
 
     -- TODO env config
     let config = ClientConfig (PlaidConfig "447ab26f3980c45b7202e2006dd9bf")
-        state = AppState "hello world" db amqp appExchange config
+        state = AppState "hello world" db amqp config
 
     runSeldaT Accounts.initialize db
 

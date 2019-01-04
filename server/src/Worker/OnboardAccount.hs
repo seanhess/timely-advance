@@ -72,7 +72,6 @@ onError e = do
 data AppState = AppState
     { db :: SeldaConnection
     , amqp :: Worker.Connection
-    , exchange :: Worker.Exchange
     }
 
 type WorkerM = ReaderT AppState IO
@@ -82,13 +81,12 @@ instance MonadSelda WorkerM where
 
 instance MonadWorker WorkerM where
     amqpConnection = asks amqp
-    amqpExchange = asks exchange
 
 
 run :: IO ()
 run = do
     conn <- Worker.connect (Worker.fromURI "amqp://guest:guest@localhost:5672")
     db <- pgOpen $ PGConnectInfo "localhost" 5432 "postgres" Nothing (Just "postgres") Nothing
-    let state = AppState db conn Events.appExchange
+    let state = AppState db conn
     putStrLn "Running worker"
     runReaderT connect state
