@@ -1,19 +1,38 @@
 {-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
+{-# LANGUAGE GADTs             #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings  #-}
-module Accounts.Application where
+module Accounts.Application
+    ( fromAccountInfo
+    , initialize
+    , ApplicationStore(..)
+    ) where
 
 import Database.Selda
 import Data.Aeson (ToJSON, FromJSON)
 import Data.Maybe (listToMaybe)
 import Data.Text (Text)
+import Control.Monad.Effect (Effect(..))
 import GHC.Generics (Generic)
 
 import Types.Application (Application(..))
 import Types.Account (Account)
 import Types.Account.AccountInfo (AccountInfo(..))
 import Types.Id (Id)
+
+
+data ApplicationStore a where
+    Save      :: Application -> ApplicationStore ()
+    Find      :: Id Account  -> ApplicationStore (Maybe Application)
+    All       :: ApplicationStore [Application]
+
+instance (MonadSelda m) => Effect m ApplicationStore where
+    run (Save a) = saveApplication a
+    run (Find i) = findApplication i
+    run All      = allApplications
 
 
 fromAccountInfo :: Id Account -> AccountInfo -> Application
@@ -44,3 +63,10 @@ findApplication i = do
 allApplications :: (MonadSelda m) => m [Application]
 allApplications =
     query $ select applications
+
+
+
+initialize :: (MonadSelda m, MonadIO m) => m ()
+initialize = do
+    -- drop the table / db first to run migrations
+    tryCreateTable applications

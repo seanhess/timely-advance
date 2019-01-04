@@ -12,6 +12,7 @@ import Types.Account.Customer (Customer(..))
 import Types.Account.Bank (Bank(..))
 import Types.Application (Application(..))
 import Control.Exception (SomeException(..))
+import Control.Monad.Effect (Effect(run))
 import Control.Monad.Reader (ReaderT, runReaderT, asks)
 import Control.Monad.IO.Class (liftIO)
 import Database.Selda.PostgreSQL (pgOpen, PGConnectInfo(..))
@@ -38,10 +39,10 @@ onboardAccount m = do
     liftIO $ print app
 
     -- create the customer record
-    Account.createCustomer $ newCustomer app
+    run $ Account.CreateCustomer (newCustomer app)
 
     -- TODO call plaid
-    Account.createBank $ newBank app
+    run $ Account.CreateBank (newBank app)
 
     liftIO $ putStrLn " - done"
 
@@ -83,8 +84,8 @@ instance MonadWorker WorkerM where
     amqpConnection = asks amqp
 
 
-run :: IO ()
-run = do
+start :: IO ()
+start = do
     conn <- Worker.connect (Worker.fromURI "amqp://guest:guest@localhost:5672")
     db <- pgOpen $ PGConnectInfo "localhost" 5432 "postgres" Nothing (Just "postgres") Nothing
     let state = AppState db conn

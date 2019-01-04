@@ -16,7 +16,7 @@ main = do
     a <- getArgs
     case a of
       ["version"] -> putStrLn $ "TODO version"
-      ["onboard-account"] -> OnboardAccount.run
-      _ -> Api.run 3001
+      ["onboard-account"] -> OnboardAccount.start
+      _ -> Api.start 3001
 
 

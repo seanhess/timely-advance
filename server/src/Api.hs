@@ -8,19 +8,24 @@
 {-# LANGUAGE TypeOperators     #-}
 module Api where
 
+import qualified Api.Applications as Applications
+import qualified Accounts.Application as App
+
 import AppM (AppM, nt, AppState(..))
+import qualified Accounts.Account as Account
 import Control.Monad.Reader (asks)
 -- import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Effect (Effect(..))
 import Control.Monad.Except (throwError, MonadError)
 import Database.Selda.PostgreSQL (pgOpen, PGConnectInfo(..))
 import Database.Selda.Backend (runSeldaT)
 
-import Types.Application as App
+-- import Types.Application as App
 import Types.Account
 import Types.Account.AccountInfo
 import Types.Id
 import Types.Config
-import qualified Endpoint.Accounts as Accounts
+import Types.Application
 import GHC.Generics (Generic)
 
 import Data.Proxy (Proxy(..))
@@ -28,7 +33,8 @@ import Data.Text (Text)
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.AMQP.Worker as Worker
 
-import Servant hiding (Link)
+import Servant hiding (Link, Application)
+import qualified Servant
 import Servant.API.Generic ((:-), ToServantApi, ToServant, AsApi)
 import Servant.API.ContentTypes.JS (JS)
 import Servant.API.ContentTypes.HTML (HTML, Link(..))
@@ -64,25 +70,25 @@ data AccountsApi route = AccountsApi
 
 
 data AppsApi route = AppsApi
-    { _all :: route :- Get '[JSON, HTML] [App.Application]
-    , _get :: route :- Capture "id" (Id Account) :> Get '[JSON, HTML] App.Application
-    , _post :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] App.Application
+    { _all :: route :- Get '[JSON, HTML] [Application]
+    , _get :: route :- Capture "id" (Id Account) :> Get '[JSON, HTML] Application
+    , _post :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] Application
     } deriving (Generic)
 
 
 accountsApi :: ToServant AccountsApi (AsServerT AppM)
 accountsApi = genericServerT AccountsApi
-    { _all = Accounts.allAccounts
-    , _get  = \i -> Accounts.getAccount i >>= notFound
+    { _all = run (Account.All)
+    , _get  = \i -> run (Account.Find i) >>= notFound
     -- , _put  = Accounts.saveAccount
     }
 
 
 appsApi :: ToServant AppsApi (AsServerT AppM)
 appsApi = genericServerT AppsApi
-    { _all = Accounts.allApplications
-    , _get = \i -> Accounts.findApplication i >>= notFound
-    , _post = Accounts.newApplication
+    { _all = run $ App.All
+    , _get = \i -> run (App.Find i) >>= notFound
+    , _post = Applications.newApplication
     }
 
 
@@ -111,8 +117,8 @@ application st =
     serve apiProxy $ hoistServer apiProxy (nt st) baseApi
 
 
-run :: Warp.Port -> IO ()
-run port = do
+start :: Warp.Port -> IO ()
+start port = do
     amqp <- Worker.connect (Worker.fromURI "amqp://guest:guest@localhost:5672")
     db <- pgOpen $ PGConnectInfo "localhost" 5432 "postgres" Nothing (Just "postgres") Nothing
 
@@ -120,7 +126,7 @@ run port = do
     let config = ClientConfig (PlaidConfig "447ab26f3980c45b7202e2006dd9bf")
         state = AppState "hello world" db amqp config
 
-    runSeldaT Accounts.initialize db
+    runSeldaT Account.initialize db
 
     putStrLn "Initialized"
 

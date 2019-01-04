@@ -1,15 +1,18 @@
 {-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs     #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings  #-}
-module Accounts.Account where
-
-import Accounts.Application (applications)
+{-# LANGUAGE KindSignatures  #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+module Accounts.Account (AccountStore(..), initialize) where
 
 import Database.Selda
 import Data.Maybe (listToMaybe)
 import Data.Aeson (ToJSON, FromJSON)
 import Data.Text (Text)
+import Control.Monad.Effect (Effect(..))
 import GHC.Generics (Generic)
 
 import Types.Account (Account(..))
@@ -18,6 +21,19 @@ import Types.Account.Customer
 import Types.Id (Id)
 
 
+
+data AccountStore a where
+    All    :: AccountStore [Account]
+    Find   :: Id Account -> AccountStore (Maybe Account)
+    CreateCustomer :: Customer -> AccountStore ()
+    CreateBank     :: Bank -> AccountStore ()
+
+
+instance (MonadSelda m) => Effect m AccountStore where
+    run (All)      = allAccounts
+    run (Find i)     = getAccount i
+    run (CreateCustomer c) = createCustomer c
+    run (CreateBank b)     = createBank b
 
 
 -- there's not actually a table currently
@@ -74,7 +90,6 @@ createBank b = do
 initialize :: (MonadSelda m, MonadIO m) => m ()
 initialize = do
     -- drop the table / db first to run migrations
-    tryCreateTable applications
     tryCreateTable customers
     tryCreateTable banks
 
