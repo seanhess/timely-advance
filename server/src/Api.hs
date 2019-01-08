@@ -11,7 +11,7 @@ module Api where
 import qualified Api.Applications as Applications
 import qualified Accounts.Application as App
 
-import AppM (AppM, nt, AppState(..), loadState, clientConfig)
+import Api.AppM (AppM, nt, AppState(..), loadState, clientConfig)
 import qualified Accounts.Account as Account
 import Control.Monad.Reader (asks)
 -- import Control.Monad.IO.Class (liftIO)

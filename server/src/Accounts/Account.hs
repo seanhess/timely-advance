@@ -29,6 +29,7 @@ data AccountStore a where
     CreateBank     :: Bank -> AccountStore ()
 
 
+-- this is silly... move it into AppM?
 instance (MonadSelda m) => Effect m AccountStore where
     run (All)      = allAccounts
     run (Find i)     = getAccount i

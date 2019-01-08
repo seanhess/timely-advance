@@ -3,9 +3,10 @@ module Main where
 import System.IO (hSetBuffering, stdout, stderr, BufferMode(..))
 import System.Environment (getArgs)
 import qualified Worker.OnboardAccount as OnboardAccount
+import qualified Worker.WorkerM as Worker
 
 import qualified Api
-import SeldaTutorial
+-- import SeldaTutorial
 
 
 main :: IO ()
@@ -16,7 +17,15 @@ main = do
     a <- getArgs
     case a of
       ["version"] -> putStrLn $ "TODO version"
-      ["onboard-account"] -> OnboardAccount.start
-      _ -> Api.start 3001
+      ["onboard-account"] -> startOnboardAccount
+      _ -> startApi
 
+
+
+startApi :: IO ()
+startApi = Api.start 3001
+
+
+startOnboardAccount :: IO ()
+startOnboardAccount = Worker.start OnboardAccount.queue OnboardAccount.handler
 

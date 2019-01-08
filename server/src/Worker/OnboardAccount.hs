@@ -1,7 +1,6 @@
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleInstances #-}
 module Worker.OnboardAccount where
 
 
@@ -11,32 +10,34 @@ import Types.Account (Account(..))
 import Types.Account.Customer (Customer(..))
 import Types.Account.Bank (Bank(..))
 import Types.Application (Application(..))
+import Control.Monad.Except (MonadError)
 import Control.Exception (SomeException(..))
 import Control.Monad.Effect (Effect(run))
 import Control.Monad.Reader (ReaderT, runReaderT, asks)
+import Control.Monad.Plaid (MonadPlaid, runPlaid, PlaidError)
+import qualified Control.Monad.Plaid as Plaid
 import Control.Monad.IO.Class (liftIO)
 import Database.Selda.PostgreSQL (pgOpen, PGConnectInfo(..))
 import Network.AMQP.Worker (key, word, Key, Routing, WorkerException, def, Message(..))
+import Network.AMQP.Worker (Queue)
 import qualified Network.AMQP.Worker as Worker hiding (publish, bindQueue, worker)
 import qualified Network.AMQP.Worker.Monad as Worker
 import Network.AMQP.Worker.Monad (MonadWorker(..))
 import qualified Network.Plaid as Plaid
 import qualified Network.Plaid.Types as Plaid
 import Database.Selda.Backend (SeldaConnection, MonadSelda(..), SeldaT, runSeldaT)
+import Worker.WorkerM (WorkerM, loadState)
 
 
 
-connect :: (MonadSelda m, MonadWorker m) => m ()
-connect = do
-    let queue = Worker.topic Events.applicationsNew "app.onboardAccount"
-    Worker.bindQueue queue
-    Worker.worker def queue onError onboardAccount
+queue :: Queue Application
+queue = Worker.topic Events.applicationsNew "app.onboardAccount"
 
 
 
 -- TODO effects constraints, not this
-onboardAccount :: (MonadSelda m, MonadWorker m) => Message Application -> m ()
-onboardAccount m = do
+handler :: (MonadSelda m, MonadWorker m, MonadPlaid m, MonadError PlaidError m) => Message Application -> m ()
+handler m = do
     let app = value m
     liftIO $ putStrLn "NEW APPLICATION :)"
     liftIO $ print app
@@ -44,14 +45,14 @@ onboardAccount m = do
     -- create the customer record
     run $ Account.CreateCustomer (newCustomer app)
 
+
+    -- TODO bank service
+
     -- TODO call plaid
-    -- run $ Account.CreateBank (newBank app)
-    -- TODO plaid client id
-    -- TODO secret
     -- TODO access token
-    -- let request = Plaid.AccountsRequest clientId secret accessToken
-    -- res <- Plaid.sendAccounts request
-    -- liftIO $ print $ accounts res
+    creds <- Plaid.credentials
+    res <- runPlaid $ Plaid.reqAccounts creds (plaidToken app)
+    liftIO $ print $ res
 
     liftIO $ putStrLn " - done"
 
@@ -66,37 +67,10 @@ newCustomer Application {..} = Customer {..}
 --     accessToken = "fake-access-token"
 
 
-onError :: MonadWorker m => WorkerException SomeException -> m ()
-onError e = do
-    liftIO $ putStrLn "Do something with errors"
-    liftIO $ print e
-
-    -- TODO handle errors. Create an error queue?
-    -- TODO send to rollbar or somewhere similar
 
 
 
 
 
--- TODO move this to a common function. Handle ENV, etc
-data AppState = AppState
-    { db :: SeldaConnection
-    , amqp :: Worker.Connection
-    }
-
-type WorkerM = ReaderT AppState IO
-
-instance MonadSelda WorkerM where
-    seldaConnection = asks db
-
-instance MonadWorker WorkerM where
-    amqpConnection = asks amqp
 
 
-start :: IO ()
-start = do
-    conn <- Worker.connect (Worker.fromURI "amqp://guest:guest@localhost:5672")
-    db <- pgOpen $ PGConnectInfo "localhost" 5432 "postgres" Nothing (Just "postgres") Nothing
-    let state = AppState db conn
-    putStrLn "Running worker"
-    runReaderT connect state
