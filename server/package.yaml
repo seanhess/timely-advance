@@ -25,6 +25,7 @@ dependencies:
 - amqp
 - amqp-worker
 - elm-export
+- envy
 - http-media
 - http-client
 - http-client-tls

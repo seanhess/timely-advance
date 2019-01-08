@@ -9,11 +9,19 @@ import Data.Aeson (Value, ToJSON, FromJSON, parseJSON, withText, genericToJSON, 
 import Data.Char (toLower)
 import Data.Text (Text)
 import Data.Time.Calendar (Day, fromGregorian)
+import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 
 
 
 {-# ANN module ("HLint: ignore Use camelCase" :: String) #-}
+
+
+data Credentials = Credentials
+    { client_id :: Id Client
+    , secret :: Id Secret
+    } deriving (Generic, Show, Eq)
+
 
 -- * Authentication
 -- 
@@ -35,9 +43,6 @@ import GHC.Generics (Generic)
 -- >   "item_id": "M5eVJqLnv3tbzdngLDp9FL5OlDNxlNhlE55op",
 -- >   "request_id": "Aim3b"
 -- > }
-
-exchangeTokenRequest :: Id Client -> Id Secret -> Token Public -> ExchangeTokenRequest
-exchangeTokenRequest = ExchangeTokenRequest
 
 data ExchangeTokenRequest = ExchangeTokenRequest
     { client_id :: Id Client
@@ -101,8 +106,6 @@ instance FromJSON ExchangeTokenResponse
 -- > }
 
 
-authRequest :: Access -> AuthRequest
-authRequest (Access c s a) = AuthRequest c s a
 
 
 data AuthRequest = AuthRequest
@@ -206,11 +209,6 @@ instance FromJSON AuthResponse
 -- >   "request_id": "45QSn"
 -- > }
 
-transactionsRequest :: Access -> TransactionsOptions -> TransactionsRequest
-transactionsRequest Access {..} TransactionsOptions {..} = TransactionsRequest {..}
-  where
-    options = ListRequestOptions {..}
-
 
 data TransactionsOptions = TransactionsOptions
     { start_date :: Day
@@ -305,9 +303,6 @@ instance FromJSON TransactionsResponse
 -- > }
 
 
-accountsRequest :: Access -> AccountsRequest
-accountsRequest Access {..} = AccountsRequest {..}
-
 data AccountsRequest = AccountsRequest
     { client_id :: Id Client
     , secret :: Id Secret
@@ -363,10 +358,10 @@ data Branch
 
 
 newtype Token t = Token Text
-    deriving (Generic, FromJSON, ToJSON, Show, Eq)
+    deriving (Generic, FromJSON, ToJSON, Show, Eq, Typeable)
 
 newtype Id t = Id Text
-    deriving (Generic, FromJSON, ToJSON, Show, Eq)
+    deriving (Generic, FromJSON, ToJSON, Show, Eq, Typeable)
 
 newtype Number t = Number Text
     deriving (Generic, FromJSON, ToJSON, Show, Eq)

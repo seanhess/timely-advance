@@ -1,12 +1,14 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds #-}
 module Network.Plaid
   ( PlaidApi
-  , sendExchangeToken
-  , sendAuth
-  , sendTransactions
-  , sendAccounts
+  , Credentials(..)
+  , reqExchangeToken
+  , reqAuth
+  , reqTransactions
+  , reqAccounts
   , runClientM
   , mkClientEnv
   , hoistClient
@@ -14,7 +16,7 @@ module Network.Plaid
 
 
 import Data.Proxy (Proxy(..))
-import Network.Plaid.Types
+import Network.Plaid.Types hiding (accounts)
 import Servant ((:>), ReqBody, JSON, Post, (:<|>)(..))
 import Servant.Client (ClientM, client, runClientM, mkClientEnv, hoistClient)
 
@@ -50,11 +52,32 @@ api = Proxy
 
 -- * Requests
 
-sendExchangeToken :: ExchangeTokenRequest -> ClientM ExchangeTokenResponse
-sendAuth          :: AuthRequest          -> ClientM AuthResponse
-sendTransactions  :: TransactionsRequest  -> ClientM TransactionsResponse
-sendAccounts      :: AccountsRequest      -> ClientM AccountsResponse
-sendExchangeToken :<|> sendAuth :<|> sendTransactions :<|> sendAccounts = client api
+callExchangeToken :: ExchangeTokenRequest -> ClientM ExchangeTokenResponse
+callAuth          :: AuthRequest          -> ClientM AuthResponse
+callTransactions  :: TransactionsRequest  -> ClientM TransactionsResponse
+callAccounts      :: AccountsRequest      -> ClientM AccountsResponse
+callExchangeToken :<|> callAuth :<|> callTransactions :<|> callAccounts = client api
+
+
+
+reqExchangeToken :: Credentials -> Token Public -> ClientM ExchangeTokenResponse
+reqExchangeToken Credentials {..} public_token = callExchangeToken $ ExchangeTokenRequest {..}
+
+
+reqAuth :: Credentials -> Token Access -> ClientM AuthResponse
+reqAuth Credentials {..} access_token = callAuth $ AuthRequest {..}
+
+
+reqTransactions :: Credentials -> Token Access -> TransactionsOptions -> ClientM TransactionsResponse
+reqTransactions Credentials {..} access_token TransactionsOptions {..} =
+    callTransactions $ TransactionsRequest {..}
+  where
+    options = ListRequestOptions {..}
+
+
+reqAccounts :: Credentials -> Token Access -> ClientM AccountsResponse
+reqAccounts Credentials {..} access_token =
+    callAccounts $ AccountsRequest {..}
 
 
 

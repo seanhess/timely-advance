@@ -15,6 +15,7 @@ import GHC.Generics (Generic)
 import Types.Account (Account)
 import Types.Account.AccountInfo (AccountInfo(..))
 import Types.Id (Id)
+import Types.Plaid
 import Servant.API.ContentTypes.HTML (Linkable(..))
 
 
@@ -26,12 +27,13 @@ data Application = Application
     , firstName :: Text
     , lastName :: Text
     , email :: Text
-    , plaidToken :: Text
+    , plaidToken :: Token Access
     } deriving (Generic, Show)
 
 instance FromJSON Application
 instance ToJSON Application
 instance SqlRow Application
+
 
 instance Linkable Application where
     linkId = cs . UUID.toText . accountId

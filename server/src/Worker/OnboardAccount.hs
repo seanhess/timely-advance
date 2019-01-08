@@ -20,6 +20,8 @@ import Network.AMQP.Worker (key, word, Key, Routing, WorkerException, def, Messa
 import qualified Network.AMQP.Worker as Worker hiding (publish, bindQueue, worker)
 import qualified Network.AMQP.Worker.Monad as Worker
 import Network.AMQP.Worker.Monad (MonadWorker(..))
+import qualified Network.Plaid as Plaid
+import qualified Network.Plaid.Types as Plaid
 import Database.Selda.Backend (SeldaConnection, MonadSelda(..), SeldaT, runSeldaT)
 
 
@@ -32,6 +34,7 @@ connect = do
 
 
 
+-- TODO effects constraints, not this
 onboardAccount :: (MonadSelda m, MonadWorker m) => Message Application -> m ()
 onboardAccount m = do
     let app = value m
@@ -42,7 +45,13 @@ onboardAccount m = do
     run $ Account.CreateCustomer (newCustomer app)
 
     -- TODO call plaid
-    run $ Account.CreateBank (newBank app)
+    -- run $ Account.CreateBank (newBank app)
+    -- TODO plaid client id
+    -- TODO secret
+    -- TODO access token
+    -- let request = Plaid.AccountsRequest clientId secret accessToken
+    -- res <- Plaid.sendAccounts request
+    -- liftIO $ print $ accounts res
 
     liftIO $ putStrLn " - done"
 
@@ -50,11 +59,11 @@ onboardAccount m = do
 newCustomer :: Application -> Customer
 newCustomer Application {..} = Customer {..}
 
-newBank :: Application -> Bank
-newBank Application {..} = Bank {..}
-  where
-    balance = 200
-    accessToken = "fake-access-token"
+-- newBank :: Application -> Bank
+-- newBank Application {..} = Bank {..}
+--   where
+--     balance = 200
+--     accessToken = "fake-access-token"
 
 
 onError :: MonadWorker m => WorkerException SomeException -> m ()

@@ -11,7 +11,7 @@ module Api where
 import qualified Api.Applications as Applications
 import qualified Accounts.Application as App
 
-import AppM (AppM, nt, AppState(..))
+import AppM (AppM, nt, AppState(..), loadState, clientConfig)
 import qualified Accounts.Account as Account
 import Control.Monad.Reader (asks)
 -- import Control.Monad.IO.Class (liftIO)
@@ -94,7 +94,7 @@ appsApi = genericServerT AppsApi
 
 baseApi :: ToServant BaseApi (AsServerT AppM)
 baseApi = genericServerT BaseApi
-    { _info = asks appMessage
+    { _info = pure "hello"
     , _versioned = versionedApi
     }
 
@@ -102,8 +102,8 @@ versionedApi :: ToServant VersionedApi (AsServerT AppM)
 versionedApi = genericServerT VersionedApi
     { _accounts = accountsApi
     , _apps     = appsApi
-    , _config   = asks client
-    , _config'  = asks client
+    , _config   = clientConfig
+    , _config'  = clientConfig
     , _info     = pure $ [Link "accounts", Link "applications", Link "config"]
     }
 
@@ -119,16 +119,12 @@ application st =
 
 start :: Warp.Port -> IO ()
 start port = do
-    amqp <- Worker.connect (Worker.fromURI "amqp://guest:guest@localhost:5672")
-    db <- pgOpen $ PGConnectInfo "localhost" 5432 "postgres" Nothing (Just "postgres") Nothing
+    -- Load state
+    state <- loadState
 
-    -- TODO env config
-    let config = ClientConfig (PlaidConfig "447ab26f3980c45b7202e2006dd9bf")
-        state = AppState "hello world" db amqp config
-
-    runSeldaT Account.initialize db
-
-    putStrLn "Initialized"
+    -- Initialize databases
+    flip runSeldaT (dbConn state) $ do
+        Account.initialize
 
     putStrLn $ "Running on " ++ show port
     Warp.run port (application state)

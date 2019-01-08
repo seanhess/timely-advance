@@ -19,11 +19,13 @@ import Types.Application (Application)
 import Types.Account.Bank (Bank)
 import Types.Account.Customer (Customer)
 import Types.Account.AccountInfo (AccountInfo)
+import Network.Plaid.Types (Token)
 
 
 
 instance ElmType Account
 instance ElmType Application
+instance ElmType (Token t)
 instance ElmType Bank
 instance ElmType Customer
 instance ElmType AccountInfo
