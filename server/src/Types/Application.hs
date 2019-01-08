@@ -15,7 +15,7 @@ import GHC.Generics (Generic)
 import Types.Account (Account)
 import Types.Account.AccountInfo (AccountInfo(..))
 import Types.Id (Id)
-import Types.Plaid
+import Types.Plaid (Token, Public)
 import Servant.API.ContentTypes.HTML (Linkable(..))
 
 
@@ -27,7 +27,7 @@ data Application = Application
     , firstName :: Text
     , lastName :: Text
     , email :: Text
-    , plaidToken :: Token Access
+    , plaidToken :: Token Public
     } deriving (Generic, Show)
 
 instance FromJSON Application

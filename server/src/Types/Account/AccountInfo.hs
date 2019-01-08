@@ -10,7 +10,7 @@ data AccountInfo = AccountInfo
     { firstName :: Text
     , lastName :: Text
     , email :: Text
-    , plaidToken :: Token Access
+    , plaidToken :: Token Public
     } deriving (Generic, Show)
 
 instance FromJSON AccountInfo

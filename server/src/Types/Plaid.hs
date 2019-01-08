@@ -1,6 +1,7 @@
 module Types.Plaid
   ( Token(..)
   , Access
+  , Public
   ) where
 
 
@@ -8,7 +9,7 @@ import Database.Selda.SqlType (Lit(..), SqlType(..))
 import Data.Typeable (Typeable)
 import Data.Text (Text)
 import Data.Proxy (Proxy(..))
-import Network.Plaid.Types (Token(..), Access)
+import Network.Plaid.Types (Token(..), Access, Public)
 
 -- I want this to act like text
 instance Typeable t => SqlType (Token t) where
