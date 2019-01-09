@@ -100,5 +100,6 @@ data Application = Application
 
 instance SqlRow Application
 instance ToJSON Application
+instance FromJSON Application
 
 

@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric             #-}
+{-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE DuplicateRecordFields     #-}
 module Types.Account
   ( Account(..)
@@ -22,10 +23,11 @@ import Servant.API.ContentTypes.HTML (Linkable(..))
 
 
 instance Linkable Account where
-    linkId a = cs $ UUID.toText $ accountId (a :: Account)
+    self a = cs $ UUID.toText $ accountId (a :: Account)
+    relations _ = ["bank-accounts"]
 
 instance Linkable Application where
-    linkId a = cs $ UUID.toText $ accountId (a :: Application)
+    self a = cs $ UUID.toText $ accountId (a :: Application)
 
 
 -- AccountInfo ---------------------

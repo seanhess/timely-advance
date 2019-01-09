@@ -50,7 +50,7 @@ data BaseApi route = BaseApi
 
 
 data VersionedApi route = VersionedApi
-    { _info     :: route :- Get '[HTML] [Link]
+    { _info     :: route :- Get '[HTML] Link
     , _accounts :: route :- "accounts"     :> ToServantApi AccountsApi
     , _apps     :: route :- "applications" :> ToServantApi AppsApi
     , _config   :: route :- "config"       :> Get '[JSON] ClientConfig
@@ -103,7 +103,7 @@ versionedApi = genericServerT VersionedApi
     , _apps     = appsApi
     , _config   = clientConfig
     , _config'  = clientConfig
-    , _info     = pure [Link "accounts", Link "applications", Link "config"]
+    , _info     = pure $ Link "" ["accounts", "applications", "config"]
     }
 
 
@@ -124,6 +124,7 @@ start port = do
     -- Initialize databases
     flip runSeldaT (dbConn state) $ do
         Account.initialize
+        Application.initialize
 
     putStrLn $ "Running on " ++ show port
     Warp.run port (application state)
