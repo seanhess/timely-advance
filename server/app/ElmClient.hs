@@ -13,20 +13,24 @@ import Data.UUID (UUID)
 import qualified Data.UUID as UUID
 
 
+import Database.Selda (ID, fromId)
 import Api (Api)
-import Types.Account (Account)
-import Types.Application (Application)
-import Types.Account.Bank (Bank)
-import Types.Account.Customer (Customer)
-import Types.Account.AccountInfo (AccountInfo)
+import AccountStore.Types
+import Types.Account (AccountInfo)
+import Types.Private (Private)
 import Network.Plaid.Types (Token)
 
 
 
+instance ElmType a => ElmType (Private a)
+instance ElmType (ID a) where
+    toElmType i = toElmType $ fromId i
 instance ElmType Account
 instance ElmType Application
 instance ElmType (Token t)
-instance ElmType Bank
+instance ElmType BankAccount
+instance ElmType BankAccountType
+instance ElmType Balance
 instance ElmType Customer
 instance ElmType AccountInfo
 instance ElmType UUID where
@@ -39,12 +43,14 @@ spec = Spec ["Nimble", "Api"]
              , toElmTypeSource    (Proxy :: Proxy Account)
              , toElmTypeSource    (Proxy :: Proxy AccountInfo)
              , toElmTypeSource    (Proxy :: Proxy Application)
-             , toElmTypeSource    (Proxy :: Proxy Bank)
+             , toElmTypeSource    (Proxy :: Proxy BankAccount)
+             , toElmTypeSource    (Proxy :: Proxy BankAccountType)
              , toElmTypeSource    (Proxy :: Proxy Customer)
              , toElmEncoderSource (Proxy :: Proxy AccountInfo)
              , toElmDecoderSource (Proxy :: Proxy AccountInfo)
              , toElmDecoderSource (Proxy :: Proxy Account)
-             , toElmDecoderSource (Proxy :: Proxy Bank)
+             , toElmDecoderSource (Proxy :: Proxy BankAccount)
+             , toElmDecoderSource (Proxy :: Proxy BankAccountType)
              , toElmDecoderSource (Proxy :: Proxy Customer)
              , toElmDecoderSource (Proxy :: Proxy Application)
              -- : generateElmForAPI  (Proxy :: Proxy Api))

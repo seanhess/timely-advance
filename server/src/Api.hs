@@ -9,10 +9,11 @@
 module Api where
 
 import qualified Api.Applications as Applications
-import qualified Accounts.Application as App
+import qualified AccountStore.Application as Application
+import AccountStore.Types (Application)
 
 import Api.AppM (AppM, nt, AppState(..), loadState, clientConfig)
-import qualified Accounts.Account as Account
+import qualified AccountStore.Account as Account
 import Control.Monad.Reader (asks)
 -- import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Effect (Effect(..))
@@ -22,10 +23,8 @@ import Database.Selda.Backend (runSeldaT)
 
 -- import Types.Application as App
 import Types.Account
-import Types.Account.AccountInfo
-import Types.Id
+import Types.Guid
 import Types.Config
-import Types.Application
 import GHC.Generics (Generic)
 
 import Data.Proxy (Proxy(..))
@@ -64,21 +63,21 @@ data VersionedApi route = VersionedApi
 -- Accounts --------------------------------------------------------
 data AccountsApi route = AccountsApi
     { _all :: route :- Get '[JSON, HTML] [Account]
-    , _get :: route :- Capture "id" (Id Account) :> Get '[JSON, HTML] (Account)
+    , _get :: route :- Capture "id" (Guid Account) :> Get '[JSON, HTML] Account
     -- , _put :: route :- Capture "id" (Id Account) :> ReqBody '[JSON] AccountInfo :> Put '[JSON] Account
     } deriving (Generic)
 
 
 data AppsApi route = AppsApi
     { _all :: route :- Get '[JSON, HTML] [Application]
-    , _get :: route :- Capture "id" (Id Account) :> Get '[JSON, HTML] Application
+    , _get :: route :- Capture "id" (Guid Account) :> Get '[JSON, HTML] Application
     , _post :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] Application
     } deriving (Generic)
 
 
 accountsApi :: ToServant AccountsApi (AsServerT AppM)
 accountsApi = genericServerT AccountsApi
-    { _all = run (Account.All)
+    { _all = run Account.All
     , _get  = \i -> run (Account.Find i) >>= notFound
     -- , _put  = Accounts.saveAccount
     }
@@ -86,8 +85,8 @@ accountsApi = genericServerT AccountsApi
 
 appsApi :: ToServant AppsApi (AsServerT AppM)
 appsApi = genericServerT AppsApi
-    { _all = run $ App.All
-    , _get = \i -> run (App.Find i) >>= notFound
+    { _all = run Application.All
+    , _get = \i -> run (Application.Find i) >>= notFound
     , _post = Applications.newApplication
     }
 
@@ -104,7 +103,7 @@ versionedApi = genericServerT VersionedApi
     , _apps     = appsApi
     , _config   = clientConfig
     , _config'  = clientConfig
-    , _info     = pure $ [Link "accounts", Link "applications", Link "config"]
+    , _info     = pure [Link "accounts", Link "applications", Link "config"]
     }
 
 

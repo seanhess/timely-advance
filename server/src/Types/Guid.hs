@@ -1,6 +1,6 @@
 -- {-# LANGUAGE DeriveGeneric     #-}
 -- {-# LANGUAGE GeneralizedNewtypeDeriving     #-}
-module Types.Id where
+module Types.Guid where
 
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad (replicateM)
@@ -16,7 +16,7 @@ import Database.Selda.SqlType (Lit(..), SqlValue(..), SqlTypeRep(..))
 import GHC.Generics (Generic)
 import System.Random (randomIO)
 
-type Id s = UUID
+type Guid s = UUID
                -- deriving (Generic, Show, Eq, SqlType)
 
 instance SqlType UUID where
@@ -35,6 +35,6 @@ nonUuidError v = error $ "fromSql: text column with non-text value: " ++ show v
 -- instance FromJSON (Id s)
 
 
-randomId :: MonadIO m => m (Id s)
+randomId :: MonadIO m => m (Guid s)
 randomId = liftIO UUID.nextRandom
 

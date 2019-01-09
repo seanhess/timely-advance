@@ -8,7 +8,7 @@ import Network.Plaid
 import Servant.Client (mkClientEnv, ClientEnv, BaseUrl, ServantError, ClientM)
 import Network.HTTP.Client (Manager)
 
-class Monad m => MonadPlaid m where
+class MonadIO m => MonadPlaid m where
     credentials :: m Credentials
     manager :: m Manager
     baseUrl :: m BaseUrl
@@ -20,7 +20,7 @@ data PlaidError = PlaidError ServantError
 instance Exception PlaidError
 
 
-runPlaid :: (MonadPlaid m, MonadIO m) => ClientM a -> m a
+runPlaid :: (MonadPlaid m) => ClientM a -> m a
 runPlaid req = do
     env <- clientEnv
     res <- liftIO $ runClientM req env

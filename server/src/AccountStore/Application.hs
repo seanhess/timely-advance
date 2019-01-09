@@ -1,13 +1,10 @@
-{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE GADTs             #-}
-{-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings  #-}
-module Accounts.Application
-    ( fromAccountInfo
-    , initialize
+module AccountStore.Application
+    ( initialize
     , ApplicationStore(..)
     ) where
 
@@ -18,15 +15,13 @@ import Data.Text (Text)
 import Control.Monad.Effect (Effect(..))
 import GHC.Generics (Generic)
 
-import Types.Application (Application(..))
-import Types.Account (Account)
-import Types.Account.AccountInfo (AccountInfo(..))
-import Types.Id (Id)
+import AccountStore.Types
+import Types.Guid (Guid)
 
 
 data ApplicationStore a where
     Save      :: Application -> ApplicationStore ()
-    Find      :: Id Account  -> ApplicationStore (Maybe Application)
+    Find      :: Guid Account  -> ApplicationStore (Maybe Application)
     All       :: ApplicationStore [Application]
 
 instance (MonadSelda m) => Effect m ApplicationStore where
@@ -34,11 +29,6 @@ instance (MonadSelda m) => Effect m ApplicationStore where
     run (Find i) = findApplication i
     run All      = allApplications
 
-
-fromAccountInfo :: Id Account -> AccountInfo -> Application
-fromAccountInfo i AccountInfo {..} = Application {..}
-  where
-    accountId = i
 
 
 applications :: Table Application
@@ -51,7 +41,7 @@ saveApplication app = do
     pure ()
 
 
-findApplication :: (MonadSelda m) => Id Account -> m (Maybe Application)
+findApplication :: (MonadSelda m) => Guid Account -> m (Maybe Application)
 findApplication i = do
     as <- query $ do
       app <- select applications

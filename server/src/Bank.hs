@@ -1,19 +1,46 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 module Bank
     ( Token
     , Access
     , Currency
+    , Banks(..)
     ) where
 
-import Network.Plaid.Types (Token, Access, Currency, Credentials)
+import Control.Monad.Effect (Effect(..))
+import Control.Monad.Plaid (MonadPlaid, runPlaid)
+import qualified Control.Monad.Plaid as Plaid
+import Network.Plaid.Types
+import qualified Network.Plaid as Plaid
+import qualified Network.Plaid.Types as Plaid
 
 -- Bank Service
 
-data Bank a where
-    LoadBalance :: Token Access -> Bank Currency
+data Banks a where
+    Authenticate :: Token Public -> Banks (Token Access)
+    LoadAccounts :: Token Access -> Banks [Account]
 
 
+-- there's an obvious implementation for anyone who has a MonadSelda
+instance (MonadPlaid m) => Effect m Banks where
+    run (Authenticate t)      = authenticate t
+    run (LoadAccounts t)      = loadAccounts t
 
-loadBalance :: Credentials -> Token Access -> m Currency
-loadBalance = do
-    undefined
+
+authenticate :: MonadPlaid m => Token Public -> m (Token Access)
+authenticate pub = do
+    creds <- Plaid.credentials
+    res <- runPlaid $ Plaid.reqExchangeToken creds pub
+    pure $ access_token (res :: ExchangeTokenResponse)
+
+
+loadAccounts :: MonadPlaid m => Token Access -> m [Account]
+loadAccounts tok = do
+    creds <- Plaid.credentials
+    res <- runPlaid $ Plaid.reqAccounts creds tok
+    pure $ accounts (res :: AccountsResponse)
+
+
