@@ -20,7 +20,6 @@ import Control.Monad.Plaid (MonadPlaid, runPlaid)
 import qualified Control.Monad.Plaid as Plaid
 import Network.Plaid.Types
 import qualified Network.Plaid as Plaid
-import qualified Network.Plaid.Types as Plaid
 
 -- Bank Service
 

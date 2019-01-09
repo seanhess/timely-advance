@@ -8,13 +8,10 @@
 module Servant.API.ContentTypes.HTML where
 
 import Data.String.Conversions (cs)
-import Data.Aeson (encode, ToJSON)
+import Data.Aeson (ToJSON)
 import Data.Aeson.Encode.Pretty (encodePretty)
-import Data.Proxy (Proxy(..))
 import Data.Text (Text)
-import qualified Data.Text as Text
 import qualified Data.List as List
-import GHC.TypeLits (KnownSymbol, symbolVal, Symbol)
 import GHC.Generics (Generic)
 import Network.HTTP.Media ((//), (/:))
 import Servant.API.ContentTypes

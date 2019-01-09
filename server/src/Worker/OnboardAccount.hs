@@ -12,26 +12,13 @@ import qualified Bank
 import qualified Events
 import qualified AccountStore.Account as Account
 import AccountStore.Account (AccountStore)
-import AccountStore.Types (Account(..), Customer(..), BankAccount(..), Application(..), BankAccountType(..), balanceFromFloat)
-import Control.Exception (SomeException(..))
+import AccountStore.Types (Account(..), BankAccount(..), Application(..), BankAccountType(..), balanceFromFloat)
 import Control.Monad.Effect (Effect(run))
-import Control.Monad.Reader (ReaderT, runReaderT, asks)
-import Control.Monad.Plaid (MonadPlaid, runPlaid)
-import qualified Control.Monad.Plaid as Plaid
 import Control.Monad.IO.Class (liftIO, MonadIO)
 import qualified Database.Selda as Selda
-import Database.Selda.PostgreSQL (pgOpen, PGConnectInfo(..))
-import Network.AMQP.Worker (key, word, Key, Routing, WorkerException, def, Message(..))
+import Network.AMQP.Worker (Message(..))
 import Network.AMQP.Worker (Queue)
 import qualified Network.AMQP.Worker as Worker hiding (publish, bindQueue, worker)
-import qualified Network.AMQP.Worker.Monad as Worker
-import Network.AMQP.Worker.Monad (MonadWorker(..))
-import qualified Network.Plaid as Plaid
-import qualified Network.Plaid.Types as Plaid
-import Network.Plaid.Types (ExchangeTokenResponse(..))
-import Database.Selda.Backend (SeldaConnection, MonadSelda(..), SeldaT, runSeldaT)
-import Worker.WorkerM (WorkerM, loadState)
-import Types.Private (private)
 import Types.Guid (Guid)
 
 

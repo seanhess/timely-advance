@@ -5,16 +5,13 @@
 module ElmClient where
 
 import           Elm          (Spec (Spec), specsToDir, toElmDecoderSource, toElmEncoderSource, toElmTypeSource, ElmType(..))
-import           GHC.Generics (Generic)
-import           Servant.API  ((:>), Capture, Get, JSON)
-import           Servant.Elm  (Proxy (Proxy), defElmImports, generateElmForAPI)
+import           Servant.Elm  (Proxy (Proxy), defElmImports)
 
 import Data.UUID (UUID)
 import qualified Data.UUID as UUID
 
 
 import Database.Selda (ID, fromId)
-import Api (Api)
 import AccountStore.Types
 import Api.Types (AccountInfo)
 import Types.Private (Private)

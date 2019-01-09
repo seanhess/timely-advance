@@ -1,9 +1,8 @@
 {-# LANGUAGE DeriveGeneric #-}
 module Types.Config where
 
-import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson (ToJSON)
 import GHC.Generics (Generic)
-import Data.Text (Text)
 import Network.Plaid.Types (Id, Public)
 
 data ClientConfig = ClientConfig

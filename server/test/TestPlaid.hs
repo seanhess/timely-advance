@@ -52,6 +52,7 @@ test = do
       Left (DecodeFailure t r) -> do
         putStrLn $ cs $ t
         putStrLn $ cs $ responseBody r
+      Left _ -> pure ()
       Right b -> do
         putStrLn $ dumpStr b
         -- putStrLn $  b

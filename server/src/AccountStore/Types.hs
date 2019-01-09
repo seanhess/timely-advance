@@ -6,14 +6,13 @@ module AccountStore.Types where
 import Bank (Token, Public, Access)
 import Database.Selda
 import Database.Selda.SqlType (Lit(..))
-import Data.Aeson (ToJSON(..), FromJSON, Value(Null))
 import Data.Proxy (Proxy(..))
 import Data.Text (Text)
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 import Types.Guid (Guid)
 import Types.Private
-import Network.Plaid.Types (Token(..), Access)
+import Network.Plaid.Types (Token(..))
 
 
 

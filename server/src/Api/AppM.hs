@@ -17,13 +17,12 @@ import Control.Monad.IO.Class (liftIO, MonadIO)
 import Data.String.Conversions (cs)
 import Data.Pool (Pool)
 import qualified Data.Pool as Pool
-import Database.Selda (MonadMask(..))
-import Database.Selda.Backend (SeldaConnection, MonadSelda(..), SeldaT)
+import Database.Selda (MonadMask)
+import Database.Selda.Backend (SeldaConnection)
 import qualified Database.Selda.PostgreSQL as Selda
 import qualified Network.AMQP.Worker as Worker
 import Network.AMQP.Worker.Monad (MonadWorker(..))
-import qualified Network.Plaid.Types as Plaid
-import Servant (Handler(..), runHandler)
+import Servant (Handler(..))
 import Types.Config (ClientConfig(ClientConfig), PlaidConfig(PlaidConfig))
 
 

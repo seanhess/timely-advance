@@ -9,16 +9,13 @@ module Api.Types
   ) where
 
 import AccountStore.Types
-import Bank (Token, Access, Public)
-import qualified AccountStore.Types as Accounts
-import Data.Function ((&))
+import Bank (Token, Public)
 import Data.Aeson (ToJSON(..), FromJSON)
 import Data.Text (Text)
 import qualified Data.UUID as UUID
 import Data.String.Conversions (cs)
-import Database.Selda (SqlRow, ID, fromId)
+import Database.Selda (ID, fromId)
 import GHC.Generics (Generic)
-import Types.Guid (Guid)
 import Servant.API.ContentTypes.HTML (Linkable(..))
 
 

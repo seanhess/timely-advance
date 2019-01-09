@@ -8,13 +8,10 @@ module AccountStore.Application
     , ApplicationStore(..)
     ) where
 
-import Control.Monad.Selda (Selda, query, insert, deleteFrom)
-import Database.Selda hiding (query, insert, deleteFrom)
-import Data.Aeson (ToJSON, FromJSON)
+import Control.Monad.Selda (Selda, query, insert)
+import Database.Selda hiding (query, insert)
 import Data.Maybe (listToMaybe)
-import Data.Text (Text)
 import Control.Monad.Effect (Effect(..))
-import GHC.Generics (Generic)
 
 import AccountStore.Types
 import Types.Guid (Guid)

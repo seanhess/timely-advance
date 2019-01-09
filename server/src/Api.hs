@@ -12,15 +12,11 @@ import qualified Data.Pool as Pool
 import qualified Api.Applications as Applications
 import qualified AccountStore.Application as Application
 import AccountStore.Types (Application)
-import Control.Concurrent (forkIO)
 import Api.AppM (AppM, nt, AppState(..), loadState, clientConfig)
 import Api.Types
 import qualified AccountStore.Account as Account
-import Control.Monad.Reader (asks)
--- import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Effect (Effect(..))
 import Control.Monad.Except (throwError, MonadError)
-import Database.Selda.PostgreSQL (pgOpen, PGConnectInfo(..))
 import Database.Selda.Backend (runSeldaT)
 
 -- import Types.Application as App
@@ -31,7 +27,6 @@ import GHC.Generics (Generic)
 import Data.Proxy (Proxy(..))
 import Data.Text (Text)
 import qualified Network.Wai.Handler.Warp as Warp
-import qualified Network.AMQP.Worker as Worker
 
 import Servant hiding (Link, Application)
 import qualified Servant

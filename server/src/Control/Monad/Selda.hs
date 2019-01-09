@@ -1,10 +1,15 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Control.Monad.Selda where
+module Control.Monad.Selda
+  ( Selda(..)
+  , insert
+  , query
+  , deleteFrom
+  ) where
 
 import Control.Monad.IO.Class (MonadIO)
 import qualified Database.Selda as Selda
-import Database.Selda
+import Database.Selda hiding (insert, query, deleteFrom)
 import Database.Selda.Backend (runSeldaT, SeldaConnection)
 
 

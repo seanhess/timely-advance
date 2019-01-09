@@ -54,6 +54,9 @@ dependencies:
 library:
   source-dirs: src
 
+ghc-options:
+- -W
+
 executables:
   server-exe:
     main:                Main.hs

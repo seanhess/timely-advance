@@ -4,8 +4,6 @@ module Events where
 
 import Data.Function ((&))
 import Network.AMQP.Worker (key, word, Key, Routing)
-import qualified Network.AMQP.Worker as Worker
-import Api.Types (Account)
 import AccountStore.Types (Application)
 
 

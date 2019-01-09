@@ -5,10 +5,10 @@
 {-# LANGUAGE RecordWildCards #-}
 module Network.Plaid.Types where
 
-import Data.Aeson (Value, ToJSON, FromJSON, parseJSON, withText, genericToJSON, genericParseJSON, defaultOptions, Options(..))
+import Data.Aeson (Value, ToJSON, FromJSON, parseJSON, withText, genericParseJSON, defaultOptions, Options(..))
 import Data.Char (toLower)
 import Data.Text (Text)
-import Data.Time.Calendar (Day, fromGregorian)
+import Data.Time.Calendar (Day)
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 

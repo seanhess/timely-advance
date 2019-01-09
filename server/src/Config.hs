@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Config where
 
-import Database.Selda (MonadMask(..))
+import Database.Selda (MonadMask)
 import Control.Monad.IO.Class (liftIO, MonadIO)
 import Data.Text (Text)
 import Data.Typeable (Typeable)
