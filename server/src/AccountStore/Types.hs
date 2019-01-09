@@ -65,6 +65,9 @@ instance ToJSON BankAccountType
 newtype Balance = Balance Int
     deriving (Generic, Eq, Show, Typeable)
 
+balanceFromFloat :: Float -> Balance
+balanceFromFloat f = Balance $ round (f * 100)
+
 instance SqlType Balance where
     mkLit (Balance b) =  LCustom $ mkLit b
     sqlType _ = sqlType (Proxy :: Proxy Int)

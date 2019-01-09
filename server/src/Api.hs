@@ -64,6 +64,7 @@ data VersionedApi route = VersionedApi
 data AccountsApi route = AccountsApi
     { _all :: route :- Get '[JSON, HTML] [Account]
     , _get :: route :- Capture "id" (Guid Account) :> Get '[JSON, HTML] Account
+    , _banks :: route :- Capture "id" (Guid Account) :> "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
     -- , _put :: route :- Capture "id" (Id Account) :> ReqBody '[JSON] AccountInfo :> Put '[JSON] Account
     } deriving (Generic)
 
@@ -79,7 +80,7 @@ accountsApi :: ToServant AccountsApi (AsServerT AppM)
 accountsApi = genericServerT AccountsApi
     { _all = run Account.All
     , _get  = \i -> run (Account.Find i) >>= notFound
-    -- , _put  = Accounts.saveAccount
+    , _banks = run . Account.BankAccounts
     }
 
 

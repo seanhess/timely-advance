@@ -29,7 +29,7 @@ data AccountStore a where
     BankAccounts   :: Guid Account -> AccountStore [BankAccount]
 
     CreateAccount  :: Application -> Token Access -> AccountStore ()
-    CreateBank     :: BankAccount -> AccountStore ()
+    SetBankAccounts :: Guid Account -> [BankAccount] -> AccountStore ()
 
 
 instance (MonadSelda m) => Effect m AccountStore where
@@ -37,7 +37,7 @@ instance (MonadSelda m) => Effect m AccountStore where
     run (Find i)           = getAccount i
     run (BankAccounts i)   = getBankAccounts i
     run (CreateAccount a t) = createAccount a t
-    run (CreateBank b)     = createBank b
+    run (SetBankAccounts i bs) = setBankAccounts i bs
 
 
 customers :: Table Customer
@@ -103,15 +103,11 @@ accountRow :: Account -> AccountRow
 accountRow Account {..} = AccountRow {..}
 
 
-createCustomer :: MonadSelda m => Customer -> m ()
-createCustomer c = do
-    insert customers [c]
-    pure ()
 
-
-createBank :: MonadSelda m => BankAccount -> m ()
-createBank b = do
-    insert banks [b]
+setBankAccounts :: MonadSelda m => Guid Account -> [BankAccount] -> m ()
+setBankAccounts i bs = do
+    deleteFrom banks (\b -> b ! #accountId .== literal i)
+    insert banks bs
     pure ()
 
 

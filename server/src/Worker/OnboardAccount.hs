@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE MonoLocalBinds #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 module Worker.OnboardAccount where
 
 
@@ -11,7 +12,7 @@ import qualified Bank
 import qualified Events
 import qualified AccountStore.Account as Account
 import AccountStore.Account (AccountStore)
-import AccountStore.Types (Account(..), Customer(..), BankAccount(..), Application(..))
+import AccountStore.Types (Account(..), Customer(..), BankAccount(..), Application(..), BankAccountType(..), balanceFromFloat)
 import Control.Exception (SomeException(..))
 import Control.Monad.Effect (Effect(run))
 import Control.Monad.Reader (ReaderT, runReaderT, asks)
@@ -31,6 +32,7 @@ import Network.Plaid.Types (ExchangeTokenResponse(..))
 import Database.Selda.Backend (SeldaConnection, MonadSelda(..), SeldaT, runSeldaT)
 import Worker.WorkerM (WorkerM, loadState)
 import Types.Private (private)
+import Types.Guid (Guid)
 
 
 
@@ -43,6 +45,7 @@ queue = Worker.topic Events.applicationsNew "app.onboardAccount"
 handler :: (MonadIO m, Effect m Banks, Effect m AccountStore) => Message Application -> m ()
 handler m = do
     let app = value m
+        aid = accountId (app :: Application)
     liftIO $ putStrLn "NEW APPLICATION :)"
     liftIO $ print app
 
@@ -58,15 +61,29 @@ handler m = do
     -- TODO save plaid token to account (better data model?)
 
     accounts <- run $ Bank.LoadAccounts tok
-    liftIO $ mapM_ print accounts
+    let bankAccounts = map (toBankAccount aid) accounts
 
-    -- creds <- Plaid.credentials
-    -- ExchangeTokenResponse { access_token } <- runPlaid $ Plaid.reqExchangeToken creds (plaidToken app)
-    -- res <- runPlaid $ Plaid.reqAccounts creds access_token
-    -- liftIO $ print $ res
+    -- save the bank accounts
+    run $ Account.SetBankAccounts aid bankAccounts
+
 
     liftIO $ putStrLn " - done"
 
+
+toBankAccount :: Guid Account -> Bank.Account -> BankAccount
+toBankAccount accountId acc = BankAccount {..}
+  where
+    id = Selda.def
+    accountType
+      | Bank._type acc == Bank.Credit = Credit
+      | Bank._type acc == Bank.Depository = Savings
+      | Bank._type acc == Bank.Loan = Credit
+      | Bank.subtype acc == Bank.Checking = Checking
+      | Bank.subtype acc == Bank.Savings = Savings
+      | otherwise = Other
+    name = Bank.name acc
+    balance = toBalance $ Bank.current $ Bank.balances acc
+    toBalance (Bank.Currency d) = balanceFromFloat d
 
 
 -- newBank :: Application -> Bank

@@ -29,6 +29,9 @@ instance Linkable Account where
 instance Linkable Application where
     self a = cs $ UUID.toText $ accountId (a :: Application)
 
+instance Linkable BankAccount where
+    self _ = ""
+
 
 -- AccountInfo ---------------------
 data AccountInfo = AccountInfo

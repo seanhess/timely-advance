@@ -6,7 +6,12 @@
 module Bank
     ( Token
     , Access
-    , Currency
+    , Public
+    , Account(..)
+    , Currency(..)
+    , Balances(..)
+    , AccountType(..)
+    , AccountSubType(..)
     , Banks(..)
     ) where
 
