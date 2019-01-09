@@ -84,7 +84,7 @@ update msg model =
             { firstName = model.form.firstName
             , lastName = model.form.lastName
             , email = model.form.email
-            , plaidToken = token
+            , publicBankToken = token
             }
     in
     case msg of

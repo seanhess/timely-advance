@@ -9,6 +9,7 @@ module Servant.API.ContentTypes.HTML where
 
 import Data.String.Conversions (cs)
 import Data.Aeson (encode, ToJSON)
+import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Proxy (Proxy(..))
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -74,13 +75,13 @@ idCol a = "<div width='100%'>" <> mconcat (map link links) <> "</div>"
 
 link :: [Text] -> Text
 link segments =
-    "<a href='"<> url <> "'>" <> url <> "</a>"
+    "<span style='padding-right: 5px'><a href='"<> url <> "'>" <> url <> "</a></span>"
   where
     url :: Text
-    url = mconcat (List.intersperse "/" segments) <> "/"
+    url = mconcat (List.intersperse "/" segments)
 
 jsonCol :: ToJSON a => a -> Text
-jsonCol a = "<div><pre>" <> cs (encode a) <> "</pre></div>"
+jsonCol a = "<div><pre>" <> cs (encodePretty a) <> "</pre></div>"
 
 
 

@@ -46,15 +46,17 @@ handler m = do
     liftIO $ putStrLn "NEW APPLICATION :)"
     liftIO $ print app
 
-    -- create the customer record
-    run $ Account.CreateCustomer (newCustomer app)
+    -- get the bank token
+    tok <- run $ Bank.Authenticate (publicBankToken app)
+
+    -- create the new account
+    run $ Account.CreateAccount app tok
 
 
     -- TODO move to bank service
     -- TODO save balance to account
     -- TODO save plaid token to account (better data model?)
 
-    tok <- run $ Bank.Authenticate (publicBankToken app)
     accounts <- run $ Bank.LoadAccounts tok
     liftIO $ mapM_ print accounts
 
@@ -66,9 +68,6 @@ handler m = do
     liftIO $ putStrLn " - done"
 
 
-newCustomer :: Application -> Customer
-newCustomer Application {..} = Customer {..}
-  where id = Selda.def
 
 -- newBank :: Application -> Bank
 -- newBank Application {..} = Bank {..}

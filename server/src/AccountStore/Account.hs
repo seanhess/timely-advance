@@ -17,6 +17,8 @@ import Control.Monad.Effect (Effect(..))
 import GHC.Generics (Generic)
 
 import Types.Guid
+import Types.Plaid
+import Types.Private
 
 
 
@@ -26,7 +28,7 @@ data AccountStore a where
     Find           :: Guid Account -> AccountStore (Maybe Account)
     BankAccounts   :: Guid Account -> AccountStore [BankAccount]
 
-    CreateCustomer :: Customer -> AccountStore ()
+    CreateAccount  :: Application -> Token Access -> AccountStore ()
     CreateBank     :: BankAccount -> AccountStore ()
 
 
@@ -34,7 +36,7 @@ instance (MonadSelda m) => Effect m AccountStore where
     run All                = allAccounts
     run (Find i)           = getAccount i
     run (BankAccounts i)   = getBankAccounts i
-    run (CreateCustomer c) = createCustomer c
+    run (CreateAccount a t) = createAccount a t
     run (CreateBank b)     = createBank b
 
 
@@ -80,6 +82,25 @@ getBankAccounts i =
       b <- select banks
       restrict (b ! #accountId .== literal i)
       pure b
+
+
+createAccount :: MonadSelda m => Application -> Token Access -> m ()
+createAccount app tok = do
+    let acc = newAccount app tok
+    insert customers [customer acc]
+    insert accounts [accountRow acc]
+    pure ()
+
+
+newAccount :: Application -> Token Access -> Account
+newAccount Application {..} tok = Account {..}
+  where id = def
+        customer = Customer {..}
+        bankToken = Private tok
+
+
+accountRow :: Account -> AccountRow
+accountRow Account {..} = AccountRow {..}
 
 
 createCustomer :: MonadSelda m => Customer -> m ()

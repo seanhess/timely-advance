@@ -1,4 +1,4 @@
-module Nimble.Api exposing (Account, AccountInfo, Application, Bank, Customer, decodeAccount, encodeAccountInfo, getAccountsById, postApplications)
+module Nimble.Api exposing (Account, AccountInfo, Application, Balance, BankAccount, BankAccountType(..), Customer, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeBankAccount, decodeCustomer, encodeAccountInfo, getAccountsById, postApplications)
 
 import Http exposing (Error)
 import Json.Decode as Decode exposing (Decoder, int, list, string)
@@ -7,9 +7,12 @@ import Json.Encode
 import String
 
 
+type alias Token =
+    String
+
+
 type alias Account =
     { accountId : String
-    , bank : Bank
     , customer : Customer
     }
 
@@ -18,7 +21,7 @@ type alias AccountInfo =
     { firstName : String
     , lastName : String
     , email : String
-    , plaidToken : String
+    , publicBankToken : Token
     }
 
 
@@ -27,15 +30,27 @@ type alias Application =
     , firstName : String
     , lastName : String
     , email : String
-    , plaidToken : String
+    , publicBankToken : String
     }
 
 
-type alias Bank =
+type alias BankAccount =
     { accountId : String
-    , balance : Int
-    , accessToken : String
+    , accountType : BankAccountType
+    , name : String
+    , balance : Balance
     }
+
+
+type BankAccountType
+    = Checking
+    | Savings
+    | Credit
+    | Other
+
+
+type alias Balance =
+    Int
 
 
 type alias Customer =
@@ -52,7 +67,7 @@ encodeAccountInfo x =
         [ ( "firstName", Json.Encode.string x.firstName )
         , ( "lastName", Json.Encode.string x.lastName )
         , ( "email", Json.Encode.string x.email )
-        , ( "plaidToken", Json.Encode.string x.plaidToken )
+        , ( "publicBankToken", Json.Encode.string x.publicBankToken )
         ]
 
 
@@ -62,23 +77,23 @@ decodeAccountInfo =
         |> required "firstName" string
         |> required "lastName" string
         |> required "email" string
-        |> required "plaidToken" string
+        |> required "publicBankToken" string
 
 
 decodeAccount : Decoder Account
 decodeAccount =
     Decode.succeed Account
         |> required "accountId" string
-        |> required "bank" decodeBank
         |> required "customer" decodeCustomer
 
 
-decodeBank : Decoder Bank
-decodeBank =
-    Decode.succeed Bank
+decodeBankAccount : Decoder BankAccount
+decodeBankAccount =
+    Decode.succeed BankAccount
         |> required "accountId" string
+        |> required "accountType" decodeBankAccountType
+        |> required "name" string
         |> required "balance" int
-        |> required "accessToken" string
 
 
 decodeCustomer : Decoder Customer
@@ -97,7 +112,30 @@ decodeApplication =
         |> required "firstName" string
         |> required "lastName" string
         |> required "email" string
-        |> required "plaidToken" string
+        |> required "publicBankToken" string
+
+
+decodeBankAccountType : Decoder BankAccountType
+decodeBankAccountType =
+    Decode.string
+        |> Decode.andThen
+            (\string ->
+                case string of
+                    "Checking" ->
+                        Decode.succeed Checking
+
+                    "Savings" ->
+                        Decode.succeed Savings
+
+                    "Credit" ->
+                        Decode.succeed Credit
+
+                    "Other" ->
+                        Decode.succeed Other
+
+                    _ ->
+                        Decode.fail ("Invalid BankAccountType, " ++ string)
+            )
 
 
 

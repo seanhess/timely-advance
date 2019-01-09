@@ -50,7 +50,7 @@ spec = Spec ["Nimble", "Api"]
              , toElmDecoderSource (Proxy :: Proxy AccountInfo)
              , toElmDecoderSource (Proxy :: Proxy Account)
              , toElmDecoderSource (Proxy :: Proxy BankAccount)
-             , toElmDecoderSource (Proxy :: Proxy BankAccountType)
+             -- , toElmDecoderSource (Proxy :: Proxy BankAccountType)
              , toElmDecoderSource (Proxy :: Proxy Customer)
              , toElmDecoderSource (Proxy :: Proxy Application)
              -- : generateElmForAPI  (Proxy :: Proxy Api))
