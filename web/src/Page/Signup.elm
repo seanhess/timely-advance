@@ -113,7 +113,7 @@ update msg model =
         CompletedSignup (Ok a) ->
             updates
                 |> set { model | status = Complete [] }
-                |> command (Nav.pushUrl model.key (Route.url Route.Accounts))
+                |> command (Nav.pushUrl model.key (Route.url <| Route.Account <| a.accountId))
 
 
 view : Model -> Element Msg

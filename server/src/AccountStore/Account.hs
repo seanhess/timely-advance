@@ -9,7 +9,8 @@ module AccountStore.Account (AccountStore(..), initialize) where
 
 import AccountStore.Types
 
-import Database.Selda
+import Control.Monad.Selda (Selda, query, insert, deleteFrom)
+import Database.Selda hiding (query, insert, deleteFrom)
 import Data.Maybe (listToMaybe)
 import Data.Aeson (ToJSON, FromJSON)
 import Data.Text (Text)
@@ -17,7 +18,7 @@ import Control.Monad.Effect (Effect(..))
 import GHC.Generics (Generic)
 
 import Types.Guid
-import Types.Plaid
+import Bank (Token, Public, Access)
 import Types.Private
 
 
@@ -32,7 +33,7 @@ data AccountStore a where
     SetBankAccounts :: Guid Account -> [BankAccount] -> AccountStore ()
 
 
-instance (MonadSelda m) => Effect m AccountStore where
+instance (Selda m) => Effect m AccountStore where
     run All                = allAccounts
     run (Find i)           = getAccount i
     run (BankAccounts i)   = getBankAccounts i
@@ -51,7 +52,7 @@ accounts = table "accounts" [#accountId :- primary]
 
 
 
-allAccounts :: (MonadSelda m) => m [Account]
+allAccounts :: (Selda m) => m [Account]
 allAccounts = do
     as <- query $ do
       c <- select customers
@@ -63,7 +64,7 @@ allAccounts = do
     account (AccountRow {..} :*: customer) = Account {..}
 
 
-getAccount :: MonadSelda m => Guid Account -> m (Maybe Account)
+getAccount :: Selda m => Guid Account -> m (Maybe Account)
 getAccount i = do
     as <- query $ do
       c <- select customers
@@ -76,7 +77,7 @@ getAccount i = do
     account (AccountRow {..} :*: customer) = Account {..}
 
 
-getBankAccounts :: MonadSelda m => Guid Account -> m [BankAccount]
+getBankAccounts :: Selda m => Guid Account -> m [BankAccount]
 getBankAccounts i =
     query $ do
       b <- select banks
@@ -84,7 +85,7 @@ getBankAccounts i =
       pure b
 
 
-createAccount :: MonadSelda m => Application -> Token Access -> m ()
+createAccount :: Selda m => Application -> Token Access -> m ()
 createAccount app tok = do
     let acc = newAccount app tok
     insert customers [customer acc]
@@ -104,7 +105,7 @@ accountRow Account {..} = AccountRow {..}
 
 
 
-setBankAccounts :: MonadSelda m => Guid Account -> [BankAccount] -> m ()
+setBankAccounts :: Selda m => Guid Account -> [BankAccount] -> m ()
 setBankAccounts i bs = do
     deleteFrom banks (\b -> b ! #accountId .== literal i)
     insert banks bs

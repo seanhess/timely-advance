@@ -9,6 +9,7 @@ import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Nimble.Api exposing (Account)
+import Page.Account as Account
 import Page.Accounts as Accounts
 import Page.Onboard as Onboard
 import Page.Signup as Signup
@@ -32,6 +33,7 @@ type PageModel
     | Onboard Onboard.Model
     | Signup Signup.Model
     | Accounts Accounts.Model
+    | Account Account.Model
 
 
 init : flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -60,6 +62,7 @@ type Msg
     | GotOnboardMsg Onboard.Msg
     | GotSignupMsg Signup.Msg
     | GotAccountsMsg Accounts.Msg
+    | GotAccountMsg Account.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -96,6 +99,10 @@ update msg model =
         ( GotAccountsMsg acc, Accounts m ) ->
             Accounts.update acc m
                 |> updateWith Accounts GotAccountsMsg model
+
+        ( GotAccountMsg acc, Account m ) ->
+            Account.update acc m
+                |> updateWith Account GotAccountMsg model
 
         ( _, _ ) ->
             -- Disregard messages that arrived for the wrong page.
@@ -154,6 +161,13 @@ changeRouteTo key maybeRoute =
             in
             ( Accounts mod, Cmd.map GotAccountsMsg cmd )
 
+        Just (Route.Account i) ->
+            let
+                ( mod, cmd ) =
+                    Account.init i
+            in
+            ( Account mod, Cmd.map GotAccountMsg cmd )
+
 
 view : Model -> Browser.Document Msg
 view model =
@@ -174,6 +188,9 @@ view model =
 
                 Accounts s ->
                     Element.map GotAccountsMsg <| Accounts.view s
+
+                Account a ->
+                    Element.map GotAccountMsg <| Account.view a
     in
     { title = "TODO: Title"
     , body =

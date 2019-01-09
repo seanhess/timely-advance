@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE DuplicateRecordFields     #-}
-module Types.Account
+module Api.Types
   ( Account(..)
   , Customer(..)
   , BankAccount(..)
@@ -9,28 +9,29 @@ module Types.Account
   ) where
 
 import AccountStore.Types
+import Bank (Token, Access, Public)
 import qualified AccountStore.Types as Accounts
 import Data.Function ((&))
-import Data.Aeson (ToJSON, FromJSON)
+import Data.Aeson (ToJSON(..), FromJSON)
 import Data.Text (Text)
 import qualified Data.UUID as UUID
 import Data.String.Conversions (cs)
+import Database.Selda (SqlRow, ID, fromId)
 import GHC.Generics (Generic)
-import Database.Selda (SqlRow)
 import Types.Guid (Guid)
-import Types.Plaid
 import Servant.API.ContentTypes.HTML (Linkable(..))
 
 
-instance Linkable Account where
-    self a = cs $ UUID.toText $ accountId (a :: Account)
-    relations _ = ["bank-accounts"]
 
-instance Linkable Application where
-    self a = cs $ UUID.toText $ accountId (a :: Application)
-
-instance Linkable BankAccount where
-    self _ = ""
+instance ToJSON (ID a) where
+    toJSON i = toJSON $ fromId i
+instance ToJSON Account
+instance ToJSON Customer
+instance ToJSON BankAccountType
+instance ToJSON Balance
+instance ToJSON BankAccount
+instance ToJSON Application
+instance FromJSON Application
 
 
 -- AccountInfo ---------------------
@@ -47,3 +48,12 @@ instance ToJSON AccountInfo
 
 
 
+instance Linkable Account where
+    self a = cs $ UUID.toText $ accountId (a :: Account)
+    relations _ = ["bank-accounts"]
+
+instance Linkable Application where
+    self a = cs $ UUID.toText $ accountId (a :: Application)
+
+instance Linkable BankAccount where
+    self _ = ""

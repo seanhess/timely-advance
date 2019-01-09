@@ -8,7 +8,8 @@ module AccountStore.Application
     , ApplicationStore(..)
     ) where
 
-import Database.Selda
+import Control.Monad.Selda (Selda, query, insert, deleteFrom)
+import Database.Selda hiding (query, insert, deleteFrom)
 import Data.Aeson (ToJSON, FromJSON)
 import Data.Maybe (listToMaybe)
 import Data.Text (Text)
@@ -24,7 +25,7 @@ data ApplicationStore a where
     Find      :: Guid Account  -> ApplicationStore (Maybe Application)
     All       :: ApplicationStore [Application]
 
-instance (MonadSelda m) => Effect m ApplicationStore where
+instance (Selda m) => Effect m ApplicationStore where
     run (Save a) = saveApplication a
     run (Find i) = findApplication i
     run All      = allApplications
@@ -35,13 +36,13 @@ applications :: Table Application
 applications = table "accounts_applications" [#accountId :- primary]
 
 
-saveApplication :: (MonadSelda m) => Application -> m ()
+saveApplication :: (Selda m) => Application -> m ()
 saveApplication app = do
     insert applications [app]
     pure ()
 
 
-findApplication :: (MonadSelda m) => Guid Account -> m (Maybe Application)
+findApplication :: (Selda m) => Guid Account -> m (Maybe Application)
 findApplication i = do
     as <- query $ do
       app <- select applications
@@ -50,13 +51,13 @@ findApplication i = do
     pure $ listToMaybe as
 
 
-allApplications :: (MonadSelda m) => m [Application]
+allApplications :: (Selda m) => m [Application]
 allApplications =
     query $ select applications
 
 
 
 initialize :: (MonadSelda m, MonadIO m) => m ()
-initialize = do
+initialize =
     -- drop the table / db first to run migrations
     tryCreateTable applications

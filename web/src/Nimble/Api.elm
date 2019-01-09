@@ -1,4 +1,4 @@
-module Nimble.Api exposing (Account, AccountInfo, Application, Balance, BankAccount, BankAccountType(..), Customer, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeBankAccount, decodeCustomer, encodeAccountInfo, getAccountsById, postApplications)
+module Nimble.Api exposing (Account, AccountInfo, Application, Balance, BankAccount, BankAccountType(..), Customer, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeBankAccount, decodeCustomer, encodeAccountInfo, getAccountsBanksById, getAccountsById, postApplications)
 
 import Http exposing (Error)
 import Json.Decode as Decode exposing (Decoder, int, list, string)
@@ -173,6 +173,19 @@ getAccountsById toMsg id =
         , url = String.join "/" [ "", "v1", "accounts", id ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg decodeAccount
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+getAccountsBanksById : (Result Error (List BankAccount) -> msg) -> String -> Cmd msg
+getAccountsBanksById toMsg id =
+    Http.request
+        { method = "GET"
+        , headers = []
+        , url = String.join "/" [ "", "v1", "accounts", id, "bank-accounts" ]
+        , body = Http.emptyBody
+        , expect = Http.expectJson toMsg (list decodeBankAccount)
         , timeout = Nothing
         , tracker = Nothing
         }

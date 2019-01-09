@@ -16,7 +16,7 @@ import qualified Data.UUID as UUID
 import Database.Selda (ID, fromId)
 import Api (Api)
 import AccountStore.Types
-import Types.Account (AccountInfo)
+import Api.Types (AccountInfo)
 import Types.Private (Private)
 import Network.Plaid.Types (Token)
 

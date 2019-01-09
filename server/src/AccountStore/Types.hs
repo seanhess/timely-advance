@@ -3,6 +3,7 @@ module AccountStore.Types where
 
 
 
+import Bank (Token, Public, Access)
 import Database.Selda
 import Database.Selda.SqlType (Lit(..))
 import Data.Aeson (ToJSON(..), FromJSON, Value(Null))
@@ -11,15 +12,17 @@ import Data.Text (Text)
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 import Types.Guid (Guid)
-import Types.Plaid
 import Types.Private
 import Network.Plaid.Types (Token(..), Access)
 
 
--- there's no instance for ID!
-instance ToJSON (ID a) where
-    toJSON i = toJSON $ fromId i
 
+-- I want this to act like text
+instance Typeable t => SqlType (Token t) where
+    mkLit (Token t) =  LCustom $ mkLit t
+    sqlType _ = sqlType (Proxy :: Proxy Text)
+    fromSql v = Token $ fromSql v
+    defaultValue = LCustom (defaultValue :: Lit Text)
 
 
 -- an aggregate of the information
@@ -29,7 +32,6 @@ data Account = Account
     , bankToken :: Private (Token Access)
     } deriving (Show, Eq, Generic)
 
-instance ToJSON Account
 
 
 data AccountRow = AccountRow
@@ -49,7 +51,6 @@ data Customer = Customer
     } deriving (Generic, Eq, Show)
 
 instance SqlRow Customer
-instance ToJSON Customer
 
 
 data BankAccountType
@@ -60,7 +61,6 @@ data BankAccountType
     deriving (Generic, Eq, Show, Bounded, Enum, Read, Typeable)
 
 instance SqlType BankAccountType
-instance ToJSON BankAccountType
 
 newtype Balance = Balance Int
     deriving (Generic, Eq, Show, Typeable)
@@ -74,7 +74,6 @@ instance SqlType Balance where
     fromSql v = Balance $ fromSql v
     defaultValue = LCustom (defaultValue :: Lit Int)
 
-instance ToJSON Balance
 
 data BankAccount = BankAccount
     { id :: ID BankAccount
@@ -86,7 +85,6 @@ data BankAccount = BankAccount
 
 
 instance SqlRow BankAccount
-instance ToJSON BankAccount
 
 
 
@@ -102,7 +100,5 @@ data Application = Application
     } deriving (Generic, Show)
 
 instance SqlRow Application
-instance ToJSON Application
-instance FromJSON Application
 
 

@@ -8,11 +8,13 @@
 {-# LANGUAGE TypeOperators     #-}
 module Api where
 
+import qualified Data.Pool as Pool
 import qualified Api.Applications as Applications
 import qualified AccountStore.Application as Application
 import AccountStore.Types (Application)
-
+import Control.Concurrent (forkIO)
 import Api.AppM (AppM, nt, AppState(..), loadState, clientConfig)
+import Api.Types
 import qualified AccountStore.Account as Account
 import Control.Monad.Reader (asks)
 -- import Control.Monad.IO.Class (liftIO)
@@ -22,7 +24,6 @@ import Database.Selda.PostgreSQL (pgOpen, PGConnectInfo(..))
 import Database.Selda.Backend (runSeldaT)
 
 -- import Types.Application as App
-import Types.Account
 import Types.Guid
 import Types.Config
 import GHC.Generics (Generic)
@@ -122,8 +123,8 @@ start port = do
     -- Load state
     state <- loadState
 
-    -- Initialize databases
-    flip runSeldaT (dbConn state) $ do
+    Pool.withResource (dbConn state) $ \conn ->
+      flip runSeldaT conn $ do
         Account.initialize
         Application.initialize
 

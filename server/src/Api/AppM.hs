@@ -1,9 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Api.AppM
   ( AppState(..)
   , loadState
@@ -15,10 +12,13 @@ module Api.AppM
 
 import Config (Env(..), loadEnv)
 import Control.Monad.Reader (ReaderT, runReaderT, asks)
+import Control.Monad.Selda (Selda(..))
 import Control.Monad.IO.Class (liftIO, MonadIO)
 import Data.String.Conversions (cs)
+import Data.Pool (Pool)
+import qualified Data.Pool as Pool
 import Database.Selda (MonadMask(..))
-import Database.Selda.Backend (SeldaConnection, MonadSelda(..), SeldaT, runSeldaT)
+import Database.Selda.Backend (SeldaConnection, MonadSelda(..), SeldaT)
 import qualified Database.Selda.PostgreSQL as Selda
 import qualified Network.AMQP.Worker as Worker
 import Network.AMQP.Worker.Monad (MonadWorker(..))
@@ -29,7 +29,7 @@ import Types.Config (ClientConfig(ClientConfig), PlaidConfig(PlaidConfig))
 
 data AppState = AppState
     { env :: Env
-    , dbConn :: SeldaConnection
+    , dbConn :: Pool SeldaConnection
     , amqpConn :: Worker.Connection
     -- , plaid :: Plaid.Credentials
     -- , manager :: HTTP.Manager
@@ -42,9 +42,14 @@ loadState :: (MonadIO m, MonadMask m) => m AppState
 loadState = do
     env <- loadEnv
     amqpConn <- Worker.connect (Worker.fromURI $ cs $ amqp env)
-    dbConn <- Selda.pgOpen' Nothing (cs $ postgres env)
+    dbConn <- liftIO $ Pool.createPool (createConn $ cs $ postgres env) destroyConn 1 5 3
+    -- dbConn <- createConn $ cs $ postgres env
     -- let plaid = Plaid.Credentials (plaidClientId env) (plaidClientSecret env)
-    pure $ AppState {..}
+    pure AppState {..}
+  where
+    createConn = Selda.pgOpen' Nothing
+    destroyConn = Selda.seldaClose
+
 
 
 clientConfig :: AppM ClientConfig
@@ -57,14 +62,16 @@ type AppM = ReaderT AppState Handler
 
 
 
-instance MonadSelda AppM where
-    seldaConnection = asks dbConn
+instance Selda AppM where
+    withConnection action = do
+      pool <- asks dbConn
+      Pool.withResource pool action
 
 instance MonadWorker AppM where
     amqpConnection = asks amqpConn
 
 -- TODO upgrade to servant 0.15 and remove this
-deriving instance MonadMask Handler
+-- deriving instance MonadMask Handler
 
 
 

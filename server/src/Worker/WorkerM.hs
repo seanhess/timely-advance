@@ -8,7 +8,10 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Plaid (MonadPlaid, runPlaid)
 import Control.Monad.Reader (ReaderT, runReaderT, asks)
 import Control.Exception (SomeException)
+import Control.Monad.Selda (Selda(..))
 import qualified Control.Monad.Plaid
+import Data.Pool (Pool)
+import qualified Data.Pool as Pool
 import Data.Aeson (FromJSON)
 import Data.String.Conversions (cs)
 import qualified Database.Selda.PostgreSQL as Selda
@@ -25,7 +28,7 @@ import qualified Network.HTTP.Client.TLS as HTTP
 
 
 data AppState = AppState
-    { dbConn :: SeldaConnection
+    { dbConn :: Pool SeldaConnection
     , amqpConn :: Worker.Connection
     , plaid :: Plaid.Credentials
     , manager :: HTTP.Manager
@@ -34,8 +37,10 @@ data AppState = AppState
 
 type WorkerM = ReaderT AppState IO
 
-instance MonadSelda WorkerM where
-    seldaConnection = asks dbConn
+instance Selda WorkerM where
+    withConnection action = do
+      pool <- asks dbConn
+      Pool.withResource pool action
 
 instance MonadWorker WorkerM where
     amqpConnection = asks amqpConn
@@ -50,10 +55,13 @@ loadState :: (MonadIO m, MonadMask m) => m AppState
 loadState = do
     env <- loadEnv
     amqpConn <- Worker.connect (Worker.fromURI $ cs $ amqp env)
-    dbConn <- Selda.pgOpen' Nothing (cs $ postgres env)
+    dbConn <- liftIO $ Pool.createPool (createConn $ cs $ postgres env) destroyConn 1 5 3
     manager <- liftIO $ HTTP.newManager HTTP.tlsManagerSettings
     let plaid = Plaid.Credentials (plaidClientId env) (plaidClientSecret env)
     pure $ AppState {..}
+  where
+    createConn = Selda.pgOpen' Nothing
+    destroyConn = Selda.seldaClose
 
 
 connect :: (FromJSON a, MonadWorker m) => Queue a -> (Message a -> m ()) -> m ()

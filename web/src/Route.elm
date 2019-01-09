@@ -14,10 +14,15 @@ import Url.Parser as Parser exposing ((</>), Parser, oneOf, s, string)
 -- import Username exposing (Username) ROUTING
 
 
+type alias AccountId =
+    String
+
+
 type Route
     = Onboard
     | Signup
     | Accounts
+    | Account AccountId
 
 
 
@@ -33,6 +38,7 @@ parser =
         [ Parser.map Onboard Parser.top
         , Parser.map Signup (s "signup")
         , Parser.map Accounts (s "accounts")
+        , Parser.map Account (s "accounts" </> string)
 
         -- , Parser.map Profile (s "profile" </> Username.urlParser)
         -- , Parser.map Article (s "article" </> Slug.urlParser)
@@ -81,5 +87,8 @@ url page =
 
                 Accounts ->
                     [ "accounts" ]
+
+                Account s ->
+                    [ "accounts", s ]
     in
     "#/" ++ String.join "/" pieces
