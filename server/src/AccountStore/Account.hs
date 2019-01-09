@@ -9,8 +9,8 @@ module AccountStore.Account (AccountStore(..), initialize) where
 
 import AccountStore.Types
 
-import Control.Monad.Selda (Selda, query, insert, deleteFrom)
-import Database.Selda hiding (query, insert, deleteFrom)
+import Control.Monad.Selda (Selda, query, insert, deleteFrom, tryCreateTable)
+import Database.Selda hiding (query, insert, deleteFrom, tryCreateTable)
 import Data.Maybe (listToMaybe)
 import Control.Monad.Effect (Effect(..))
 
@@ -110,7 +110,7 @@ setBankAccounts i bs = do
 
 
 
-initialize :: (MonadSelda m, MonadIO m) => m ()
+initialize :: (Selda m, MonadIO m) => m ()
 initialize = do
     -- drop the table / db first to run migrations
     tryCreateTable accounts

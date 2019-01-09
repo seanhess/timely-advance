@@ -8,8 +8,8 @@ module AccountStore.Application
     , ApplicationStore(..)
     ) where
 
-import Control.Monad.Selda (Selda, query, insert)
-import Database.Selda hiding (query, insert)
+import Control.Monad.Selda (Selda, query, insert, tryCreateTable)
+import Database.Selda hiding (query, insert, tryCreateTable)
 import Data.Maybe (listToMaybe)
 import Control.Monad.Effect (Effect(..))
 
@@ -54,7 +54,7 @@ allApplications =
 
 
 
-initialize :: (MonadSelda m, MonadIO m) => m ()
+initialize :: (Selda m, MonadIO m) => m ()
 initialize =
     -- drop the table / db first to run migrations
     tryCreateTable applications

@@ -8,16 +8,14 @@
 {-# LANGUAGE TypeOperators     #-}
 module Api where
 
-import qualified Data.Pool as Pool
 import qualified Api.Applications as Applications
 import qualified AccountStore.Application as Application
 import AccountStore.Types (Application)
-import Api.AppM (AppM, nt, AppState(..), loadState, clientConfig)
+import Api.AppM (AppM, nt, AppState(..), loadState, clientConfig, runIO)
 import Api.Types
 import qualified AccountStore.Account as Account
 import Control.Monad.Effect (Effect(..))
 import Control.Monad.Except (throwError, MonadError)
-import Database.Selda.Backend (runSeldaT)
 
 -- import Types.Application as App
 import Types.Guid
@@ -118,10 +116,9 @@ start port = do
     -- Load state
     state <- loadState
 
-    Pool.withResource (dbConn state) $ \conn ->
-      flip runSeldaT conn $ do
-        Account.initialize
-        Application.initialize
+    runIO state $ do
+      Account.initialize
+      Application.initialize
 
     putStrLn $ "Running on " ++ show port
     Warp.run port (application state)

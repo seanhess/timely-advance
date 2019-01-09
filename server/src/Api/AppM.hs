@@ -7,6 +7,7 @@ module Api.AppM
   , nt
   , AppM
   , clientConfig
+  , runIO
   ) where
 
 
@@ -22,7 +23,7 @@ import Database.Selda.Backend (SeldaConnection)
 import qualified Database.Selda.PostgreSQL as Selda
 import qualified Network.AMQP.Worker as Worker
 import Network.AMQP.Worker.Monad (MonadWorker(..))
-import Servant (Handler(..))
+import Servant (Handler(..), runHandler)
 import Types.Config (ClientConfig(ClientConfig), PlaidConfig(PlaidConfig))
 
 
@@ -78,3 +79,9 @@ nt :: AppState -> AppM a -> Handler a
 nt s x = runReaderT x s
 
 
+runIO :: AppState -> AppM a -> IO a
+runIO s x = do
+  res <- runHandler $ runReaderT x s
+  case res of
+    Left err -> error $ show err
+    Right r -> pure r
