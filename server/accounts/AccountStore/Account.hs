@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables     #-}
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs     #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings  #-}

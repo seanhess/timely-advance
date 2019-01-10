@@ -51,16 +51,37 @@ dependencies:
 - wai
 - warp
 
-library:
-  source-dirs: src
+
+default-extensions:
+- DataKinds
+- DeriveGeneric
+- FlexibleInstances
+- FlexibleContexts
+- GADTs
+- MultiParamTypeClasses
+- KindSignatures
+- OverloadedStrings
+- OverloadedLabels
+- RecordWildCards
+- ScopedTypeVariables
+- DuplicateRecordFields
+- TypeFamilies
+- TypeOperators
+
 
 ghc-options:
 - -W
 
+library:
+  source-dirs:
+    - src
+    - bank
+    - accounts
+
 executables:
   server-exe:
     main:                Main.hs
-    source-dirs:         app
+    source-dirs:         .
     ghc-options:
     - -threaded
     - -rtsopts

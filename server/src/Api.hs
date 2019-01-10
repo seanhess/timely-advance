@@ -8,31 +8,27 @@
 {-# LANGUAGE TypeOperators     #-}
 module Api where
 
-import qualified Api.Applications as Applications
-import qualified AccountStore.Application as Application
-import AccountStore.Types (Application)
-import Api.AppM (AppM, nt, AppState(..), loadState, clientConfig, runIO)
-import Api.Types
-import qualified AccountStore.Account as Account
-import Control.Monad.Effect (Effect(..))
-import Control.Monad.Except (throwError, MonadError)
-
--- import Types.Application as App
-import Types.Guid
-import Types.Config
-import GHC.Generics (Generic)
-
-import Data.Proxy (Proxy(..))
-import Data.Text (Text)
+import           Control.Monad.Effect (Effect(..))
+import           Control.Monad.Except (throwError, MonadError)
+import           GHC.Generics (Generic)
+import           Data.Proxy (Proxy(..))
+import           Data.Text (Text)
 import qualified Network.Wai.Handler.Warp as Warp
-
-import Servant hiding (Link, Application)
+import           Servant hiding (Link, Application)
 import qualified Servant
-import Servant.API.Generic ((:-), ToServantApi, ToServant, AsApi)
-import Servant.API.ContentTypes.JS (JS)
-import Servant.API.ContentTypes.HTML (HTML, Link(..))
-import Servant.Server.Generic (AsServerT, genericServerT)
+import           Servant.API.Generic ((:-), ToServantApi, ToServant, AsApi)
+import           Servant.API.ContentTypes.JS (JS)
+import           Servant.API.ContentTypes.HTML (HTML, Link(..))
+import           Servant.Server.Generic (AsServerT, genericServerT)
 
+import qualified AccountStore.Application as Application
+import           AccountStore.Types (Application)
+import qualified AccountStore.Account as Account
+import qualified Api.Applications as Applications
+import           Api.AppM (AppM, nt, AppState(..), loadState, clientConfig, runIO)
+import           Api.Types
+import           Types.Guid
+import           Types.Config
 
 type Api = ToServant BaseApi AsApi
 
