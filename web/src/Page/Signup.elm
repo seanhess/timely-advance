@@ -6,10 +6,10 @@ import Element.Font as Font
 import Element.Input as Input
 import Http
 import Json.Encode as Encode
-import Nimble.Api as Api exposing (AccountInfo, Application)
-import Nimble.Style as Style
 import Platform.Updates exposing (Updates, base, command, set)
 import Route
+import Timely.Api as Api exposing (AccountInfo, Application)
+import Timely.Style as Style
 
 
 port plaidLinkOpen : Encode.Value -> Cmd msg

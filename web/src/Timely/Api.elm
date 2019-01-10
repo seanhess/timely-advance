@@ -1,4 +1,4 @@
-module Nimble.Api exposing (Account, AccountInfo, Application, Balance, BankAccount, BankAccountType(..), Customer, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeBankAccount, decodeCustomer, encodeAccountInfo, getAccountsBanksById, getAccountsById, postApplications)
+module Timely.Api exposing (Account, AccountInfo, Application, Balance, BankAccount, BankAccountType(..), Customer, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeBankAccount, decodeCustomer, encodeAccountInfo, getAccountsBanksById, getAccountsById, postApplications)
 
 import Http exposing (Error)
 import Json.Decode as Decode exposing (Decoder, int, list, string)

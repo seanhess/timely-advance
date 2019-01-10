@@ -4,8 +4,8 @@ import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
 import Http
-import Nimble.Api as Api exposing (Account)
-import Nimble.Style as Style
+import Timely.Api as Api exposing (Account)
+import Timely.Style as Style
 
 
 type alias Model =

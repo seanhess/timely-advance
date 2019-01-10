@@ -1,4 +1,4 @@
-module Nimble.Style exposing (blue, button, darkBlue, formPage, grey, header, red, white)
+module Timely.Style exposing (blue, button, darkBlue, formPage, grey, header, red, white)
 
 import Element exposing (..)
 import Element.Background as Background

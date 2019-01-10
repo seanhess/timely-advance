@@ -8,12 +8,12 @@ import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
-import Nimble.Api exposing (Account)
 import Page.Account as Account
 import Page.Accounts as Accounts
 import Page.Onboard as Onboard
 import Page.Signup as Signup
 import Route exposing (Route)
+import Timely.Api exposing (Account)
 import Url exposing (Url)
 
 

@@ -5,8 +5,8 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Region as Region
-import Nimble.Style as Style
 import Route exposing (Route(..))
+import Timely.Style as Style
 
 
 type alias Model =

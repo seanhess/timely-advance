@@ -1,4 +1,4 @@
-Nimble Finance
+Timely Advance
 ==============
 
 

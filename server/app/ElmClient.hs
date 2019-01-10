@@ -35,7 +35,7 @@ instance ElmType UUID where
 
 
 spec :: Spec
-spec = Spec ["Nimble", "Api"]
+spec = Spec ["Timely", "Api"]
             [ defElmImports
              , toElmTypeSource    (Proxy :: Proxy Account)
              , toElmTypeSource    (Proxy :: Proxy AccountInfo)
