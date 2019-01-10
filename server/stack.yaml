@@ -33,8 +33,6 @@ resolver: lts-13.2
 #  - wai
 packages:
 - .
-- location: "../lib"
-  extra-dep: true
 - location:
    git: https://github.com/seanhess/amqp-worker.git
    commit: 0.3.1
