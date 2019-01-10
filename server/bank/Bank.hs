@@ -15,7 +15,7 @@ module Bank
     , Banks(..)
     ) where
 
-import Control.Monad.Effect (Effect(..))
+import Control.Monad.Service (Service(..))
 import Control.Monad.Plaid (MonadPlaid, runPlaid)
 import qualified Control.Monad.Plaid as Plaid
 import Network.Plaid.Types
@@ -29,7 +29,7 @@ data Banks a where
 
 
 -- there's an obvious implementation for anyone who has a MonadSelda
-instance (MonadPlaid m) => Effect m Banks where
+instance (MonadPlaid m) => Service m Banks where
     run (Authenticate t)      = authenticate t
     run (LoadAccounts t)      = loadAccounts t
 

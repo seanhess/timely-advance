@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeOperators     #-}
 module Api where
 
-import           Control.Monad.Effect (Effect(..))
+import           Control.Monad.Service (Service(..))
 import           Control.Monad.Except (throwError, MonadError)
 import           GHC.Generics (Generic)
 import           Data.Proxy (Proxy(..))

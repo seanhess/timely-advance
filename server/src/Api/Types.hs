@@ -8,16 +8,16 @@ module Api.Types
   , AccountInfo(..)
   ) where
 
+import           Data.Aeson (ToJSON(..), FromJSON)
+import           Data.String.Conversions (cs)
+import           Data.Text (Text)
+import qualified Data.UUID as UUID
+import           Database.Selda (ID, fromId)
+import           GHC.Generics (Generic)
+import           Servant.API.ContentTypes.HTML (Linkable(..))
+
 import AccountStore.Types
 import Bank (Token, Public)
-import Data.Aeson (ToJSON(..), FromJSON)
-import Data.Text (Text)
-import qualified Data.UUID as UUID
-import Data.String.Conversions (cs)
-import Database.Selda (ID, fromId)
-import GHC.Generics (Generic)
-import Servant.API.ContentTypes.HTML (Linkable(..))
-
 
 
 instance ToJSON (ID a) where

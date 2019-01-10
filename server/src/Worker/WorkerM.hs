@@ -17,7 +17,7 @@ import Data.String.Conversions (cs)
 import qualified Database.Selda.PostgreSQL as Selda
 import Database.Selda (MonadMask)
 import Database.Selda.Backend (SeldaConnection)
-import Network.AMQP.Worker (Queue, WorkerException, def, Message)
+import Network.AMQP.Worker (Queue, WorkerException, def)
 import qualified Network.AMQP.Worker as Worker hiding (publish, bindQueue, worker)
 import qualified Network.AMQP.Worker.Monad as Worker
 import Network.AMQP.Worker.Monad (MonadWorker(..))
@@ -63,14 +63,16 @@ loadState = do
     destroyConn = Selda.seldaClose
 
 
-connect :: (FromJSON a, MonadWorker m) => Queue a -> (Message a -> m ()) -> m ()
+connect :: (FromJSON a, MonadWorker m) => Queue a -> (a -> m ()) -> m ()
 connect queue handler = do
     Worker.bindQueue queue
-    Worker.worker def queue onError handler
+    Worker.worker def queue onError onMessage
+  where
+    onMessage m =
+      handler (Worker.value m)
 
 
-
-start :: (FromJSON a) => Queue a -> (Message a -> WorkerM ()) -> IO ()
+start :: (FromJSON a) => Queue a -> (a -> WorkerM ()) -> IO ()
 start queue handler = do
     state <- loadState
     putStrLn "Running worker"

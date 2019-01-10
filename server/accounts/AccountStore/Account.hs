@@ -12,7 +12,7 @@ import AccountStore.Types
 import Control.Monad.Selda (Selda, query, insert, deleteFrom, tryCreateTable)
 import Database.Selda hiding (query, insert, deleteFrom, tryCreateTable)
 import Data.Maybe (listToMaybe)
-import Control.Monad.Effect (Effect(..))
+import Control.Monad.Service (Service(..))
 
 import Types.Guid
 import Bank (Token, Access)
@@ -30,7 +30,7 @@ data AccountStore a where
     SetBankAccounts :: Guid Account -> [BankAccount] -> AccountStore ()
 
 
-instance (Selda m) => Effect m AccountStore where
+instance (Selda m) => Service m AccountStore where
     run All                = allAccounts
     run (Find i)           = getAccount i
     run (BankAccounts i)   = getBankAccounts i

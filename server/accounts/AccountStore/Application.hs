@@ -11,7 +11,7 @@ module AccountStore.Application
 import Control.Monad.Selda (Selda, query, insert, tryCreateTable)
 import Database.Selda hiding (query, insert, tryCreateTable)
 import Data.Maybe (listToMaybe)
-import Control.Monad.Effect (Effect(..))
+import Control.Monad.Service (Service(..))
 
 import AccountStore.Types
 import Types.Guid (Guid)
@@ -22,7 +22,7 @@ data ApplicationStore a where
     Find      :: Guid Account  -> ApplicationStore (Maybe Application)
     All       :: ApplicationStore [Application]
 
-instance (Selda m) => Effect m ApplicationStore where
+instance (Selda m) => Service m ApplicationStore where
     run (Save a) = saveApplication a
     run (Find i) = findApplication i
     run All      = allApplications

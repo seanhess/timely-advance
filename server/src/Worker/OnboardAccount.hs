@@ -13,10 +13,9 @@ import qualified Events
 import qualified AccountStore.Account as Account
 import AccountStore.Account (AccountStore)
 import AccountStore.Types (Account(..), BankAccount(..), Application(..), BankAccountType(..), balanceFromFloat)
-import Control.Monad.Effect (Effect(run))
+import Control.Monad.Service (Service(run))
 import Control.Monad.IO.Class (liftIO, MonadIO)
 import qualified Database.Selda as Selda
-import Network.AMQP.Worker (Message(..))
 import Network.AMQP.Worker (Queue)
 import qualified Network.AMQP.Worker as Worker hiding (publish, bindQueue, worker)
 import Types.Guid (Guid)
@@ -29,10 +28,9 @@ queue = Worker.topic Events.applicationsNew "app.onboardAccount"
 
 
 -- TODO effects constraints, not this
-handler :: (MonadIO m, Effect m Banks, Effect m AccountStore) => Message Application -> m ()
-handler m = do
-    let app = value m
-        aid = accountId (app :: Application)
+handler :: (MonadIO m, Service m Banks, Service m AccountStore) => Application -> m ()
+handler app = do
+    let aid = accountId (app :: Application)
     liftIO $ putStrLn "NEW APPLICATION :)"
     liftIO $ print app
 

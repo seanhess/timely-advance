@@ -1,10 +1,10 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
-module Control.Monad.Effect where
+module Control.Monad.Service where
 
 
 
-class Monad m => Effect m (e :: * -> *) where
+class Monad m => Service m (e :: * -> *) where
     run :: e a -> m a
 
