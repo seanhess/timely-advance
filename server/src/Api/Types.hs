@@ -63,6 +63,7 @@ instance Linkable Account where
 
 instance Linkable Application where
     self a = cs $ UUID.toText $ accountId (a :: Application)
+    relations _ = ["result"]
 
 instance Linkable BankAccount where
     self _ = ""

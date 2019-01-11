@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountInfo, Application, Balance, BankAccount, BankAccountType(..), Customer, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeBankAccount, decodeCustomer, encodeAccountInfo, getAccountsBanksById, getAccountsById, postApplications)
+module Timely.Api exposing (Account, AccountId, AccountInfo, Application, Approval, ApprovalResult(..), Balance, BankAccount, BankAccountType(..), Customer, Denial, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, encodeAccountInfo, getAccountsBanksById, getAccountsById, getApplicationResultById, postApplications)
 
 import Http exposing (Error)
 import Json.Decode as Decode exposing (Decoder, int, list, string)
@@ -25,8 +25,12 @@ type alias AccountInfo =
     }
 
 
+type alias AccountId =
+    String
+
+
 type alias Application =
-    { accountId : String
+    { accountId : AccountId
     , firstName : String
     , lastName : String
     , email : String
@@ -61,6 +65,21 @@ type alias Customer =
     }
 
 
+type ApprovalResult
+    = Approved Approval
+    | Denied Denial
+
+
+type alias Approval =
+    { approvalAmount : Int
+    }
+
+
+type alias Denial =
+    { denial : String
+    }
+
+
 encodeAccountInfo : AccountInfo -> Json.Encode.Value
 encodeAccountInfo x =
     Json.Encode.object
@@ -69,6 +88,26 @@ encodeAccountInfo x =
         , ( "email", Json.Encode.string x.email )
         , ( "publicBankToken", Json.Encode.string x.publicBankToken )
         ]
+
+
+decodeApprovalResult : Decoder ApprovalResult
+decodeApprovalResult =
+    Decode.oneOf
+        [ Decode.map Denied decodeDenial
+        , Decode.map Approved decodeApproval
+        ]
+
+
+decodeDenial : Decoder Denial
+decodeDenial =
+    Decode.succeed Denial
+        |> required "denial" string
+
+
+decodeApproval : Decoder Approval
+decodeApproval =
+    Decode.succeed Approval
+        |> required "approvalAmount" int
 
 
 decodeAccountInfo : Decoder AccountInfo
@@ -186,6 +225,19 @@ getAccountsBanksById toMsg id =
         , url = String.join "/" [ "", "v1", "accounts", id, "bank-accounts" ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg (list decodeBankAccount)
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+getApplicationResultById : (Result Error ApprovalResult -> msg) -> AccountId -> Cmd msg
+getApplicationResultById toMsg id =
+    Http.request
+        { method = "GET"
+        , headers = []
+        , url = String.join "/" [ "", "v1", "applications", id, "result" ]
+        , body = Http.emptyBody
+        , expect = Http.expectJson toMsg decodeApprovalResult
         , timeout = Nothing
         , tracker = Nothing
         }

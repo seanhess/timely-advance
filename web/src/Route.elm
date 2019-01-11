@@ -21,6 +21,7 @@ type alias AccountId =
 type Route
     = Onboard
     | Signup
+    | Approval AccountId
     | Accounts
     | Account AccountId
 
@@ -37,6 +38,7 @@ parser =
     oneOf
         [ Parser.map Onboard Parser.top
         , Parser.map Signup (s "signup")
+        , Parser.map Approval (s "applications" </> string)
         , Parser.map Accounts (s "accounts")
         , Parser.map Account (s "accounts" </> string)
 
@@ -90,5 +92,8 @@ url page =
 
                 Account s ->
                     [ "accounts", s ]
+
+                Approval s ->
+                    [ "applications", s ]
     in
     "#/" ++ String.join "/" pieces

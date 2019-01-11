@@ -1,4 +1,4 @@
-port module Page.Signup exposing (Model, Msg, init, subscriptions, update, view)
+port module Page.Onboard.Signup exposing (Model, Msg, init, subscriptions, update, view)
 
 import Browser.Navigation as Nav
 import Element exposing (..)
@@ -113,7 +113,7 @@ update msg model =
         CompletedSignup (Ok a) ->
             updates
                 |> set { model | status = Complete [] }
-                |> command (Nav.pushUrl model.key (Route.url <| Route.Account <| a.accountId))
+                |> command (Nav.pushUrl model.key (Route.url <| Route.Approval <| a.accountId))
 
 
 view : Model -> Element Msg

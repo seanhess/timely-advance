@@ -15,7 +15,7 @@ data Approval = Approval
     } deriving (Generic, Show, Eq)
 
 
-data DenialReason = NoReason
+data DenialReason = NoReason | SomeReason
     deriving (Generic, Show, Eq, Bounded, Enum, Read)
 
 data Denial = Denial

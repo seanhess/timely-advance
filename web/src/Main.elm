@@ -11,7 +11,8 @@ import Json.Encode as Encode
 import Page.Account as Account
 import Page.Accounts as Accounts
 import Page.Onboard as Onboard
-import Page.Signup as Signup
+import Page.Onboard.Approval as Approval
+import Page.Onboard.Signup as Signup
 import Route exposing (Route)
 import Timely.Api exposing (Account)
 import Url exposing (Url)
@@ -32,6 +33,7 @@ type PageModel
     = NotFound
     | Onboard Onboard.Model
     | Signup Signup.Model
+    | Approval Approval.Model
     | Accounts Accounts.Model
     | Account Account.Model
 
@@ -59,10 +61,11 @@ type Msg
       -- | ChangedRoute (Maybe Route)
     | ChangedUrl Url
     | ClickedLink Browser.UrlRequest
-    | GotOnboardMsg Onboard.Msg
-    | GotSignupMsg Signup.Msg
-    | GotAccountsMsg Accounts.Msg
-    | GotAccountMsg Account.Msg
+    | OnOnboard Onboard.Msg
+    | OnSignup Signup.Msg
+    | OnApproval Approval.Msg
+    | OnAccounts Accounts.Msg
+    | OnAccount Account.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -88,21 +91,25 @@ update msg model =
                 Browser.External href ->
                     ( model, Nav.load href )
 
-        ( GotOnboardMsg _, _ ) ->
+        ( OnOnboard _, _ ) ->
             ( model, Cmd.none )
 
-        ( GotSignupMsg sub, Signup m ) ->
+        ( OnSignup sub, Signup m ) ->
             Signup.update sub m
-                |> runUpdates (always Cmd.none) Signup GotSignupMsg model
+                |> runUpdates (always Cmd.none) Signup OnSignup model
+
+        ( OnApproval app, Approval m ) ->
+            Approval.update app m
+                |> runUpdates (always Cmd.none) Approval OnApproval model
 
         -- |> updateWith Signup GotSignupMsg model
-        ( GotAccountsMsg acc, Accounts m ) ->
+        ( OnAccounts acc, Accounts m ) ->
             Accounts.update acc m
-                |> updateWith Accounts GotAccountsMsg model
+                |> updateWith Accounts OnAccounts model
 
-        ( GotAccountMsg acc, Account m ) ->
+        ( OnAccount acc, Account m ) ->
             Account.update acc m
-                |> updateWith Account GotAccountMsg model
+                |> updateWith Account OnAccount model
 
         ( _, _ ) ->
             -- Disregard messages that arrived for the wrong page.
@@ -154,19 +161,26 @@ changeRouteTo key maybeRoute =
         Just Route.Signup ->
             ( Signup (Signup.init key), Cmd.none )
 
+        Just (Route.Approval i) ->
+            let
+                ( mod, cmd ) =
+                    Approval.init key i
+            in
+            ( Approval mod, Cmd.map OnApproval cmd )
+
         Just Route.Accounts ->
             let
                 ( mod, cmd ) =
                     Accounts.init
             in
-            ( Accounts mod, Cmd.map GotAccountsMsg cmd )
+            ( Accounts mod, Cmd.map OnAccounts cmd )
 
         Just (Route.Account i) ->
             let
                 ( mod, cmd ) =
                     Account.init i
             in
-            ( Account mod, Cmd.map GotAccountMsg cmd )
+            ( Account mod, Cmd.map OnAccount cmd )
 
 
 view : Model -> Browser.Document Msg
@@ -181,16 +195,19 @@ view model =
                     Element.text "Not Found"
 
                 Onboard o ->
-                    Element.map GotOnboardMsg <| Onboard.view o
+                    Element.map OnOnboard <| Onboard.view o
 
                 Signup s ->
-                    Element.map GotSignupMsg <| Signup.view s
+                    Element.map OnSignup <| Signup.view s
+
+                Approval a ->
+                    Element.map OnApproval <| Approval.view a
 
                 Accounts s ->
-                    Element.map GotAccountsMsg <| Accounts.view s
+                    Element.map OnAccounts <| Accounts.view s
 
                 Account a ->
-                    Element.map GotAccountMsg <| Account.view a
+                    Element.map OnAccount <| Account.view a
     in
     { title = "TODO: Title"
     , body =
@@ -203,10 +220,10 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.page of
         Onboard mod ->
-            Sub.map GotOnboardMsg (Onboard.subscriptions mod)
+            Sub.map OnOnboard (Onboard.subscriptions mod)
 
         Signup mod ->
-            Sub.map GotSignupMsg (Signup.subscriptions mod)
+            Sub.map OnSignup (Signup.subscriptions mod)
 
         _ ->
             Sub.none
