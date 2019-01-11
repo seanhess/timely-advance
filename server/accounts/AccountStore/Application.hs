@@ -9,7 +9,7 @@ module AccountStore.Application
     ) where
 
 
-import Underwriting.Types (Result(..), Approval(..))
+import Underwriting.Types (Result(..), Approval(..), Denial(..))
 import Control.Monad.Selda (Selda, query, insert, tryCreateTable)
 import Database.Selda hiding (query, insert, tryCreateTable, Result)
 import Data.Maybe (listToMaybe)
@@ -72,7 +72,7 @@ saveResult :: (Selda m) => Guid Account -> Result -> m ()
 saveResult accountId (Approved (Approval {..})) = do
     insert approvals [AppApproval {..}]
     pure ()
-saveResult accountId (Denied denial) = do
+saveResult accountId (Denied (Denial {..})) = do
     insert denials [AppDenial {..}]
     pure ()
 
@@ -90,8 +90,8 @@ findResult i = do
       pure a
     pure $ listToMaybe $ map fromAppDenial ds ++ map fromAppApproval as
   where
-    fromAppDenial (AppDenial _ d) = Denied d
-    fromAppApproval (AppApproval _ approvalAmount) = Approved $ Approval {..}
+    fromAppDenial (AppDenial {..}) = Denied $ Denial {..}
+    fromAppApproval (AppApproval {..}) = Approved $ Approval {..}
 
 
 

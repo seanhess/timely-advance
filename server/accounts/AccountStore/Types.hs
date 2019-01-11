@@ -12,7 +12,7 @@ import GHC.Generics (Generic)
 
 import           Bank (Token(..), Public, Access, Id(..))
 import qualified Bank
-import Underwriting.Types (Denial)
+import Underwriting.Types (DenialReason)
 import Types.Guid (Guid)
 import Types.Private
 import Types.Money
@@ -106,10 +106,10 @@ instance SqlRow AppApproval
 
 data AppDenial = AppDenial
     { accountId :: Guid Account
-    , denial :: Denial
+    , denial :: DenialReason
     } deriving (Generic, Show)
 
-instance SqlType Denial
+instance SqlType DenialReason
 instance SqlRow AppDenial
 
 

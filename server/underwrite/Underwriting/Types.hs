@@ -10,11 +10,17 @@ data Result
    | Denied Denial
    deriving (Generic, Show, Eq)
 
-data Denial = Denial
-    deriving (Generic, Show, Eq, Bounded, Enum, Read)
-
 data Approval = Approval
     { approvalAmount :: Money
     } deriving (Generic, Show, Eq)
+
+
+data DenialReason = NoReason
+    deriving (Generic, Show, Eq, Bounded, Enum, Read)
+
+data Denial = Denial
+    { denial :: DenialReason
+    } deriving (Generic, Show, Eq)
+
 
 

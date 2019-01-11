@@ -6,6 +6,7 @@ module Api.Types
   , Customer(..)
   , BankAccount(..)
   , AccountInfo(..)
+  , Result(..)
   ) where
 
 import           Data.Aeson (ToJSON(..), FromJSON)
@@ -19,6 +20,16 @@ import           Servant.API.ContentTypes.HTML (Linkable(..))
 import Types.Money as Money
 import AccountStore.Types
 import Bank (Token, Public)
+import Underwriting (Result(..), Approval, Denial, DenialReason)
+
+
+instance ToJSON Result where
+    toJSON (Approved a) = toJSON a
+    toJSON (Denied d) = toJSON d
+
+instance ToJSON Approval
+instance ToJSON Denial
+instance ToJSON DenialReason
 
 
 instance ToJSON (ID a) where

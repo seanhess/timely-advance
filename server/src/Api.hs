@@ -60,9 +60,10 @@ data AccountsApi route = AccountsApi
 
 
 data AppsApi route = AppsApi
-    { _all :: route :- Get '[JSON, HTML] [Application]
-    , _get :: route :- Capture "id" (Guid Account) :> Get '[JSON, HTML] Application
-    , _post :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] Application
+    { _all    :: route :- Get '[JSON, HTML] [Application]
+    , _get    :: route :- Capture "id" (Guid Account) :> Get '[JSON, HTML] Application
+    , _result :: route :- Capture "id" (Guid Account) :> "result" :> Get '[JSON] Result
+    , _post   :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] Application
     } deriving (Generic)
 
 
@@ -78,6 +79,7 @@ appsApi :: ToServant AppsApi (AsServerT AppM)
 appsApi = genericServerT AppsApi
     { _all = run Application.All
     , _get = \i -> run (Application.Find i) >>= notFound
+    , _result = \i -> run (Application.FindResult i) >>= notFound
     , _post = Applications.newApplication
     }
 
