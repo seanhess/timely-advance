@@ -83,12 +83,12 @@ view : Model -> Element Msg
 view model =
     Element.column Style.formPage
         [ el Style.header (text "Approval")
-        , viewStatus model.status
+        , viewStatus model.accountId model.status
         ]
 
 
-viewStatus : Status -> Element Msg
-viewStatus status =
+viewStatus : AccountId -> Status -> Element Msg
+viewStatus accountId status =
     case status of
         Loading ->
             Element.el [] (text "Loading...")
@@ -100,9 +100,15 @@ viewStatus status =
             Element.el [] (text "Denied")
 
         Complete (Approved a) ->
-            Element.column []
+            Element.column [ spacing 10 ]
                 [ Element.el [] (text "Approved!")
                 , Element.el [] (text <| String.fromInt a.approvalAmount)
+                , Element.column []
+                    [ Element.link Style.button
+                        { url = Route.url <| Route.Account accountId
+                        , label = Element.text "My Account"
+                        }
+                    ]
                 ]
 
 
