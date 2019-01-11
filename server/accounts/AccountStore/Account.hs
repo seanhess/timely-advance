@@ -38,15 +38,15 @@ instance (Selda m) => Service m AccountStore where
     run (SetBankAccounts i bs) = setBankAccounts i bs
 
 
-customers :: Table Customer
-customers = table "accounts_customers" [#id :- autoPrimary]
-
-banks :: Table BankAccount
-banks = table "accounts_banks" [#id :- autoPrimary]
 
 accounts :: Table AccountRow
 accounts = table "accounts" [#accountId :- primary]
 
+customers :: Table Customer
+customers = table "accounts_customers" [#id :- autoPrimary, #accountId :- foreignKey accounts #accountId ]
+
+banks :: Table BankAccount
+banks = table "accounts_banks" [#id :- autoPrimary, #accountId :- foreignKey accounts #accountId]
 
 
 allAccounts :: (Selda m) => m [Account]

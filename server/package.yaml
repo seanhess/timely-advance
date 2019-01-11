@@ -99,4 +99,6 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - tasty
+    - tasty-hunit
     - server

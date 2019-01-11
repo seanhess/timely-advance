@@ -80,6 +80,10 @@ start queue handler = do
     runReaderT (connect queue handler) state
 
 
+runIO :: AppState -> WorkerM a -> IO a
+runIO s x = do
+  runReaderT x s
+
 
 
 -- standardized error handling

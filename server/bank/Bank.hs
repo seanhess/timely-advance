@@ -5,10 +5,12 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 module Bank
     ( Token(..)
+    , Id(..)
     , Access
     , Public
     , Account(..)
     , Currency(..)
+    , CurrencyCode(..)
     , Balances(..)
     , AccountType(..)
     , AccountSubType(..)
@@ -20,18 +22,21 @@ import Control.Monad.Plaid (MonadPlaid, runPlaid)
 import qualified Control.Monad.Plaid as Plaid
 import Network.Plaid.Types
 import qualified Network.Plaid as Plaid
+import Data.Time.Calendar (fromGregorian)
 
 -- Bank Service
 
 data Banks a where
-    Authenticate :: Token Public -> Banks (Token Access)
-    LoadAccounts :: Token Access -> Banks [Account]
+    Authenticate     :: Token Public -> Banks (Token Access)
+    LoadAccounts     :: Token Access -> Banks [Account]
+    LoadTransactions :: Token Access -> Id Account -> Banks [Transaction]
 
 
 -- there's an obvious implementation for anyone who has a MonadSelda
 instance (MonadPlaid m) => Service m Banks where
     run (Authenticate t)      = authenticate t
     run (LoadAccounts t)      = loadAccounts t
+    run (LoadTransactions t i) = loadTransactions t i
 
 
 authenticate :: MonadPlaid m => Token Public -> m (Token Access)
@@ -48,3 +53,14 @@ loadAccounts tok = do
     pure $ accounts (res :: AccountsResponse)
 
 
+-- which transactions should I load? How far back? 3 months?
+-- this only works for specific accounts
+-- so we don't really care about the account information, do we?
+loadTransactions :: MonadPlaid m => Token Access -> Id Account -> m [Transaction]
+loadTransactions tok aid = do
+    creds <- Plaid.credentials
+    -- TODO how many transactions should we pull?
+    -- TODO how far back should we go?
+    let options = TransactionsOptions (fromGregorian 2018 09 01) (fromGregorian 2018 12 31) 500 0 [aid]
+    res <- runPlaid $ Plaid.reqTransactions creds tok options
+    pure $ transactions (res :: TransactionsResponse)

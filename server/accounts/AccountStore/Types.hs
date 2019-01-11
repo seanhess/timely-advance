@@ -10,18 +10,24 @@ import Data.Text (Text)
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 
-import Bank (Token(..), Public, Access)
+import           Bank (Token(..), Public, Access, Id(..))
+import qualified Bank
 import Underwriting.Types (Denial)
 import Types.Guid (Guid)
 import Types.Private
 import Types.Money
 
 
--- I want this to act like text
 instance Typeable t => SqlType (Token t) where
     mkLit (Token t) =  LCustom $ mkLit t
     sqlType _ = sqlType (Proxy :: Proxy Text)
     fromSql v = Token $ fromSql v
+    defaultValue = LCustom (defaultValue :: Lit Text)
+
+instance Typeable t => SqlType (Id t) where
+    mkLit (Id t) =  LCustom $ mkLit t
+    sqlType _ = sqlType (Proxy :: Proxy Text)
+    fromSql v = Id $ fromSql v
     defaultValue = LCustom (defaultValue :: Lit Text)
 
 
@@ -68,6 +74,7 @@ data BankAccount = BankAccount
     { id :: ID BankAccount
     , accountId :: Guid Account
     , accountType :: BankAccountType
+    , bankAccountId :: Id Bank.Account
     , name :: Text
     , balance :: Money
     } deriving (Generic, Eq, Show)

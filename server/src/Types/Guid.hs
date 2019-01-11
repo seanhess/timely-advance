@@ -1,10 +1,15 @@
 -- {-# LANGUAGE DeriveGeneric     #-}
 -- {-# LANGUAGE GeneralizedNewtypeDeriving     #-}
-module Types.Guid where
+module Types.Guid
+    ( Guid
+    , randomId
+    , toText
+    , fromText
+    ) where
 
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Maybe (fromMaybe)
-import Data.UUID (UUID)
+import Data.UUID (UUID, toText, fromText)
 import qualified Data.UUID as UUID
 import qualified Data.UUID.V4 as UUID
 import Database.Selda (SqlType(..))

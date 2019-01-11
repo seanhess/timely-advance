@@ -67,8 +67,13 @@ handler app = do
 
         -- save the bank accounts
         accounts <- run $ Bank.LoadAccounts tok
+        -- liftIO $ print accounts
+
         let bankAccounts = map (toBankAccount aid) accounts
+        -- liftIO $ putStrLn " ----- Banks----------------------- "
+        -- liftIO $ print bankAccounts
         run $ Account.SetBankAccounts aid bankAccounts
+
 
 
 
@@ -77,15 +82,16 @@ toBankAccount accountId acc = BankAccount {..}
   where
     id = Selda.def
     accountType
+      | Bank.subtype acc == Bank.Checking = Checking
+      | Bank.subtype acc == Bank.Savings = Savings
       | Bank._type acc == Bank.Credit = Credit
       | Bank._type acc == Bank.Depository = Savings
       | Bank._type acc == Bank.Loan = Credit
-      | Bank.subtype acc == Bank.Checking = Checking
-      | Bank.subtype acc == Bank.Savings = Savings
       | otherwise = Other
     name = Bank.name acc
     balance = toBalance $ Bank.current $ Bank.balances acc
     toBalance (Bank.Currency d) = Money.fromFloat d
+    bankAccountId = Bank.account_id acc
 
 
 -- newBank :: Application -> Bank
