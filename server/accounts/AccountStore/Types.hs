@@ -3,17 +3,18 @@ module AccountStore.Types where
 
 
 
-import Bank (Token, Public, Access)
 import Database.Selda
 import Database.Selda.SqlType (Lit(..))
 import Data.Proxy (Proxy(..))
 import Data.Text (Text)
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
+
+import Bank (Token(..), Public, Access)
+import Underwriting.Types (Denial)
 import Types.Guid (Guid)
 import Types.Private
-import Network.Plaid.Types (Token(..))
-
+import Types.Money
 
 
 -- I want this to act like text
@@ -61,17 +62,6 @@ data BankAccountType
 
 instance SqlType BankAccountType
 
-newtype Balance = Balance Int
-    deriving (Generic, Eq, Show, Typeable)
-
-balanceFromFloat :: Float -> Balance
-balanceFromFloat f = Balance $ round (f * 100)
-
-instance SqlType Balance where
-    mkLit (Balance b) =  LCustom $ mkLit b
-    sqlType _ = sqlType (Proxy :: Proxy Int)
-    fromSql v = Balance $ fromSql v
-    defaultValue = LCustom (defaultValue :: Lit Int)
 
 
 data BankAccount = BankAccount
@@ -79,13 +69,11 @@ data BankAccount = BankAccount
     , accountId :: Guid Account
     , accountType :: BankAccountType
     , name :: Text
-    , balance :: Balance
+    , balance :: Money
     } deriving (Generic, Eq, Show)
 
 
 instance SqlRow BankAccount
-
-
 
 
 
@@ -99,5 +87,22 @@ data Application = Application
     } deriving (Generic, Show)
 
 instance SqlRow Application
+
+
+data AppApproval = AppApproval
+    { accountId :: Guid Account
+    , approvalAmount :: Money
+    } deriving (Generic, Show)
+
+instance SqlRow AppApproval
+
+
+data AppDenial = AppDenial
+    { accountId :: Guid Account
+    , denial :: Denial
+    } deriving (Generic, Show)
+
+instance SqlType Denial
+instance SqlRow AppDenial
 
 

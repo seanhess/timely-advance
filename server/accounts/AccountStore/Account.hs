@@ -5,7 +5,7 @@
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
-module AccountStore.Account (AccountStore(..), initialize) where
+module AccountStore.Account (AccountStore(..), initialize, account) where
 
 import AccountStore.Types
 
@@ -26,7 +26,7 @@ data AccountStore a where
     Find           :: Guid Account -> AccountStore (Maybe Account)
     BankAccounts   :: Guid Account -> AccountStore [BankAccount]
 
-    CreateAccount  :: Application -> Token Access -> AccountStore ()
+    CreateAccount  :: Account -> AccountStore ()
     SetBankAccounts :: Guid Account -> [BankAccount] -> AccountStore ()
 
 
@@ -34,7 +34,7 @@ instance (Selda m) => Service m AccountStore where
     run All                = allAccounts
     run (Find i)           = getAccount i
     run (BankAccounts i)   = getBankAccounts i
-    run (CreateAccount a t) = createAccount a t
+    run (CreateAccount a) = createAccount a
     run (SetBankAccounts i bs) = setBankAccounts i bs
 
 
@@ -82,16 +82,15 @@ getBankAccounts i =
       pure b
 
 
-createAccount :: Selda m => Application -> Token Access -> m ()
-createAccount app tok = do
-    let acc = newAccount app tok
+createAccount :: Selda m => Account -> m ()
+createAccount acc = do
     insert customers [customer acc]
     insert accounts [accountRow acc]
     pure ()
 
 
-newAccount :: Application -> Token Access -> Account
-newAccount Application {..} tok = Account {..}
+account :: Application -> Token Access -> Account
+account Application {..} tok = Account {..}
   where id = def
         customer = Customer {..}
         bankToken = Private tok

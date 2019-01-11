@@ -8,7 +8,6 @@ import qualified Worker.WorkerM as Worker
 
 import qualified Api
 
-
 main :: IO ()
 main = do
   hSetBuffering stdout LineBuffering

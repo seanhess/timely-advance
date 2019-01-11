@@ -16,6 +16,7 @@ import           Database.Selda (ID, fromId)
 import           GHC.Generics (Generic)
 import           Servant.API.ContentTypes.HTML (Linkable(..))
 
+import Types.Money as Money
 import AccountStore.Types
 import Bank (Token, Public)
 
@@ -25,7 +26,7 @@ instance ToJSON (ID a) where
 instance ToJSON Account
 instance ToJSON Customer
 instance ToJSON BankAccountType
-instance ToJSON Balance
+instance ToJSON Money
 instance ToJSON BankAccount
 instance ToJSON Application
 instance FromJSON Application

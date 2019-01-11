@@ -76,6 +76,7 @@ library:
   source-dirs:
     - src
     - bank
+    - underwrite
     - accounts
 
 executables:

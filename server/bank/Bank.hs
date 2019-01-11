@@ -4,7 +4,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 module Bank
-    ( Token
+    ( Token(..)
     , Access
     , Public
     , Account(..)

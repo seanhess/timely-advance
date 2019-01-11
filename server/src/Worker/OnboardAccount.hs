@@ -7,18 +7,24 @@
 module Worker.OnboardAccount where
 
 
-import Bank (Banks)
-import qualified Bank 
-import qualified Events
-import qualified AccountStore.Account as Account
-import AccountStore.Account (AccountStore)
-import AccountStore.Types (Account(..), BankAccount(..), Application(..), BankAccountType(..), balanceFromFloat)
 import Control.Monad.Service (Service(run))
 import Control.Monad.IO.Class (liftIO, MonadIO)
 import qualified Database.Selda as Selda
 import Network.AMQP.Worker (Queue)
 import qualified Network.AMQP.Worker as Worker hiding (publish, bindQueue, worker)
+
+import           Bank (Banks)
+import qualified Bank 
+import           Underwriting (Underwriting(..), Result(..))
+import qualified Events
+import           AccountStore.Application (ApplicationStore)
+import qualified AccountStore.Application as Application
+import           AccountStore.Account (AccountStore)
+import qualified AccountStore.Account as Account
+import           AccountStore.Types (Account(..), BankAccount(..), Application(..), BankAccountType(..))
+
 import Types.Guid (Guid)
+import Types.Money as Money
 
 
 
@@ -28,31 +34,42 @@ queue = Worker.topic Events.applicationsNew "app.onboardAccount"
 
 
 -- TODO effects constraints, not this
-handler :: (MonadIO m, Service m Banks, Service m AccountStore) => Application -> m ()
+handler
+  :: ( MonadIO m
+     , Service m Banks
+     , Service m AccountStore
+     , Service m Underwriting
+     , Service m ApplicationStore
+     )
+  => Application -> m ()
 handler app = do
     let aid = accountId (app :: Application)
     liftIO $ putStrLn "NEW APPLICATION :)"
     liftIO $ print app
 
-    -- get the bank token
     tok <- run $ Bank.Authenticate (publicBankToken app)
 
-    -- create the new account
-    run $ Account.CreateAccount app tok
+    res <- run $ Underwriting.New app
+
+    run $ Application.SaveResult aid res
 
 
-    -- TODO move to bank service
-    -- TODO save balance to account
-    -- TODO save plaid token to account (better data model?)
+    case res of
+      Underwriting.Denied   _ -> do
+        -- we're done. The user can see their status by polling
+        liftIO $ putStrLn "DENIED"
 
-    accounts <- run $ Bank.LoadAccounts tok
-    let bankAccounts = map (toBankAccount aid) accounts
+      Underwriting.Approved _ -> do
+        liftIO $ putStrLn "APPROVED"
 
-    -- save the bank accounts
-    run $ Account.SetBankAccounts aid bankAccounts
+        -- sure...
+        run $ Account.CreateAccount $ Account.account app tok
 
+        -- save the bank accounts
+        accounts <- run $ Bank.LoadAccounts tok
+        let bankAccounts = map (toBankAccount aid) accounts
+        run $ Account.SetBankAccounts aid bankAccounts
 
-    liftIO $ putStrLn " - done"
 
 
 toBankAccount :: Guid Account -> Bank.Account -> BankAccount
@@ -68,7 +85,7 @@ toBankAccount accountId acc = BankAccount {..}
       | otherwise = Other
     name = Bank.name acc
     balance = toBalance $ Bank.current $ Bank.balances acc
-    toBalance (Bank.Currency d) = balanceFromFloat d
+    toBalance (Bank.Currency d) = Money.fromFloat d
 
 
 -- newBank :: Application -> Bank

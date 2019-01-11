@@ -8,8 +8,10 @@ module AccountStore.Application
     , ApplicationStore(..)
     ) where
 
+
+import Underwriting.Types (Result(..), Approval(..))
 import Control.Monad.Selda (Selda, query, insert, tryCreateTable)
-import Database.Selda hiding (query, insert, tryCreateTable)
+import Database.Selda hiding (query, insert, tryCreateTable, Result)
 import Data.Maybe (listToMaybe)
 import Control.Monad.Service (Service(..))
 
@@ -22,15 +24,26 @@ data ApplicationStore a where
     Find      :: Guid Account  -> ApplicationStore (Maybe Application)
     All       :: ApplicationStore [Application]
 
+    SaveResult :: Guid Account -> Result -> ApplicationStore ()
+    FindResult :: Guid Account -> ApplicationStore (Maybe Result)
+
 instance (Selda m) => Service m ApplicationStore where
     run (Save a) = saveApplication a
     run (Find i) = findApplication i
     run All      = allApplications
+    run (SaveResult i r) = saveResult i r
+    run (FindResult i) = findResult i
 
 
 
 applications :: Table Application
-applications = table "accounts_applications" [#accountId :- primary]
+applications = table "applications" [#accountId :- primary]
+
+approvals :: Table AppApproval
+approvals = table "applications_approvals" [#accountId :- primary]
+
+denials :: Table AppDenial
+denials = table "applications_denials" [#accountId :- primary]
 
 
 saveApplication :: (Selda m) => Application -> m ()
@@ -53,8 +66,42 @@ allApplications =
     query $ select applications
 
 
+-- Underwriting results ---------------------------------
+
+saveResult :: (Selda m) => Guid Account -> Result -> m ()
+saveResult accountId (Approved (Approval {..})) = do
+    insert approvals [AppApproval {..}]
+    pure ()
+saveResult accountId (Denied denial) = do
+    insert denials [AppDenial {..}]
+    pure ()
+
+
+-- take the first result you find, favoring denials
+findResult :: Selda m => Guid Account -> m (Maybe Result)
+findResult i = do
+    ds <- query $ do
+      d <- select denials
+      restrict (d ! #accountId .== literal i)
+      pure d
+    as <- query $ do
+      a <- select approvals
+      restrict (a ! #accountId .== literal i)
+      pure a
+    pure $ listToMaybe $ map fromAppDenial ds ++ map fromAppApproval as
+  where
+    fromAppDenial (AppDenial _ d) = Denied d
+    fromAppApproval (AppApproval _ approvalAmount) = Approved $ Approval {..}
+
+
+
+
+
 
 initialize :: (Selda m, MonadIO m) => m ()
-initialize =
+initialize = do
     -- drop the table / db first to run migrations
     tryCreateTable applications
+    tryCreateTable approvals
+    tryCreateTable denials
+
