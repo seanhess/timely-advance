@@ -1,4 +1,4 @@
-module Route exposing (Route(..), fromUrl, href, replaceUrl, url)
+module Route exposing (AccountId, Onboard(..), Route(..), fromUrl, href, parser, parserOnboard, replaceUrl, url)
 
 -- import Article.Slug as Slug exposing (Slug)
 -- import Profile exposing (Profile)
@@ -18,10 +18,15 @@ type alias AccountId =
     String
 
 
-type Route
-    = Onboard
+type Onboard
+    = Landing
     | Signup
+    | Phone
     | Approval AccountId
+
+
+type Route
+    = Onboard Onboard
     | Accounts
     | Account AccountId
 
@@ -36,9 +41,7 @@ type Route
 parser : Parser (Route -> a) a
 parser =
     oneOf
-        [ Parser.map Onboard Parser.top
-        , Parser.map Signup (s "signup")
-        , Parser.map Approval (s "applications" </> string)
+        [ Parser.map Onboard (s "onboard" </> parserOnboard)
         , Parser.map Accounts (s "accounts")
         , Parser.map Account (s "accounts" </> string)
 
@@ -46,6 +49,16 @@ parser =
         -- , Parser.map Article (s "article" </> Slug.urlParser)
         -- , Parser.map NewArticle (s "editor")
         -- , Parser.map EditArticle (s "editor" </> Slug.urlParser)
+        ]
+
+
+parserOnboard : Parser (Onboard -> a) a
+parserOnboard =
+    oneOf
+        [ Parser.map Landing Parser.top
+        , Parser.map Signup (s "signup")
+        , Parser.map Phone (s "phone")
+        , Parser.map Approval (s "approval" </> string)
         ]
 
 
@@ -81,19 +94,22 @@ url page =
     let
         pieces =
             case page of
-                Onboard ->
+                Onboard Landing ->
                     []
 
-                Signup ->
-                    [ "signup" ]
+                Onboard Signup ->
+                    [ "onboard", "signup" ]
+
+                Onboard Phone ->
+                    [ "onboard", "phone" ]
+
+                Onboard (Approval s) ->
+                    [ "onboard", "approval", s ]
 
                 Accounts ->
                     [ "accounts" ]
 
                 Account s ->
                     [ "accounts", s ]
-
-                Approval s ->
-                    [ "applications", s ]
     in
     "#/" ++ String.join "/" pieces

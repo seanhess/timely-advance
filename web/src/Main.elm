@@ -10,8 +10,9 @@ import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Page.Account as Account
 import Page.Accounts as Accounts
-import Page.Onboard as Onboard
 import Page.Onboard.Approval as Approval
+import Page.Onboard.Landing as Landing
+import Page.Onboard.Phone as Phone
 import Page.Onboard.Signup as Signup
 import Route exposing (Route)
 import Timely.Api exposing (Account)
@@ -31,7 +32,8 @@ type alias Model =
 
 type PageModel
     = NotFound
-    | Onboard Onboard.Model
+    | Landing Landing.Model
+    | Phone Phone.Model
     | Signup Signup.Model
     | Approval Approval.Model
     | Accounts Accounts.Model
@@ -61,7 +63,8 @@ type Msg
       -- | ChangedRoute (Maybe Route)
     | ChangedUrl Url
     | ClickedLink Browser.UrlRequest
-    | OnOnboard Onboard.Msg
+    | OnLanding Landing.Msg
+    | OnPhone Phone.Msg
     | OnSignup Signup.Msg
     | OnApproval Approval.Msg
     | OnAccounts Accounts.Msg
@@ -91,7 +94,7 @@ update msg model =
                 Browser.External href ->
                     ( model, Nav.load href )
 
-        ( OnOnboard _, _ ) ->
+        ( OnLanding _, _ ) ->
             ( model, Cmd.none )
 
         ( OnSignup sub, Signup m ) ->
@@ -101,6 +104,10 @@ update msg model =
         ( OnApproval app, Approval m ) ->
             Approval.update app m
                 |> runUpdates (always Cmd.none) Approval OnApproval model
+
+        ( OnPhone msg_, Phone m_ ) ->
+            Phone.update msg_ m_
+                |> updateWith Phone OnPhone model
 
         -- |> updateWith Signup GotSignupMsg model
         ( OnAccounts acc, Accounts m ) ->
@@ -155,13 +162,16 @@ changeRouteTo key maybeRoute =
         Nothing ->
             ( NotFound, Cmd.none )
 
-        Just Route.Onboard ->
-            ( Onboard Onboard.init, Cmd.none )
+        Just (Route.Onboard Route.Landing) ->
+            ( Landing Landing.init, Cmd.none )
 
-        Just Route.Signup ->
+        Just (Route.Onboard Route.Signup) ->
             ( Signup (Signup.init key), Cmd.none )
 
-        Just (Route.Approval i) ->
+        Just (Route.Onboard Route.Phone) ->
+            ( Phone Phone.init, Cmd.none )
+
+        Just (Route.Onboard (Route.Approval i)) ->
             let
                 ( mod, cmd ) =
                     Approval.init key i
@@ -194,8 +204,11 @@ view model =
                 NotFound ->
                     Element.text "Not Found"
 
-                Onboard o ->
-                    Element.map OnOnboard <| Onboard.view o
+                Landing o ->
+                    Element.map OnLanding <| Landing.view o
+
+                Phone o ->
+                    Element.map OnPhone <| Phone.view o
 
                 Signup s ->
                     Element.map OnSignup <| Signup.view s
@@ -219,9 +232,6 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.page of
-        Onboard mod ->
-            Sub.map OnOnboard (Onboard.subscriptions mod)
-
         Signup mod ->
             Sub.map OnSignup (Signup.subscriptions mod)
 
