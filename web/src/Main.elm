@@ -12,7 +12,6 @@ import Page.Account as Account
 import Page.Accounts as Accounts
 import Page.Onboard.Approval as Approval
 import Page.Onboard.Landing as Landing
-import Page.Onboard.Phone as Phone
 import Page.Onboard.Signup as Signup
 import Route exposing (Route)
 import Timely.Api exposing (Account)
@@ -33,7 +32,6 @@ type alias Model =
 type PageModel
     = NotFound
     | Landing Landing.Model
-    | Phone Phone.Model
     | Signup Signup.Model
     | Approval Approval.Model
     | Accounts Accounts.Model
@@ -64,7 +62,6 @@ type Msg
     | ChangedUrl Url
     | ClickedLink Browser.UrlRequest
     | OnLanding Landing.Msg
-    | OnPhone Phone.Msg
     | OnSignup Signup.Msg
     | OnApproval Approval.Msg
     | OnAccounts Accounts.Msg
@@ -104,10 +101,6 @@ update msg model =
         ( OnApproval app, Approval m ) ->
             Approval.update app m
                 |> runUpdates (always Cmd.none) Approval OnApproval model
-
-        ( OnPhone msg_, Phone m_ ) ->
-            Phone.update msg_ m_
-                |> updateWith Phone OnPhone model
 
         -- |> updateWith Signup GotSignupMsg model
         ( OnAccounts acc, Accounts m ) ->
@@ -168,9 +161,6 @@ changeRouteTo key maybeRoute =
         Just (Route.Onboard Route.Signup) ->
             ( Signup (Signup.init key), Cmd.none )
 
-        Just (Route.Onboard Route.Phone) ->
-            ( Phone Phone.init, Cmd.none )
-
         Just (Route.Onboard (Route.Approval i)) ->
             let
                 ( mod, cmd ) =
@@ -206,9 +196,6 @@ view model =
 
                 Landing o ->
                     Element.map OnLanding <| Landing.view o
-
-                Phone o ->
-                    Element.map OnPhone <| Phone.view o
 
                 Signup s ->
                     Element.map OnSignup <| Signup.view s

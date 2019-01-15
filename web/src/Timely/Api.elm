@@ -18,8 +18,7 @@ type alias Account =
 
 
 type alias AccountInfo =
-    { firstName : String
-    , lastName : String
+    { phone : String
     , email : String
     , publicBankToken : Token
     }
@@ -83,8 +82,7 @@ type alias Denial =
 encodeAccountInfo : AccountInfo -> Json.Encode.Value
 encodeAccountInfo x =
     Json.Encode.object
-        [ ( "firstName", Json.Encode.string x.firstName )
-        , ( "lastName", Json.Encode.string x.lastName )
+        [ ( "phone", Json.Encode.string x.phone )
         , ( "email", Json.Encode.string x.email )
         , ( "publicBankToken", Json.Encode.string x.publicBankToken )
         ]
@@ -113,8 +111,7 @@ decodeApproval =
 decodeAccountInfo : Decoder AccountInfo
 decodeAccountInfo =
     Decode.succeed AccountInfo
-        |> required "firstName" string
-        |> required "lastName" string
+        |> required "phone" string
         |> required "email" string
         |> required "publicBankToken" string
 

@@ -1,5 +1,6 @@
 module Main where
 
+import           Control.Concurrent (forkIO)
 import           System.IO (hSetBuffering, stdout, stderr, BufferMode(..))
 import           System.Environment (getArgs)
 
@@ -16,6 +17,8 @@ main = do
   a <- getArgs
   case a of
     ["version"        ] -> putStrLn "TODO version"
+    ["all"]             -> startAll
+    ["api"]             -> startApi
     ["onboard-account"] -> startOnboardAccount
     _                   -> startApi
 
@@ -27,3 +30,11 @@ startApi = Api.start 3001
 
 startOnboardAccount :: IO ()
 startOnboardAccount = Worker.start OnboardAccount.queue OnboardAccount.handler
+
+
+startAll :: IO ()
+startAll = do
+  _ <- forkIO $ startApi
+  _ <- forkIO $ startOnboardAccount
+  _ <- getLine
+  pure ()

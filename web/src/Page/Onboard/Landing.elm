@@ -31,5 +31,5 @@ view : Model -> Element msg
 view _ =
     column [ padding 10, spacing 8 ]
         [ el [ Region.heading 1 ] (text "Timely Advance")
-        , link Style.button { url = Route.url (Onboard Phone), label = text "Sign Up" }
+        , link Style.button { url = Route.url (Onboard Signup), label = text "Sign Up" }
         ]

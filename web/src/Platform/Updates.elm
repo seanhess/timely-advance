@@ -1,4 +1,4 @@
-module Platform.Updates exposing (Event, Evt(..), Model(..), Msg(..), Updates, base, command, event, modify, set)
+module Platform.Updates exposing (Event, Evt(..), Model(..), Msg(..), Updates, base, command, event, modify, set, updates)
 
 
 type Msg
@@ -24,6 +24,11 @@ type alias Event a =
 base : model -> Updates model msg event
 base mod =
     ( mod, Cmd.none, Nothing )
+
+
+updates : model -> Updates model msg event
+updates =
+    base
 
 
 set : model -> Updates model msg event -> Updates model msg event

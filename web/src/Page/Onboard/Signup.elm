@@ -4,11 +4,13 @@ import Browser.Navigation as Nav
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
+import Html.Attributes as Html
 import Http
 import Json.Encode as Encode
-import Platform.Updates exposing (Updates, base, command, set)
+import Platform.Updates exposing (Updates, command, set, updates)
 import Route
 import Timely.Api as Api exposing (AccountInfo, Application)
+import Timely.Components exposing (loadingButton)
 import Timely.Style as Style
 
 
@@ -22,14 +24,14 @@ port plaidLinkDone : (String -> msg) -> Sub msg
 
 
 type alias Form =
-    { firstName : String
-    , lastName : String
-    , email : String
+    { email : String
+    , phone : String
     }
 
 
 type alias Model =
     { form : Form
+    , code : String
     , key : Nav.Key
     , status : Status
     }
@@ -52,6 +54,7 @@ type alias Problem =
 
 type Msg
     = Update Form
+    | EditCode String
     | Submit
     | PlaidExited
     | PlaidDone String
@@ -60,7 +63,8 @@ type Msg
 
 init : Nav.Key -> Model
 init key =
-    { form = { firstName = "", lastName = "", email = "" }
+    { form = { phone = "", email = "" }
+    , code = ""
     , status = Editing
     , key = key
     }
@@ -77,95 +81,81 @@ subscriptions model =
 update : Msg -> Model -> Updates Model Msg ()
 update msg model =
     let
-        updates =
-            base model
-
         newApplication token =
-            { firstName = model.form.firstName
-            , lastName = model.form.lastName
-            , email = model.form.email
+            { email = model.form.email
+            , phone = model.form.phone
             , publicBankToken = token
             }
     in
     case msg of
         Update f ->
-            updates
-                |> set { model | form = f }
+            updates { model | form = f }
 
         Submit ->
-            updates
-                |> set { model | status = Plaid }
+            updates { model | status = Plaid }
                 |> command (plaidLinkOpen Encode.null)
 
         PlaidExited ->
-            updates
-                |> set { model | status = Editing }
+            updates { model | status = Editing }
 
         PlaidDone token ->
-            updates
-                |> set { model | status = Saving token }
+            updates { model | status = Saving token }
                 |> command (Api.postApplications CompletedSignup <| newApplication token)
 
         CompletedSignup (Err e) ->
-            updates
-                |> set { model | status = Complete [ "Signup server error" ] }
+            updates { model | status = Complete [ "Signup server error" ] }
 
         CompletedSignup (Ok a) ->
-            updates
-                |> set { model | status = Complete [] }
+            updates { model | status = Complete [] }
                 |> command (Nav.pushUrl model.key (Route.url <| Route.Onboard <| Route.Approval <| a.accountId))
+
+        EditCode s ->
+            updates { model | code = s }
 
 
 view : Model -> Element Msg
 view model =
-    form model.status model.form
+    viewSignupForm model.status model.form
 
 
-form : Status -> Form -> Element Msg
-form status frm =
+viewSignupForm : Status -> Form -> Element Msg
+viewSignupForm status frm =
     Element.column Style.formPage
         [ el Style.header (text "Create an Account")
-        , Input.text [ spacing 12 ]
-            { text = frm.firstName
-            , placeholder = Nothing
-            , onChange = \new -> Update { frm | firstName = new }
-            , label = Input.labelAbove [ Font.size 14 ] (text "First Name")
-            }
-        , Input.text [ spacing 12 ]
-            { text = frm.lastName
-            , placeholder = Nothing
-            , onChange = \new -> Update { frm | lastName = new }
-            , label = Input.labelAbove [ Font.size 14 ] (text "Last Name")
-            }
-        , Input.email [ spacing 12 ]
+        , Input.email []
             { text = frm.email
             , placeholder = Nothing
             , onChange = \new -> Update { frm | email = new }
-            , label = Input.labelAbove [ Font.size 14 ] (text "Email")
+            , label = label "Email"
             }
-        , submit status
+        , Input.text [ htmlAttribute (Html.type_ "tel") ]
+            { text = frm.phone
+            , placeholder = Nothing
+            , onChange = \new -> Update { frm | phone = new }
+            , label = label "Phone"
+            }
+        , loadingButton Style.button
+            { onPress = Submit
+            , label = Element.text "Create Account"
+            , isLoading = status /= Editing
+            }
         ]
 
 
-submit : Status -> Element Msg
-submit status =
-    case status of
-        Editing ->
-            Input.button Style.button
-                { onPress = Just Submit
-                , label = Element.text "Create Account"
-                }
-
-        Plaid ->
-            el [] (text "Plaid...")
-
-        Saving token ->
-            el [] (text <| "Saving: " ++ token)
-
-        Complete problems ->
-            el [] (text <| "Complete: " ++ String.concat problems)
+viewPhoneCode : String -> Element Msg
+viewPhoneCode code =
+    column []
+        [ el Style.header (text "Enter Code")
+        , paragraph [] [ text "We sent a message to your phone number" ]
+        , Input.text [ htmlAttribute (Html.type_ "tel") ]
+            { text = code
+            , placeholder = Nothing
+            , onChange = EditCode
+            , label = label "Phone"
+            }
+        ]
 
 
-big : List (Attribute msg)
-big =
-    [ Font.size 18 ]
+label : String -> Input.Label Msg
+label t =
+    Input.labelAbove [ Font.size 14 ] (text t)
