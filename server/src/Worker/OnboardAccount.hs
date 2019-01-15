@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE MonoLocalBinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
@@ -9,6 +10,10 @@ module Worker.OnboardAccount where
 
 import Control.Monad.Service (Service(run))
 import Control.Monad.IO.Class (liftIO, MonadIO)
+import Control.Exception (Exception, throwIO)
+import Data.Text (Text)
+import qualified Data.Text as Text
+import qualified Data.List as List
 import qualified Database.Selda as Selda
 import Network.AMQP.Worker (Queue)
 import qualified Network.AMQP.Worker as Worker hiding (publish, bindQueue, worker)
@@ -21,7 +26,7 @@ import           AccountStore.Application (ApplicationStore)
 import qualified AccountStore.Application as Application
 import           AccountStore.Account (AccountStore)
 import qualified AccountStore.Account as Account
-import           AccountStore.Types (Account(..), BankAccount(..), Application(..), BankAccountType(..))
+import           AccountStore.Types (Account(..), BankAccount(..), Application(..), BankAccountType(..), Customer(..))
 
 import Types.Guid (Guid)
 import Types.Money as Money
@@ -31,6 +36,14 @@ import Types.Money as Money
 queue :: Queue Application
 queue = Worker.topic Events.applicationsNew "app.onboardAccount"
 
+
+
+data OnboardError
+    = BadName Text
+    | NoNames
+    deriving (Eq, Show)
+
+instance Exception OnboardError
 
 
 -- TODO effects constraints, not this
@@ -48,8 +61,11 @@ handler app = do
     liftIO $ print app
 
     tok <- run $ Bank.Authenticate (publicBankToken app)
+    idt <- run $ Bank.LoadIdentity tok
 
-    res <- run $ Underwriting.New app
+    cust <- toNewCustomer app idt
+
+    res <- run $ Underwriting.New cust
 
     run $ Application.SaveResult aid res
 
@@ -63,7 +79,7 @@ handler app = do
         liftIO $ putStrLn "APPROVED"
 
         -- sure...
-        run $ Account.CreateAccount $ Account.account app tok
+        run $ Account.CreateAccount $ Account.account aid cust tok
 
         -- save the bank accounts
         accounts <- run $ Bank.LoadAccounts tok
@@ -73,6 +89,23 @@ handler app = do
         -- liftIO $ putStrLn " ----- Banks----------------------- "
         -- liftIO $ print bankAccounts
         run $ Account.SetBankAccounts aid bankAccounts
+
+
+
+-- TODO don't use IO exceptions
+toNewCustomer :: MonadIO m => Application -> Bank.Identity -> m Customer
+toNewCustomer Application {..} identity = do
+    let id = Selda.def
+    (firstName, middleName, lastName) <- parseName
+    pure $ Customer {..}
+  where
+    parseName = do
+      case List.map Text.words (Bank.names identity) of
+        [f, m, l]:_ -> pure (f, Just m, l)
+        [f, l]:_ -> pure (f, Nothing, l)
+        n:_ -> liftIO $ throwIO $ BadName $ Text.unwords n
+        _ -> liftIO $ throwIO $ NoNames
+
 
 
 

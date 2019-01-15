@@ -48,7 +48,9 @@ dependencies:
 - time
 - text
 - uuid
+- unix
 - wai
+- wai-extra
 - warp
 
 

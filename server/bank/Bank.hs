@@ -14,6 +14,10 @@ module Bank
     , Balances(..)
     , AccountType(..)
     , AccountSubType(..)
+    , Identity(..)
+    , Address(..)
+    , IdentityInfo(_data, _primary)
+    , AddressInfo(..)
     , Banks(..)
     ) where
 
@@ -28,6 +32,7 @@ import Data.Time.Calendar (fromGregorian)
 
 data Banks a where
     Authenticate     :: Token Public -> Banks (Token Access)
+    LoadIdentity     :: Token Access -> Banks Identity
     LoadAccounts     :: Token Access -> Banks [Account]
     LoadTransactions :: Token Access -> Id Account -> Banks [Transaction]
 
@@ -35,6 +40,7 @@ data Banks a where
 -- there's an obvious implementation for anyone who has a MonadSelda
 instance (MonadPlaid m) => Service m Banks where
     run (Authenticate t)      = authenticate t
+    run (LoadIdentity t)      = loadIdentity t
     run (LoadAccounts t)      = loadAccounts t
     run (LoadTransactions t i) = loadTransactions t i
 
@@ -44,6 +50,13 @@ authenticate pub = do
     creds <- Plaid.credentials
     res <- runPlaid $ Plaid.reqExchangeToken creds pub
     pure $ access_token (res :: ExchangeTokenResponse)
+
+
+loadIdentity :: MonadPlaid m => Token Access -> m Identity
+loadIdentity tok = do
+    creds <- Plaid.credentials
+    res <- runPlaid $ Plaid.reqIdentity creds tok
+    pure $ identity (res :: IdentityResponse)
 
 
 loadAccounts :: MonadPlaid m => Token Access -> m [Account]

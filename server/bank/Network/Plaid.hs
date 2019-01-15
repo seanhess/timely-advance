@@ -9,6 +9,7 @@ module Network.Plaid
   , reqAuth
   , reqTransactions
   , reqAccounts
+  , reqIdentity
   , runClientM
   , mkClientEnv
   , hoistClient
@@ -43,6 +44,10 @@ type PlaidApi
           :> ReqBody '[JSON] AccountsRequest
           :> Post    '[JSON] AccountsResponse
 
+  :<|> "identity" :> "get"
+          :> ReqBody '[JSON] IdentityRequest
+          :> Post    '[JSON] IdentityResponse
+
 
 
 
@@ -56,7 +61,8 @@ callExchangeToken :: ExchangeTokenRequest -> ClientM ExchangeTokenResponse
 callAuth          :: AuthRequest          -> ClientM AuthResponse
 callTransactions  :: TransactionsRequest  -> ClientM TransactionsResponse
 callAccounts      :: AccountsRequest      -> ClientM AccountsResponse
-callExchangeToken :<|> callAuth :<|> callTransactions :<|> callAccounts = client api
+callIdentity      :: IdentityRequest      -> ClientM IdentityResponse
+callExchangeToken :<|> callAuth :<|> callTransactions :<|> callAccounts :<|> callIdentity = client api
 
 
 
@@ -78,6 +84,11 @@ reqTransactions Credentials {..} access_token TransactionsOptions {..} =
 reqAccounts :: Credentials -> Token Access -> ClientM AccountsResponse
 reqAccounts Credentials {..} access_token =
     callAccounts $ AccountsRequest {..}
+
+
+reqIdentity :: Credentials -> Token Access -> ClientM IdentityResponse
+reqIdentity Credentials {..} access_token =
+    callIdentity $ IdentityRequest {..}
 
 
 

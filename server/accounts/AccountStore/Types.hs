@@ -52,8 +52,10 @@ data Customer = Customer
     { id :: ID Customer
     , accountId :: Guid Account
     , firstName :: Text
+    , middleName :: Maybe Text
     , lastName :: Text
     , email :: Text
+    , phone :: Text
     } deriving (Generic, Eq, Show)
 
 instance SqlRow Customer
@@ -87,8 +89,7 @@ instance SqlRow BankAccount
 
 data Application = Application
     { accountId :: Guid Account
-    , firstName :: Text
-    , lastName :: Text
+    , phone :: Text
     , email :: Text
     , publicBankToken :: Token Public
     } deriving (Generic, Show)

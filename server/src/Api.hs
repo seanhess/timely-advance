@@ -14,6 +14,7 @@ import           GHC.Generics (Generic)
 import           Data.Proxy (Proxy(..))
 import           Data.Text (Text)
 import qualified Network.Wai.Handler.Warp as Warp
+import qualified Network.Wai.Middleware.RequestLogger as RequestLogger
 import           Servant hiding (Link, Application)
 import qualified Servant
 import           Servant.API.Generic ((:-), ToServantApi, ToServant, AsApi)
@@ -29,6 +30,7 @@ import           Api.AppM (AppM, nt, AppState(..), loadState, clientConfig, runI
 import           Api.Types
 import           Types.Guid
 import           Types.Config
+import           Types.Auth
 
 type Api = ToServant BaseApi AsApi
 
@@ -43,6 +45,7 @@ data VersionedApi route = VersionedApi
     { _info     :: route :- Get '[HTML] [Link]
     , _accounts :: route :- "accounts"     :> ToServantApi AccountsApi
     , _apps     :: route :- "applications" :> ToServantApi AppsApi
+    , _sessions :: route :- "sessions"     :> ToServantApi SessionsApi
     , _config   :: route :- "config"       :> Get '[JSON] ClientConfig
     , _config'  :: route :- "config.js"    :> Get '[JS "CONFIG"] ClientConfig
     } deriving (Generic)
@@ -67,6 +70,12 @@ data AppsApi route = AppsApi
     } deriving (Generic)
 
 
+data SessionsApi route = SessionsApi
+    { _code  :: route :- ReqBody '[PlainText] Phone :> Post '[PlainText] SessionId
+    , _check :: route :- Capture "sessions" SessionId :> ReqBody '[PlainText] AuthCode :> Post '[PlainText] AuthToken
+    } deriving Generic
+
+
 accountsApi :: ToServant AccountsApi (AsServerT AppM)
 accountsApi = genericServerT AccountsApi
     { _all = run Account.All
@@ -83,6 +92,12 @@ appsApi = genericServerT AppsApi
     , _post = Applications.newApplication
     }
 
+sessionsApi :: ToServant SessionsApi (AsServerT AppM)
+sessionsApi = genericServerT SessionsApi
+    { _code = \_ -> pure "fake-session-id"
+    , _check = \_ _ -> pure "fake-token"
+    }
+
 
 baseApi :: ToServant BaseApi (AsServerT AppM)
 baseApi = genericServerT BaseApi
@@ -94,6 +109,7 @@ versionedApi :: ToServant VersionedApi (AsServerT AppM)
 versionedApi = genericServerT VersionedApi
     { _accounts = accountsApi
     , _apps     = appsApi
+    , _sessions = sessionsApi
     , _config   = clientConfig
     , _config'  = clientConfig
     , _info     = pure [Link "accounts" [], Link "applications" [], Link "config" []]
@@ -106,7 +122,9 @@ apiProxy = Proxy
 
 application :: AppState -> Servant.Application
 application st =
-    serve apiProxy $ hoistServer apiProxy (nt st) baseApi
+    logger $ serve apiProxy $ hoistServer apiProxy (nt st) baseApi
+  where
+    logger = RequestLogger.logStdout
 
 
 start :: Warp.Port -> IO ()

@@ -1,8 +1,11 @@
 module Main where
 
-import           Control.Concurrent (forkIO)
+import           Control.Concurrent (forkIO, killThread)
 import           System.IO (hSetBuffering, stdout, stderr, BufferMode(..))
 import           System.Environment (getArgs)
+-- import           System.Exit (ExitCode(..))
+import           System.Posix.Signals (installHandler, keyboardSignal, Handler(Catch))
+-- import           System.Posix.Process (exitImmediately)
 
 import qualified Worker.OnboardAccount as OnboardAccount
 import qualified Worker.WorkerM as Worker
@@ -17,10 +20,9 @@ main = do
   a <- getArgs
   case a of
     ["version"        ] -> putStrLn "TODO version"
-    ["all"]             -> startAll
     ["api"]             -> startApi
     ["onboard-account"] -> startOnboardAccount
-    _                   -> startApi
+    _                   -> startAll
 
 
 
@@ -34,7 +36,24 @@ startOnboardAccount = Worker.start OnboardAccount.queue OnboardAccount.handler
 
 startAll :: IO ()
 startAll = do
-  _ <- forkIO $ startApi
-  _ <- forkIO $ startOnboardAccount
-  _ <- getLine
-  pure ()
+    api <- forkIO $ startApi
+    onb <- forkIO $ startOnboardAccount
+
+    putStrLn "Press any key to exit"
+    installHandler keyboardSignal (Catch (exit api onb)) Nothing
+
+    waitAnyKey
+    exit api onb
+  where
+
+    exit api onb = do
+      putStrLn "Exiting..."
+      killThread api
+      killThread onb
+      -- exitImmediately ExitSuccess
+
+    waitAnyKey = do
+      c <- getChar
+      if c == '\n'
+         then waitAnyKey
+         else pure ()

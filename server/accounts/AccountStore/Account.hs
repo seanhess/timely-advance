@@ -84,16 +84,15 @@ getBankAccounts i =
 
 createAccount :: Selda m => Account -> m ()
 createAccount acc = do
-    insert customers [customer acc]
+    -- accounts must be first!
     insert accounts [accountRow acc]
+    insert customers [customer acc]
     pure ()
 
 
-account :: Application -> Token Access -> Account
-account Application {..} tok = Account {..}
-  where id = def
-        customer = Customer {..}
-        bankToken = Private tok
+account :: Guid Account -> Customer -> Token Access -> Account
+account accountId customer tok = Account {..}
+  where bankToken = Private tok
 
 
 accountRow :: Account -> AccountRow

@@ -1,6 +1,7 @@
 port module Page.Onboard.Signup exposing (Model, Msg, init, subscriptions, update, view)
 
 import Browser.Navigation as Nav
+import Debug
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
@@ -9,7 +10,7 @@ import Http
 import Json.Encode as Encode
 import Platform.Updates exposing (Updates, command, set, updates)
 import Route
-import Timely.Api as Api exposing (AccountInfo, Application)
+import Timely.Api as Api exposing (AccountInfo, Application, Auth, AuthCode, Bank, Id(..), Phone, Session, Token, idValue)
 import Timely.Components exposing (loadingButton)
 import Timely.Style as Style
 
@@ -23,29 +24,24 @@ port plaidLinkExit : (Encode.Value -> msg) -> Sub msg
 port plaidLinkDone : (String -> msg) -> Sub msg
 
 
-type alias Form =
-    { email : String
-    , phone : String
-    }
-
-
 type alias Model =
-    { form : Form
-    , code : String
+    { email : String
+    , phone : Phone
+    , code : Token AuthCode
+    , sessionId : Id Session
+    , authToken : Token Auth
+    , plaidToken : Token Bank
     , key : Nav.Key
     , status : Status
+    , isLoading : Bool
+    , problems : List Problem
     }
-
-
-type alias PublicToken =
-    String
 
 
 type Status
-    = Editing
+    = EditingForm
+    | EditingCode
     | Plaid
-    | Saving PublicToken
-    | Complete (List Problem)
 
 
 type alias Problem =
@@ -53,28 +49,39 @@ type alias Problem =
 
 
 type Msg
-    = Update Form
+    = EditPhone String
+    | EditEmail String
+    | SubmitForm
     | EditCode String
-    | Submit
-    | PlaidExited
+    | SubmitCode
+    | PlaidOpen
+      -- | PlaidExited
     | PlaidDone String
+    | CompletedCheckCode (Result Http.Error (Token Auth))
+    | CompletedCreateCode (Result Http.Error (Id Session))
     | CompletedSignup (Result Http.Error Application)
 
 
 init : Nav.Key -> Model
 init key =
-    { form = { phone = "", email = "" }
-    , code = ""
-    , status = Editing
+    { phone = Id ""
+    , email = ""
+    , sessionId = Id ""
+    , code = Id ""
+    , authToken = Id ""
+    , plaidToken = Id ""
+    , status = EditingForm
     , key = key
+    , problems = []
+    , isLoading = False
     }
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ plaidLinkExit (always PlaidExited)
-        , plaidLinkDone PlaidDone
+        -- [ plaidLinkExit (always PlaidExited)
+        [ plaidLinkDone PlaidDone
         ]
 
 
@@ -82,76 +89,121 @@ update : Msg -> Model -> Updates Model Msg ()
 update msg model =
     let
         newApplication token =
-            { email = model.form.email
-            , phone = model.form.phone
+            { email = model.email
+            , phone = model.phone
             , publicBankToken = token
             }
     in
     case msg of
-        Update f ->
-            updates { model | form = f }
+        EditPhone s ->
+            updates { model | phone = Id s }
 
-        Submit ->
-            updates { model | status = Plaid }
-                |> command (plaidLinkOpen Encode.null)
+        EditEmail s ->
+            updates { model | email = s }
 
-        PlaidExited ->
-            updates { model | status = Editing }
+        SubmitForm ->
+            updates { model | status = EditingCode }
+                |> command (Api.sessionsCreateCode CompletedCreateCode model.phone)
 
-        PlaidDone token ->
-            updates { model | status = Saving token }
-                |> command (Api.postApplications CompletedSignup <| newApplication token)
+        CompletedCreateCode (Err e) ->
+            updates { model | problems = [ "Could not create code" ] }
 
-        CompletedSignup (Err e) ->
-            updates { model | status = Complete [ "Signup server error" ] }
-
-        CompletedSignup (Ok a) ->
-            updates { model | status = Complete [] }
-                |> command (Nav.pushUrl model.key (Route.url <| Route.Onboard <| Route.Approval <| a.accountId))
+        CompletedCreateCode (Ok s) ->
+            updates { model | sessionId = s }
 
         EditCode s ->
-            updates { model | code = s }
+            updates { model | code = Id s }
+
+        SubmitCode ->
+            updates { model | isLoading = True }
+                |> command (Api.sessionsCheckCode CompletedCheckCode model.sessionId model.code)
+
+        CompletedCheckCode (Err e) ->
+            updates { model | problems = [ "Invalid code" ] }
+
+        CompletedCheckCode (Ok t) ->
+            updates { model | authToken = t, status = Plaid }
+                |> command (plaidLinkOpen Encode.null)
+
+        PlaidOpen ->
+            updates model
+                |> command (plaidLinkOpen Encode.null)
+
+        -- PlaidExited ->
+        --     updates { model | status = EditingCode }
+        PlaidDone token ->
+            updates { model | plaidToken = Id token }
+                |> command (Api.postApplications CompletedSignup <| newApplication (Id token))
+
+        CompletedSignup (Err e) ->
+            updates { model | problems = [ "Signup server error: " ++ Debug.toString e ] }
+
+        CompletedSignup (Ok a) ->
+            updates model
+                |> command (Nav.pushUrl model.key (Route.url <| Route.Onboard <| Route.Approval <| a.accountId))
 
 
 view : Model -> Element Msg
 view model =
-    viewSignupForm model.status model.form
+    case model.status of
+        EditingForm ->
+            viewSignupForm model
+
+        EditingCode ->
+            viewPhoneCode model
+
+        Plaid ->
+            viewPlaidLanding
 
 
-viewSignupForm : Status -> Form -> Element Msg
-viewSignupForm status frm =
-    Element.column Style.formPage
-        [ el Style.header (text "Create an Account")
+viewSignupForm : Model -> Element Msg
+viewSignupForm model =
+    column Style.formPage
+        [ el Style.header (text "Sign up for Timely")
         , Input.email []
-            { text = frm.email
+            { text = model.email
             , placeholder = Nothing
-            , onChange = \new -> Update { frm | email = new }
+            , onChange = EditEmail
             , label = label "Email"
             }
         , Input.text [ htmlAttribute (Html.type_ "tel") ]
-            { text = frm.phone
+            { text = idValue model.phone
             , placeholder = Nothing
-            , onChange = \new -> Update { frm | phone = new }
+            , onChange = EditPhone
             , label = label "Phone"
             }
-        , loadingButton Style.button
-            { onPress = Submit
-            , label = Element.text "Create Account"
-            , isLoading = status /= Editing
+        , Input.button Style.button
+            { onPress = Just SubmitForm
+            , label = Element.text "Sign up"
             }
         ]
 
 
-viewPhoneCode : String -> Element Msg
-viewPhoneCode code =
-    column []
+viewPhoneCode : Model -> Element Msg
+viewPhoneCode model =
+    column Style.formPage
         [ el Style.header (text "Enter Code")
         , paragraph [] [ text "We sent a message to your phone number" ]
         , Input.text [ htmlAttribute (Html.type_ "tel") ]
-            { text = code
+            { text = idValue model.code
             , placeholder = Nothing
             , onChange = EditCode
-            , label = label "Phone"
+            , label = label "Code"
+            }
+        , Input.button Style.button
+            { onPress = Just SubmitCode
+            , label = Element.text "Check code"
+            }
+        ]
+
+
+viewPlaidLanding : Element Msg
+viewPlaidLanding =
+    column Style.formPage
+        [ el Style.header (text "Connect your bank")
+        , Input.button Style.button
+            { onPress = Just PlaidOpen
+            , label = Element.text "Connect Bank"
             }
         ]
 
@@ -159,3 +211,10 @@ viewPhoneCode code =
 label : String -> Input.Label Msg
 label t =
     Input.labelAbove [ Font.size 14 ] (text t)
+
+
+
+-- TODO collect email and phone
+-- TODO collect phone code
+-- TODO show plaid
+-- TODO bank landing page "Securly Connect bank"

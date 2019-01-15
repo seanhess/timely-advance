@@ -1,14 +1,14 @@
-module Timely.Api exposing (Account, AccountId, AccountInfo, Application, Approval, ApprovalResult(..), Balance, BankAccount, BankAccountType(..), Customer, Denial, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, encodeAccountInfo, getAccountsBanksById, getAccountsById, getApplicationResultById, postApplications)
+module Timely.Api exposing (Account, AccountId, AccountInfo, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Balance, Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Phone, Session(..), Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, encodeAccountInfo, encodeId, expectId, getAccountsBanksById, getAccountsById, getApplicationResultById, idValue, postApplications, sessionsCheckCode, sessionsCreateCode)
 
-import Http exposing (Error)
-import Json.Decode as Decode exposing (Decoder, int, list, string)
+import Http exposing (Error, Expect)
+import Json.Decode as Decode exposing (Decoder, int, list, nullable, string)
 import Json.Decode.Pipeline exposing (..)
-import Json.Encode
+import Json.Encode as Encode
 import String
 
 
-type alias Token =
-    String
+type Bank
+    = Bank
 
 
 type alias Account =
@@ -18,9 +18,9 @@ type alias Account =
 
 
 type alias AccountInfo =
-    { phone : String
+    { phone : Phone
     , email : String
-    , publicBankToken : Token
+    , publicBankToken : Id Bank
     }
 
 
@@ -30,10 +30,6 @@ type alias AccountId =
 
 type alias Application =
     { accountId : AccountId
-    , firstName : String
-    , lastName : String
-    , email : String
-    , publicBankToken : String
     }
 
 
@@ -59,8 +55,10 @@ type alias Balance =
 type alias Customer =
     { accountId : String
     , firstName : String
+    , middleName : Maybe String
     , lastName : String
     , email : String
+    , phone : String
     }
 
 
@@ -79,12 +77,12 @@ type alias Denial =
     }
 
 
-encodeAccountInfo : AccountInfo -> Json.Encode.Value
+encodeAccountInfo : AccountInfo -> Encode.Value
 encodeAccountInfo x =
-    Json.Encode.object
-        [ ( "phone", Json.Encode.string x.phone )
-        , ( "email", Json.Encode.string x.email )
-        , ( "publicBankToken", Json.Encode.string x.publicBankToken )
+    Encode.object
+        [ ( "phone", encodeId x.phone )
+        , ( "email", Encode.string x.email )
+        , ( "publicBankToken", encodeId x.publicBankToken )
         ]
 
 
@@ -111,9 +109,9 @@ decodeApproval =
 decodeAccountInfo : Decoder AccountInfo
 decodeAccountInfo =
     Decode.succeed AccountInfo
-        |> required "phone" string
+        |> required "phone" decodeId
         |> required "email" string
-        |> required "publicBankToken" string
+        |> required "publicBankToken" decodeId
 
 
 decodeAccount : Decoder Account
@@ -137,18 +135,16 @@ decodeCustomer =
     Decode.succeed Customer
         |> required "accountId" string
         |> required "firstName" string
+        |> required "middleName" (nullable string)
         |> required "lastName" string
         |> required "email" string
+        |> required "phone" string
 
 
 decodeApplication : Decoder Application
 decodeApplication =
     Decode.succeed Application
         |> required "accountId" string
-        |> required "firstName" string
-        |> required "lastName" string
-        |> required "email" string
-        |> required "publicBankToken" string
 
 
 decodeBankAccountType : Decoder BankAccountType
@@ -241,14 +237,83 @@ getApplicationResultById toMsg id =
 
 
 
--- putAccountsById : (Result Error Account -> msg) -> String -> AccountInfo -> Cmd msg
--- putAccountsById toMsg id body =
---     Http.request
---         { method = "PUT"
---         , headers = []
---         , url = String.join "/" [ "", "v1", "accounts", id ]
---         , body = Http.jsonBody (encodeAccountInfo body)
---         , expect = Http.expectJson toMsg decodeAccount
---         , timeout = Nothing
---         , tracker = Nothing
---         }
+-- Authentication -----------------
+
+
+type alias Phone =
+    Id ()
+
+
+type AuthCode
+    = AuthCode
+
+
+type Auth
+    = Auth
+
+
+type Session
+    = Session
+
+
+type Id a
+    = Id String
+
+
+type alias Token a =
+    Id a
+
+
+idValue : Id a -> String
+idValue (Id a) =
+    a
+
+
+encodeId : Id a -> Encode.Value
+encodeId (Id s) =
+    Encode.string s
+
+
+decodeId : Decoder (Id a)
+decodeId =
+    Decode.map Id Decode.string
+
+
+sessionsCreateCode : (Result Error (Id Session) -> msg) -> Phone -> Cmd msg
+sessionsCreateCode toMsg (Id p) =
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = String.join "/" [ "", "v1", "sessions" ]
+        , body = Http.stringBody "text/plain;charset=utf-8" p
+        , expect = expectId toMsg
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+sessionsCheckCode : (Result Error (Token Auth) -> msg) -> Id Session -> Token AuthCode -> Cmd msg
+sessionsCheckCode toMsg (Id s) (Id c) =
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = String.join "/" [ "", "v1", "sessions", s ]
+        , body = Http.stringBody "text/plain;charset=utf-8" c
+        , expect = expectId toMsg
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+expectId : (Result Error (Id a) -> msg) -> Expect msg
+expectId toMsg =
+    let
+        onResult r =
+            case r of
+                Ok s ->
+                    toMsg <| Ok (Id s)
+
+                Err e ->
+                    toMsg <| Err e
+    in
+    Http.expectString onResult

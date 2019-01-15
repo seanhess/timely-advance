@@ -45,8 +45,7 @@ instance FromJSON Application
 
 -- AccountInfo ---------------------
 data AccountInfo = AccountInfo
-    { firstName :: Text
-    , lastName :: Text
+    { phone :: Text
     , email :: Text
     , publicBankToken :: Token Public
     } deriving (Generic, Show)
