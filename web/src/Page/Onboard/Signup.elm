@@ -55,7 +55,7 @@ type Msg
     | EditCode String
     | SubmitCode
     | PlaidOpen
-      -- | PlaidExited
+    | PlaidExited
     | PlaidDone String
     | CompletedCheckCode (Result Http.Error (Token Auth))
     | CompletedCreateCode (Result Http.Error (Id Session))
@@ -80,8 +80,8 @@ init key =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        -- [ plaidLinkExit (always PlaidExited)
-        [ plaidLinkDone PlaidDone
+        [ plaidLinkExit (always PlaidExited)
+        , plaidLinkDone PlaidDone
         ]
 
 
@@ -129,8 +129,10 @@ update msg model =
             updates model
                 |> command (plaidLinkOpen Encode.null)
 
-        -- PlaidExited ->
-        --     updates { model | status = EditingCode }
+        -- Leave this here. Elm throws an error if there are no subscribers for a subscription!
+        PlaidExited ->
+            updates model
+
         PlaidDone token ->
             updates { model | plaidToken = Id token }
                 |> command (Api.postApplications CompletedSignup <| newApplication (Id token))
