@@ -11,6 +11,7 @@ import Process
 import Route
 import Task
 import Timely.Api as Api exposing (AccountId, Application, ApprovalResult(..))
+import Timely.Components exposing (spinnerRipple)
 import Timely.Style as Style
 
 
@@ -91,7 +92,7 @@ viewStatus : AccountId -> Status -> Element Msg
 viewStatus accountId status =
     case status of
         Loading ->
-            Element.el [] (text "Loading...")
+            spinnerRipple
 
         Error ps ->
             Element.column [] (List.map viewProblem ps)
