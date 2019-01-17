@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountId, AccountInfo, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Balance, Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Phone, Session(..), Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, encodeAccountInfo, encodeId, expectId, getAccountsBanksById, getAccountsById, getApplicationResultById, idValue, postApplications, sessionsCheckCode, sessionsCreateCode)
+module Timely.Api exposing (Account, AccountId, AccountInfo, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Balance, Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Phone, Session(..), Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, encodeAccountInfo, encodeId, expectId, getAccountsBanksById, getAccountsById, getApplicationResultById, getTest, idValue, postApplications, postLogin, postLogout, sessionsCheckCode, sessionsCreateCode)
 
 import Http exposing (Error, Expect)
 import Json.Decode as Decode exposing (Decoder, int, list, nullable, string)
@@ -231,6 +231,45 @@ getApplicationResultById toMsg id =
         , url = String.join "/" [ "", "v1", "applications", id, "result" ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg decodeApprovalResult
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+postLogin : (Result Error () -> msg) -> Cmd msg
+postLogin toMsg =
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = String.join "/" [ "", "v1", "login" ]
+        , body = Http.emptyBody
+        , expect = Http.expectWhatever toMsg
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+postLogout : (Result Error () -> msg) -> Cmd msg
+postLogout toMsg =
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = String.join "/" [ "", "v1", "logout" ]
+        , body = Http.emptyBody
+        , expect = Http.expectWhatever toMsg
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+getTest : (Result Error String -> msg) -> Cmd msg
+getTest toMsg =
+    Http.request
+        { method = "GET"
+        , headers = []
+        , url = String.join "/" [ "", "v1", "test" ]
+        , body = Http.emptyBody
+        , expect = Http.expectString toMsg
         , timeout = Nothing
         , tracker = Nothing
         }

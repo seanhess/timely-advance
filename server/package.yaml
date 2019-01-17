@@ -30,6 +30,7 @@ dependencies:
 - http-media
 - http-client
 - http-client-tls
+- jose
 - mtl
 - monad-control
 - random
@@ -39,6 +40,8 @@ dependencies:
 - servant-server
 - servant-elm
 - servant-client
+- servant-auth
+- servant-auth-server
 - selda
 - selda-postgresql
 - selda-sqlite
@@ -52,6 +55,7 @@ dependencies:
 - wai
 - wai-extra
 - warp
+- warp-tls
 
 
 default-extensions:

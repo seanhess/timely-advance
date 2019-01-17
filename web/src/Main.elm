@@ -91,8 +91,9 @@ update msg model =
                 Browser.External href ->
                     ( model, Nav.load href )
 
-        ( OnLanding _, _ ) ->
-            ( model, Cmd.none )
+        ( OnLanding mg, Landing m ) ->
+            Landing.update mg m
+                |> updateWith Landing OnLanding model
 
         ( OnSignup sub, Signup m ) ->
             Signup.update sub m
@@ -156,7 +157,11 @@ changeRouteTo key maybeRoute =
             ( NotFound, Cmd.none )
 
         Just (Route.Onboard Route.Landing) ->
-            ( Landing Landing.init, Cmd.none )
+            let
+                ( mod, cmd ) =
+                    Landing.init
+            in
+            ( Landing mod, Cmd.map OnLanding cmd )
 
         Just (Route.Onboard Route.Signup) ->
             ( Signup (Signup.init key), Cmd.none )
