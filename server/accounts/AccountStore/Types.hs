@@ -2,7 +2,7 @@
 module AccountStore.Types where
 
 
-
+import Auth (Phone(..))
 import Database.Selda
 import Database.Selda.SqlType (Lit(..))
 import Data.Proxy (Proxy(..))
@@ -30,11 +30,18 @@ instance Typeable t => SqlType (Id t) where
     fromSql v = Id $ fromSql v
     defaultValue = LCustom (defaultValue :: Lit Text)
 
+instance SqlType Phone where
+    mkLit (Phone t) =  LCustom $ mkLit t
+    sqlType _ = sqlType (Proxy :: Proxy Text)
+    fromSql v = Phone $ fromSql v
+    defaultValue = LCustom (defaultValue :: Lit Text)
 
--- an aggregate of the information
+
+-- aggregate all account information
 data Account = Account
     { accountId :: Guid Account
-    , customer :: Customer
+    , phone     :: Phone
+    , customer  :: Customer
     , bankToken :: Private (Token Access)
     } deriving (Show, Eq, Generic)
 
@@ -42,6 +49,7 @@ data Account = Account
 
 data AccountRow = AccountRow
     { accountId :: Guid Account
+    , phone     :: Phone
     , bankToken :: Private (Token Access)
     } deriving (Generic, Eq, Show)
 
@@ -55,7 +63,6 @@ data Customer = Customer
     , middleName :: Maybe Text
     , lastName :: Text
     , email :: Text
-    , phone :: Text
     } deriving (Generic, Eq, Show)
 
 instance SqlRow Customer
@@ -87,9 +94,10 @@ instance SqlRow BankAccount
 
 
 
+-- Can we have more than one application per phone number? NO
 data Application = Application
     { accountId :: Guid Account
-    , phone :: Text
+    , phone :: Phone
     , email :: Text
     , publicBankToken :: Token Public
     } deriving (Generic, Show)

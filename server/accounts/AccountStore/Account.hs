@@ -7,6 +7,7 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 module AccountStore.Account (AccountStore(..), initialize, account) where
 
+import Auth (Phone)
 import AccountStore.Types
 
 import Control.Monad.Selda (Selda, query, insert, deleteFrom, tryCreateTable)
@@ -24,6 +25,7 @@ import Types.Private
 data AccountStore a where
     All            :: AccountStore [Account]
     Find           :: Guid Account -> AccountStore (Maybe Account)
+    FindByPhone    :: Phone -> AccountStore (Maybe (Guid Account))
     BankAccounts   :: Guid Account -> AccountStore [BankAccount]
 
     CreateAccount  :: Account -> AccountStore ()
@@ -33,6 +35,7 @@ data AccountStore a where
 instance (Selda m) => Service m AccountStore where
     run All                = allAccounts
     run (Find i)           = getAccount i
+    run (FindByPhone p)    = getAccountIdByPhone p
     run (BankAccounts i)   = getBankAccounts i
     run (CreateAccount a) = createAccount a
     run (SetBankAccounts i bs) = setBankAccounts i bs
@@ -40,7 +43,11 @@ instance (Selda m) => Service m AccountStore where
 
 
 accounts :: Table AccountRow
-accounts = table "accounts" [#accountId :- primary]
+accounts = table "accounts"
+  [ #accountId :- primary
+  , #phone :- index
+  , #phone :- unique
+  ]
 
 customers :: Table Customer
 customers = table "accounts_customers" [#id :- autoPrimary, #accountId :- foreignKey accounts #accountId ]
@@ -74,6 +81,17 @@ getAccount i = do
     account (AccountRow {..} :*: customer) = Account {..}
 
 
+getAccountIdByPhone :: Selda m => Phone -> m (Maybe (Guid Account))
+getAccountIdByPhone p = do
+  as <- query $ do
+    a <- select accounts
+    restrict (a ! #phone .== literal p)
+    pure $ a ! #accountId
+  pure $ listToMaybe as
+
+
+
+
 getBankAccounts :: Selda m => Guid Account -> m [BankAccount]
 getBankAccounts i =
     query $ do
@@ -90,8 +108,8 @@ createAccount acc = do
     pure ()
 
 
-account :: Guid Account -> Customer -> Token Access -> Account
-account accountId customer tok = Account {..}
+account :: Guid Account -> Phone -> Customer -> Token Access -> Account
+account accountId phone customer tok = Account {..}
   where bankToken = Private tok
 
 

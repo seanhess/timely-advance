@@ -22,6 +22,7 @@ main = do
     ["version"        ] -> putStrLn "TODO version"
     ["api"]             -> startApi
     ["onboard-account"] -> startOnboardAccount
+    ["initialize"]      -> Api.initialize
     _                   -> startAll
 
 

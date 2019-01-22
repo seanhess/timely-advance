@@ -89,7 +89,7 @@ runIO s x = do
 -- standardized error handling
 onError :: MonadWorker m => WorkerException SomeException -> m ()
 onError e = do
-    liftIO $ putStrLn "Do something with errors"
+    liftIO $ putStrLn "Do something with errors: careful with PII in logs!"
     liftIO $ print e
     -- TODO handle errors. Create an error queue?
     -- TODO send to rollbar or somewhere similar

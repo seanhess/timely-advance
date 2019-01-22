@@ -9,12 +9,7 @@
 {-# LANGUAGE RankNTypes     #-}
 module Api where
 
-import Data.String.Conversions (cs)
 import Crypto.JOSE.JWK (JWK)
-import Data.UUID (UUID)
-import qualified Data.UUID as UUID
-import Data.Aeson (FromJSON, ToJSON)
-import Control.Monad.IO.Class (liftIO)
 import           Control.Monad.Service (Service(..))
 import           Control.Monad.Except (throwError, MonadError)
 import           GHC.Generics (Generic)
@@ -27,19 +22,21 @@ import qualified Servant
 import           Servant.API.Generic ((:-), ToServantApi, ToServant, AsApi)
 import           Servant.API.ContentTypes.JS (JS)
 import           Servant.API.ContentTypes.HTML (HTML, Link(..))
-import           Servant.API.ResponseHeaders (addHeader)
 import           Servant.Server.Generic (AsServerT, genericServerT)
-import           Servant.Auth.Server (Auth, JWT, Cookie, FromJWT, CookieSettings(..), JWTSettings, ToJWT, generateKey, defaultJWTSettings, defaultCookieSettings, AuthResult(..), throwAll, acceptLogin, SetCookie, clearSession)
+import           Servant.Auth.Server (Auth, Cookie, CookieSettings(..), JWTSettings)
 
+import           Auth (Phone, AuthCode)
 import qualified AccountStore.Application as Application
 import           AccountStore.Types (Application)
 import qualified AccountStore.Account as Account
 import qualified Api.Applications as Applications
+import qualified Api.Sessions as Sessions
+import           Api.Sessions (SetSession)
 import           Api.AppM (AppM, nt, AppState(..), loadState, clientConfig, runIO)
 import           Api.Types
 import           Types.Guid
 import           Types.Config
-import           Types.Auth
+import           Types.Session
 
 type Api = ToServant BaseApi AsApi
 
@@ -51,31 +48,15 @@ data BaseApi route = BaseApi
 
 
 
-data Session = Session
-    { accountId :: Guid Account
-    } deriving (Generic, Show)
-
-instance FromJSON Session
-instance ToJSON Session
-instance ToJWT UUID
-instance ToJWT Session
-instance FromJWT UUID
-instance FromJWT Session
 
 
 
-type Authenticated = Auth '[JWT, Cookie] Session
-
--- I Need to combine it with the Capture "id" (Guid Account) thing
 
 data VersionedApi route = VersionedApi
     { _info     :: route :- Get '[HTML] [Link]
-    , _accounts :: route :- "accounts"     :> ToServantApi AccountsApi
-    , _apps     :: route :- "applications" :> ToServantApi AppsApi
+    , _account  :: route :- "account"      :> Auth '[Cookie] Session :> ToServantApi AccountApi
+    , _app      :: route :- "application"  :> Auth '[Cookie] Session :> ToServantApi AppApi
     , _sessions :: route :- "sessions"     :> ToServantApi SessionsApi
-    , _test     :: route :- "test"         :> Auth '[Cookie] Session :> Get '[JSON] Text
-    , _login    :: route :- "login"        :> Post '[JSON] (Headers '[Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] Text)
-    , _logout   :: route :- "logout"       :> Post '[JSON] (Headers '[Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] Text)
     , _config   :: route :- "config"       :> Get '[JSON] ClientConfig
     , _config'  :: route :- "config.js"    :> Get '[JS "CONFIG"] ClientConfig
     } deriving (Generic)
@@ -83,92 +64,71 @@ data VersionedApi route = VersionedApi
 
 
 
--- Accounts --------------------------------------------------------
-data AccountsApi route = AccountsApi
-    { _all :: route :- Get '[JSON, HTML] [Account]
-    , _get :: route :- Capture "id" (Guid Account) :> Get '[JSON, HTML] Account
-    , _banks :: route :- Capture "id" (Guid Account) :> "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
-    -- , _put :: route :- Capture "id" (Id Account) :> ReqBody '[JSON] AccountInfo :> Put '[JSON] Account
+-- Personal Information : Account and Application -----------------------------------------
+data AccountApi route = AccountApi
+    { _get   :: route :- Get '[JSON, HTML] Account
+    , _banks :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
     } deriving (Generic)
+    -- { _all :: route   :- Get '[JSON, HTML] [Account]
+    -- , _put :: route :- Capture "id" (Id Account) :> ReqBody '[JSON] AccountInfo :> Put '[JSON] Account
 
 
-data AppsApi route = AppsApi
-    { _all    :: route :- Get '[JSON, HTML] [Application]
-    , _get    :: route :- Capture "id" (Guid Account) :> Get '[JSON, HTML] Application
-    , _result :: route :- Capture "id" (Guid Account) :> "result" :> Get '[JSON] Result
+data AppApi route = AppApi
+    { _get    :: route :- Get '[JSON] Application
+    , _result :: route :- "result" :> Get '[JSON] Result
     , _post   :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] Application
     } deriving (Generic)
 
 
 data SessionsApi route = SessionsApi
-    { _code  :: route :- ReqBody '[PlainText] Phone :> Post '[PlainText] SessionId
-    , _check :: route :- Capture "sessions" SessionId :> ReqBody '[PlainText] AuthCode :> Post '[PlainText] AuthToken
+    { _code    :: route :- ReqBody '[JSON] Phone :> Post '[JSON] NoContent
+    , _auth    :: route :- Capture "phone" Phone :> ReqBody '[JSON] AuthCode :> Post '[JSON] (SetSession Session)
+    , _check   :: route :- Auth '[Cookie] Session :> Get '[JSON] (SetSession Session)
+    , _logout  :: route :- Delete '[JSON] (SetSession NoContent)
     } deriving Generic
 
 
-accountsApi :: ToServant AccountsApi (AsServerT AppM)
-accountsApi = genericServerT AccountsApi
-    { _all = run Account.All
-    , _get  = \i -> run (Account.Find i) >>= notFound
-    , _banks = run . Account.BankAccounts
+-- Your own account!
+accountApi :: Guid Account -> ToServant AccountApi (AsServerT AppM)
+accountApi i = genericServerT AccountApi
+    { _get   = run (Account.Find i) >>= notFound
+    , _banks = run (Account.BankAccounts i)
     }
 
 
-appsApi :: ToServant AppsApi (AsServerT AppM)
-appsApi = genericServerT AppsApi
-    { _all = run Application.All
-    , _get = \i -> run (Application.Find i) >>= notFound
-    , _result = \i -> run (Application.FindResult i) >>= notFound
-    , _post = Applications.newApplication
+-- You have a validated phone number, work with that
+applicationApi :: Phone -> ToServant AppApi (AsServerT AppM)
+applicationApi p = genericServerT AppApi
+    { _get    = run (Application.FindByPhone p) >>= notFound
+    , _result = run (Application.FindResultByPhone p) >>= notFound
+    , _post   = Applications.newApplication p
     }
 
-sessionsApi :: ToServant SessionsApi (AsServerT AppM)
-sessionsApi = genericServerT SessionsApi
-    { _code = \_ -> pure "fake-session-id"
-    , _check = \_ _ -> pure "fake-token"
+sessionsApi :: CookieSettings -> JWTSettings -> ToServant SessionsApi (AsServerT AppM)
+sessionsApi cke jwt = genericServerT SessionsApi
+    { _code   = Sessions.generateCode
+    , _auth   = Sessions.authenticate cke jwt
+    , _check  = Sessions.checkSession cke jwt
+    , _logout = Sessions.logout cke
     }
 
 
 baseApi :: CookieSettings -> JWTSettings -> ToServant BaseApi (AsServerT AppM)
 baseApi cke jwt = genericServerT BaseApi
-    { _info = pure "hello"
+    { _info = pure "Timely"
     , _versioned = versionedApi cke jwt
     }
 
 versionedApi :: CookieSettings -> JWTSettings -> ToServant VersionedApi (AsServerT AppM)
 versionedApi cke jwt = genericServerT VersionedApi
-    { _accounts = accountsApi
-    , _apps     = appsApi
-    , _sessions = sessionsApi
-    , _test     = test
-    , _login    = login cke jwt
-    , _logout   = logout cke
+    { _account  = Sessions.protectAccount accountApi
+    , _app      = Sessions.protectPhone applicationApi
+    , _sessions = sessionsApi cke jwt
     , _config   = clientConfig
     , _config'  = clientConfig
     , _info     = pure [Link "accounts" [], Link "applications" [], Link "config" []]
     }
 
-test (Authenticated s) = do
-  liftIO $ print s
-  pure $ cs $ show s
-test e = do
-  liftIO $ print e
-  throwAll err401
-
-
-login :: CookieSettings -> JWTSettings -> AppM (Headers '[ Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie ] Text)
-login cke jwt = do
-  -- is this a separate key?
-  let Just u = UUID.fromText "0eb9e990-a3c5-403a-a5a9-f5dd3ac2cf4b"
-  mApplyCookies <- liftIO $ acceptLogin cke jwt (Session u)
-  case mApplyCookies of
-    Nothing -> throwError err401
-    Just applyCookies -> pure $ applyCookies "Hello"
-
-logout :: CookieSettings -> AppM (Headers '[ Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] Text)
-logout cke =
-  pure $ clearSession cke "ok"
--- 
 
 
 apiProxy :: Proxy Api
@@ -182,26 +142,28 @@ server cke jwt st = hoistServerWithContext apiProxy context (nt st) (baseApi cke
     context = Proxy
 
 -- https://haskell-servant.readthedocs.io/en/stable/cookbook/jwt-and-basic-auth/JWTAndBasicAuth.html
+-- https://github.com/haskell-servant/servant-auth#readme
 application :: JWK -> AppState -> Servant.Application
 application jwk st =
     logger $ serveWithContext apiProxy context $ server cke jwt st
   where
     logger = RequestLogger.logStdout
-    -- context :: Context '[CookieSettings, JWTSettings]
-    -- context = def :. undefined :. EmptyContext
     context = jwt :. cke :. EmptyContext
-    jwt = defaultJWTSettings jwk
-    cke = defaultCookieSettings { cookieIsSecure = NotSecure, cookieXsrfSetting = Nothing }
+    jwt = Sessions.jwtSettings jwk
+    cke = Sessions.cookieSettings
 
 
--- hoistServerWithAuth
---   :: HasServer api '[CookieSettings, JWTSettings]
---   => Proxy api
---   -> (forall x. m x -> n x)
---   -> ServerT api m
---   -> ServerT api n
--- hoistServerWithAuth api =
---   hoistServerWithContext api (Proxy :: Proxy '[CookieSettings, JWTSettings])
+
+initialize :: IO ()
+initialize = do
+    putStrLn "Initializing"
+    state <- loadState
+
+    runIO state $ do
+      Account.initialize
+      Application.initialize
+
+    putStrLn "Done"
 
 
 start :: Warp.Port -> IO ()
@@ -209,12 +171,8 @@ start port = do
     -- Load state
     state <- loadState
 
-    runIO state $ do
-      Account.initialize
-      Application.initialize
-
     putStrLn $ "Running on " ++ show port
-    key <- generateKey
+    key <- Sessions.generateKey
     Warp.run port (application key state)
 
 

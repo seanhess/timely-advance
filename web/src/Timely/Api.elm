@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountId, AccountInfo, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Balance, Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Phone, Session(..), Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, encodeAccountInfo, encodeId, expectId, getAccountsBanksById, getAccountsById, getApplicationResultById, getTest, idValue, postApplications, postLogin, postLogout, sessionsCheckCode, sessionsCreateCode)
+module Timely.Api exposing (Account, AccountId, AccountInfo, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Balance, Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Phone, Session, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, encodeAccountInfo, encodeId, expectId, getAccount, getAccountBanks, getApplicationResult, getTest, idValue, postApplications, postLogin, postLogout, sessionsCheckCode, sessionsCreateCode)
 
 import Http exposing (Error, Expect)
 import Json.Decode as Decode exposing (Decoder, int, list, nullable, string)
@@ -13,13 +13,13 @@ type Bank
 
 type alias Account =
     { accountId : String
+    , phone : String
     , customer : Customer
     }
 
 
 type alias AccountInfo =
-    { phone : Phone
-    , email : String
+    { email : String
     , publicBankToken : Id Bank
     }
 
@@ -30,6 +30,12 @@ type alias AccountId =
 
 type alias Application =
     { accountId : AccountId
+    }
+
+
+type alias Session =
+    { phone : Phone
+    , accountId : Maybe AccountId
     }
 
 
@@ -58,7 +64,6 @@ type alias Customer =
     , middleName : Maybe String
     , lastName : String
     , email : String
-    , phone : String
     }
 
 
@@ -80,8 +85,7 @@ type alias Denial =
 encodeAccountInfo : AccountInfo -> Encode.Value
 encodeAccountInfo x =
     Encode.object
-        [ ( "phone", encodeId x.phone )
-        , ( "email", Encode.string x.email )
+        [ ( "email", Encode.string x.email )
         , ( "publicBankToken", encodeId x.publicBankToken )
         ]
 
@@ -109,7 +113,6 @@ decodeApproval =
 decodeAccountInfo : Decoder AccountInfo
 decodeAccountInfo =
     Decode.succeed AccountInfo
-        |> required "phone" decodeId
         |> required "email" string
         |> required "publicBankToken" decodeId
 
@@ -118,6 +121,7 @@ decodeAccount : Decoder Account
 decodeAccount =
     Decode.succeed Account
         |> required "accountId" string
+        |> required "phone" string
         |> required "customer" decodeCustomer
 
 
@@ -138,7 +142,6 @@ decodeCustomer =
         |> required "middleName" (nullable string)
         |> required "lastName" string
         |> required "email" string
-        |> required "phone" string
 
 
 decodeApplication : Decoder Application
@@ -189,7 +192,7 @@ postApplications toMsg body =
     Http.request
         { method = "POST"
         , headers = []
-        , url = String.join "/" [ "", "v1", "applications" ]
+        , url = String.join "/" [ "", "v1", "application" ]
         , body = Http.jsonBody (encodeAccountInfo body)
         , expect = Http.expectJson toMsg decodeApplication
         , timeout = Nothing
@@ -197,12 +200,12 @@ postApplications toMsg body =
         }
 
 
-getAccountsById : (Result Error Account -> msg) -> String -> Cmd msg
-getAccountsById toMsg id =
+getAccount : (Result Error Account -> msg) -> Cmd msg
+getAccount toMsg =
     Http.request
         { method = "GET"
         , headers = []
-        , url = String.join "/" [ "", "v1", "accounts", id ]
+        , url = String.join "/" [ "", "v1", "account" ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg decodeAccount
         , timeout = Nothing
@@ -210,12 +213,12 @@ getAccountsById toMsg id =
         }
 
 
-getAccountsBanksById : (Result Error (List BankAccount) -> msg) -> String -> Cmd msg
-getAccountsBanksById toMsg id =
+getAccountBanks : (Result Error (List BankAccount) -> msg) -> Cmd msg
+getAccountBanks toMsg =
     Http.request
         { method = "GET"
         , headers = []
-        , url = String.join "/" [ "", "v1", "accounts", id, "bank-accounts" ]
+        , url = String.join "/" [ "", "v1", "account", "bank-accounts" ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg (list decodeBankAccount)
         , timeout = Nothing
@@ -223,12 +226,12 @@ getAccountsBanksById toMsg id =
         }
 
 
-getApplicationResultById : (Result Error ApprovalResult -> msg) -> AccountId -> Cmd msg
-getApplicationResultById toMsg id =
+getApplicationResult : (Result Error ApprovalResult -> msg) -> Cmd msg
+getApplicationResult toMsg =
     Http.request
         { method = "GET"
         , headers = []
-        , url = String.join "/" [ "", "v1", "applications", id, "result" ]
+        , url = String.join "/" [ "", "v1", "application", "result" ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg decodeApprovalResult
         , timeout = Nothing
@@ -291,10 +294,6 @@ type Auth
     = Auth
 
 
-type Session
-    = Session
-
-
 type Id a
     = Id String
 
@@ -319,25 +318,25 @@ decodeId =
 
 
 sessionsCreateCode : (Result Error (Id Session) -> msg) -> Phone -> Cmd msg
-sessionsCreateCode toMsg (Id p) =
+sessionsCreateCode toMsg p =
     Http.request
         { method = "POST"
         , headers = []
         , url = String.join "/" [ "", "v1", "sessions" ]
-        , body = Http.stringBody "text/plain;charset=utf-8" p
+        , body = Http.jsonBody (encodeId p)
         , expect = expectId toMsg
         , timeout = Nothing
         , tracker = Nothing
         }
 
 
-sessionsCheckCode : (Result Error (Token Auth) -> msg) -> Id Session -> Token AuthCode -> Cmd msg
-sessionsCheckCode toMsg (Id s) (Id c) =
+sessionsCheckCode : (Result Error (Token Auth) -> msg) -> Phone -> Token AuthCode -> Cmd msg
+sessionsCheckCode toMsg (Id p) c =
     Http.request
         { method = "POST"
         , headers = []
-        , url = String.join "/" [ "", "v1", "sessions", s ]
-        , body = Http.stringBody "text/plain;charset=utf-8" c
+        , url = String.join "/" [ "", "v1", "sessions", p ]
+        , body = Http.jsonBody (encodeId c)
         , expect = expectId toMsg
         , timeout = Nothing
         , tracker = Nothing

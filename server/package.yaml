@@ -84,6 +84,7 @@ library:
     - bank
     - underwrite
     - accounts
+    - auth
 
 executables:
   server-exe:

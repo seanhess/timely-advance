@@ -57,6 +57,7 @@ handler
   => Application -> m ()
 handler app = do
     let aid = accountId (app :: Application)
+    let phn = phone (app :: Application)
     liftIO $ putStrLn "NEW APPLICATION :)"
     liftIO $ print app
 
@@ -78,8 +79,7 @@ handler app = do
       Underwriting.Approved _ -> do
         liftIO $ putStrLn "APPROVED"
 
-        -- sure...
-        run $ Account.CreateAccount $ Account.account aid cust tok
+        run $ Account.CreateAccount $ Account.account aid phn cust tok
 
         -- save the bank accounts
         accounts <- run $ Bank.LoadAccounts tok

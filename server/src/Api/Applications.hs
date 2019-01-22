@@ -14,15 +14,16 @@ import Network.AMQP.Worker.Monad (MonadWorker)
 import qualified Network.AMQP.Worker.Monad as Worker
 import AccountStore.Types (Application(..), Account)
 
+import Auth (Phone)
 import Api.Types (AccountInfo(..))
 
 
 -- TODO switch to Service m ApplicationStore constraint
-newApplication :: (MonadWorker m, Service m ApplicationStore) => AccountInfo -> m Application
-newApplication info = do
+newApplication :: (MonadWorker m, Service m ApplicationStore) => Phone -> AccountInfo -> m Application
+newApplication phone info = do
     -- create an application
     accountId <- randomId
-    let app = fromAccountInfo accountId info
+    let app = fromAccountInfo accountId phone info
 
     -- save it
     run $ Application.Save app
@@ -36,7 +37,7 @@ newApplication info = do
 
 
 
-fromAccountInfo :: Guid Account -> AccountInfo -> Application
-fromAccountInfo i AccountInfo {..} = Application {..}
+fromAccountInfo :: Guid Account -> Phone -> AccountInfo -> Application
+fromAccountInfo i phone AccountInfo {..} = Application {..}
   where
     accountId = i

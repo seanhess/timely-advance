@@ -34,8 +34,8 @@ init : String -> ( Model, Cmd Msg )
 init id =
     ( { accountId = id, account = Nothing, problems = [], banks = [] }
     , Cmd.batch
-        [ Api.getAccountsById LoadComplete id
-        , Api.getAccountsBanksById LoadBanksComplete id
+        [ Api.getAccount LoadComplete
+        , Api.getAccountBanks LoadBanksComplete
         ]
     )
 

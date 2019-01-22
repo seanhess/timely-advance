@@ -43,7 +43,6 @@ loadState = do
     env <- loadEnv
     amqpConn <- Worker.connect (Worker.fromURI $ cs $ amqp env)
     dbConn <- liftIO $ Pool.createPool (createConn $ cs $ postgres env) destroyConn 1 5 3
-    -- dbConn <- createConn $ cs $ postgres env
     -- let plaid = Plaid.Credentials (plaidClientId env) (plaidClientSecret env)
     pure AppState {..}
   where
@@ -69,10 +68,6 @@ instance Selda AppM where
 
 instance MonadWorker AppM where
     amqpConnection = asks amqpConn
-
--- TODO upgrade to servant 0.15 and remove this
--- deriving instance MonadMask Handler
-
 
 
 nt :: AppState -> AppM a -> Handler a

@@ -15,29 +15,32 @@ import Database.Selda hiding (query, insert, tryCreateTable, Result)
 import Data.Maybe (listToMaybe)
 import Control.Monad.Service (Service(..))
 
+import Auth (Phone)
 import AccountStore.Types
 import Types.Guid (Guid)
 
 
 data ApplicationStore a where
     Save      :: Application -> ApplicationStore ()
-    Find      :: Guid Account  -> ApplicationStore (Maybe Application)
+    FindByPhone :: Phone -> ApplicationStore (Maybe Application)
     All       :: ApplicationStore [Application]
 
     SaveResult :: Guid Account -> Result -> ApplicationStore ()
     FindResult :: Guid Account -> ApplicationStore (Maybe Result)
+    FindResultByPhone :: Phone -> ApplicationStore (Maybe Result)
 
 instance (Selda m) => Service m ApplicationStore where
-    run (Save a) = saveApplication a
-    run (Find i) = findApplication i
-    run All      = allApplications
+    run (Save a) = save a
+    run (FindByPhone i) = loadByPhone i
+    run All      = loadAll
     run (SaveResult i r) = saveResult i r
     run (FindResult i) = findResult i
+    run (FindResultByPhone p) = findResultByPhone p
 
 
 
 applications :: Table Application
-applications = table "applications" [#accountId :- primary]
+applications = table "applications" [#accountId :- primary, #phone :- index, #phone :- unique]
 
 approvals :: Table AppApproval
 approvals = table "applications_approvals" [#accountId :- primary]
@@ -46,23 +49,23 @@ denials :: Table AppDenial
 denials = table "applications_denials" [#accountId :- primary]
 
 
-saveApplication :: (Selda m) => Application -> m ()
-saveApplication app = do
+save :: (Selda m) => Application -> m ()
+save app = do
     insert applications [app]
     pure ()
 
 
-findApplication :: (Selda m) => Guid Account -> m (Maybe Application)
-findApplication i = do
+loadByPhone :: (Selda m) => Phone -> m (Maybe Application)
+loadByPhone p = do
     as <- query $ do
       app <- select applications
-      restrict (app ! #accountId .== literal i)
+      restrict (app ! #phone .== literal p)
       return app
     pure $ listToMaybe as
 
 
-allApplications :: (Selda m) => m [Application]
-allApplications =
+loadAll :: (Selda m) => m [Application]
+loadAll =
     query $ select applications
 
 
@@ -75,6 +78,16 @@ saveResult accountId (Approved (Approval {..})) = do
 saveResult accountId (Denied (Denial {..})) = do
     insert denials [AppDenial {..}]
     pure ()
+
+
+
+findResultByPhone :: Selda m => Phone -> m (Maybe Result)
+findResultByPhone p = do
+    ma <- loadByPhone p
+    case ma of
+      Nothing -> pure Nothing
+      Just a -> findResult $ accountId (a :: Application)
+
 
 
 -- take the first result you find, favoring denials

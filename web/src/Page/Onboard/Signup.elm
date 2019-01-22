@@ -28,7 +28,6 @@ type alias Model =
     { email : String
     , phone : Phone
     , code : Token AuthCode
-    , sessionId : Id Session
     , authToken : Token Auth
     , plaidToken : Token Bank
     , key : Nav.Key
@@ -66,7 +65,6 @@ init : Nav.Key -> Model
 init key =
     { phone = Id ""
     , email = ""
-    , sessionId = Id ""
     , code = Id ""
     , authToken = Id ""
     , plaidToken = Id ""
@@ -90,7 +88,6 @@ update msg model =
     let
         newApplication token =
             { email = model.email
-            , phone = model.phone
             , publicBankToken = token
             }
     in
@@ -108,15 +105,15 @@ update msg model =
         CompletedCreateCode (Err e) ->
             updates { model | problems = [ "Could not create code" ] }
 
-        CompletedCreateCode (Ok s) ->
-            updates { model | sessionId = s }
+        CompletedCreateCode (Ok _) ->
+            updates model
 
         EditCode s ->
             updates { model | code = Id s }
 
         SubmitCode ->
             updates { model | isLoading = True }
-                |> command (Api.sessionsCheckCode CompletedCheckCode model.sessionId model.code)
+                |> command (Api.sessionsCheckCode CompletedCheckCode model.phone model.code)
 
         CompletedCheckCode (Err e) ->
             updates { model | problems = [ "Invalid code" ] }
