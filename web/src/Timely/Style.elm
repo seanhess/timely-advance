@@ -1,4 +1,4 @@
-module Timely.Style exposing (blue, button, darkBlue, formPage, grey, header, red, white)
+module Timely.Style exposing (..)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -46,3 +46,7 @@ formPage =
 header : List (Attribute msg)
 header =
     [ Region.heading 1, Font.size 36, alignLeft ]
+
+
+error : Attribute msg
+error = Font.color red

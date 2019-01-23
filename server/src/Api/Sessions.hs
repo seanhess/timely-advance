@@ -10,7 +10,7 @@ import           Servant (NoContent(..), err401, ServantErr, Headers, Header)
 import           Servant.Auth.Server (AuthResult(..), CookieSettings(..), JWTSettings, defaultJWTSettings, defaultCookieSettings, IsSecure(..), SetCookie, ThrowAll(..))
 import qualified Servant.Auth.Server as Servant
 
-import           Auth (Phone, AuthCode)
+import           Auth (Phone, AuthCode, AuthConfig)
 import qualified Auth
 import qualified AccountStore.Account as Account
 import           AccountStore.Types (Account)
@@ -34,6 +34,7 @@ authenticate
      , MonadError ServantErr m
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
+     , MonadConfig AuthConfig m
      , Service m Account.AccountStore
      ) => Phone -> AuthCode -> m (SetSession Session)
 authenticate p c = do

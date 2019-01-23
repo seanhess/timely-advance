@@ -11,22 +11,27 @@ module Api.AppM
   ) where
 
 
-import Config (Env(..), loadEnv)
-import Control.Monad.Config (MonadConfig(..))
-import Control.Monad.Reader (ReaderT, runReaderT, asks)
-import Control.Monad.Selda (Selda(..))
-import Control.Monad.IO.Class (liftIO, MonadIO)
-import Data.String.Conversions (cs)
-import Data.Pool (Pool)
+import           Control.Monad.Config (MonadConfig(..))
+import           Control.Monad.Reader (ReaderT, runReaderT, asks, ask)
+import           Control.Monad.Selda (Selda(..))
+import           Control.Monad.IO.Class (liftIO, MonadIO)
+import           Data.String.Conversions (cs)
+import           Data.Pool (Pool)
 import qualified Data.Pool as Pool
-import Database.Selda (MonadMask)
-import Database.Selda.Backend (SeldaConnection)
+import           Database.Selda (MonadMask)
+import           Database.Selda.Backend (SeldaConnection)
 import qualified Database.Selda.PostgreSQL as Selda
 import qualified Network.AMQP.Worker as Worker
-import Network.AMQP.Worker.Monad (MonadWorker(..))
-import Servant (Handler(..), runHandler)
-import Servant.Auth.Server (CookieSettings(..), JWTSettings)
-import Types.Config (ClientConfig(ClientConfig), PlaidConfig(PlaidConfig))
+import           Network.AMQP.Worker.Monad (MonadWorker(..))
+import qualified Network.HTTP.Client as HTTP
+import qualified Network.HTTP.Client.TLS as HTTP
+import           Servant.Auth.Server (CookieSettings(..), JWTSettings)
+import           Servant (Handler(..), runHandler)
+
+import           Auth (AuthConfig)
+import qualified Auth
+import           Config (Env(..), loadEnv)
+import           Types.Config (ClientConfig(ClientConfig), PlaidConfig(PlaidConfig))
 import qualified Api.Sessions as Sessions
 
 
@@ -36,8 +41,7 @@ data AppState = AppState
     , amqpConn :: Worker.Connection
     , cookieSettings :: CookieSettings
     , jwtSettings :: JWTSettings
-    -- , plaid :: Plaid.Credentials
-    -- , manager :: HTTP.Manager
+    , manager :: HTTP.Manager
     }
 
 
@@ -51,7 +55,7 @@ loadState = do
     env <- loadEnv
     amqpConn <- Worker.connect (Worker.fromURI $ cs $ amqp env)
     dbConn <- liftIO $ Pool.createPool (createConn $ cs $ postgres env) destroyConn 1 5 3
-    -- let plaid = Plaid.Credentials (plaidClientId env) (plaidClientSecret env)
+    manager <- liftIO $ HTTP.newManager HTTP.tlsManagerSettings
     pure AppState {..}
   where
     createConn = Selda.pgOpen' Nothing
@@ -82,6 +86,15 @@ instance MonadConfig CookieSettings AppM where
 
 instance MonadConfig JWTSettings AppM where
     config = asks jwtSettings
+
+instance MonadConfig AuthConfig AppM where
+    config = do
+      state <- ask
+      let m = manager state
+          u = authyBaseUrl $ env state
+          k = authyApiKey $ env state
+      pure $ Auth.AuthConfig m u k
+
 
 
 nt :: AppState -> AppM a -> Handler a

@@ -30,20 +30,21 @@ type alias Model =
     , code : Token AuthCode
     , plaidToken : Token Bank
     , key : Nav.Key
+    , step : Step
     , status : Status
-    , isLoading : Bool
-    , problems : List Problem
     }
 
 
-type Status
+type Step
     = EditingForm
     | EditingCode
     | Plaid
 
 
-type alias Problem =
-    String
+type Status
+    = Loading
+    | Ready
+    | Failed String Http.Error
 
 
 type Msg
@@ -66,10 +67,9 @@ init key =
     , email = ""
     , code = Id ""
     , plaidToken = Id ""
-    , status = EditingForm
+    , step = EditingForm
+    , status = Ready
     , key = key
-    , problems = []
-    , isLoading = False
     }
 
 
@@ -97,35 +97,35 @@ update msg model =
             updates { model | email = s }
 
         SubmitForm ->
-            updates { model | status = EditingCode }
+            updates { model | status = Loading }
                 |> command (Api.sessionsCreateCode CompletedCreateCode model.phone)
 
         CompletedCreateCode (Err e) ->
-            updates { model | problems = [ "Could not create code" ] }
+            updates { model | status = Failed "Could not create code" e }
 
         CompletedCreateCode (Ok _) ->
-            updates model
+            updates { model | status = Ready, step = EditingCode }
 
         EditCode s ->
             updates { model | code = Id s }
 
         SubmitCode ->
-            updates { model | isLoading = True }
+            updates { model | status = Loading }
                 |> command (Api.sessionsCheckCode CompletedCheckCode model.phone model.code)
 
         CompletedCheckCode (Err e) ->
-            updates { model | problems = [ "Invalid code" ] }
+            updates { model | status = Failed "Invalid code" e }
 
         CompletedCheckCode (Ok t) ->
-            updates { model | status = Plaid }
+            updates { model | status = Ready, step = Plaid }
                 |> command (plaidLinkOpen Encode.null)
 
         PlaidOpen ->
             updates model
                 |> command (plaidLinkOpen Encode.null)
 
-        -- Leave this here. Elm throws an error if there are no subscribers for a subscription!
         PlaidExited ->
+            -- Leave this here. Elm throws an error if there are no subscribers for a subscription!
             updates model
 
         PlaidDone token ->
@@ -133,7 +133,7 @@ update msg model =
                 |> command (Api.postApplications CompletedSignup <| newApplication (Id token))
 
         CompletedSignup (Err e) ->
-            updates { model | problems = [ "Signup server error: " ++ Debug.toString e ] }
+            updates { model | status = Failed "Signup server error" e }
 
         CompletedSignup (Ok a) ->
             updates model
@@ -142,7 +142,7 @@ update msg model =
 
 view : Model -> Element Msg
 view model =
-    case model.status of
+    case model.step of
         EditingForm ->
             viewSignupForm model
 
@@ -150,7 +150,7 @@ view model =
             viewPhoneCode model
 
         Plaid ->
-            viewPlaidLanding
+            viewPlaidLanding model
 
 
 viewSignupForm : Model -> Element Msg
@@ -173,6 +173,7 @@ viewSignupForm model =
             { onPress = Just SubmitForm
             , label = Element.text "Sign up"
             }
+        , viewProblems model.status
         ]
 
 
@@ -191,17 +192,19 @@ viewPhoneCode model =
             { onPress = Just SubmitCode
             , label = Element.text "Check code"
             }
+        , viewProblems model.status
         ]
 
 
-viewPlaidLanding : Element Msg
-viewPlaidLanding =
+viewPlaidLanding : Model -> Element Msg
+viewPlaidLanding model =
     column Style.formPage
         [ el Style.header (text "Connect your bank")
         , Input.button Style.button
             { onPress = Just PlaidOpen
             , label = Element.text "Connect Bank"
             }
+        , viewProblems model.status
         ]
 
 
@@ -210,8 +213,18 @@ label t =
     Input.labelAbove [ Font.size 14 ] (text t)
 
 
+viewProblems : Status -> Element Msg
+viewProblems status =
+    case status of
+        Failed p _ ->
+            el [ Style.error ] (text p)
 
--- TODO collect email and phone
+        _ ->
+            el [] (text "")
+
+
+
+-- TODO collect email and pone
 -- TODO collect phone code
 -- TODO show plaid
 -- TODO bank landing page "Securly Connect bank"

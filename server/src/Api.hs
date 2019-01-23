@@ -63,7 +63,7 @@ data VersionedApi route = VersionedApi
 
 
 
--- Personal Information : Account and Application -----------------------------------------
+-- Personal Information : Account and Application ---------------------
 data AccountApi route = AccountApi
     { _get   :: route :- Get '[JSON, HTML] Account
     , _banks :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]

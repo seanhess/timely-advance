@@ -30,6 +30,7 @@ dependencies:
 - http-media
 - http-client
 - http-client-tls
+- http-types
 - jose
 - mtl
 - monad-control

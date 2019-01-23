@@ -8,6 +8,7 @@ import Data.Text (Text)
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 import Network.Plaid.Types (Id(..), Client, Secret, Public)
+import Network.Authy (AuthyApiKey)
 import System.Envy (FromEnv, DefConfig(..), Var(..))
 import Servant.Client (BaseUrl(..), Scheme(Https))
 import qualified Servant.Client as Servant
@@ -20,6 +21,8 @@ data Env = Env
     , plaidPublicKey :: Id Public
     , plaidClientId :: Id Client
     , plaidClientSecret :: Id Secret
+    , authyBaseUrl :: BaseUrl
+    , authyApiKey :: AuthyApiKey
     } deriving (Show, Eq, Generic)
 
 
@@ -31,6 +34,8 @@ instance DefConfig Env where
       , plaidPublicKey = Id "447ab26f3980c45b7202e2006dd9bf"
       , plaidClientId = Id "5c1a663c5eca930011ff67ee"
       , plaidClientSecret = Id "db8bad5d68d41340cba767615c7aea"
+      , authyApiKey = "bmGKSWu6xZ8vGEhtfvsIBZKcxLarHs64"
+      , authyBaseUrl = BaseUrl Https "api.authy.com" 443 ""
       }
 
 instance FromEnv Env
