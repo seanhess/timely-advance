@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountInfo, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Balance, Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Phone, Session, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeId, expectId, getAccount, getAccountBanks, getApplicationResult, idValue, postApplications, sessionsCheckCode, sessionsCreateCode, sessionsGet)
+module Timely.Api exposing (Account, AccountInfo, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Balance, Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Phone, Session, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeId, expectId, getAccount, getAccountBanks, getApplicationResult, idValue, postApplications, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout)
 
 import Http exposing (Error, Expect)
 import Json.Decode as Decode exposing (Decoder, int, list, nullable, string)
@@ -176,20 +176,6 @@ decodeBankAccountType =
             )
 
 
-
--- getAccounts : (Result Error (List Account) -> msg) -> Cmd msg
--- getAccounts toMsg =
---     Http.request
---         { method = "GET"
---         , headers = []
---         , url = String.join "/" [ "", "v1", "accounts" ]
---         , body = Http.emptyBody
---         , expect = Http.expectJson toMsg (list decodeAccount)
---         , timeout = Nothing
---         , tracker = Nothing
---         }
-
-
 postApplications : (Result Error Application -> msg) -> AccountInfo -> Cmd msg
 postApplications toMsg body =
     Http.request
@@ -315,6 +301,19 @@ sessionsGet toMsg =
         , url = String.join "/" [ "", "v1", "sessions" ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg decodeSession
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+sessionsLogout : (Result Error () -> msg) -> Cmd msg
+sessionsLogout toMsg =
+    Http.request
+        { method = "DELETE"
+        , headers = []
+        , url = String.join "/" [ "", "v1", "sessions" ]
+        , body = Http.emptyBody
+        , expect = Http.expectWhatever toMsg
         , timeout = Nothing
         , tracker = Nothing
         }

@@ -1,4 +1,4 @@
-port module Page.Onboard.Signup exposing (Model, Msg, init, subscriptions, update, view)
+port module Page.Onboard.Signup exposing (Mode(..), Model, Msg, init, subscriptions, update, view)
 
 import Browser.Navigation as Nav
 import Debug
@@ -32,7 +32,13 @@ type alias Model =
     , key : Nav.Key
     , step : Step
     , status : Status
+    , mode : Mode
     }
+
+
+type Mode
+    = Signup
+    | Login
 
 
 type Step
@@ -61,8 +67,8 @@ type Msg
     | CompletedSignup (Result Http.Error Application)
 
 
-init : Nav.Key -> Model
-init key =
+init : Nav.Key -> Mode -> Model
+init key mode =
     { phone = Id ""
     , email = ""
     , code = Id ""
@@ -70,6 +76,7 @@ init key =
     , step = EditingForm
     , status = Ready
     , key = key
+    , mode = mode
     }
 
 
@@ -151,7 +158,12 @@ view : Model -> Element Msg
 view model =
     case model.step of
         EditingForm ->
-            viewSignupForm model
+            case model.mode of
+                Signup ->
+                    viewSignupForm model
+
+                Login ->
+                    viewLoginForm model
 
         EditingCode ->
             viewPhoneCode model
@@ -164,24 +176,47 @@ viewSignupForm : Model -> Element Msg
 viewSignupForm model =
     column Style.formPage
         [ el Style.header (text "Sign up for Timely")
-        , Input.email []
-            { text = model.email
-            , placeholder = Nothing
-            , onChange = EditEmail
-            , label = label "Email"
-            }
-        , Input.text [ htmlAttribute (Html.type_ "tel") ]
-            { text = idValue model.phone
-            , placeholder = Nothing
-            , onChange = EditPhone
-            , label = label "Phone"
-            }
+        , viewEmailInput model
+        , viewPhoneInput model
         , Input.button Style.button
             { onPress = Just SubmitForm
             , label = Element.text "Sign up"
             }
         , viewProblems model.status
         ]
+
+
+viewLoginForm : Model -> Element Msg
+viewLoginForm model =
+    column Style.formPage
+        [ el Style.header (text "Log in to Timely")
+        , viewPhoneInput model
+        , Input.button Style.button
+            { onPress = Just SubmitForm
+            , label = Element.text "Login"
+            }
+        , viewProblems model.status
+        ]
+
+
+viewPhoneInput : Model -> Element Msg
+viewPhoneInput model =
+    Input.text [ htmlAttribute (Html.type_ "tel") ]
+        { text = idValue model.phone
+        , placeholder = Nothing
+        , onChange = EditPhone
+        , label = label "Phone"
+        }
+
+
+viewEmailInput : Model -> Element Msg
+viewEmailInput model =
+    Input.email []
+        { text = model.email
+        , placeholder = Nothing
+        , onChange = EditEmail
+        , label = label "Email"
+        }
 
 
 viewPhoneCode : Model -> Element Msg

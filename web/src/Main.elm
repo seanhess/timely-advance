@@ -112,7 +112,7 @@ update msg model =
                     |> updateWith Accounts OnAccounts model
 
             ( OnAccount acc, Account m ) ->
-                Account.update acc m
+                Account.update model.key acc m
                     |> updateWith Account OnAccount model
 
             ( OnInit ini, Init m ) ->
@@ -171,7 +171,10 @@ changeRouteTo key maybeRoute =
             ( Landing mod, Cmd.map OnLanding cmd )
 
         Just (Route.Onboard Route.Signup) ->
-            ( Signup (Signup.init key), Cmd.none )
+            ( Signup (Signup.init key Signup.Signup), Cmd.none )
+
+        Just (Route.Onboard Route.Login) ->
+            ( Signup (Signup.init key Signup.Login), Cmd.none )
 
         Just (Route.Onboard (Route.Approval i)) ->
             let

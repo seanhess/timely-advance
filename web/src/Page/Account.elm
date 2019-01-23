@@ -1,10 +1,12 @@
 module Page.Account exposing (Model, Msg, init, update, view)
 
+import Browser.Navigation as Nav
 import Debug
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
 import Http
+import Route
 import Timely.Api as Api exposing (Account, BankAccount, BankAccountType(..), Id)
 import Timely.Style as Style
 
@@ -13,8 +15,14 @@ type alias Model =
     { accountId : Id Account
     , account : Maybe Account
     , banks : List BankAccount
-    , problems : List Problem
+    , status : Status
     }
+
+
+type Status
+    = Ready
+    | Loading
+    | Failed Problem Http.Error
 
 
 type alias Problem =
@@ -24,15 +32,13 @@ type alias Problem =
 type Msg
     = LoadComplete (Result Http.Error Account)
     | LoadBanksComplete (Result Http.Error (List BankAccount))
-
-
-
--- TODO load the account
+    | Logout
+    | LogoutDone (Result Http.Error ())
 
 
 init : Id Account -> ( Model, Cmd Msg )
 init id =
-    ( { accountId = id, account = Nothing, problems = [], banks = [] }
+    ( { accountId = id, account = Nothing, status = Loading, banks = [] }
     , Cmd.batch
         [ Api.getAccount LoadComplete
         , Api.getAccountBanks LoadBanksComplete
@@ -40,30 +46,33 @@ init id =
     )
 
 
-
---Api.getAccounts LoadComplete )
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Nav.Key -> Msg -> Model -> ( Model, Cmd Msg )
+update nav msg model =
     case msg of
         LoadComplete (Err e) ->
-            ( { model | problems = [ "Could not load account" ] ++ model.problems }, Cmd.none )
+            ( { model | status = Failed "Could not load account" e }, Cmd.none )
 
         LoadComplete (Ok acc) ->
-            ( { model | account = Just acc }, Cmd.none )
+            ( { model | status = Ready, account = Just acc }, Cmd.none )
 
         LoadBanksComplete (Err e) ->
-            ( { model | problems = [ "Could not load banks" ] ++ model.problems }, Cmd.none )
+            ( { model | status = Failed "Could not load banks" e }, Cmd.none )
 
         LoadBanksComplete (Ok bs) ->
-            ( { model | banks = bs }, Cmd.none )
+            ( { model | status = Ready, banks = bs }, Cmd.none )
+
+        Logout ->
+            ( model, Api.sessionsLogout LogoutDone )
+
+        LogoutDone _ ->
+            ( model, Nav.pushUrl nav (Route.url (Route.Onboard Route.Landing)) )
 
 
 view : Model -> Element Msg
 view model =
     Element.column Style.formPage
         [ el Style.header (text "Account")
+        , Input.button [] { onPress = Just Logout, label = text "Logout" }
         , accountView model.account
         , el Style.header (text "Banks")
         , banksTable model.banks

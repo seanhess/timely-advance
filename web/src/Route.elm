@@ -22,6 +22,7 @@ type alias AccountId =
 type Onboard
     = Landing
     | Signup
+    | Login
     | Approval (Id Account)
 
 
@@ -42,10 +43,10 @@ type Route
 parser : Parser (Route -> a) a
 parser =
     oneOf
-        [ Parser.map Onboard (s "onboard" </> parserOnboard)
+        [ Parser.map Init Parser.top
+        , Parser.map Onboard (s "onboard" </> parserOnboard)
         , Parser.map Accounts (s "accounts")
         , Parser.map Account (s "accounts" </> Parser.map Id string)
-        , Parser.map Init Parser.top
         ]
 
 
@@ -54,6 +55,7 @@ parserOnboard =
     oneOf
         [ Parser.map Landing Parser.top
         , Parser.map Signup (s "signup")
+        , Parser.map Login (s "login")
         , Parser.map Approval (s "approval" </> Parser.map Id string)
         ]
 
@@ -95,6 +97,9 @@ url page =
 
                 Onboard Signup ->
                     [ "onboard", "signup" ]
+
+                Onboard Login ->
+                    [ "onboard", "login" ]
 
                 Onboard (Approval (Id s)) ->
                     [ "onboard", "approval", s ]
