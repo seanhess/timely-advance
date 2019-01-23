@@ -53,8 +53,8 @@ data BaseApi route = BaseApi
 
 data VersionedApi route = VersionedApi
     { _info     :: route :- Get '[HTML] [Link]
-    , _account  :: route :- "account"      :> Auth '[Cookie] Session :> Capture "id" (Guid Account) :> ToServantApi AccountApi
-    , _app      :: route :- "application"  :> Auth '[Cookie] Session :> ToServantApi AppApi
+    , _account  :: route :- "accounts"      :> Auth '[Cookie] Session :> Capture "id" (Guid Account) :> ToServantApi AccountApi
+    , _app      :: route :- "applications"  :> Auth '[Cookie] Session :> ToServantApi AppApi
     , _sessions :: route :- "sessions"     :> ToServantApi SessionsApi
     , _config   :: route :- "config"       :> Get '[JSON] ClientConfig
     , _config'  :: route :- "config.js"    :> Get '[JS "CONFIG"] ClientConfig

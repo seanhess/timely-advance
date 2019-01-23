@@ -181,7 +181,7 @@ postApplications toMsg body =
     Http.request
         { method = "POST"
         , headers = []
-        , url = String.join "/" [ "", "v1", "application" ]
+        , url = String.join "/" [ "", "v1", "applications" ]
         , body = Http.jsonBody (encodeAccountInfo body)
         , expect = Http.expectJson toMsg decodeApplication
         , timeout = Nothing
@@ -194,7 +194,7 @@ getAccount toMsg (Id a) =
     Http.request
         { method = "GET"
         , headers = []
-        , url = String.join "/" [ "", "v1", "account", a ]
+        , url = String.join "/" [ "", "v1", "accounts", a ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg decodeAccount
         , timeout = Nothing
@@ -207,7 +207,7 @@ getAccountBanks toMsg (Id a) =
     Http.request
         { method = "GET"
         , headers = []
-        , url = String.join "/" [ "", "v1", "account", a, "bank-accounts" ]
+        , url = String.join "/" [ "", "v1", "accounts", a, "bank-accounts" ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg (list decodeBankAccount)
         , timeout = Nothing
@@ -220,7 +220,7 @@ getApplicationResult toMsg (Id a) =
     Http.request
         { method = "GET"
         , headers = []
-        , url = String.join "/" [ "", "v1", "account", a, "application", "result" ]
+        , url = String.join "/" [ "", "v1", "accounts", a, "application", "result" ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg decodeApprovalResult
         , timeout = Nothing
