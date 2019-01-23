@@ -44,12 +44,12 @@ instance (MonadIO m) => Service m AuthService where
 
 
 
-login :: (ToJWT session, MonadIO m, MonadError ServantErr m) => CookieSettings -> JWTSettings -> session -> m (Headers '[ Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie ] session)
-login cke jwt session = do
+login :: (ToJWT session, MonadIO m, MonadError ServantErr m) => CookieSettings -> JWTSettings -> session -> value -> m (Headers '[ Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie ] value)
+login cke jwt session value = do
   mApplyCookies <- liftIO $ acceptLogin cke jwt session
   case mApplyCookies of
     Nothing -> throwError err401
-    Just applyCookies -> pure $ applyCookies session
+    Just applyCookies -> pure $ applyCookies value
 
 
 logout :: Applicative m => CookieSettings -> m (Headers '[ Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] NoContent)

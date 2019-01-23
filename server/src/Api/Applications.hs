@@ -4,22 +4,35 @@ module Api.Applications
     ( newApplication
     ) where
 
+import           Control.Monad.Service (Service(..))
+import           Control.Monad.Config (MonadConfig(..))
+import           Control.Monad.Except (MonadError(..))
+import           Control.Monad.IO.Class (liftIO, MonadIO)
+import           Network.AMQP.Worker.Monad (MonadWorker)
+import qualified Network.AMQP.Worker.Monad as Worker
+import           Servant (ServantErr)
+import           Servant.Auth.Server (CookieSettings, JWTSettings)
+
+import AccountStore.Types (Application(..), Account)
+import Auth (Phone)
+import Api.Types (AccountInfo(..))
+import           Api.Sessions (SetSession)
+import qualified Api.Sessions as Sessions
 import qualified AccountStore.Application as Application
 import           AccountStore.Application   (ApplicationStore)
 import qualified Events
-import Control.Monad.Service (Service(..))
-import Control.Monad.IO.Class (liftIO)
 import Types.Guid (Guid, randomId)
-import Network.AMQP.Worker.Monad (MonadWorker)
-import qualified Network.AMQP.Worker.Monad as Worker
-import AccountStore.Types (Application(..), Account)
-
-import Auth (Phone)
-import Api.Types (AccountInfo(..))
+import Types.Session (Session(..))
 
 
--- TODO switch to Service m ApplicationStore constraint
-newApplication :: (MonadWorker m, Service m ApplicationStore) => Phone -> AccountInfo -> m Application
+newApplication
+  :: ( MonadWorker m
+     , Service m ApplicationStore
+     , MonadIO m
+     , MonadError ServantErr m
+     , MonadConfig CookieSettings m
+     , MonadConfig JWTSettings m
+     ) => Phone -> AccountInfo -> m (SetSession Application)
 newApplication phone info = do
     -- create an application
     accountId <- randomId
@@ -33,7 +46,8 @@ newApplication phone info = do
     liftIO $ print app
     Worker.publish Events.applicationsNew app
 
-    pure app
+    -- set the session
+    Sessions.setSession (Session phone (Just accountId)) app
 
 
 

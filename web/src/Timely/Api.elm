@@ -317,27 +317,27 @@ decodeId =
     Decode.map Id Decode.string
 
 
-sessionsCreateCode : (Result Error (Id Session) -> msg) -> Phone -> Cmd msg
+sessionsCreateCode : (Result Error () -> msg) -> Phone -> Cmd msg
 sessionsCreateCode toMsg p =
     Http.request
         { method = "POST"
         , headers = []
         , url = String.join "/" [ "", "v1", "sessions" ]
         , body = Http.jsonBody (encodeId p)
-        , expect = expectId toMsg
+        , expect = Http.expectWhatever toMsg
         , timeout = Nothing
         , tracker = Nothing
         }
 
 
-sessionsCheckCode : (Result Error (Token Auth) -> msg) -> Phone -> Token AuthCode -> Cmd msg
+sessionsCheckCode : (Result Error () -> msg) -> Phone -> Token AuthCode -> Cmd msg
 sessionsCheckCode toMsg (Id p) c =
     Http.request
         { method = "POST"
         , headers = []
         , url = String.join "/" [ "", "v1", "sessions", p ]
         , body = Http.jsonBody (encodeId c)
-        , expect = expectId toMsg
+        , expect = Http.expectWhatever toMsg
         , timeout = Nothing
         , tracker = Nothing
         }

@@ -1,9 +1,11 @@
 module Api.Sessions where
 
 
+import           Crypto.JOSE.JWK (JWK)
+import           Control.Monad.Config
 import           Control.Monad.Service (Service(..))
 import           Control.Monad.Except (MonadError(..))
-import           Control.Monad.IO.Class (MonadIO)
+import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Servant (NoContent(..), err401, ServantErr, Headers, Header)
 import           Servant.Auth.Server (AuthResult(..), CookieSettings(..), JWTSettings, defaultJWTSettings, defaultCookieSettings, IsSecure(..), SetCookie, ThrowAll(..))
 import qualified Servant.Auth.Server as Servant
@@ -27,37 +29,72 @@ generateCode p = do
 
 
 -- TODO check to see if there's an account and set the account id
-authenticate :: (MonadIO m, MonadError ServantErr m, Service m Account.AccountStore) => CookieSettings -> JWTSettings -> Phone -> AuthCode -> m (SetSession Session)
-authenticate cke jwt p c = do
+authenticate
+  :: ( MonadIO m
+     , MonadError ServantErr m
+     , MonadConfig CookieSettings m
+     , MonadConfig JWTSettings m
+     , Service m Account.AccountStore
+     ) => Phone -> AuthCode -> m (SetSession Session)
+authenticate p c = do
   res <- run $ Auth.CodeCheck p c
   if not res
      then throwError err401
-     else session cke jwt p
+     else session p
 
 
-session :: (MonadIO m, MonadError ServantErr m, Service m Account.AccountStore) => CookieSettings -> JWTSettings -> Phone -> m (SetSession Session)
-session cke jwt p = do
+session
+  :: ( MonadIO m
+     , MonadError ServantErr m
+     , Service m Account.AccountStore
+     , MonadConfig CookieSettings m
+     , MonadConfig JWTSettings m
+     ) => Phone -> m (SetSession Session)
+session p = do
     -- they've already successfully validated the code. They're in!
     ma <- run $ Account.FindByPhone p
-    Auth.login cke jwt $ Session p ma
+    let s = Session p ma
+    setSession s s
 
 
-checkSession :: (MonadIO m, MonadError ServantErr m, Service m Account.AccountStore) => CookieSettings -> JWTSettings -> AuthResult Session -> m (SetSession Session)
-checkSession cke jwt (Authenticated (Session p _)) = session cke jwt p
-checkSession _ _ _ =
+setSession
+  :: ( MonadIO m
+     , MonadError ServantErr m
+     , MonadConfig CookieSettings m
+     , MonadConfig JWTSettings m
+     ) => Session -> value -> m (SetSession value)
+setSession s value = do
+    cke <- config
+    jwt <- config
+    Auth.login cke jwt s value
+
+
+
+checkSession
+  :: ( MonadIO m
+     , MonadError ServantErr m
+     , Service m Account.AccountStore
+     , MonadConfig CookieSettings m
+     , MonadConfig JWTSettings m
+     ) => AuthResult Session -> m (Session)
+checkSession (Authenticated s) = pure s
+checkSession _ =
   throwError err401
 
 
 
-logout :: Monad m => CookieSettings -> m (SetSession NoContent)
-logout cke = Auth.logout cke
+logout :: (Monad m, MonadConfig CookieSettings m) => m (SetSession NoContent)
+logout = do
+  cke <- config
+  Auth.logout cke
 
 
 jwtSettings jwk = defaultJWTSettings jwk
 cookieSettings = defaultCookieSettings { cookieIsSecure = NotSecure, cookieXsrfSetting = Nothing }
 
 
-generateKey = Servant.generateKey
+generateKey :: MonadIO m => m JWK
+generateKey = liftIO $ Servant.generateKey
 
 
 

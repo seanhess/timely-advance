@@ -12,6 +12,7 @@ module Api.AppM
 
 
 import Config (Env(..), loadEnv)
+import Control.Monad.Config (MonadConfig(..))
 import Control.Monad.Reader (ReaderT, runReaderT, asks)
 import Control.Monad.Selda (Selda(..))
 import Control.Monad.IO.Class (liftIO, MonadIO)
@@ -24,13 +25,17 @@ import qualified Database.Selda.PostgreSQL as Selda
 import qualified Network.AMQP.Worker as Worker
 import Network.AMQP.Worker.Monad (MonadWorker(..))
 import Servant (Handler(..), runHandler)
+import Servant.Auth.Server (CookieSettings(..), JWTSettings)
 import Types.Config (ClientConfig(ClientConfig), PlaidConfig(PlaidConfig))
+import qualified Api.Sessions as Sessions
 
 
 data AppState = AppState
     { env :: Env
     , dbConn :: Pool SeldaConnection
     , amqpConn :: Worker.Connection
+    , cookieSettings :: CookieSettings
+    , jwtSettings :: JWTSettings
     -- , plaid :: Plaid.Credentials
     -- , manager :: HTTP.Manager
     }
@@ -40,6 +45,9 @@ data AppState = AppState
 
 loadState :: (MonadIO m, MonadMask m) => m AppState
 loadState = do
+    key <- Sessions.generateKey
+    let jwtSettings = Sessions.jwtSettings key
+    let cookieSettings = Sessions.cookieSettings
     env <- loadEnv
     amqpConn <- Worker.connect (Worker.fromURI $ cs $ amqp env)
     dbConn <- liftIO $ Pool.createPool (createConn $ cs $ postgres env) destroyConn 1 5 3
@@ -68,6 +76,12 @@ instance Selda AppM where
 
 instance MonadWorker AppM where
     amqpConnection = asks amqpConn
+
+instance MonadConfig CookieSettings AppM where
+    config = asks cookieSettings
+
+instance MonadConfig JWTSettings AppM where
+    config = asks jwtSettings
 
 
 nt :: AppState -> AppM a -> Handler a

@@ -28,7 +28,6 @@ type alias Model =
     { email : String
     , phone : Phone
     , code : Token AuthCode
-    , authToken : Token Auth
     , plaidToken : Token Bank
     , key : Nav.Key
     , status : Status
@@ -56,8 +55,8 @@ type Msg
     | PlaidOpen
     | PlaidExited
     | PlaidDone String
-    | CompletedCheckCode (Result Http.Error (Token Auth))
-    | CompletedCreateCode (Result Http.Error (Id Session))
+    | CompletedCheckCode (Result Http.Error ())
+    | CompletedCreateCode (Result Http.Error ())
     | CompletedSignup (Result Http.Error Application)
 
 
@@ -66,7 +65,6 @@ init key =
     { phone = Id ""
     , email = ""
     , code = Id ""
-    , authToken = Id ""
     , plaidToken = Id ""
     , status = EditingForm
     , key = key
@@ -119,7 +117,7 @@ update msg model =
             updates { model | problems = [ "Invalid code" ] }
 
         CompletedCheckCode (Ok t) ->
-            updates { model | authToken = t, status = Plaid }
+            updates { model | status = Plaid }
                 |> command (plaidLinkOpen Encode.null)
 
         PlaidOpen ->

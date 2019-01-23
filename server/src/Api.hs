@@ -9,7 +9,6 @@
 {-# LANGUAGE RankNTypes     #-}
 module Api where
 
-import Crypto.JOSE.JWK (JWK)
 import           Control.Monad.Service (Service(..))
 import           Control.Monad.Except (throwError, MonadError)
 import           GHC.Generics (Generic)
@@ -76,14 +75,14 @@ data AccountApi route = AccountApi
 data AppApi route = AppApi
     { _get    :: route :- Get '[JSON] Application
     , _result :: route :- "result" :> Get '[JSON] Result
-    , _post   :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] Application
+    , _post   :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] (SetSession Application)
     } deriving (Generic)
 
 
 data SessionsApi route = SessionsApi
     { _code    :: route :- ReqBody '[JSON] Phone :> Post '[JSON] NoContent
     , _auth    :: route :- Capture "phone" Phone :> ReqBody '[JSON] AuthCode :> Post '[JSON] (SetSession Session)
-    , _check   :: route :- Auth '[Cookie] Session :> Get '[JSON] (SetSession Session)
+    , _check   :: route :- Auth '[Cookie] Session :> Get '[JSON] (Session)
     , _logout  :: route :- Delete '[JSON] (SetSession NoContent)
     } deriving Generic
 
@@ -104,26 +103,26 @@ applicationApi p = genericServerT AppApi
     , _post   = Applications.newApplication p
     }
 
-sessionsApi :: CookieSettings -> JWTSettings -> ToServant SessionsApi (AsServerT AppM)
-sessionsApi cke jwt = genericServerT SessionsApi
+sessionsApi :: ToServant SessionsApi (AsServerT AppM)
+sessionsApi = genericServerT SessionsApi
     { _code   = Sessions.generateCode
-    , _auth   = Sessions.authenticate cke jwt
-    , _check  = Sessions.checkSession cke jwt
-    , _logout = Sessions.logout cke
+    , _auth   = Sessions.authenticate
+    , _check  = Sessions.checkSession
+    , _logout = Sessions.logout
     }
 
 
-baseApi :: CookieSettings -> JWTSettings -> ToServant BaseApi (AsServerT AppM)
-baseApi cke jwt = genericServerT BaseApi
+baseApi :: ToServant BaseApi (AsServerT AppM)
+baseApi = genericServerT BaseApi
     { _info = pure "Timely"
-    , _versioned = versionedApi cke jwt
+    , _versioned = versionedApi
     }
 
-versionedApi :: CookieSettings -> JWTSettings -> ToServant VersionedApi (AsServerT AppM)
-versionedApi cke jwt = genericServerT VersionedApi
+versionedApi :: ToServant VersionedApi (AsServerT AppM)
+versionedApi = genericServerT VersionedApi
     { _account  = Sessions.protectAccount accountApi
     , _app      = Sessions.protectPhone applicationApi
-    , _sessions = sessionsApi cke jwt
+    , _sessions = sessionsApi
     , _config   = clientConfig
     , _config'  = clientConfig
     , _info     = pure [Link "accounts" [], Link "applications" [], Link "config" []]
@@ -135,22 +134,20 @@ apiProxy :: Proxy Api
 apiProxy = Proxy
 
 
-server :: CookieSettings -> JWTSettings -> AppState -> Server Api
-server cke jwt st = hoistServerWithContext apiProxy context (nt st) (baseApi cke jwt)
+server :: AppState -> Server Api
+server st = hoistServerWithContext apiProxy context (nt st) (baseApi)
   where
     context :: Proxy '[CookieSettings, JWTSettings]
     context = Proxy
 
 -- https://haskell-servant.readthedocs.io/en/stable/cookbook/jwt-and-basic-auth/JWTAndBasicAuth.html
 -- https://github.com/haskell-servant/servant-auth#readme
-application :: JWK -> AppState -> Servant.Application
-application jwk st =
-    logger $ serveWithContext apiProxy context $ server cke jwt st
+application :: AppState -> Servant.Application
+application st =
+    logger $ serveWithContext apiProxy context $ server st
   where
     logger = RequestLogger.logStdout
-    context = jwt :. cke :. EmptyContext
-    jwt = Sessions.jwtSettings jwk
-    cke = Sessions.cookieSettings
+    context = (jwtSettings st) :. (cookieSettings st) :. EmptyContext
 
 
 
@@ -166,14 +163,14 @@ initialize = do
     putStrLn "Done"
 
 
+-- TODO use secret to generate key so sessions aren't invalidated
 start :: Warp.Port -> IO ()
 start port = do
     -- Load state
     state <- loadState
 
     putStrLn $ "Running on " ++ show port
-    key <- Sessions.generateKey
-    Warp.run port (application key state)
+    Warp.run port (application state)
 
 
 notFound :: (MonadError ServantErr m) => Maybe a -> m a
