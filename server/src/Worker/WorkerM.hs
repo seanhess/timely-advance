@@ -5,11 +5,10 @@ module Worker.WorkerM where
 
 import Config (loadEnv, Env(..))
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Plaid (MonadPlaid)
+import Control.Monad.Config (MonadConfig(..))
 import Control.Monad.Reader (ReaderT, runReaderT, asks)
 import Control.Exception (SomeException)
 import Control.Monad.Selda (Selda(..))
-import qualified Control.Monad.Plaid
 import Data.Pool (Pool)
 import qualified Data.Pool as Pool
 import Data.Aeson (FromJSON)
@@ -24,6 +23,8 @@ import Network.AMQP.Worker.Monad (MonadWorker(..))
 import qualified Network.Plaid as Plaid
 import qualified Network.HTTP.Client as HTTP
 import qualified Network.HTTP.Client.TLS as HTTP
+
+import qualified Bank
 
 
 data AppState = AppState
@@ -44,10 +45,12 @@ instance Selda WorkerM where
 instance MonadWorker WorkerM where
     amqpConnection = asks amqpConn
 
-instance MonadPlaid WorkerM where
-    credentials = asks plaid
-    manager = asks manager
-    baseUrl = asks (plaidBaseUrl . env)
+instance MonadConfig Bank.Config WorkerM where
+    config = do
+      c <- asks plaid
+      m <- asks manager
+      b <- asks (plaidBaseUrl . env)
+      pure $ Bank.Config { Bank.manager = m, Bank.baseUrl = b, Bank.credentials = c }
 
 
 loadState :: (MonadIO m, MonadMask m) => m AppState
