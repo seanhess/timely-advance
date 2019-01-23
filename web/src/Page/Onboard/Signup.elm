@@ -56,7 +56,7 @@ type Msg
     | PlaidOpen
     | PlaidExited
     | PlaidDone String
-    | CompletedCheckCode (Result Http.Error ())
+    | CompletedCheckCode (Result Http.Error Session)
     | CompletedCreateCode (Result Http.Error ())
     | CompletedSignup (Result Http.Error Application)
 
@@ -89,55 +89,62 @@ update msg model =
             , publicBankToken = token
             }
     in
-    case msg of
-        EditPhone s ->
-            updates { model | phone = Id s }
+    Debug.log (Debug.toString msg) <|
+        case msg of
+            EditPhone s ->
+                updates { model | phone = Id s }
 
-        EditEmail s ->
-            updates { model | email = s }
+            EditEmail s ->
+                updates { model | email = s }
 
-        SubmitForm ->
-            updates { model | status = Loading }
-                |> command (Api.sessionsCreateCode CompletedCreateCode model.phone)
+            SubmitForm ->
+                updates { model | status = Loading }
+                    |> command (Api.sessionsCreateCode CompletedCreateCode model.phone)
 
-        CompletedCreateCode (Err e) ->
-            updates { model | status = Failed "Could not create code" e }
+            CompletedCreateCode (Err e) ->
+                updates { model | status = Failed "Could not create code" e }
 
-        CompletedCreateCode (Ok _) ->
-            updates { model | status = Ready, step = EditingCode }
+            CompletedCreateCode (Ok _) ->
+                updates { model | status = Ready, step = EditingCode }
 
-        EditCode s ->
-            updates { model | code = Id s }
+            EditCode s ->
+                updates { model | code = Id s }
 
-        SubmitCode ->
-            updates { model | status = Loading }
-                |> command (Api.sessionsCheckCode CompletedCheckCode model.phone model.code)
+            SubmitCode ->
+                updates { model | status = Loading }
+                    |> command (Api.sessionsCheckCode CompletedCheckCode model.phone model.code)
 
-        CompletedCheckCode (Err e) ->
-            updates { model | status = Failed "Invalid code" e }
+            CompletedCheckCode (Err e) ->
+                updates { model | status = Failed "Invalid code" e }
 
-        CompletedCheckCode (Ok t) ->
-            updates { model | status = Ready, step = Plaid }
-                |> command (plaidLinkOpen Encode.null)
+            CompletedCheckCode (Ok session) ->
+                case session.accountId of
+                    Nothing ->
+                        updates { model | status = Ready, step = Plaid }
+                            |> command (plaidLinkOpen Encode.null)
 
-        PlaidOpen ->
-            updates model
-                |> command (plaidLinkOpen Encode.null)
+                    Just id ->
+                        updates model
+                            |> command (Nav.pushUrl model.key (Route.url <| Route.Account id))
 
-        PlaidExited ->
-            -- Leave this here. Elm throws an error if there are no subscribers for a subscription!
-            updates model
+            PlaidOpen ->
+                updates model
+                    |> command (plaidLinkOpen Encode.null)
 
-        PlaidDone token ->
-            updates { model | plaidToken = Id token }
-                |> command (Api.postApplications CompletedSignup <| newApplication (Id token))
+            PlaidExited ->
+                -- Leave this here. Elm throws an error if there are no subscribers for a subscription!
+                updates model
 
-        CompletedSignup (Err e) ->
-            updates { model | status = Failed "Signup server error" e }
+            PlaidDone token ->
+                updates { model | plaidToken = Id token }
+                    |> command (Api.postApplications CompletedSignup <| newApplication (Id token))
 
-        CompletedSignup (Ok a) ->
-            updates model
-                |> command (Nav.pushUrl model.key (Route.url <| Route.Onboard <| Route.Approval <| a.accountId))
+            CompletedSignup (Err e) ->
+                updates { model | status = Failed "Signup server error" e }
+
+            CompletedSignup (Ok a) ->
+                updates model
+                    |> command (Nav.pushUrl model.key (Route.url <| Route.Onboard <| Route.Approval <| a.accountId))
 
 
 view : Model -> Element Msg
@@ -221,10 +228,3 @@ viewProblems status =
 
         _ ->
             el [] (text "")
-
-
-
--- TODO collect email and pone
--- TODO collect phone code
--- TODO show plaid
--- TODO bank landing page "Securly Connect bank"

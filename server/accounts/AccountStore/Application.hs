@@ -15,32 +15,31 @@ import Database.Selda hiding (query, insert, tryCreateTable, Result)
 import Data.Maybe (listToMaybe)
 import Control.Monad.Service (Service(..))
 
-import Auth (Phone)
 import AccountStore.Types
 import Types.Guid (Guid)
 
 
 data ApplicationStore a where
     Save      :: Application -> ApplicationStore ()
-    FindByPhone :: Phone -> ApplicationStore (Maybe Application)
+    Find      :: Guid Account -> ApplicationStore (Maybe Application)
     All       :: ApplicationStore [Application]
 
     SaveResult :: Guid Account -> Result -> ApplicationStore ()
     FindResult :: Guid Account -> ApplicationStore (Maybe Result)
-    FindResultByPhone :: Phone -> ApplicationStore (Maybe Result)
 
 instance (Selda m) => Service m ApplicationStore where
     run (Save a) = save a
-    run (FindByPhone i) = loadByPhone i
+    run (Find i) = loadById i
     run All      = loadAll
     run (SaveResult i r) = saveResult i r
     run (FindResult i) = findResult i
-    run (FindResultByPhone p) = findResultByPhone p
 
 
 
+-- you can have more than one application per phone number
+-- what if they are denied? Or cancel out for some reason?
 applications :: Table Application
-applications = table "applications" [#accountId :- primary, #phone :- index, #phone :- unique]
+applications = table "applications" [#accountId :- primary]
 
 approvals :: Table AppApproval
 approvals = table "applications_approvals" [#accountId :- primary]
@@ -55,11 +54,11 @@ save app = do
     pure ()
 
 
-loadByPhone :: (Selda m) => Phone -> m (Maybe Application)
-loadByPhone p = do
+loadById :: (Selda m) => Guid Account -> m (Maybe Application)
+loadById i = do
     as <- query $ do
       app <- select applications
-      restrict (app ! #phone .== literal p)
+      restrict (app ! #accountId .== literal i)
       return app
     pure $ listToMaybe as
 
@@ -81,12 +80,6 @@ saveResult accountId (Denied (Denial {..})) = do
 
 
 
-findResultByPhone :: Selda m => Phone -> m (Maybe Result)
-findResultByPhone p = do
-    ma <- loadByPhone p
-    case ma of
-      Nothing -> pure Nothing
-      Just a -> findResult $ accountId (a :: Application)
 
 
 

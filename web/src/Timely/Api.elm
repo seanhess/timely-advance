@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountId, AccountInfo, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Balance, Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Phone, Session, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, encodeAccountInfo, encodeId, expectId, getAccount, getAccountBanks, getApplicationResult, getTest, idValue, postApplications, postLogin, postLogout, sessionsCheckCode, sessionsCreateCode)
+module Timely.Api exposing (Account, AccountInfo, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Balance, Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Phone, Session, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeId, expectId, getAccount, getAccountBanks, getApplicationResult, idValue, postApplications, sessionsCheckCode, sessionsCreateCode, sessionsGet)
 
 import Http exposing (Error, Expect)
 import Json.Decode as Decode exposing (Decoder, int, list, nullable, string)
@@ -24,18 +24,14 @@ type alias AccountInfo =
     }
 
 
-type alias AccountId =
-    String
-
-
 type alias Application =
-    { accountId : AccountId
+    { accountId : Id Account
     }
 
 
 type alias Session =
     { phone : Phone
-    , accountId : Maybe AccountId
+    , accountId : Maybe (Id Account)
     }
 
 
@@ -147,7 +143,14 @@ decodeCustomer =
 decodeApplication : Decoder Application
 decodeApplication =
     Decode.succeed Application
-        |> required "accountId" string
+        |> required "accountId" decodeId
+
+
+decodeSession : Decoder Session
+decodeSession =
+    Decode.succeed Session
+        |> required "phone" decodeId
+        |> required "accountId" (nullable decodeId)
 
 
 decodeBankAccountType : Decoder BankAccountType
@@ -231,48 +234,9 @@ getApplicationResult toMsg =
     Http.request
         { method = "GET"
         , headers = []
-        , url = String.join "/" [ "", "v1", "application", "result" ]
+        , url = String.join "/" [ "", "v1", "account", "application", "result" ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg decodeApprovalResult
-        , timeout = Nothing
-        , tracker = Nothing
-        }
-
-
-postLogin : (Result Error () -> msg) -> Cmd msg
-postLogin toMsg =
-    Http.request
-        { method = "POST"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "login" ]
-        , body = Http.emptyBody
-        , expect = Http.expectWhatever toMsg
-        , timeout = Nothing
-        , tracker = Nothing
-        }
-
-
-postLogout : (Result Error () -> msg) -> Cmd msg
-postLogout toMsg =
-    Http.request
-        { method = "POST"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "logout" ]
-        , body = Http.emptyBody
-        , expect = Http.expectWhatever toMsg
-        , timeout = Nothing
-        , tracker = Nothing
-        }
-
-
-getTest : (Result Error String -> msg) -> Cmd msg
-getTest toMsg =
-    Http.request
-        { method = "GET"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "test" ]
-        , body = Http.emptyBody
-        , expect = Http.expectString toMsg
         , timeout = Nothing
         , tracker = Nothing
         }
@@ -330,14 +294,27 @@ sessionsCreateCode toMsg p =
         }
 
 
-sessionsCheckCode : (Result Error () -> msg) -> Phone -> Token AuthCode -> Cmd msg
+sessionsCheckCode : (Result Error Session -> msg) -> Phone -> Token AuthCode -> Cmd msg
 sessionsCheckCode toMsg (Id p) c =
     Http.request
         { method = "POST"
         , headers = []
         , url = String.join "/" [ "", "v1", "sessions", p ]
         , body = Http.jsonBody (encodeId c)
-        , expect = Http.expectWhatever toMsg
+        , expect = Http.expectJson toMsg decodeSession
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+sessionsGet : (Result Error Session -> msg) -> Cmd msg
+sessionsGet toMsg =
+    Http.request
+        { method = "GET"
+        , headers = []
+        , url = String.join "/" [ "", "v1", "sessions" ]
+        , body = Http.emptyBody
+        , expect = Http.expectJson toMsg decodeSession
         , timeout = Nothing
         , tracker = Nothing
         }

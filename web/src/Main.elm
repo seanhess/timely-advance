@@ -10,6 +10,7 @@ import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Page.Account as Account
 import Page.Accounts as Accounts
+import Page.Init as Init
 import Page.Onboard.Approval as Approval
 import Page.Onboard.Landing as Landing
 import Page.Onboard.Signup as Signup
@@ -31,6 +32,7 @@ type alias Model =
 
 type PageModel
     = NotFound
+    | Init Init.Model
     | Landing Landing.Model
     | Signup Signup.Model
     | Approval Approval.Model
@@ -61,6 +63,7 @@ type Msg
       -- | ChangedRoute (Maybe Route)
     | ChangedUrl Url
     | ClickedLink Browser.UrlRequest
+    | OnInit Init.Msg
     | OnLanding Landing.Msg
     | OnSignup Signup.Msg
     | OnApproval Approval.Msg
@@ -70,51 +73,55 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    -- Debug.log (Debug.toString msg) <|
-    case ( msg, model.page ) of
-        ( Ignored, _ ) ->
-            ( model, Cmd.none )
+    Debug.log (Debug.toString msg) <|
+        case ( msg, model.page ) of
+            ( Ignored, _ ) ->
+                ( model, Cmd.none )
 
-        ( ChangedUrl url, _ ) ->
-            let
-                ( page, cmd ) =
-                    changeRouteTo model.key (Route.fromUrl url)
-            in
-            ( { model | page = page, url = url }, cmd )
+            ( ChangedUrl url, _ ) ->
+                let
+                    ( page, cmd ) =
+                        changeRouteTo model.key (Route.fromUrl url)
+                in
+                ( { model | page = page, url = url }, cmd )
 
-        -- this allows us to intercept the url, I think
-        ( ClickedLink urlRequest, _ ) ->
-            case urlRequest of
-                Browser.Internal url ->
-                    ( model, Nav.pushUrl model.key (Url.toString url) )
+            -- this allows us to intercept the url, I think
+            ( ClickedLink urlRequest, _ ) ->
+                case urlRequest of
+                    Browser.Internal url ->
+                        ( model, Nav.pushUrl model.key (Url.toString url) )
 
-                Browser.External href ->
-                    ( model, Nav.load href )
+                    Browser.External href ->
+                        ( model, Nav.load href )
 
-        ( OnLanding mg, Landing m ) ->
-            Landing.update mg m
-                |> updateWith Landing OnLanding model
+            ( OnLanding mg, Landing m ) ->
+                Landing.update mg m
+                    |> updateWith Landing OnLanding model
 
-        ( OnSignup sub, Signup m ) ->
-            Signup.update sub m
-                |> runUpdates (always Cmd.none) Signup OnSignup model
+            ( OnSignup sub, Signup m ) ->
+                Signup.update sub m
+                    |> runUpdates (always Cmd.none) Signup OnSignup model
 
-        ( OnApproval app, Approval m ) ->
-            Approval.update app m
-                |> runUpdates (always Cmd.none) Approval OnApproval model
+            ( OnApproval app, Approval m ) ->
+                Approval.update app m
+                    |> runUpdates (always Cmd.none) Approval OnApproval model
 
-        -- |> updateWith Signup GotSignupMsg model
-        ( OnAccounts acc, Accounts m ) ->
-            Accounts.update acc m
-                |> updateWith Accounts OnAccounts model
+            -- |> updateWith Signup GotSignupMsg model
+            ( OnAccounts acc, Accounts m ) ->
+                Accounts.update acc m
+                    |> updateWith Accounts OnAccounts model
 
-        ( OnAccount acc, Account m ) ->
-            Account.update acc m
-                |> updateWith Account OnAccount model
+            ( OnAccount acc, Account m ) ->
+                Account.update acc m
+                    |> updateWith Account OnAccount model
 
-        ( _, _ ) ->
-            -- Disregard messages that arrived for the wrong page.
-            ( model, Cmd.none )
+            ( OnInit ini, Init m ) ->
+                Init.update ini m
+                    |> updateWith Init OnInit model
+
+            ( _, _ ) ->
+                -- Disregard messages that arrived for the wrong page.
+                ( model, Cmd.none )
 
 
 
@@ -187,6 +194,14 @@ changeRouteTo key maybeRoute =
             in
             ( Account mod, Cmd.map OnAccount cmd )
 
+        Just Route.Init ->
+            -- Check session!
+            let
+                ( m, cmd ) =
+                    Init.init key
+            in
+            ( Init m, Cmd.map OnInit cmd )
+
 
 view : Model -> Browser.Document Msg
 view model =
@@ -213,6 +228,9 @@ view model =
 
                 Account a ->
                     Element.map OnAccount <| Account.view a
+
+                Init m ->
+                    Element.map OnInit <| Init.view m
     in
     { title = "TODO: Title"
     , body =

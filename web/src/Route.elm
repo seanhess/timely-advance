@@ -6,6 +6,7 @@ module Route exposing (AccountId, Onboard(..), Route(..), fromUrl, href, parser,
 import Browser.Navigation as Nav
 import Html exposing (Attribute)
 import Html.Attributes as Attr
+import Timely.Api exposing (Account, Id(..))
 import Url exposing (Url)
 import Url.Parser as Parser exposing ((</>), Parser, oneOf, s, string)
 
@@ -21,13 +22,14 @@ type alias AccountId =
 type Onboard
     = Landing
     | Signup
-    | Approval AccountId
+    | Approval (Id Account)
 
 
 type Route
     = Onboard Onboard
     | Accounts
-    | Account AccountId
+    | Account (Id Account)
+    | Init
 
 
 
@@ -42,12 +44,8 @@ parser =
     oneOf
         [ Parser.map Onboard (s "onboard" </> parserOnboard)
         , Parser.map Accounts (s "accounts")
-        , Parser.map Account (s "accounts" </> string)
-
-        -- , Parser.map Profile (s "profile" </> Username.urlParser)
-        -- , Parser.map Article (s "article" </> Slug.urlParser)
-        -- , Parser.map NewArticle (s "editor")
-        -- , Parser.map EditArticle (s "editor" </> Slug.urlParser)
+        , Parser.map Account (s "accounts" </> Parser.map Id string)
+        , Parser.map Init Parser.top
         ]
 
 
@@ -56,7 +54,7 @@ parserOnboard =
     oneOf
         [ Parser.map Landing Parser.top
         , Parser.map Signup (s "signup")
-        , Parser.map Approval (s "approval" </> string)
+        , Parser.map Approval (s "approval" </> Parser.map Id string)
         ]
 
 
@@ -93,18 +91,21 @@ url page =
         pieces =
             case page of
                 Onboard Landing ->
-                    []
+                    [ "onboard" ]
 
                 Onboard Signup ->
                     [ "onboard", "signup" ]
 
-                Onboard (Approval s) ->
+                Onboard (Approval (Id s)) ->
                     [ "onboard", "approval", s ]
 
                 Accounts ->
                     [ "accounts" ]
 
-                Account s ->
+                Account (Id s) ->
                     [ "accounts", s ]
+
+                Init ->
+                    []
     in
     "#/" ++ String.join "/" pieces

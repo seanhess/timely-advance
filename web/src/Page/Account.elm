@@ -5,12 +5,12 @@ import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
 import Http
-import Timely.Api as Api exposing (Account, BankAccount, BankAccountType(..))
+import Timely.Api as Api exposing (Account, BankAccount, BankAccountType(..), Id)
 import Timely.Style as Style
 
 
 type alias Model =
-    { accountId : String
+    { accountId : Id Account
     , account : Maybe Account
     , banks : List BankAccount
     , problems : List Problem
@@ -30,7 +30,7 @@ type Msg
 -- TODO load the account
 
 
-init : String -> ( Model, Cmd Msg )
+init : Id Account -> ( Model, Cmd Msg )
 init id =
     ( { accountId = id, account = Nothing, problems = [], banks = [] }
     , Cmd.batch

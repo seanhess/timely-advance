@@ -65,17 +65,17 @@ data VersionedApi route = VersionedApi
 
 -- Personal Information : Account and Application ---------------------
 data AccountApi route = AccountApi
-    { _get   :: route :- Get '[JSON, HTML] Account
-    , _banks :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
+    { _get    :: route :- Get '[JSON, HTML] Account
+    , _banks  :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
+    , _app    :: route :- "application" :> Get '[JSON] Application
+    , _result :: route :- "application" :> "result" :> Get '[JSON] Result
     } deriving (Generic)
     -- { _all :: route   :- Get '[JSON, HTML] [Account]
     -- , _put :: route :- Capture "id" (Id Account) :> ReqBody '[JSON] AccountInfo :> Put '[JSON] Account
 
 
 data AppApi route = AppApi
-    { _get    :: route :- Get '[JSON] Application
-    , _result :: route :- "result" :> Get '[JSON] Result
-    , _post   :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] (SetSession Application)
+    { _post   :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] (SetSession Application)
     } deriving (Generic)
 
 
@@ -92,15 +92,16 @@ accountApi :: Guid Account -> ToServant AccountApi (AsServerT AppM)
 accountApi i = genericServerT AccountApi
     { _get   = run (Account.Find i) >>= notFound
     , _banks = run (Account.BankAccounts i)
+    , _app    = run (Application.Find i) >>= notFound
+    , _result = run (Application.FindResult i) >>= notFound
     }
 
 
--- You have a validated phone number, work with that
+-- the ONLY route that needs to authenticate via phone only is newApplication
+-- EVERY other route uses an accountId, including applications
 applicationApi :: Phone -> ToServant AppApi (AsServerT AppM)
 applicationApi p = genericServerT AppApi
-    { _get    = run (Application.FindByPhone p) >>= notFound
-    , _result = run (Application.FindResultByPhone p) >>= notFound
-    , _post   = Applications.newApplication p
+    { _post   = Applications.newApplication p
     }
 
 sessionsApi :: ToServant SessionsApi (AsServerT AppM)
