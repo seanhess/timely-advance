@@ -47,7 +47,7 @@ init key accountId =
       , status = Loading
       , key = key
       }
-    , Api.getApplicationResult OnResult
+    , Api.getApplicationResult OnResult accountId
     )
 
 
@@ -77,7 +77,7 @@ update msg model =
 
         OnWaited () ->
             updates
-                |> command (Api.getApplicationResult OnResult)
+                |> command (Api.getApplicationResult OnResult model.accountId)
 
 
 view : Model -> Element Msg

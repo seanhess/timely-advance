@@ -189,12 +189,12 @@ postApplications toMsg body =
         }
 
 
-getAccount : (Result Error Account -> msg) -> Cmd msg
-getAccount toMsg =
+getAccount : (Result Error Account -> msg) -> Id Account -> Cmd msg
+getAccount toMsg (Id a) =
     Http.request
         { method = "GET"
         , headers = []
-        , url = String.join "/" [ "", "v1", "account" ]
+        , url = String.join "/" [ "", "v1", "account", a ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg decodeAccount
         , timeout = Nothing
@@ -202,12 +202,12 @@ getAccount toMsg =
         }
 
 
-getAccountBanks : (Result Error (List BankAccount) -> msg) -> Cmd msg
-getAccountBanks toMsg =
+getAccountBanks : (Result Error (List BankAccount) -> msg) -> Id Account -> Cmd msg
+getAccountBanks toMsg (Id a) =
     Http.request
         { method = "GET"
         , headers = []
-        , url = String.join "/" [ "", "v1", "account", "bank-accounts" ]
+        , url = String.join "/" [ "", "v1", "account", a, "bank-accounts" ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg (list decodeBankAccount)
         , timeout = Nothing
@@ -215,12 +215,12 @@ getAccountBanks toMsg =
         }
 
 
-getApplicationResult : (Result Error ApprovalResult -> msg) -> Cmd msg
-getApplicationResult toMsg =
+getApplicationResult : (Result Error ApprovalResult -> msg) -> Id Account -> Cmd msg
+getApplicationResult toMsg (Id a) =
     Http.request
         { method = "GET"
         , headers = []
-        , url = String.join "/" [ "", "v1", "account", "application", "result" ]
+        , url = String.join "/" [ "", "v1", "account", a, "application", "result" ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg decodeApprovalResult
         , timeout = Nothing

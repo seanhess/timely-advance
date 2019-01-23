@@ -40,8 +40,8 @@ init : Id Account -> ( Model, Cmd Msg )
 init id =
     ( { accountId = id, account = Nothing, status = Loading, banks = [] }
     , Cmd.batch
-        [ Api.getAccount LoadComplete
-        , Api.getAccountBanks LoadBanksComplete
+        [ Api.getAccount LoadComplete id
+        , Api.getAccountBanks LoadBanksComplete id
         ]
     )
 
