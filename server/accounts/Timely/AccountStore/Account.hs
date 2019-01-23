@@ -5,19 +5,19 @@
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
-module AccountStore.Account (AccountStore(..), initialize, account) where
+module Timely.AccountStore.Account (AccountStore(..), initialize, account) where
 
-import Auth (Phone)
-import AccountStore.Types
 
 import Control.Monad.Selda (Selda, query, insert, deleteFrom, tryCreateTable)
 import Database.Selda hiding (query, insert, deleteFrom, tryCreateTable)
 import Data.Maybe (listToMaybe)
 import Control.Monad.Service (Service(..))
 
-import Types.Guid
-import Bank (Token, Access)
-import Types.Private
+import Timely.AccountStore.Types
+import Timely.Types.Guid
+import Timely.Types.Private
+import Timely.Bank (Token, Access)
+import Timely.Auth (Phone)
 
 
 

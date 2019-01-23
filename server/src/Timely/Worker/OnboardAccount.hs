@@ -5,7 +5,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE MonoLocalBinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-module Worker.OnboardAccount where
+module Timely.Worker.OnboardAccount where
 
 
 import Control.Monad.Service (Service(run))
@@ -18,18 +18,17 @@ import qualified Database.Selda as Selda
 import Network.AMQP.Worker (Queue)
 import qualified Network.AMQP.Worker as Worker hiding (publish, bindQueue, worker)
 
-import           Bank (Banks)
-import qualified Bank 
-import           Underwriting (Underwriting(..), Result(..))
-import qualified Events
-import           AccountStore.Application (ApplicationStore)
-import qualified AccountStore.Application as Application
-import           AccountStore.Account (AccountStore)
-import qualified AccountStore.Account as Account
-import           AccountStore.Types (Account(..), BankAccount(..), Application(..), BankAccountType(..), Customer(..))
-
-import Types.Guid (Guid)
-import Types.Money as Money
+import           Timely.Bank (Banks)
+import qualified Timely.Bank as Bank
+import           Timely.Underwriting as Underwriting (Underwriting(..), Result(..))
+import qualified Timely.Events as Events
+import           Timely.AccountStore.Application (ApplicationStore)
+import qualified Timely.AccountStore.Application as Application
+import           Timely.AccountStore.Account (AccountStore)
+import qualified Timely.AccountStore.Account as Account
+import           Timely.AccountStore.Types (Account(..), BankAccount(..), Application(..), BankAccountType(..), Customer(..))
+import           Timely.Types.Guid (Guid)
+import           Timely.Types.Money as Money
 
 
 

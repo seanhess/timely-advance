@@ -1,4 +1,4 @@
-module Api.Sessions where
+module Timely.Api.Sessions where
 
 
 import           Crypto.JOSE.JWK (JWK)
@@ -10,12 +10,12 @@ import           Servant (NoContent(..), err401, ServantErr, Headers, Header)
 import           Servant.Auth.Server (AuthResult(..), CookieSettings(..), JWTSettings, defaultJWTSettings, defaultCookieSettings, IsSecure(..), SetCookie, ThrowAll(..))
 import qualified Servant.Auth.Server as Servant
 
-import           Auth (Phone, AuthCode, AuthConfig)
-import qualified Auth
-import qualified AccountStore.Account as Account
-import           AccountStore.Types (Account)
-import           Types.Session (Session(..))
-import           Types.Guid
+import           Timely.Auth (Phone, AuthCode, AuthConfig)
+import qualified Timely.Auth as Auth
+import qualified Timely.AccountStore.Account as Account
+import           Timely.AccountStore.Types (Account)
+import           Timely.Types.Session (Session(..))
+import           Timely.Types.Guid
 
 
 type SetSession a = Headers '[Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] a

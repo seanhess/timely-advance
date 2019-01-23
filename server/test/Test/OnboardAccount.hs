@@ -3,12 +3,12 @@ module Test.OnboardAccount where
 import Test.Tasty.HUnit
 import Test.Tasty.Monad
 
-import Bank
-import AccountStore.Types (BankAccount(..))
-import qualified AccountStore.Types as Account
-import Worker.OnboardAccount
-import qualified Types.Guid as Guid
-import qualified Types.Money as Money
+import           Timely.Bank as Bank
+import           Timely.AccountStore.Types (BankAccount(..))
+import qualified Timely.AccountStore.Types as Account
+import           Timely.Worker.OnboardAccount
+import qualified Timely.Types.Guid as Guid
+import qualified Timely.Types.Money as Money
 
 tests :: Tests ()
 tests = do

@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Types.Config where
+module Timely.Types.Config where
 
 import Data.Aeson (ToJSON)
 import GHC.Generics (Generic)

@@ -86,6 +86,7 @@ library:
     - underwrite
     - accounts
     - auth
+    - evaluate
 
 executables:
   server-exe:

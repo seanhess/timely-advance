@@ -7,7 +7,7 @@
 {-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE TypeOperators     #-}
 {-# LANGUAGE RankNTypes     #-}
-module Api where
+module Timely.Api where
 
 import           Control.Monad.Service (Service(..))
 import           Control.Monad.Except (throwError, MonadError)
@@ -24,18 +24,18 @@ import           Servant.API.ContentTypes.HTML (HTML, Link(..))
 import           Servant.Server.Generic (AsServerT, genericServerT)
 import           Servant.Auth.Server (Auth, Cookie, CookieSettings(..), JWTSettings)
 
-import           Auth (Phone, AuthCode)
-import qualified AccountStore.Application as Application
-import           AccountStore.Types (Application)
-import qualified AccountStore.Account as Account
-import qualified Api.Applications as Applications
-import qualified Api.Sessions as Sessions
-import           Api.Sessions (SetSession)
-import           Api.AppM (AppM, nt, AppState(..), loadState, clientConfig, runIO)
-import           Api.Types
-import           Types.Guid
-import           Types.Config
-import           Types.Session
+import           Timely.Auth (Phone, AuthCode)
+import qualified Timely.AccountStore.Application as Application
+import           Timely.AccountStore.Types (Application)
+import qualified Timely.AccountStore.Account as Account
+import qualified Timely.Api.Applications as Applications
+import qualified Timely.Api.Sessions as Sessions
+import           Timely.Api.Sessions (SetSession)
+import           Timely.Api.AppM (AppM, nt, AppState(..), loadState, clientConfig, runIO)
+import           Timely.Api.Types
+import           Timely.Types.Guid
+import           Timely.Types.Config
+import           Timely.Types.Session
 
 type Api = ToServant BaseApi AsApi
 

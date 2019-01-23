@@ -1,8 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields, DeriveGeneric #-}
-module AccountStore.Types where
+module Timely.AccountStore.Types where
 
 
-import Auth (Phone(..))
 import Database.Selda
 import Database.Selda.SqlType (Lit(..))
 import Data.Proxy (Proxy(..))
@@ -10,12 +9,13 @@ import Data.Text (Text)
 import Data.Typeable (Typeable)
 import GHC.Generics (Generic)
 
-import           Bank (Token(..), Public, Access, Id(..))
-import qualified Bank
-import Underwriting.Types (DenialReason)
-import Types.Guid (Guid)
-import Types.Private
-import Types.Money
+import           Timely.Bank (Token(..), Public, Access, Id(..))
+import qualified Timely.Bank as Bank
+import           Timely.Underwriting.Types (DenialReason)
+import           Timely.Auth (Phone(..))
+import           Timely.Types.Guid (Guid)
+import           Timely.Types.Private
+import           Timely.Types.Money
 
 
 instance Typeable t => SqlType (Token t) where

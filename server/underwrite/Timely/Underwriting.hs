@@ -1,14 +1,13 @@
-module Underwriting
+module Timely.Underwriting
   ( Underwriting(..)
-  , module Underwriting.Types
+  , module Timely.Underwriting.Types
   ) where
 
 import Control.Monad.Service (Service(..))
 
--- I need these common types here!
-import AccountStore.Types (Customer(..))
-import Underwriting.Types
-import qualified Types.Money as Money
+import           Timely.AccountStore.Types (Customer(..))
+import           Timely.Underwriting.Types
+import qualified Timely.Types.Money as Money
 
 
 

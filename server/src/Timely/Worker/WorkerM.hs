@@ -1,30 +1,30 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE RecordWildCards #-}
-module Worker.WorkerM where
+module Timely.Worker.WorkerM where
 
-import Config (loadEnv, Env(..))
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Config (MonadConfig(..))
-import Control.Monad.Reader (ReaderT, runReaderT, asks)
-import Control.Exception (SomeException)
-import Control.Monad.Selda (Selda(..))
-import Data.Pool (Pool)
+import           Control.Monad.IO.Class (MonadIO, liftIO)
+import           Control.Monad.Config (MonadConfig(..))
+import           Control.Monad.Reader (ReaderT, runReaderT, asks)
+import           Control.Exception (SomeException)
+import           Control.Monad.Selda (Selda(..))
+import           Data.Pool (Pool)
 import qualified Data.Pool as Pool
-import Data.Aeson (FromJSON)
-import Data.String.Conversions (cs)
+import           Data.Aeson (FromJSON)
+import           Data.String.Conversions (cs)
 import qualified Database.Selda.PostgreSQL as Selda
-import Database.Selda (MonadMask)
-import Database.Selda.Backend (SeldaConnection)
-import Network.AMQP.Worker (Queue, WorkerException, def)
+import           Database.Selda (MonadMask)
+import           Database.Selda.Backend (SeldaConnection)
+import           Network.AMQP.Worker (Queue, WorkerException, def)
 import qualified Network.AMQP.Worker as Worker hiding (publish, bindQueue, worker)
 import qualified Network.AMQP.Worker.Monad as Worker
-import Network.AMQP.Worker.Monad (MonadWorker(..))
+import           Network.AMQP.Worker.Monad (MonadWorker(..))
 import qualified Network.Plaid as Plaid
 import qualified Network.HTTP.Client as HTTP
 import qualified Network.HTTP.Client.TLS as HTTP
 
-import qualified Bank
+import Timely.Config (loadEnv, Env(..))
+import qualified Timely.Bank as Bank
 
 
 data AppState = AppState

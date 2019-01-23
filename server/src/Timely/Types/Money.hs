@@ -1,4 +1,4 @@
-module Types.Money where
+module Timely.Types.Money where
 
 import Data.Typeable (Typeable)
 import Data.Proxy (Proxy(..))

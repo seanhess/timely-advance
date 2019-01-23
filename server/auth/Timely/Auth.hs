@@ -1,7 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE GADTs #-}
-module Auth where
+module Timely.Auth where
 
 import           Control.Exception (Exception, throw)
 import           Control.Monad.IO.Class (MonadIO, liftIO)

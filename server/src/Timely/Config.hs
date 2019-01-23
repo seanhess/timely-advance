@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Config where
+module Timely.Config where
 
 import Database.Selda (MonadMask)
 import Control.Monad.IO.Class (liftIO, MonadIO)

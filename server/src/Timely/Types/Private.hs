@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric, ScopedTypeVariables #-}
-module Types.Private where
+module Timely.Types.Private where
 
 
 import Database.Selda.SqlType (Lit(..), SqlType(..))

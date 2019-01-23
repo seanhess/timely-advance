@@ -1,6 +1,6 @@
 -- {-# LANGUAGE DeriveGeneric     #-}
 -- {-# LANGUAGE GeneralizedNewtypeDeriving     #-}
-module Types.Guid
+module Timely.Types.Guid
     ( Guid
     , randomId
     , toText

@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric             #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE DuplicateRecordFields     #-}
-module Api.Types
+module Timely.Api.Types
   ( Account(..)
   , Customer(..)
   , BankAccount(..)
@@ -17,10 +17,10 @@ import           Database.Selda (ID, fromId)
 import           GHC.Generics (Generic)
 import           Servant.API.ContentTypes.HTML (Linkable(..))
 
-import Types.Money as Money
-import AccountStore.Types
-import Bank (Token, Public)
-import Underwriting (Result(..), Approval, Denial, DenialReason)
+import Timely.Types.Money as Money
+import Timely.AccountStore.Types
+import Timely.Bank (Token, Public)
+import Timely.Underwriting (Result(..), Approval, Denial, DenialReason)
 
 
 instance ToJSON Result where

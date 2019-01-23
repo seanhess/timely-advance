@@ -1,8 +1,8 @@
-module Underwriting.Types where
+module Timely.Underwriting.Types where
 
 import GHC.Generics (Generic)
 
-import Types.Money
+import Timely.Types.Money
 
 
 data Result

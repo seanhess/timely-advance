@@ -7,10 +7,10 @@ import           System.Environment (getArgs)
 import           System.Posix.Signals (installHandler, keyboardSignal, Handler(Catch))
 -- import           System.Posix.Process (exitImmediately)
 
-import qualified Worker.OnboardAccount as OnboardAccount
-import qualified Worker.WorkerM as Worker
+import qualified Timely.Worker.OnboardAccount as OnboardAccount
+import qualified Timely.Worker.WorkerM as Worker
 
-import qualified Api
+import qualified Timely.Api as Api
 
 main :: IO ()
 main = do

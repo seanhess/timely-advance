@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
-module Api.AppM
+module Timely.Api.AppM
   ( AppState(..)
   , loadState
   , nt
@@ -28,11 +28,11 @@ import qualified Network.HTTP.Client.TLS as HTTP
 import           Servant.Auth.Server (CookieSettings(..), JWTSettings)
 import           Servant (Handler(..), runHandler)
 
-import           Auth (AuthConfig)
-import qualified Auth
-import           Config (Env(..), loadEnv)
-import           Types.Config (ClientConfig(ClientConfig), PlaidConfig(PlaidConfig))
-import qualified Api.Sessions as Sessions
+import           Timely.Auth (AuthConfig)
+import qualified Timely.Auth as Auth
+import           Timely.Config (Env(..), loadEnv)
+import           Timely.Types.Config (ClientConfig(ClientConfig), PlaidConfig(PlaidConfig))
+import qualified Timely.Api.Sessions as Sessions
 
 
 data AppState = AppState

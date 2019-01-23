@@ -3,20 +3,20 @@
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedLabels  #-}
 {-# LANGUAGE OverloadedStrings  #-}
-module AccountStore.Application
+module Timely.AccountStore.Application
     ( initialize
     , ApplicationStore(..)
     ) where
 
 
-import Underwriting.Types (Result(..), Approval(..), Denial(..))
 import Control.Monad.Selda (Selda, query, insert, tryCreateTable)
 import Database.Selda hiding (query, insert, tryCreateTable, Result)
 import Data.Maybe (listToMaybe)
 import Control.Monad.Service (Service(..))
 
-import AccountStore.Types
-import Types.Guid (Guid)
+import Timely.Underwriting.Types (Result(..), Approval(..), Denial(..))
+import Timely.AccountStore.Types
+import Timely.Types.Guid (Guid)
 
 
 data ApplicationStore a where

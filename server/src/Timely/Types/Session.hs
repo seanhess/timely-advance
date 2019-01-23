@@ -1,12 +1,12 @@
-module Types.Session where
+module Timely.Types.Session where
 
 import Data.Aeson (ToJSON, FromJSON)
 import Servant.Auth.Server (ToJWT, FromJWT)
 import GHC.Generics (Generic)
 
-import Types.Guid (Guid)
-import AccountStore.Types (Account)
-import Auth (Phone)
+import Timely.Types.Guid (Guid)
+import Timely.AccountStore.Types (Account)
+import Timely.Auth (Phone)
 
 data Session = Session
     { phone :: Phone

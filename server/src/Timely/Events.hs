@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Events where
+module Timely.Events where
 
 
 import Data.Function ((&))
 import Network.AMQP.Worker (key, word, Key, Routing)
-import AccountStore.Types (Application)
+import Timely.AccountStore.Types (Application)
 
 
 applicationsNew :: Key Routing Application

@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Api.Applications
+module Timely.Api.Applications
     ( newApplication
     ) where
 
@@ -13,16 +13,18 @@ import qualified Network.AMQP.Worker.Monad as Worker
 import           Servant (ServantErr)
 import           Servant.Auth.Server (CookieSettings, JWTSettings)
 
-import AccountStore.Types (Application(..), Account)
-import Auth (Phone)
-import Api.Types (AccountInfo(..))
-import           Api.Sessions (SetSession)
-import qualified Api.Sessions as Sessions
-import qualified AccountStore.Application as Application
-import           AccountStore.Application   (ApplicationStore)
-import qualified Events
-import Types.Guid (Guid, randomId)
-import Types.Session (Session(..))
+import           Timely.AccountStore.Types (Application(..), Account)
+import           Timely.Api.Types (AccountInfo(..))
+import           Timely.Api.Sessions (SetSession)
+import qualified Timely.Api.Sessions as Sessions
+import qualified Timely.AccountStore.Application as Application
+import           Timely.AccountStore.Application   (ApplicationStore)
+
+import qualified Timely.Events as Events
+
+import           Timely.Auth (Phone)
+import           Timely.Types.Guid (Guid, randomId)
+import           Timely.Types.Session (Session(..))
 
 
 newApplication
