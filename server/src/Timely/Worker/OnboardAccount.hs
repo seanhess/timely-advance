@@ -126,11 +126,6 @@ toBankAccount accountId acc = BankAccount {..}
     bankAccountId = Bank.account_id acc
 
 
--- newBank :: Application -> Bank
--- newBank Application {..} = Bank {..}
---   where
---     balance = 200
---     accessToken = "fake-access-token"
 
 
 

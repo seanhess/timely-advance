@@ -2,7 +2,7 @@
 module Timely.AccountStore.Types where
 
 
-import Database.Selda
+import Database.Selda as Selda
 import Database.Selda.SqlType (Lit(..))
 import Data.Proxy (Proxy(..))
 import Data.Text (Text)
@@ -15,7 +15,7 @@ import           Timely.Underwriting.Types (DenialReason)
 import           Timely.Auth (Phone(..))
 import           Timely.Types.Guid (Guid)
 import           Timely.Types.Private
-import           Timely.Types.Money
+import           Timely.Types.Money as Money
 
 
 instance Typeable t => SqlType (Token t) where
@@ -121,4 +121,22 @@ data AppDenial = AppDenial
 instance SqlType DenialReason
 instance SqlRow AppDenial
 
+
+
+
+toBankAccount :: Guid Account -> Bank.Account -> BankAccount
+toBankAccount accountId acc = BankAccount {..}
+  where
+    id = Selda.def
+    accountType
+      | Bank.subtype acc == Bank.Checking = Checking
+      | Bank.subtype acc == Bank.Savings = Savings
+      | Bank._type acc == Bank.Credit = Credit
+      | Bank._type acc == Bank.Depository = Savings
+      | Bank._type acc == Bank.Loan = Credit
+      | otherwise = Other
+    name = Bank.name acc
+    balance = toBalance $ Bank.current $ Bank.balances acc
+    toBalance (Bank.Currency d) = Money.fromFloat d
+    bankAccountId = Bank.account_id acc
 

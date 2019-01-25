@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Timely.Types.Money where
 
 import Data.Typeable (Typeable)
@@ -6,7 +7,7 @@ import Database.Selda.SqlType (SqlType(..), Lit(..))
 import GHC.Generics (Generic)
 
 newtype Money = Money Int
-    deriving (Generic, Eq, Show, Typeable)
+    deriving (Generic, Eq, Show, Typeable, Num, Ord)
 
 fromFloat :: Float -> Money
 fromFloat f = Money $ round (f * 100)

@@ -42,6 +42,7 @@ packages:
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
 extra-deps:
+# - time-1.9.2
 # - amqp-worker-0.2.5
 # - git: https://github.com/NoRedInk/servant-elm.git
 #   commit: 96bafc59c87b72606a75dfff3188002d90680735
