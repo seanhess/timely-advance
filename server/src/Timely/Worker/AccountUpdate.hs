@@ -1,24 +1,27 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE MonoLocalBinds    #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE MonoLocalBinds #-}
 module Timely.Worker.AccountUpdate where
 
-import           Control.Monad.Service (Service(run))
-import           Control.Monad.Except (MonadError(..))
-import           Control.Exception (Exception)
-import qualified Data.List as List
-import qualified Network.AMQP.Worker as Worker
+import           Control.Exception             (Exception)
+import           Control.Monad.Except          (MonadError (..))
+import           Control.Monad.Service         (Service (run))
+import qualified Data.List                     as List
+import qualified Network.AMQP.Worker           as Worker
 
-import qualified Timely.Bank as Bank
-import           Timely.Bank (Banks, Token, Access)
+import           Timely.AccountStore.Account   (AccountStore)
+import qualified Timely.AccountStore.Account   as AccountStore
+import           Timely.AccountStore.Types     (Account (bankToken, credit), BankAccount (accountType, balance),
+                                                BankAccountType (Checking), toBankAccount)
+import           Timely.Advances               (Advances)
+import qualified Timely.Advances               as Advances
+import           Timely.Bank                   (Access, Banks, Token)
+import qualified Timely.Bank                   as Bank
+import           Timely.Evaluate.AccountHealth (Health (..))
 import qualified Timely.Evaluate.AccountHealth as AccountHealth
-import           Timely.Evaluate.AccountHealth (Health(..))
-import qualified Timely.AccountStore.Account as AccountStore
-import           Timely.AccountStore.Account (AccountStore)
-import           Timely.AccountStore.Types (Account(bankToken, credit), BankAccount(accountType, balance), BankAccountType(Checking), toBankAccount)
-import           Timely.Types.Guid (Guid)
-import           Timely.Types.Private (Private(..))
-import           Timely.Events as Events
+import           Timely.Events                 as Events
+import           Timely.Types.Guid             (Guid)
+import           Timely.Types.Private          (Private (..))
 
 
 queue :: Worker.Queue (Guid Account)
@@ -34,6 +37,7 @@ queue = Worker.topic Events.transactionsNew "app.account.update"
 handler
   :: ( Service m Banks
      , Service m AccountStore
+     , Service m Advances
      , MonadError EvaluateError m
      )
   => Guid Account -> m ()
@@ -45,22 +49,17 @@ handler accountId = do
     checking <- updateBankBalances accountId (private $ bankToken account)
                   >>= require MissingChecking
 
+    advances <- run (Advances.FindActive accountId)
 
-    -- TODO AccountStore: load approval amount, should always have one
-    let advances = []
-        info     = AccountHealth.Info (credit account) (balance checking) advances
-        health   = AccountHealth.analyze info
-
+    let health   = AccountHealth.analyze $ AccountHealth.Info (credit account) (balance checking) advances
 
     handleHealth health
-
-    pure ()
 
   where
 
     require :: MonadError EvaluateError m => (Guid Account -> EvaluateError) -> (Maybe a) -> m a
     require err Nothing = throwError (err accountId)
-    require _ (Just a) = pure a
+    require _ (Just a)  = pure a
 
 
 
@@ -86,7 +85,7 @@ handleHealth :: Monad m => Health -> m ()
 handleHealth Ok = pure ()
 handleHealth (Maxed _ _) = pure ()
 handleHealth (Needs _) = do
-    -- TODO store advances, load
+    -- TODO store advances
     -- TODO schedule advance
     -- TODO schedule payment
 

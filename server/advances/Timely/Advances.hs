@@ -1,18 +1,19 @@
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedLabels #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedLabels      #-}
+{-# LANGUAGE OverloadedStrings     #-}
 module Timely.Advances where
 
-import Control.Monad.Service (Service(..))
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Selda (Selda, insert, tryCreateTable)
+import           Control.Monad.IO.Class    (MonadIO, liftIO)
+import           Control.Monad.Selda       (Selda, insert, query, tryCreateTable)
+import           Control.Monad.Service     (Service (..))
 import           Data.Time.Clock           (UTCTime)
-import qualified Data.Time.Clock as Time
-import           Database.Selda            (ID, Table, SqlRow, table, Attr(..), autoPrimary, def)
+import qualified Data.Time.Clock           as Time
+import  Data.Time.Calendar (Day)
+import           Database.Selda            hiding (insert, query, tryCreateTable)
 import           GHC.Generics              (Generic)
 import           Timely.AccountStore.Types (Account)
 import           Timely.Types.Money        (Money)
@@ -25,6 +26,7 @@ data Advance = Advance
     , accountId :: Guid Account
     , amount    :: Money
     , created   :: UTCTime
+    , due       :: Day
     , collected :: Maybe UTCTime
     } deriving (Show, Eq, Generic)
 
@@ -35,13 +37,13 @@ instance SqlRow Advance
 
 
 data Advances a where
-    Create     :: Guid Account -> Money -> Advances Advance
+    Create     :: Guid Account -> Money -> Day -> Advances Advance
     FindActive :: Guid Account -> Advances [Advance]
 
 
 
 instance Selda m => Service m Advances where
-    run (Create i amt) = create i amt
+    run (Create i a d) = create i a d
     run (FindActive i) = findActive i
 
 
@@ -51,22 +53,28 @@ advances =
       [ #advanceId :- autoPrimary ]
 
 
-create :: Selda m => Guid Account -> Money -> m Advance
-create i amt = do
-  time <- liftIO $ Time.getCurrentTime
-  let advance = Advance { advanceId = def
-                        , accountId = i
-                        , amount = amt
-                        , created = time
-                        , collected = Nothing
-                        }
+create :: Selda m => Guid Account -> Money -> Day -> m Advance
+create i a d = do
+    time <- liftIO $ Time.getCurrentTime
+    let advance = Advance { advanceId = def
+                          , accountId = i
+                          , amount = a
+                          , created = time
+                          , due = d
+                          , collected = Nothing
+                          }
 
-  insert advances [advance]
-  pure advance
+    insert advances [advance]
+    pure advance
 
 
 findActive :: Selda m => Guid Account -> m [Advance]
-findActive = undefined
+findActive i = query $ do
+    a <- select advances
+    restrict (a ! #accountId .== literal i)
+    restrict (isNull $ a ! #collected )
+    pure a
+
 
 
 
@@ -76,10 +84,3 @@ initialize = do
     tryCreateTable advances
 
 
--- created: information, but it hasn't been transfered
--- advanced: +sent money
--- collected: +received money
-
--- maybe the transfers should be stored separately?
--- but we can't easily tell which ones are active...
--- yeah, we can figure it out with some kind of a join

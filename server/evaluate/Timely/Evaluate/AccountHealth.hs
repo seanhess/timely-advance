@@ -1,24 +1,18 @@
 {-# LANGUAGE RecordWildCards #-}
 module Timely.Evaluate.AccountHealth where
 
-import           Control.Monad (guard)
-import           Data.Time.Calendar (Day)
+import           Control.Monad      (guard)
 
+import           Timely.Advances    (Advance (..))
 import           Timely.Types.Money (Money)
 import qualified Timely.Types.Money as Money
 
 
 -- active advances?
 data Info = Info
-    { approval :: Money
+    { approval        :: Money
     , checkingBalance :: Money
     , activeAdvances  :: [Advance]
-    }
-
--- TODO other fields?
-data Advance = Advance
-    { amount :: Money
-    , due :: Day
     }
 
 
@@ -77,7 +71,6 @@ shortfall :: Money -> Money -> Maybe Money
 shortfall balance projected = do
     guard (projected > balance)
     pure $ projected - balance
-
 
 
 
