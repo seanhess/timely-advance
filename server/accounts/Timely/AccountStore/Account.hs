@@ -15,6 +15,7 @@ import Control.Monad.Service (Service(..))
 
 import Timely.AccountStore.Types
 import Timely.Types.Guid
+import Timely.Types.Money
 import Timely.Types.Private
 import Timely.Bank (Token, Access)
 import Timely.Auth (Phone)
@@ -68,6 +69,7 @@ allAccounts = do
     account (AccountRow {..} :*: customer) = Account {..}
 
 
+
 getAccount :: Selda m => Guid Account -> m (Maybe Account)
 getAccount i = do
     as <- query $ do
@@ -108,8 +110,8 @@ createAccount acc = do
     pure ()
 
 
-account :: Guid Account -> Phone -> Customer -> Token Access -> Account
-account accountId phone customer tok = Account {..}
+account :: Guid Account -> Phone -> Customer -> Token Access -> Money -> Account
+account accountId phone customer tok credit = Account {..}
   where bankToken = Private tok
 
 

@@ -12,10 +12,9 @@ import qualified Timely.Evaluate.AccountHealth as AccountHealth
 import           Timely.Evaluate.AccountHealth (Health(..))
 import qualified Timely.AccountStore.Account as AccountStore
 import           Timely.AccountStore.Account (AccountStore)
-import           Timely.AccountStore.Types (Account(bankToken), BankAccount(accountType, balance), BankAccountType(Checking), toBankAccount)
+import           Timely.AccountStore.Types (Account(bankToken, credit), BankAccount(accountType, balance), BankAccountType(Checking), toBankAccount)
 import           Timely.Types.Guid (Guid)
 import           Timely.Types.Private (Private(..))
-import qualified Timely.Types.Money as Money
 import           Timely.Events as Events
 
 
@@ -45,9 +44,8 @@ handler accountId = do
 
 
     -- TODO AccountStore: load approval amount, should always have one
-    let approval = Money.fromFloat 250.00
-        advances = []
-        info     = AccountHealth.Info approval (balance checking) advances
+    let advances = []
+        info     = AccountHealth.Info (credit account) (balance checking) advances
         health   = AccountHealth.analyze info
 
 

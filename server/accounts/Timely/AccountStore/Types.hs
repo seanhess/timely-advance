@@ -43,6 +43,7 @@ data Account = Account
     , phone     :: Phone
     , customer  :: Customer
     , bankToken :: Private (Token Access)
+    , credit    :: Money
     } deriving (Show, Eq, Generic)
 
 
@@ -51,6 +52,7 @@ data AccountRow = AccountRow
     { accountId :: Guid Account
     , phone     :: Phone
     , bankToken :: Private (Token Access)
+    , credit    :: Money
     } deriving (Generic, Eq, Show)
 
 instance SqlRow AccountRow

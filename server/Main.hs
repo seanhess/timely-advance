@@ -7,7 +7,7 @@ import           System.Environment (getArgs)
 import           System.Posix.Signals (installHandler, keyboardSignal, Handler(Catch))
 -- import           System.Posix.Process (exitImmediately)
 
-import qualified Timely.Worker.OnboardAccount as OnboardAccount
+import qualified Timely.Worker.AccountOnboard as AccountOnboard
 import qualified Timely.Worker.AccountUpdate as AccountUpdate
 import qualified Timely.Worker.WorkerM as Worker
 
@@ -22,7 +22,7 @@ main = do
   case a of
     ["version"        ] -> putStrLn "TODO version"
     ["api"]             -> startApi
-    ["onboard-account"] -> startOnboardAccount
+    ["account-onboard"] -> startAccountOnboard
     ["account-update"]  -> startAccountUpdate
     ["initialize"]      -> Api.initialize
     _                   -> startAll
@@ -33,8 +33,8 @@ startApi :: IO ()
 startApi = Api.start 3001
 
 
-startOnboardAccount :: IO ()
-startOnboardAccount = Worker.start OnboardAccount.queue OnboardAccount.handler
+startAccountOnboard :: IO ()
+startAccountOnboard = Worker.start AccountOnboard.queue AccountOnboard.handler
 
 
 startAccountUpdate :: IO ()

@@ -5,7 +5,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE MonoLocalBinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-module Timely.Worker.OnboardAccount where
+module Timely.Worker.AccountOnboard where
 
 
 import           Control.Monad.Service (Service(run))
@@ -20,7 +20,7 @@ import qualified Network.AMQP.Worker as Worker hiding (publish, bindQueue, worke
 
 import           Timely.Bank (Banks)
 import qualified Timely.Bank as Bank
-import           Timely.Underwriting as Underwriting (Underwriting(..), Result(..))
+import           Timely.Underwriting as Underwriting (Underwriting(..), Result(..), Approval(..))
 import qualified Timely.Events as Events
 import           Timely.AccountStore.Application (ApplicationStore)
 import qualified Timely.AccountStore.Application as Application
@@ -31,7 +31,7 @@ import           Timely.AccountStore.Types (Application(..), Customer(..), toBan
 
 
 queue :: Queue Application
-queue = Worker.topic Events.applicationsNew "app.onboardAccount"
+queue = Worker.topic Events.applicationsNew "app.account.onboard"
 
 
 
@@ -73,16 +73,15 @@ handler app = do
         -- liftIO $ putStrLn "DENIED"
         pure ()
 
-      Underwriting.Approved _ -> do
+      Underwriting.Approved (Approval amt) -> do
         -- liftIO $ putStrLn "APPROVED"
 
-        run $ Account.CreateAccount $ Account.account aid phn cust tok
+        run $ Account.CreateAccount $ Account.account aid phn cust tok amt
 
         -- save the bank accounts
-        accounts <- run $ Bank.LoadAccounts tok
-        -- liftIO $ print accounts
+        banks <- run $ Bank.LoadAccounts tok
 
-        let bankAccounts = map (toBankAccount aid) accounts
+        let bankAccounts = map (toBankAccount aid) banks
         -- liftIO $ putStrLn " ----- Banks----------------------- "
         -- liftIO $ print bankAccounts
         run $ Account.SetBankAccounts aid bankAccounts
