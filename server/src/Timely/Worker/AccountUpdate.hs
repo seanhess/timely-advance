@@ -80,16 +80,50 @@ updateBankBalances accountId token = do
     isChecking acc = accountType acc == Checking
 
 
+-- TODO logging! so we can see the results of nothing happened / maxed credit
 
 handleHealth :: Monad m => Health -> m ()
 handleHealth Ok = pure ()
 handleHealth (Maxed _ _) = pure ()
+    -- TODO what do we want to do if their credit is maxed?
+    -- maybe it's not my job to handle this..
+
 handleHealth (Needs _) = do
     -- TODO store advances
     -- TODO schedule advance
     -- TODO schedule payment
 
     pure ()
+
+
+-- hmmmmmmmm..... so, I decide they need an advance, but they don't necessarily have enough credit. What should I do?
+-- it's simplier if I have this guy issue the advance also
+-- why not?
+-- handle it in code, not in asynchronous messiness
+-- "advances" that are issued are VERY different than ones that should be issued
+-- yeah that's a health result, no?
+-- account needs money
+-- account needs money but is maxed
+-- account is ok
+
+
+-- they can't really have more than one state of health
+
+
+-- what about if we say "they need an advance!", but it hasn't been issued yet. It hasn't hit their account yet. So they still need money, but they don't have it
+-- how do I handle this?
+-- There's a pending state: they need money, but they don't have it yet
+---- We sent them an advance. Are they still in jeopardy?
+---- pending advances... hmm.... how should we tell if they need them, or whatever?
+
+-- TEST what if they have two transactions right after each other? They might need more money than we expect. We begin an advance right away, but then along comes another transaction, and they're going to need even MORE money. No, only if we miscalculated. Because transactions are normal. It's not like we expect them to not spend money. But sometimes they do something unexpected. We miscalculated. We should CORRECT the advance. But it's pending. So do another one
+
+
+-- Identify pending advances? Some way to link them up with transaction ids. I'm not sure how they'll even show up. It would be better if we don't have to rely on that 
+-- Look, we know we sent them money, but we don't know if it's *arrived* yet
+-- We don't want to send more than one a day, that's for sure
+-- we might want to say: "They need $X dollars"
+-- but at what point do we act on that?
 
 
 

@@ -1,47 +1,48 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE PolyKinds         #-}
-{-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE TypeOperators     #-}
-{-# LANGUAGE RankNTypes     #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 module Timely.Api where
 
-import           Control.Monad.Service (Service(..))
-import           Control.Monad.Except (throwError, MonadError)
-import           GHC.Generics (Generic)
-import           Data.Proxy (Proxy(..))
-import           Data.Text (Text)
-import qualified Network.Wai.Handler.Warp as Warp
+import           Control.Monad.Except                 (MonadError, throwError)
+import           Control.Monad.Service                (Service (..))
+import           Data.Proxy                           (Proxy (..))
+import           Data.Text                            (Text)
+import           GHC.Generics                         (Generic)
+import qualified Network.Wai.Handler.Warp             as Warp
 import qualified Network.Wai.Middleware.RequestLogger as RequestLogger
-import           Servant hiding (Link, Application)
+import           Servant                              hiding (Application, Link)
 import qualified Servant
-import           Servant.API.Generic ((:-), ToServantApi, ToServant, AsApi)
-import           Servant.API.ContentTypes.JS (JS)
-import           Servant.API.ContentTypes.HTML (HTML, Link(..))
-import           Servant.Server.Generic (AsServerT, genericServerT)
-import           Servant.Auth.Server (Auth, Cookie, CookieSettings(..), JWTSettings)
+import           Servant.API.ContentTypes.HTML        (HTML, Link (..))
+import           Servant.API.ContentTypes.JS          (JS)
+import           Servant.API.Generic                  ((:-), AsApi, ToServant, ToServantApi)
+import           Servant.Auth.Server                  (Auth, Cookie, CookieSettings (..), JWTSettings)
+import           Servant.Server.Generic               (AsServerT, genericServerT)
 
-import           Timely.Auth (Phone, AuthCode)
-import qualified Timely.AccountStore.Application as Application
-import           Timely.AccountStore.Types (Application)
-import qualified Timely.AccountStore.Account as Account
-import qualified Timely.Api.Applications as Applications
-import qualified Timely.Api.Sessions as Sessions
-import           Timely.Api.Sessions (SetSession)
-import           Timely.Api.AppM (AppM, nt, AppState(..), loadState, clientConfig, runIO)
+import qualified Timely.AccountStore.Account          as Account
+import qualified Timely.AccountStore.Application      as Application
+import           Timely.AccountStore.Types            (Application)
+import qualified Timely.Advances                      as Advances
+import qualified Timely.Api.Applications              as Applications
+import           Timely.Api.AppM                      (AppM, AppState (..), clientConfig, loadState, nt, runIO)
+import           Timely.Api.Sessions                  (SetSession)
+import qualified Timely.Api.Sessions                  as Sessions
 import           Timely.Api.Types
-import           Timely.Types.Guid
+import           Timely.Auth                          (AuthCode, Phone)
 import           Timely.Types.Config
+import           Timely.Types.Guid
 import           Timely.Types.Session
 
 type Api = ToServant BaseApi AsApi
 
 
 data BaseApi route = BaseApi
-    { _info ::      route :- Get '[JSON] Text
+    { _info      :: route :- Get '[JSON] Text
     , _versioned :: route :- "v1" :> ToServantApi VersionedApi
     } deriving (Generic)
 
@@ -80,10 +81,10 @@ data AppApi route = AppApi
 
 
 data SessionsApi route = SessionsApi
-    { _code    :: route :- ReqBody '[JSON] Phone :> Post '[JSON] NoContent
-    , _auth    :: route :- Capture "phone" Phone :> ReqBody '[JSON] AuthCode :> Post '[JSON] (SetSession Session)
-    , _check   :: route :- Auth '[Cookie] Session :> Get '[JSON] (Session)
-    , _logout  :: route :- Delete '[JSON] (SetSession NoContent)
+    { _code   :: route :- ReqBody '[JSON] Phone :> Post '[JSON] NoContent
+    , _auth   :: route :- Capture "phone" Phone :> ReqBody '[JSON] AuthCode :> Post '[JSON] (SetSession Session)
+    , _check  :: route :- Auth '[Cookie] Session :> Get '[JSON] (Session)
+    , _logout :: route :- Delete '[JSON] (SetSession NoContent)
     } deriving Generic
 
 
@@ -160,6 +161,7 @@ initialize = do
     runIO state $ do
       Account.initialize
       Application.initialize
+      Advances.initialize
 
     putStrLn "Done"
 
@@ -176,5 +178,4 @@ start port = do
 
 notFound :: (MonadError ServantErr m) => Maybe a -> m a
 notFound (Just a) = return a
-notFound Nothing = throwError err404
-
+notFound Nothing  = throwError err404
