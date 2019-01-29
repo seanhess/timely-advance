@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Control.Monad.Config where
 
 class Monad m => MonadConfig c m where

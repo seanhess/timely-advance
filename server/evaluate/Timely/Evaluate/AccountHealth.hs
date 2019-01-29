@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 module Timely.Evaluate.AccountHealth where
 
 import           Control.Monad (guard)

@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE MonoLocalBinds #-}
 module Timely.Worker.AccountUpdate where
 
 import           Control.Monad.Service (Service(run))

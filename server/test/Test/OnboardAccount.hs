@@ -1,3 +1,5 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Test.OnboardAccount where
 
 import Test.Tasty.HUnit

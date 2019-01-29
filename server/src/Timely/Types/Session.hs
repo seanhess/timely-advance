@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 module Timely.Types.Session where
 
 import Data.Aeson (ToJSON, FromJSON)

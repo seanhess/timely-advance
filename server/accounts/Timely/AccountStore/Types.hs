@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields, DeriveGeneric #-}
+{-# LANGUAGE RecordWildCards #-}
 module Timely.AccountStore.Types where
 
 

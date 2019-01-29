@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 module Timely.Underwriting.Types where
 
 import GHC.Generics (Generic)
