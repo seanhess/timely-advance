@@ -1,12 +1,14 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RecordWildCards #-}
 module Timely.Worker.WorkerM where
 
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Control.Monad.Config (MonadConfig(..))
+import           Control.Monad.Except (runExceptT, ExceptT)
 import           Control.Monad.Reader (ReaderT, runReaderT, asks)
-import           Control.Exception (SomeException)
+import           Control.Exception (SomeException, throwIO, Exception)
 import           Control.Monad.Selda (Selda(..))
 import           Data.Pool (Pool)
 import qualified Data.Pool as Pool
@@ -36,16 +38,20 @@ data AppState = AppState
     }
 
 type WorkerM = ReaderT AppState IO
+type WorkerEM e = ExceptT e WorkerM
 
-instance Selda WorkerM where
+instance Selda (WorkerEM e) where
     withConnection action = do
       pool <- asks dbConn
       Pool.withResource pool action
 
+instance MonadWorker (WorkerEM e) where
+    amqpConnection = asks amqpConn
+
 instance MonadWorker WorkerM where
     amqpConnection = asks amqpConn
 
-instance MonadConfig Bank.Config WorkerM where
+instance MonadConfig Bank.Config (WorkerEM e) where
     config = do
       c <- asks plaid
       m <- asks manager
@@ -66,26 +72,35 @@ loadState = do
     destroyConn = Selda.seldaClose
 
 
-connect :: (FromJSON a, MonadWorker m) => Queue a -> (a -> m ()) -> m ()
+connect :: forall a e. (FromJSON a, Exception e) => Queue a -> (a -> WorkerEM e ()) -> WorkerM ()
 connect queue handler = do
     Worker.bindQueue queue
     Worker.worker def queue onError onMessage
+
   where
-    onMessage m =
-      handler (Worker.value m)
+    onMessage :: Worker.Message a -> WorkerM ()
+    onMessage m = runWorkerEM $ handler (Worker.value m)
 
 
-start :: (FromJSON a) => Queue a -> (a -> WorkerM ()) -> IO ()
+
+start :: (FromJSON a, Exception e) => Queue a -> (a -> WorkerEM e ()) -> IO ()
 start queue handler = do
     state <- loadState
     putStrLn "Running worker"
-    print queue
     runReaderT (connect queue handler) state
 
 
-runIO :: AppState -> WorkerM a -> IO a
+runWorkerEM :: Exception e => WorkerEM e a -> WorkerM a
+runWorkerEM x = do
+    e <- runExceptT x
+    case e of
+      Left err -> liftIO $ throwIO err
+      Right a -> pure a
+
+
+runIO :: Exception e => AppState -> WorkerEM e a -> IO a
 runIO s x = do
-  runReaderT x s
+  runReaderT (runWorkerEM x) s
 
 
 

@@ -8,6 +8,7 @@ import           System.Posix.Signals (installHandler, keyboardSignal, Handler(C
 -- import           System.Posix.Process (exitImmediately)
 
 import qualified Timely.Worker.OnboardAccount as OnboardAccount
+import qualified Timely.Worker.AccountUpdate as AccountUpdate
 import qualified Timely.Worker.WorkerM as Worker
 
 import qualified Timely.Api as Api
@@ -22,6 +23,7 @@ main = do
     ["version"        ] -> putStrLn "TODO version"
     ["api"]             -> startApi
     ["onboard-account"] -> startOnboardAccount
+    ["account-update"]  -> startAccountUpdate
     ["initialize"]      -> Api.initialize
     _                   -> startAll
 
@@ -35,22 +37,28 @@ startOnboardAccount :: IO ()
 startOnboardAccount = Worker.start OnboardAccount.queue OnboardAccount.handler
 
 
+startAccountUpdate :: IO ()
+startAccountUpdate = Worker.start AccountUpdate.queue AccountUpdate.handler
+
+
 startAll :: IO ()
 startAll = do
     api <- forkIO $ startApi
     onb <- forkIO $ startOnboardAccount
+    evl <- forkIO $ startEvaluate
 
     putStrLn "Press any key to exit"
-    installHandler keyboardSignal (Catch (exit api onb)) Nothing
+    installHandler keyboardSignal (Catch (exit api onb evl)) Nothing
 
     waitAnyKey
-    exit api onb
+    exit api onb evl
   where
 
-    exit api onb = do
+    exit api onb evl = do
       putStrLn "Exiting..."
       killThread api
       killThread onb
+      killThread evl
       -- exitImmediately ExitSuccess
 
     waitAnyKey = do
