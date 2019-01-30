@@ -45,6 +45,7 @@ data Account = Account
     , customer  :: Customer
     , bankToken :: Private (Token Access)
     , credit    :: Money
+    , health    :: Health
     } deriving (Show, Eq, Generic)
 
 
@@ -143,3 +144,21 @@ toBankAccount accountId acc = BankAccount {..}
     toBalance (Bank.Currency d) = Money.fromFloat d
     bankAccountId = Bank.account_id acc
 
+
+isChecking :: BankAccount -> Bool
+isChecking acc = accountType acc == Checking
+
+
+
+
+-- Account Projection -------------------
+
+
+data Health = Health
+    { accountId :: Guid Account
+    , expenses  :: Money
+    , advances  :: Money
+    , available :: Money
+    } deriving (Show, Eq, Generic)
+
+instance SqlRow Health

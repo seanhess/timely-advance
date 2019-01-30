@@ -1,55 +1,48 @@
 {-# LANGUAGE RecordWildCards #-}
 module Timely.Evaluate.AccountHealth where
 
-import           Control.Monad      (guard)
+import qualified Data.List             as List
 
-import           Timely.Advances    (Advance (..))
-import           Timely.Types.Money (Money)
-import qualified Timely.Types.Money as Money
+import           Timely.Advances       (Advance (..))
+import           Timely.Evaluate.Types (Projection (..))
+import           Timely.Types.Money    (Money)
+import qualified Timely.Types.Money    as Money
 
 
 -- active advances?
+-- TODO we need to know / calculate their projected expenses.
 data Info = Info
-    { approval        :: Money
-    , checkingBalance :: Money
+    { checkingBalance :: Money
     , activeAdvances  :: [Advance]
     }
 
 
-type Credit = Money
 
 
-data Health
-    = Ok
-    | Needs Money
-    | Maxed Money Credit
-
-
+-- TODO more information on "expenses"? Like which expenses do we predict will happen again, etc
 
 -- | Decide what to do given the advance needed and their account state
-analyze :: Info -> Health
-analyze Info {..} =
-    let projected = projectedSpending
-        advance   = advanceNeeded checkingBalance projected
-        credit    = creditRemaining approval activeAdvances
-    in maybe Ok (checkCredit credit) advance
+analyze :: Money -> [Advance] -> Projection
+analyze checking advances =
+    Projection
+      { expenses  = projectedSpending
+      , available = checking
+      , advances  = List.sum $ List.map amount advances
+      }
 
 
-checkCredit :: Money -> Money -> Health
-checkCredit credit amt
-  | amt <= credit = Needs amt
-  | otherwise     = Maxed amt credit
+-- checkCredit :: Money -> Money -> Health
+-- checkCredit credit amt
+--   | amt <= credit = Needs amt
+--   | otherwise     = Maxed amt credit
 
 
-advanceNeeded :: Money -> Money -> Maybe Money
-advanceNeeded balance projected = do
-    short <- shortfall balance projected
-    pure $ short + safetyMargin
+-- -- plus saftey margin?
+-- advanceNeeded :: Money -> Money -> Maybe Money
+-- advanceNeeded balance projected = do
+--     short <- shortfall balance projected
+--     pure $ short + safetyMargin
 
-
-creditRemaining :: Money -> [Advance] -> Money
-creditRemaining approval active =
-    approval - (sum $ map amount active)
 
 
 
@@ -62,17 +55,15 @@ projectedSpending = Money.fromFloat 200.00
 
 -- in case we mis-predict
 -- TODO base this on possible unknown transaction size? By analyzing their account?
-safetyMargin :: Money
-safetyMargin = Money.fromFloat 100.00
+-- safetyMargin :: Money
+-- safetyMargin = Money.fromFloat 100.00
 
 
 
-shortfall :: Money -> Money -> Maybe Money
-shortfall balance projected = do
-    guard (projected > balance)
-    pure $ projected - balance
-
-
+-- shortfall :: Money -> Money -> Maybe Money
+-- shortfall balance projected = do
+--     guard (projected > balance)
+--     pure $ projected - balance
 
 
 

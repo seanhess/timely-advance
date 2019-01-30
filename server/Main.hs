@@ -44,8 +44,8 @@ startAccountUpdate = Worker.start AccountUpdate.queue AccountUpdate.handler
 startAll :: IO ()
 startAll = do
     api <- forkIO $ startApi
-    onb <- forkIO $ startOnboardAccount
-    evl <- forkIO $ startEvaluate
+    onb <- forkIO $ startAccountOnboard
+    evl <- forkIO $ startAccountUpdate
 
     putStrLn "Press any key to exit"
     installHandler keyboardSignal (Catch (exit api onb evl)) Nothing

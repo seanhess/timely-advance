@@ -17,7 +17,6 @@ import           Database.Selda (ID, fromId)
 import           GHC.Generics (Generic)
 import           Servant.API.ContentTypes.HTML (Linkable(..))
 
-import Timely.Types.Money as Money
 import Timely.AccountStore.Types
 import Timely.Bank (Token, Public)
 import Timely.Underwriting (Result(..), Approval, Denial, DenialReason)
@@ -34,10 +33,10 @@ instance ToJSON DenialReason
 
 instance ToJSON (ID a) where
     toJSON i = toJSON $ fromId i
+instance ToJSON Health
 instance ToJSON Account
 instance ToJSON Customer
 instance ToJSON BankAccountType
-instance ToJSON Money
 instance ToJSON BankAccount
 instance ToJSON Application
 instance FromJSON Application

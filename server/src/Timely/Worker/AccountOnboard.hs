@@ -26,7 +26,8 @@ import           Timely.AccountStore.Application (ApplicationStore)
 import qualified Timely.AccountStore.Application as Application
 import           Timely.AccountStore.Account (AccountStore)
 import qualified Timely.AccountStore.Account as Account
-import           Timely.AccountStore.Types (Application(..), Customer(..), toBankAccount)
+import           Timely.AccountStore.Types (Application(..), Customer(..), toBankAccount, isChecking, BankAccount(balance))
+import qualified Timely.Evaluate.AccountHealth as AccountHealth
 
 
 
@@ -35,12 +36,6 @@ queue = Worker.topic Events.applicationsNew "app.account.onboard"
 
 
 
-data OnboardError
-    = BadName Text
-    | NoNames
-    deriving (Eq, Show)
-
-instance Exception OnboardError
 
 
 handler
@@ -76,16 +71,25 @@ handler app = do
       Underwriting.Approved (Approval amt) -> do
         -- liftIO $ putStrLn "APPROVED"
 
-        run $ Account.CreateAccount $ Account.account aid phn cust tok amt
+        -- get bank accounts
+        banks <- run $ Bank.LoadAccounts tok
+        let bankAccounts = map (toBankAccount aid) banks
+
+        checking <- require MissingChecking $ List.find isChecking bankAccounts
+
+        let advances = []
+            health = AccountHealth.analyze (balance checking) advances
+        run $ Account.CreateAccount $ Account.account aid phn cust tok amt health
 
         -- save the bank accounts
-        banks <- run $ Bank.LoadAccounts tok
-
-        let bankAccounts = map (toBankAccount aid) banks
         -- liftIO $ putStrLn " ----- Banks----------------------- "
         -- liftIO $ print bankAccounts
         run $ Account.SetBankAccounts aid bankAccounts
 
+  where
+    require :: MonadError err m => err -> (Maybe a) -> m a
+    require err Nothing = throwError err
+    require _ (Just a)  = pure a
 
 
 toNewCustomer :: MonadError OnboardError m => Application -> Bank.Identity -> m Customer
@@ -114,3 +118,10 @@ toNewCustomer Application {..} identity = do
 
 
 
+data OnboardError
+    = BadName Text
+    | NoNames
+    | MissingChecking
+    deriving (Eq, Show)
+
+instance Exception OnboardError
