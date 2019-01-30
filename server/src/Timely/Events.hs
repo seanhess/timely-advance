@@ -12,6 +12,10 @@ applicationsNew :: Key Routing Application
 applicationsNew = key "applications" & word "new"
 
 
-transactionsNew :: Key Routing (Guid Account)
-transactionsNew = key "transactions" & word "new"
+-- transactionsNew :: Key Routing (Guid Account)
+-- transactionsNew = key "transactions" & word "new"
+
+
+accountsUpdate :: Key Routing (Guid Account)
+accountsUpdate = key "accounts" & word "update"
 

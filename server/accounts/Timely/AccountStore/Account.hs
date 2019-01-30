@@ -25,7 +25,7 @@ import           Timely.Types.Private
 
 
 data AccountStore a where
-    -- All            :: AccountStore [Account]
+    All            :: AccountStore [AccountRow]
     Find           :: Guid Account -> AccountStore (Maybe Account)
     FindByPhone    :: Phone -> AccountStore (Maybe (Guid Account))
     BankAccounts   :: Guid Account -> AccountStore [BankAccount]
@@ -36,7 +36,7 @@ data AccountStore a where
 
 
 instance (Selda m) => Service m AccountStore where
-    -- run All                    = allAccounts
+    run All                    = allAccounts
     run (Find i)               = getAccount i
     run (FindByPhone p)        = getAccountIdByPhone p
     run (BankAccounts i)       = getBankAccounts i
@@ -65,16 +65,10 @@ healths = table "accounts_healths"
     , #accountId :- foreignKey accounts #accountId
     ]
 
--- allAccounts :: (Selda m) => m [Account]
--- allAccounts = do
---     as <- query $ do
---       c <- select customers
---       a <- select accounts
---       restrict (a ! #accountId .== c ! #accountId)
---       pure (a :*: c)
---     pure $ fmap account as
---   where
---     account (AccountRow {..} :*: customer) = Account {..}
+
+allAccounts :: (Selda m) => m [AccountRow]
+allAccounts =
+    query $ select accounts
 
 
 

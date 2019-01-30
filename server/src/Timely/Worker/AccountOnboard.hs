@@ -74,9 +74,9 @@ handler app = do
         -- get bank accounts
         banks <- run $ Bank.LoadAccounts tok
         let bankAccounts = map (toBankAccount aid) banks
-
         checking <- require MissingChecking $ List.find isChecking bankAccounts
 
+        -- TODO the transactions might not be available until the webhook triggers - maybe it makes more sense to have the health in a pending state. Or just. We're good!
         let advances = []
             health = AccountHealth.analyze (balance checking) advances
         run $ Account.CreateAccount $ Account.account aid phn cust tok amt health

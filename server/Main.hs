@@ -22,8 +22,9 @@ main = do
   case a of
     ["version"        ] -> putStrLn "TODO version"
     ["api"]             -> startApi
-    ["account-onboard"] -> startAccountOnboard
-    ["account-update"]  -> startAccountUpdate
+    ["work-account-onboard"] -> startAccountOnboard
+    ["work-account-update"]  -> startAccountUpdate
+    ["schedule-account-update"]  -> startAccountUpdateSchedule
     ["initialize"]      -> Api.initialize
     _                   -> startAll
 
@@ -39,6 +40,10 @@ startAccountOnboard = Worker.start AccountOnboard.queue AccountOnboard.handler
 
 startAccountUpdate :: IO ()
 startAccountUpdate = Worker.start AccountUpdate.queue AccountUpdate.handler
+
+
+startAccountUpdateSchedule :: IO ()
+startAccountUpdateSchedule = Worker.runIO AccountUpdate.schedule
 
 
 startAll :: IO ()

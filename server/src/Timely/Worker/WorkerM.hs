@@ -99,9 +99,15 @@ runWorkerEM x = do
       Right a -> pure a
 
 
-runIO :: Exception e => AppState -> WorkerEM e a -> IO a
-runIO s x = do
+runIO :: Exception e => WorkerEM e a -> IO a
+runIO x = do
+  s <- loadState
   runReaderT (runWorkerEM x) s
+
+
+
+
+
 
 
 
