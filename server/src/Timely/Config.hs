@@ -47,7 +47,7 @@ instance DefConfig Env where
     , twilioAccountId   = Twilio.AccountSID "ACea89d7047fbce75c97607b517303f27a"
     , twilioAuthToken   = Maybe.fromJust $ Twilio.parseAuthToken "01aadd9eee8a895d9f410b5e807334ee"
     , twilioFromPhone   = "5413940563"
-    , endpoint          = BaseUrl Https "app.timelyadvance.com" 433 ""
+    , endpoint          = BaseUrl Https "app.timelyadvance.com" 443 ""
     }
 
 instance FromEnv Env

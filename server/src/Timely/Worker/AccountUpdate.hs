@@ -11,6 +11,7 @@ import           Control.Exception             (Exception)
 import           Control.Monad                 (when)
 import           Control.Monad.Catch           (MonadThrow (..))
 import           Control.Monad.Service         (Service (run))
+-- import Control.Monad.IO.Class (liftIO, MonadIO)
 import qualified Data.List                     as List
 import           Data.Time.Calendar            (Day)
 import           Network.AMQP.Worker           (MonadWorker)
@@ -73,6 +74,7 @@ handler
      , Service m Time
      , Service m Notify
      , MonadThrow m
+     -- , MonadIO m
      )
   => Guid Account -> m ()
 handler accountId = do
@@ -102,6 +104,7 @@ checkAdvance
   :: ( Service m Advances
      , Service m Time
      , Service m Notify
+     -- , MonadIO m
      )
   => Account -> Projection -> m ()
 checkAdvance account health = do
