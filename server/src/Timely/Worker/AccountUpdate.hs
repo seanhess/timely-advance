@@ -3,28 +3,43 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Timely.Worker.AccountUpdate where
 
+-- TODO real transaction analysis
+-- TODO logging
+-- TODO advance locking / tracking. Right now it creates multiple advances and counts those in the health
+
 import           Control.Exception             (Exception)
-import           Control.Monad.Except          (MonadError (..))
-import           Control.Monad.IO.Class        (liftIO, MonadIO)
+import           Control.Monad                 (when)
+import           Control.Monad.Catch           (MonadThrow (..))
 import           Control.Monad.Service         (Service (run))
 import qualified Data.List                     as List
+import           Data.Time.Calendar            (Day)
 import           Network.AMQP.Worker           (MonadWorker)
 import qualified Network.AMQP.Worker           as Worker hiding (publish)
 import qualified Network.AMQP.Worker.Monad     as Worker
 
 import           Timely.AccountStore.Account   (AccountStore)
 import qualified Timely.AccountStore.Account   as AccountStore
-import           Timely.AccountStore.Types     (Account (bankToken), AccountRow (accountId), BankAccount (balance),
+import           Timely.AccountStore.Types     (Account (bankToken), BankAccount (balance),
                                                 isChecking, toBankAccount)
-import           Timely.Advances               (Advances)
+import qualified Timely.AccountStore.Types     as Account (Account(..))
+import qualified Timely.AccountStore.Types     as AccountRow (AccountRow(..))
+import           Timely.Advances               (Advance, Advances)
 import qualified Timely.Advances               as Advances
 import           Timely.Bank                   (Access, Banks, Token)
 import qualified Timely.Bank                   as Bank
 import qualified Timely.Evaluate.AccountHealth as AccountHealth
+import qualified Timely.Evaluate.Offer         as Offer
+import qualified Timely.Evaluate.Paydate       as Paydate
 import           Timely.Evaluate.Types         (Projection (..))
 import           Timely.Events                 as Events
+import           Timely.Notify                 (Notify)
+import qualified Timely.Notify                 as Notify
+import           Timely.Time                   (Time)
+import qualified Timely.Time                   as Time
 import           Timely.Types.Guid             (Guid)
+import           Timely.Types.Money            (Money)
 import           Timely.Types.Private          (Private (..))
+
 
 
 queue :: Worker.Queue (Guid Account)
@@ -32,9 +47,10 @@ queue = Worker.topic Events.accountsUpdate "app.account.update"
 
 
 
+-- | Schedules all accounts for an update
 schedule
   :: ( Service m AccountStore
-     , MonadError EvaluateError m
+     , MonadThrow m
      , MonadWorker m
      )
   => m ()
@@ -45,8 +61,8 @@ schedule = do
     pure ()
   where
     scheduleAccountUpdate account = do
-      liftIO $ putStrLn $ "ACCOUNT: " ++ (show $ accountId account)
-      Worker.publish Events.accountsUpdate (accountId account)
+      -- liftIO $ putStrLn $ "ACCOUNT: " ++ (show $ accountId account)
+      Worker.publish Events.accountsUpdate (AccountRow.accountId account)
 
 
 
@@ -54,38 +70,75 @@ handler
   :: ( Service m Banks
      , Service m AccountStore
      , Service m Advances
-     , MonadIO m
-     , MonadError EvaluateError m
+     , Service m Time
+     , Service m Notify
+     , MonadThrow m
      )
   => Guid Account -> m ()
 handler accountId = do
 
-    liftIO $ putStrLn $ "HELLO!"  ++ show accountId
+    -- liftIO $ putStrLn $ "HELLO!"  ++ show accountId
     account  <- run (AccountStore.Find accountId)
                   >>= require MissingAccount
 
     checking <- updateBankBalances accountId (private $ bankToken account)
                   >>= require MissingChecking
 
-    updateHealth accountId checking
+    health <- updateHealth accountId checking
+
+    checkAdvance account health
+
     pure ()
 
   where
 
-    require :: MonadError err m => (Guid Account -> err) -> (Maybe a) -> m a
-    require err Nothing = throwError (err accountId)
+    require :: (MonadThrow m, Exception err) => (Guid Account -> err) -> (Maybe a) -> m a
+    require err Nothing = throwM (err accountId)
     require _ (Just a)  = pure a
 
 
 
-updateHealth
-  :: ( Service m AccountStore
-     , Service m Advances
+checkAdvance
+  :: ( Service m Advances
+     , Service m Time
+     , Service m Notify
      )
+  => Account -> Projection -> m ()
+checkAdvance account health = do
+    now    <- run $ Time.CurrentTime
+    offer  <- run $ Advances.FindOffer  (Account.accountId account)
+    active <- run $ Advances.FindActive (Account.accountId account)
+    when (Offer.isNeeded offer active health now) $ do
+      offerAdvance account Offer.amount (Time.utctDay now)
+      pure ()
+
+
+offerAdvance
+   :: ( Service m Advances
+      , Service m Notify
+      )
+   => Account -> Money -> Day -> m Advance
+offerAdvance account amount today = do
+    let id = Account.accountId account
+        transactions = []
+        frequency    = Paydate.frequency transactions
+        nextPayday   = Paydate.next frequency today
+        due          = nextPayday
+    advance <- run $ Advances.Create id amount due
+    run $ Notify.Send account (Notify.Message (Advances.advanceId advance) Notify.Advance message)
+    pure advance
+  where
+    message = "Your bank balance is getting low. Click here to accept an advance from Timely"
+
+
+
+
+
+updateHealth
+  :: ( Service m AccountStore)
   => Guid Account -> BankAccount -> m Projection
 updateHealth accountId checking = do
-    advances <- run (Advances.FindActive accountId)
-    let health = AccountHealth.analyze (balance checking) advances
+    let health = AccountHealth.analyze (balance checking)
     run $ AccountStore.SetHealth accountId health
     pure health
 

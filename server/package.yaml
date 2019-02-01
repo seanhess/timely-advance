@@ -27,6 +27,7 @@ dependencies:
 - amqp-worker
 - elm-export
 - envy
+- exceptions
 - http-media
 - http-client
 - http-client-tls
@@ -50,6 +51,7 @@ dependencies:
 - stm
 - transformers-base
 - time
+- twilio
 - text
 - uuid
 - unix

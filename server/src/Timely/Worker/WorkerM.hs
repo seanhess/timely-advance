@@ -1,108 +1,107 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 module Timely.Worker.WorkerM where
 
-import           Control.Monad.IO.Class (MonadIO, liftIO)
-import           Control.Monad.Config (MonadConfig(..))
-import           Control.Monad.Except (runExceptT, ExceptT)
-import           Control.Monad.Reader (ReaderT, runReaderT, asks)
-import           Control.Exception (SomeException, throwIO, Exception)
-import           Control.Monad.Selda (Selda(..))
-import           Data.Pool (Pool)
-import qualified Data.Pool as Pool
-import           Data.Aeson (FromJSON)
-import           Data.String.Conversions (cs)
+import           Control.Exception         (SomeException)
+import           Control.Monad.Config      (MonadConfig (..))
+import           Control.Monad.IO.Class    (MonadIO, liftIO)
+import           Control.Monad.Reader      (ReaderT, asks, runReaderT)
+import           Control.Monad.Selda       (Selda (..))
+import           Data.Aeson                (FromJSON)
+import           Data.Pool                 (Pool)
+import qualified Data.Pool                 as Pool
+import           Data.String.Conversions   (cs)
+import           Database.Selda            (MonadMask)
+import           Database.Selda.Backend    (SeldaConnection)
 import qualified Database.Selda.PostgreSQL as Selda
-import           Database.Selda (MonadMask)
-import           Database.Selda.Backend (SeldaConnection)
-import           Network.AMQP.Worker (Queue, WorkerException, def)
-import qualified Network.AMQP.Worker as Worker hiding (publish, bindQueue, worker)
+import           Network.AMQP.Worker       (Queue, WorkerException, def)
+import qualified Network.AMQP.Worker       as Worker hiding (bindQueue, publish, worker)
+import           Network.AMQP.Worker.Monad (MonadWorker (..))
 import qualified Network.AMQP.Worker.Monad as Worker
-import           Network.AMQP.Worker.Monad (MonadWorker(..))
-import qualified Network.Plaid as Plaid
-import qualified Network.HTTP.Client as HTTP
-import qualified Network.HTTP.Client.TLS as HTTP
+import qualified Network.HTTP.Client       as HTTP
+import qualified Network.HTTP.Client.TLS   as HTTP
+import qualified Network.Plaid             as Plaid
 
-import Timely.Config (loadEnv, Env(..))
-import qualified Timely.Bank as Bank
-
+import qualified Timely.Bank               as Bank
+import           Timely.Config             (Env (..), loadEnv)
+import qualified Timely.Notify             as Notify
 
 data AppState = AppState
-    { dbConn :: Pool SeldaConnection
-    , amqpConn :: Worker.Connection
-    , plaid :: Plaid.Credentials
-    , manager :: HTTP.Manager
-    , env :: Env
-    }
+  { dbConn   :: Pool SeldaConnection
+  , amqpConn :: Worker.Connection
+  , plaid    :: Plaid.Credentials
+  , manager  :: HTTP.Manager
+  , env      :: Env
+  }
 
 type WorkerM = ReaderT AppState IO
-type WorkerEM e = ExceptT e WorkerM
 
-instance Selda (WorkerEM e) where
-    withConnection action = do
-      pool <- asks dbConn
-      Pool.withResource pool action
-
-instance MonadWorker (WorkerEM e) where
-    amqpConnection = asks amqpConn
+instance Selda WorkerM where
+  withConnection action = do
+    pool <- asks dbConn
+    Pool.withResource pool action
 
 instance MonadWorker WorkerM where
-    amqpConnection = asks amqpConn
+  amqpConnection = asks amqpConn
 
-instance MonadConfig Bank.Config (WorkerEM e) where
-    config = do
-      c <- asks plaid
-      m <- asks manager
-      b <- asks (plaidBaseUrl . env)
-      pure $ Bank.Config { Bank.manager = m, Bank.baseUrl = b, Bank.credentials = c }
+instance MonadConfig Bank.Config WorkerM where
+  config = do
+    c <- asks plaid
+    m <- asks manager
+    b <- asks (plaidBaseUrl . env)
+    pure $ Bank.Config { Bank.manager = m, Bank.baseUrl = b, Bank.credentials = c }
+
+instance MonadConfig Notify.Config WorkerM where
+  config = do
+    e <- asks env
+    pure $ Notify.Config (twilioFromPhone e) (twilioAccountId e) (twilioAuthToken e) (endpoint e)
 
 
 loadState :: (MonadIO m, MonadMask m) => m AppState
 loadState = do
-    env <- loadEnv
-    amqpConn <- Worker.connect (Worker.fromURI $ cs $ amqp env)
-    dbConn <- liftIO $ Pool.createPool (createConn $ cs $ postgres env) destroyConn 1 5 3
-    manager <- liftIO $ HTTP.newManager HTTP.tlsManagerSettings
-    let plaid = Plaid.Credentials (plaidClientId env) (plaidClientSecret env)
-    pure AppState {..}
-  where
-    createConn = Selda.pgOpen' Nothing
-    destroyConn = Selda.seldaClose
+  env <- loadEnv
+  amqpConn <- Worker.connect (Worker.fromURI $ cs $ amqp env)
+  dbConn <- liftIO $ Pool.createPool (createConn $ cs $ postgres env) destroyConn 1 5 3
+  manager <- liftIO $ HTTP.newManager HTTP.tlsManagerSettings
+  let plaid = Plaid.Credentials (plaidClientId env) (plaidClientSecret env)
+  pure AppState {..}
+
+  where createConn = Selda.pgOpen' Nothing
+        destroyConn = Selda.seldaClose
 
 
-connect :: forall a e. (FromJSON a, Exception e) => Queue a -> (a -> WorkerEM e ()) -> WorkerM ()
+connect :: forall a. (FromJSON a) => Queue a -> (a -> WorkerM ()) -> WorkerM ()
 connect queue handler = do
-    Worker.bindQueue queue
-    Worker.worker def queue onError onMessage
+  Worker.bindQueue queue
+  Worker.worker def queue onError onMessage
 
-  where
-    onMessage :: Worker.Message a -> WorkerM ()
-    onMessage m = runWorkerEM $ handler (Worker.value m)
-
+  where onMessage :: Worker.Message a -> WorkerM ()
+        onMessage m = handler (Worker.value m)
 
 
-start :: (FromJSON a, Exception e) => Queue a -> (a -> WorkerEM e ()) -> IO ()
+
+start :: (FromJSON a) => Queue a -> (a -> WorkerM ()) -> IO ()
 start queue handler = do
-    state <- loadState
-    putStrLn "Running worker"
-    runReaderT (connect queue handler) state
+  state <- loadState
+  putStrLn "Running worker"
+  runReaderT (connect queue handler) state
 
 
-runWorkerEM :: Exception e => WorkerEM e a -> WorkerM a
-runWorkerEM x = do
-    e <- runExceptT x
-    case e of
-      Left err -> liftIO $ throwIO err
-      Right a -> pure a
+-- runWorkerEM :: Exception e => WorkerEM e a -> WorkerM a
+-- runWorkerEM x = do
+--   e <- runExceptT x
+--   case e of
+--     Left err -> liftIO $ throwIO err
+--     Right a  -> pure a
 
 
-runIO :: Exception e => WorkerEM e a -> IO a
+runIO :: WorkerM a -> IO a
 runIO x = do
   s <- loadState
-  runReaderT (runWorkerEM x) s
+  runReaderT x s
 
 
 
@@ -118,4 +117,3 @@ onError e = do
     liftIO $ print e
     -- TODO handle errors. Create an error queue?
     -- TODO send to rollbar or somewhere similar
-

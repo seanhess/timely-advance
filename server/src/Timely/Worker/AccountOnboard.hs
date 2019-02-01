@@ -9,7 +9,7 @@ module Timely.Worker.AccountOnboard where
 
 
 import           Control.Monad.Service (Service(run))
-import           Control.Monad.Except (MonadError(..))
+import           Control.Monad.Catch (MonadThrow(..))
 import           Control.Exception (Exception)
 import           Data.Text (Text)
 import qualified Data.Text as Text
@@ -43,7 +43,7 @@ handler
      , Service m AccountStore
      , Service m Underwriting
      , Service m ApplicationStore
-     , MonadError OnboardError m
+     , MonadThrow m
      )
   => Application -> m ()
 handler app = do
@@ -77,8 +77,7 @@ handler app = do
         checking <- require MissingChecking $ List.find isChecking bankAccounts
 
         -- TODO the transactions might not be available until the webhook triggers - maybe it makes more sense to have the health in a pending state. Or just. We're good!
-        let advances = []
-            health = AccountHealth.analyze (balance checking) advances
+        let health = AccountHealth.analyze (balance checking)
         run $ Account.CreateAccount $ Account.account aid phn cust tok amt health
 
         -- save the bank accounts
@@ -87,12 +86,12 @@ handler app = do
         run $ Account.SetBankAccounts aid bankAccounts
 
   where
-    require :: MonadError err m => err -> (Maybe a) -> m a
-    require err Nothing = throwError err
+    require :: (MonadThrow m, Exception err) => err -> (Maybe a) -> m a
+    require err Nothing = throwM err
     require _ (Just a)  = pure a
 
 
-toNewCustomer :: MonadError OnboardError m => Application -> Bank.Identity -> m Customer
+toNewCustomer :: MonadThrow m => Application -> Bank.Identity -> m Customer
 toNewCustomer Application {..} identity = do
     let id = Selda.def
     (firstName, middleName, lastName) <- parseName
@@ -102,8 +101,8 @@ toNewCustomer Application {..} identity = do
       case List.map Text.words (Bank.names identity) of
         [f, m, l]:_ -> pure (f, Just m, l)
         [f, l]:_ -> pure (f, Nothing, l)
-        n:_ -> throwError $ BadName $ Text.unwords n
-        _ -> throwError $ NoNames
+        n:_ -> throwM $ BadName $ Text.unwords n
+        _ -> throwM $ NoNames
 
 
 

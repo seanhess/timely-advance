@@ -5,11 +5,13 @@ module Timely.Types.Guid
     , randomId
     , toText
     , fromText
+    , toString
+    , fromString
     ) where
 
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Maybe (fromMaybe)
-import Data.UUID (UUID, toText, fromText)
+import Data.UUID (UUID, toText, fromText, toString, fromString)
 import qualified Data.UUID as UUID
 import qualified Data.UUID.V4 as UUID
 import Database.Selda (SqlType(..))

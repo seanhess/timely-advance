@@ -157,7 +157,6 @@ isChecking acc = accountType acc == Checking
 data Health = Health
     { accountId :: Guid Account
     , expenses  :: Money
-    , advances  :: Money
     , available :: Money
     } deriving (Show, Eq, Generic)
 

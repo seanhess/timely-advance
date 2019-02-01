@@ -7,7 +7,6 @@ import           Timely.Types.Money
 
 data Projection = Projection
     { expenses  :: Money
-    , advances  :: Money
     , available :: Money
     } deriving (Show, Eq, Generic)
 
