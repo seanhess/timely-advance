@@ -3,4 +3,4 @@ server.cabal
 *~
 *.sqlite
 
-client/**
+client/**/*.elm

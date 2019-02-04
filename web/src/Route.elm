@@ -1,4 +1,4 @@
-module Route exposing (AccountId, Onboard(..), Route(..), fromUrl, href, parser, parserOnboard, replaceUrl, url)
+module Route exposing (Account(..), AccountId, Onboard(..), Route(..), fromUrl, href, replaceUrl, url)
 
 -- import Article.Slug as Slug exposing (Slug)
 -- import Profile exposing (Profile)
@@ -6,7 +6,7 @@ module Route exposing (AccountId, Onboard(..), Route(..), fromUrl, href, parser,
 import Browser.Navigation as Nav
 import Html exposing (Attribute)
 import Html.Attributes as Attr
-import Timely.Api exposing (Account, Id(..))
+import Timely.Api as Api exposing (Account, Id(..))
 import Url exposing (Url)
 import Url.Parser as Parser exposing ((</>), Parser, oneOf, s, string)
 
@@ -23,14 +23,19 @@ type Onboard
     = Landing
     | Signup
     | Login
-    | Approval (Id Account)
+    | Approval (Id Api.Account)
 
 
 type Route
     = Onboard Onboard
     | Accounts
-    | Account (Id Account)
+    | Account (Id Api.Account) Account
     | Init
+
+
+type Account
+    = AccountMain
+    | Advance (Id Api.Advance)
 
 
 
@@ -46,7 +51,7 @@ parser =
         [ Parser.map Init Parser.top
         , Parser.map Onboard (s "onboard" </> parserOnboard)
         , Parser.map Accounts (s "accounts")
-        , Parser.map Account (s "accounts" </> Parser.map Id string)
+        , Parser.map Account (s "accounts" </> Parser.map Id string </> parserAccount)
         ]
 
 
@@ -57,6 +62,14 @@ parserOnboard =
         , Parser.map Signup (s "signup")
         , Parser.map Login (s "login")
         , Parser.map Approval (s "approval" </> Parser.map Id string)
+        ]
+
+
+parserAccount : Parser (Account -> a) a
+parserAccount =
+    oneOf
+        [ Parser.map Advance (s "advance" </> Parser.map Id string)
+        , Parser.map AccountMain Parser.top
         ]
 
 
@@ -107,8 +120,11 @@ url page =
                 Accounts ->
                     [ "accounts" ]
 
-                Account (Id s) ->
+                Account (Id s) AccountMain ->
                     [ "accounts", s ]
+
+                Account (Id s) (Advance (Id adv)) ->
+                    [ "notify", s, "advance", adv ]
 
                 Init ->
                     []

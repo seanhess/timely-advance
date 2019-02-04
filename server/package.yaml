@@ -91,7 +91,7 @@ library:
     - advances
     - auth
     - evaluate
-    # - client
+    - client
 
 executables:
   server-exe:

@@ -19,7 +19,7 @@ import qualified Data.Text                 as Text
 import           GHC.Generics              (Generic)
 import           Servant.Client            (BaseUrl)
 import qualified Servant.Client            as Servant
-import           Timely.AccountStore.Types (Account)
+import           Timely.AccountStore.Types (Account(..))
 import qualified Timely.AccountStore.Types as Account
 import           Timely.Auth               (Phone (..))
 import           Timely.Types.Guid         (Guid)
@@ -46,19 +46,24 @@ send account message = do
   let (Phone from) = "+1" <> fromPhone
       (Phone to)   = "+1" <> Account.phone (account :: Account)
   liftIO $ Twilio.runTwilio (accountSid, authToken) $ do
-    Twilio.post $ Twilio.PostMessage to from (body appBaseUrl message) Nothing
+    Twilio.post $ Twilio.PostMessage to from (body appBaseUrl (accountId account) message) Nothing
   pure ()
 
 
 
-body :: BaseUrl -> Message a -> Text
-body b m = message m <> " " <> url b m
+body :: BaseUrl -> Guid Account -> Message a -> Text
+body b a m = message m <> " " <> url b a m
 
 
 
-url :: BaseUrl -> Message a -> Text
-url b m =
-  cs (Servant.showBaseUrl b) <> "/#/" <> Text.intercalate "/" ["notify", rurl (resource m), Guid.toText (id m)]
+url :: BaseUrl -> Guid Account -> Message a -> Text
+url b a m =
+  cs (Servant.showBaseUrl b) <> "/#/" <> Text.intercalate "/"
+    [ "accounts"
+    , Guid.toText a
+    , rurl (resource m)
+    , Guid.toText (id m)
+    ]
   where rurl Advance = "advance"
 
 

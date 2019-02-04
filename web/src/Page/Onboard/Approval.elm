@@ -106,7 +106,7 @@ viewStatus accountId status =
                 , Element.el [] (text <| String.fromInt a.approvalAmount)
                 , Element.column []
                     [ Element.link Style.button
-                        { url = Route.url <| Route.Account accountId
+                        { url = Route.url <| Route.Account accountId <| Route.AccountMain
                         , label = Element.text "My Account"
                         }
                     ]

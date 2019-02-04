@@ -10,6 +10,7 @@ import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Page.Account as Account
 import Page.Accounts as Accounts
+import Page.Advance as Advance
 import Page.Init as Init
 import Page.Onboard.Approval as Approval
 import Page.Onboard.Landing as Landing
@@ -38,6 +39,7 @@ type PageModel
     | Approval Approval.Model
     | Accounts Accounts.Model
     | Account Account.Model
+    | Advance Advance.Model
 
 
 init : flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -67,6 +69,7 @@ type Msg
     | OnLanding Landing.Msg
     | OnSignup Signup.Msg
     | OnApproval Approval.Msg
+    | OnAdvance Advance.Msg
     | OnAccounts Accounts.Msg
     | OnAccount Account.Msg
 
@@ -114,6 +117,10 @@ update msg model =
             ( OnAccount acc, Account m ) ->
                 Account.update model.key acc m
                     |> updateWith Account OnAccount model
+
+            ( OnAdvance adv, Advance m ) ->
+                Advance.update adv m
+                    |> runUpdates (always Cmd.none) Advance OnAdvance model
 
             ( OnInit ini, Init m ) ->
                 Init.update ini m
@@ -190,12 +197,20 @@ changeRouteTo key maybeRoute =
             in
             ( Accounts mod, Cmd.map OnAccounts cmd )
 
-        Just (Route.Account i) ->
+        Just (Route.Account i Route.AccountMain) ->
             let
                 ( mod, cmd ) =
                     Account.init i
             in
             ( Account mod, Cmd.map OnAccount cmd )
+
+        Just (Route.Account a (Route.Advance adv)) ->
+            -- Check session!
+            let
+                ( m, cmd ) =
+                    Advance.init key a adv
+            in
+            ( Advance m, Cmd.map OnAdvance cmd )
 
         Just Route.Init ->
             -- Check session!
@@ -231,6 +246,9 @@ view model =
 
                 Account a ->
                     Element.map OnAccount <| Account.view a
+
+                Advance a ->
+                    Element.map OnAdvance <| Advance.view a
 
                 Init m ->
                     Element.map OnInit <| Init.view m

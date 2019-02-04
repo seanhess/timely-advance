@@ -1,6 +1,6 @@
-{-# LANGUAGE DeriveGeneric             #-}
-{-# LANGUAGE OverloadedStrings         #-}
-{-# LANGUAGE DuplicateRecordFields     #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings     #-}
 module Timely.Api.Types
   ( Account(..)
   , Customer(..)
@@ -9,22 +9,24 @@ module Timely.Api.Types
   , Result(..)
   ) where
 
-import           Data.Aeson (ToJSON(..), FromJSON)
-import           Data.String.Conversions (cs)
-import           Data.Text (Text)
-import qualified Data.UUID as UUID
-import           Database.Selda (ID, fromId)
-import           GHC.Generics (Generic)
-import           Servant.API.ContentTypes.HTML (Linkable(..))
+import           Data.Aeson                    (FromJSON, ToJSON (..))
+import           Data.String.Conversions       (cs)
+import           Data.Text                     (Text)
+import qualified Data.UUID                     as UUID
+import           Database.Selda                (ID, fromId)
+import           GHC.Generics                  (Generic)
+import           Servant.API.ContentTypes.HTML (Linkable (..))
 
-import Timely.AccountStore.Types
-import Timely.Bank (Token, Public)
-import Timely.Underwriting (Result(..), Approval, Denial, DenialReason)
+import           Timely.AccountStore.Types
+import           Timely.Advances               (Advance)
+import           Timely.Bank                   (Public, Token)
+import           Timely.Underwriting           (Approval, Denial, DenialReason,
+                                                Result (..))
 
 
 instance ToJSON Result where
     toJSON (Approved a) = toJSON a
-    toJSON (Denied d) = toJSON d
+    toJSON (Denied d)   = toJSON d
 
 instance ToJSON Approval
 instance ToJSON Denial
@@ -39,12 +41,13 @@ instance ToJSON Customer
 instance ToJSON BankAccountType
 instance ToJSON BankAccount
 instance ToJSON Application
+instance ToJSON Advance
 instance FromJSON Application
 
 
 -- AccountInfo ---------------------
 data AccountInfo = AccountInfo
-    { email :: Text
+    { email           :: Text
     , publicBankToken :: Token Public
     } deriving (Generic, Show)
 

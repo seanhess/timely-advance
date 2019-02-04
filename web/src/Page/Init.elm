@@ -35,7 +35,7 @@ update msg model =
             Route.url <| Route.Onboard Route.Landing
 
         account i =
-            Route.url <| Route.Account i
+            Route.url <| Route.Account i <| Route.AccountMain
     in
     case msg of
         LoadedSession (Err e) ->

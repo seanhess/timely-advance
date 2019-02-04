@@ -1,10 +1,12 @@
-module Timely.Api exposing (Account, AccountInfo, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Balance, Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Phone, Session, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeId, expectId, getAccount, getAccountBanks, getApplicationResult, idValue, postApplications, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout)
+module Timely.Api exposing (Account, AccountInfo, Advance, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Balance, Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money(..), Phone, Session, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeMoney, decodeSession, encodeAccountInfo, encodeId, expectId, getAccount, getAccountBanks, getAdvance, getApplicationResult, idValue, postApplications, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout)
 
 import Http exposing (Error, Expect)
+import Iso8601
 import Json.Decode as Decode exposing (Decoder, int, list, nullable, string)
 import Json.Decode.Pipeline exposing (..)
 import Json.Encode as Encode
 import String
+import Time
 
 
 type Bank
@@ -75,6 +77,17 @@ type alias Approval =
 
 type alias Denial =
     { denial : String
+    }
+
+
+type alias Advance =
+    { advanceId : String
+    , accountId : String
+    , amount : Money
+    , due : Time.Posix
+    , offered : Time.Posix
+    , activated : Maybe Time.Posix
+    , collected : Maybe Time.Posix
     }
 
 
@@ -176,6 +189,24 @@ decodeBankAccountType =
             )
 
 
+decodeMoney : Decoder Money
+decodeMoney =
+    Decode.map Money
+        int
+
+
+decodeAdvance : Decoder Advance
+decodeAdvance =
+    Decode.succeed Advance
+        |> required "advanceId" string
+        |> required "accountId" string
+        |> required "amount" decodeMoney
+        |> required "due" Iso8601.decoder
+        |> required "offered" Iso8601.decoder
+        |> required "activated" (nullable Iso8601.decoder)
+        |> required "collected" (nullable Iso8601.decoder)
+
+
 postApplications : (Result Error Application -> msg) -> AccountInfo -> Cmd msg
 postApplications toMsg body =
     Http.request
@@ -228,8 +259,21 @@ getApplicationResult toMsg (Id a) =
         }
 
 
+getAdvance : (Result Error Advance -> msg) -> Id Account -> Id Advance -> Cmd msg
+getAdvance toMsg (Id a) (Id adv) =
+    Http.request
+        { method = "GET"
+        , headers = []
+        , url = String.join "/" [ "", "v1", "accounts", a, "advances", adv ]
+        , body = Http.emptyBody
+        , expect = Http.expectJson toMsg decodeAdvance
+        , timeout = Nothing
+        , tracker = Nothing
+        }
 
--- Authentication -----------------
+
+
+-- Common -----------------
 
 
 type alias Phone =
@@ -265,6 +309,14 @@ encodeId (Id s) =
 decodeId : Decoder (Id a)
 decodeId =
     Decode.map Id Decode.string
+
+
+type Money
+    = Money Int
+
+
+
+--- Authentication -------------------------------------------
 
 
 sessionsCreateCode : (Result Error () -> msg) -> Phone -> Cmd msg

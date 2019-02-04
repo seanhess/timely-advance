@@ -11,7 +11,8 @@ import           Control.Monad.IO.Class    (MonadIO, liftIO)
 import           Control.Monad.Selda       (Selda, insert, query, tryCreateTable, update_)
 import           Control.Monad.Service     (Service (..))
 import qualified Data.List                 as List
-import           Data.Maybe                (isJust, isNothing)
+import qualified Data.Maybe as Maybe
+import           Data.Ord                  (comparing, Down(..))
 import           Data.Time.Calendar        (Day)
 import           Data.Time.Clock           (UTCTime)
 import qualified Data.Time.Clock           as Time
@@ -49,6 +50,8 @@ data Advances a where
     MarkCollected :: Guid Advance -> Advances ()
     FindOffer     :: Guid Account -> Advances (Maybe Advance)
     FindActive    :: Guid Account -> Advances [Advance]
+    FindAll       :: Guid Account -> Advances [Advance]
+    Find          :: Guid Account -> Guid Advance -> Advances (Maybe Advance)
 
 
 instance Selda m => Service m Advances where
@@ -57,6 +60,8 @@ instance Selda m => Service m Advances where
     run (MarkCollected i) = markCollected i
     run (FindOffer i)     = findOffer <$> findAdvances i
     run (FindActive i)    = findActive <$> findAdvances i
+    run (FindAll i)       = findAdvances i
+    run (Find i adv)      = findAdvance i adv
 
 
 advances :: Table Advance
@@ -93,17 +98,22 @@ findAdvances i = query $ do
     pure a
 
 
+
+mostRecentAdvance :: [Advance] -> Maybe Advance
+mostRecentAdvance =
+    Maybe.listToMaybe
+  . List.sortBy (comparing (Down . offered))
+
+
 findOffer :: [Advance] -> Maybe Advance
 findOffer =
     List.find isOffer
-  . List.take 1
-  . List.reverse
-  . List.sortOn offered
+  . mostRecentAdvance
 
 
 isOffer :: Advance -> Bool
 isOffer a =
-  isNothing (activated a)
+  Maybe.isNothing (activated a)
 
 
 findActive :: [Advance] -> [Advance]
@@ -112,9 +122,17 @@ findActive = List.filter isActive
 
 isActive :: Advance -> Bool
 isActive a =
-  isJust (activated a) && isNothing (collected a)
+  Maybe.isJust (activated a) && Maybe.isNothing (collected a)
 
 
+findAdvance :: Selda m => Guid Account -> Guid Advance -> m (Maybe Advance)
+findAdvance i adv = do
+    as <- query $ do
+      a <- select advances
+      restrict (a ! #accountId .== literal i)
+      restrict (a ! #advanceId .== literal adv)
+      pure a
+    pure $ Maybe.listToMaybe as
 
 
 

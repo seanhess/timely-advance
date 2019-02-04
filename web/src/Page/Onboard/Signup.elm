@@ -132,7 +132,7 @@ update msg model =
 
                     Just id ->
                         updates model
-                            |> command (Nav.pushUrl model.key (Route.url <| Route.Account id))
+                            |> command (Nav.pushUrl model.key (Route.url <| Route.Account id <| Route.AccountMain))
 
             PlaidOpen ->
                 updates model

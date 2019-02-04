@@ -20,16 +20,23 @@ import           Servant                              hiding (Application, Link)
 import qualified Servant
 import           Servant.API.ContentTypes.HTML        (HTML, Link (..))
 import           Servant.API.ContentTypes.JS          (JS)
-import           Servant.API.Generic                  ((:-), AsApi, ToServant, ToServantApi)
-import           Servant.Auth.Server                  (Auth, Cookie, CookieSettings (..), JWTSettings)
-import           Servant.Server.Generic               (AsServerT, genericServerT)
+import           Servant.API.Generic                  ((:-), AsApi, ToServant,
+                                                       ToServantApi)
+import           Servant.Auth.Server                  (Auth, Cookie,
+                                                       CookieSettings (..),
+                                                       JWTSettings)
+import           Servant.Server.Generic               (AsServerT,
+                                                       genericServerT)
 
 import qualified Timely.AccountStore.Account          as Account
 import qualified Timely.AccountStore.Application      as Application
 import           Timely.AccountStore.Types            (Application)
+import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
 import qualified Timely.Api.Applications              as Applications
-import           Timely.Api.AppM                      (AppM, AppState (..), clientConfig, loadState, nt, runIO)
+import           Timely.Api.AppM                      (AppM, AppState (..),
+                                                       clientConfig, loadState,
+                                                       nt, runIO)
 import           Timely.Api.Sessions                  (SetSession)
 import qualified Timely.Api.Sessions                  as Sessions
 import           Timely.Api.Types
@@ -66,18 +73,25 @@ data VersionedApi route = VersionedApi
 
 -- Personal Information : Account and Application ---------------------
 data AccountApi route = AccountApi
-    { _get    :: route :- Get '[JSON, HTML] Account
-    , _banks  :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
-    , _app    :: route :- "application" :> Get '[JSON] Application
-    , _result :: route :- "application" :> "result" :> Get '[JSON] Result
+    { _get     :: route :- Get '[JSON, HTML] Account
+    , _banks   :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
+    , _app     :: route :- "application" :> Get '[JSON] Application
+    , _result  :: route :- "application" :> "result" :> Get '[JSON] Result
+    , _advance :: route :- "advances" :> ToServantApi AdvanceApi
     } deriving (Generic)
-    -- { _all :: route   :- Get '[JSON, HTML] [Account]
-    -- , _put :: route :- Capture "id" (Id Account) :> ReqBody '[JSON] AccountInfo :> Put '[JSON] Account
+
+
+data AdvanceApi route = AdvanceApi
+    { _all     :: route :- Get '[JSON] [Advance]
+    , _get     :: route :- Capture "id" (Guid Advance) :> Get '[JSON] Advance
+    } deriving (Generic)
 
 
 data AppApi route = AppApi
     { _post   :: route :- ReqBody '[JSON] AccountInfo :> Post '[JSON] (SetSession Application)
     } deriving (Generic)
+
+
 
 
 data SessionsApi route = SessionsApi
@@ -95,6 +109,14 @@ accountApi i = genericServerT AccountApi
     , _banks = run (Account.BankAccounts i)
     , _app    = run (Application.Find i) >>= notFound
     , _result = run (Application.FindResult i) >>= notFound
+    , _advance = advanceApi i
+    }
+
+
+advanceApi :: Guid Account -> ToServant AdvanceApi (AsServerT AppM)
+advanceApi i = genericServerT AdvanceApi
+    { _all = run (Advances.FindAll i)
+    , _get = \adv -> run (Advances.Find i adv) >>= notFound
     }
 
 
@@ -104,6 +126,7 @@ applicationApi :: Phone -> ToServant AppApi (AsServerT AppM)
 applicationApi p = genericServerT AppApi
     { _post   = Applications.newApplication p
     }
+
 
 sessionsApi :: ToServant SessionsApi (AsServerT AppM)
 sessionsApi = genericServerT SessionsApi
