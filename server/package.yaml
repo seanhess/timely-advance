@@ -35,6 +35,7 @@ dependencies:
 - jose
 - mtl
 - monad-control
+- monad-logger
 - random
 - pretty-show
 - resource-pool
@@ -90,6 +91,7 @@ library:
     - advances
     - auth
     - evaluate
+    # - client
 
 executables:
   server-exe:

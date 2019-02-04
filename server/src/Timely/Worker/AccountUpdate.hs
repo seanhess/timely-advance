@@ -6,11 +6,12 @@ module Timely.Worker.AccountUpdate where
 -- TODO real transaction analysis
 -- TODO logging
 -- TODO advance locking / tracking. Right now it creates multiple advances and counts those in the health
-
 import           Control.Exception             (Exception)
 import           Control.Monad                 (when)
 import           Control.Monad.Catch           (MonadThrow (..))
+import           Control.Monad.Logger          as Log (MonadLogger, logInfoNS)
 import           Control.Monad.Service         (Service (run))
+import           Data.String.Conversions       (cs)
 -- import Control.Monad.IO.Class (liftIO, MonadIO)
 import qualified Data.List                     as List
 import           Data.Time.Calendar            (Day)
@@ -20,10 +21,9 @@ import qualified Network.AMQP.Worker.Monad     as Worker
 
 import           Timely.AccountStore.Account   (AccountStore)
 import qualified Timely.AccountStore.Account   as AccountStore
-import           Timely.AccountStore.Types     (Account (bankToken), BankAccount (balance),
-                                                isChecking, toBankAccount)
-import qualified Timely.AccountStore.Types     as Account (Account(..))
-import qualified Timely.AccountStore.Types     as AccountRow (AccountRow(..))
+import           Timely.AccountStore.Types     (Account (bankToken), BankAccount (balance), isChecking, toBankAccount)
+import qualified Timely.AccountStore.Types     as Account (Account (..))
+import qualified Timely.AccountStore.Types     as AccountRow (AccountRow (..))
 import           Timely.Advances               (Advance, Advances)
 import qualified Timely.Advances               as Advances
 import           Timely.Bank                   (Access, Banks, Token)
@@ -38,6 +38,7 @@ import qualified Timely.Notify                 as Notify
 import           Timely.Time                   (Time)
 import qualified Timely.Time                   as Time
 import           Timely.Types.Guid             (Guid)
+import qualified Timely.Types.Guid             as Guid
 import           Timely.Types.Money            (Money)
 import           Timely.Types.Private          (Private (..))
 
@@ -74,12 +75,13 @@ handler
      , Service m Time
      , Service m Notify
      , MonadThrow m
-     -- , MonadIO m
+     , MonadLogger m
      )
   => Guid Account -> m ()
 handler accountId = do
 
-    -- liftIO $ putStrLn $ "HELLO!"  ++ show accountId
+    logInfoNS (Guid.toText accountId) "Update"
+
     account  <- run (AccountStore.Find accountId)
                   >>= require MissingAccount
 
@@ -88,6 +90,7 @@ handler accountId = do
 
     health <- updateHealth accountId checking
 
+    logInfoNS (Guid.toText accountId) (cs $ show health)
     checkAdvance account health
 
     pure ()
@@ -104,7 +107,7 @@ checkAdvance
   :: ( Service m Advances
      , Service m Time
      , Service m Notify
-     -- , MonadIO m
+     , MonadLogger m
      )
   => Account -> Projection -> m ()
 checkAdvance account health = do
@@ -112,6 +115,7 @@ checkAdvance account health = do
     offer  <- run $ Advances.FindOffer  (Account.accountId account)
     active <- run $ Advances.FindActive (Account.accountId account)
     when (Offer.isNeeded offer active health now) $ do
+      logInfoNS (Guid.toText $ Account.accountId account) "Advance!"
       offerAdvance account Offer.amount (Time.utctDay now)
       pure ()
 

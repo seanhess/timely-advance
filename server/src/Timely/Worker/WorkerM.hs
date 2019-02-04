@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
@@ -8,16 +9,18 @@ module Timely.Worker.WorkerM where
 import           Control.Exception         (SomeException)
 import           Control.Monad.Config      (MonadConfig (..))
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
+import           Control.Monad.Logger      (LoggingT, logErrorNS, logInfoNS, runStdoutLoggingT, MonadLogger)
 import           Control.Monad.Reader      (ReaderT, asks, runReaderT)
 import           Control.Monad.Selda       (Selda (..))
 import           Data.Aeson                (FromJSON)
 import           Data.Pool                 (Pool)
 import qualified Data.Pool                 as Pool
 import           Data.String.Conversions   (cs)
+import           Data.Text                 (Text)
 import           Database.Selda            (MonadMask)
 import           Database.Selda.Backend    (SeldaConnection)
 import qualified Database.Selda.PostgreSQL as Selda
-import           Network.AMQP.Worker       (Queue, WorkerException, def)
+import           Network.AMQP.Worker       (Queue (Queue), WorkerException, def)
 import qualified Network.AMQP.Worker       as Worker hiding (bindQueue, publish, worker)
 import           Network.AMQP.Worker.Monad (MonadWorker (..))
 import qualified Network.AMQP.Worker.Monad as Worker
@@ -37,7 +40,7 @@ data AppState = AppState
   , env      :: Env
   }
 
-type WorkerM = ReaderT AppState IO
+type WorkerM = ReaderT AppState (LoggingT IO)
 
 instance Selda WorkerM where
   withConnection action = do
@@ -76,18 +79,20 @@ loadState = do
 connect :: forall a. (FromJSON a) => Queue a -> (a -> WorkerM ()) -> WorkerM ()
 connect queue handler = do
   Worker.bindQueue queue
-  Worker.worker def queue onError onMessage
+  Worker.worker def queue (onError $ queueName queue) onMessage
 
   where onMessage :: Worker.Message a -> WorkerM ()
-        onMessage m = handler (Worker.value m)
+        onMessage m = do
+          logInfoNS (queueName queue) "New Message"
+          handler (Worker.value m)
 
-
+        queueName queue = let (Queue _ name) = queue in name
 
 start :: (FromJSON a) => Queue a -> (a -> WorkerM ()) -> IO ()
 start queue handler = do
   state <- loadState
   putStrLn "Running worker"
-  runReaderT (connect queue handler) state
+  runStdoutLoggingT (runReaderT (connect queue handler) state)
 
 
 -- runWorkerEM :: Exception e => WorkerEM e a -> WorkerM a
@@ -101,7 +106,7 @@ start queue handler = do
 runIO :: WorkerM a -> IO a
 runIO x = do
   s <- loadState
-  runReaderT x s
+  runStdoutLoggingT (runReaderT x s)
 
 
 
@@ -111,9 +116,8 @@ runIO x = do
 
 
 -- standardized error handling
-onError :: MonadWorker m => WorkerException SomeException -> m ()
-onError e = do
-    liftIO $ putStrLn "Do something with errors: careful with PII in logs!"
-    liftIO $ print e
-    -- TODO handle errors. Create an error queue?
+onError :: (MonadLogger m) => Text -> WorkerException SomeException -> m ()
+onError n e = do
     -- TODO send to rollbar or somewhere similar
+    -- TODO handle PII!
+    logErrorNS n (cs $ show e)

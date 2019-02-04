@@ -10,7 +10,8 @@ module Timely.Advances where
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
 import           Control.Monad.Selda       (Selda, insert, query, tryCreateTable, update_)
 import           Control.Monad.Service     (Service (..))
-import           Data.Maybe                (listToMaybe)
+import qualified Data.List                 as List
+import           Data.Maybe                (isJust, isNothing)
 import           Data.Time.Calendar        (Day)
 import           Data.Time.Clock           (UTCTime)
 import qualified Data.Time.Clock           as Time
@@ -36,9 +37,6 @@ data Advance = Advance
 instance SqlRow Advance
 
 
--- We can only have one advance offer active at a time
--- what's the best way to model that?
--- because we want to keep track of the old offers, right? And what happened to them
 -- CurrentOffer: The most recent offered but not accepted
 -- Active: All accepted but not collected
 
@@ -57,8 +55,8 @@ instance Selda m => Service m Advances where
     run (Create i a d)    = create i a d
     run (MarkActivated i) = markActivated i
     run (MarkCollected i) = markCollected i
-    run (FindOffer i)     = findOffer i
-    run (FindActive i)    = findActive i
+    run (FindOffer i)     = findOffer <$> findAdvances i
+    run (FindActive i)    = findActive <$> findAdvances i
 
 
 advances :: Table Advance
@@ -85,24 +83,39 @@ create i a d = do
     pure advance
 
 
-findActive :: Selda m => Guid Account -> m [Advance]
-findActive i = query $ do
+
+-- | Advances in order of offer time
+findAdvances :: Selda m => Guid Account -> m [Advance]
+findAdvances i = query $ do
     a <- select advances
     restrict (a ! #accountId .== literal i)
-    restrict (not_ $ isNull $ a ! #activated )
-    restrict (isNull $ a ! #collected )
-    pure a
-
-
-findOffer :: Selda m => Guid Account -> m (Maybe Advance)
-findOffer i = do
-  as <- query $ do
-    a <- select advances
-    restrict (a ! #accountId .== literal i)
-    restrict (isNull $ a ! #activated )
     order (a ! #offered) descending
     pure a
-  pure $ listToMaybe as
+
+
+findOffer :: [Advance] -> Maybe Advance
+findOffer =
+    List.find isOffer
+  . List.take 1
+  . List.reverse
+  . List.sortOn offered
+
+
+isOffer :: Advance -> Bool
+isOffer a =
+  isNothing (activated a)
+
+
+findActive :: [Advance] -> [Advance]
+findActive = List.filter isActive
+
+
+isActive :: Advance -> Bool
+isActive a =
+  isJust (activated a) && isNothing (collected a)
+
+
+
 
 
 markActivated :: Selda m => Guid Advance -> m ()
