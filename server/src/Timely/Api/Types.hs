@@ -7,6 +7,7 @@ module Timely.Api.Types
   , BankAccount(..)
   , AccountInfo(..)
   , Result(..)
+  , Amount(..)
   ) where
 
 import           Data.Aeson                    (FromJSON, ToJSON (..))
@@ -20,8 +21,8 @@ import           Servant.API.ContentTypes.HTML (Linkable (..))
 import           Timely.AccountStore.Types
 import           Timely.Advances               (Advance)
 import           Timely.Bank                   (Public, Token)
-import           Timely.Underwriting           (Approval, Denial, DenialReason,
-                                                Result (..))
+import           Timely.Types.Money            (Money)
+import           Timely.Underwriting           (Approval, Denial, DenialReason, Result (..))
 
 
 instance ToJSON Result where
@@ -43,6 +44,13 @@ instance ToJSON BankAccount
 instance ToJSON Application
 instance ToJSON Advance
 instance FromJSON Application
+
+
+data Amount = Amount
+    { amount :: Money }
+    deriving (Show, Eq, Generic)
+
+instance FromJSON Amount
 
 
 -- AccountInfo ---------------------

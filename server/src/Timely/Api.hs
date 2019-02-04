@@ -84,6 +84,7 @@ data AccountApi route = AccountApi
 data AdvanceApi route = AdvanceApi
     { _all     :: route :- Get '[JSON] [Advance]
     , _get     :: route :- Capture "id" (Guid Advance) :> Get '[JSON] Advance
+    , _accept  :: route :- Capture "id" (Guid Advance) :> "accept" :> ReqBody '[JSON] Amount :> Post '[JSON] NoContent
     } deriving (Generic)
 
 
@@ -105,18 +106,19 @@ data SessionsApi route = SessionsApi
 -- Your own account!
 accountApi :: Guid Account -> ToServant AccountApi (AsServerT AppM)
 accountApi i = genericServerT AccountApi
-    { _get   = run (Account.Find i) >>= notFound
-    , _banks = run (Account.BankAccounts i)
-    , _app    = run (Application.Find i) >>= notFound
-    , _result = run (Application.FindResult i) >>= notFound
+    { _get     = run (Account.Find i)           >>= notFound
+    , _banks   = run (Account.BankAccounts i)
+    , _app     = run (Application.Find i)       >>= notFound
+    , _result  = run (Application.FindResult i) >>= notFound
     , _advance = advanceApi i
     }
 
 
 advanceApi :: Guid Account -> ToServant AdvanceApi (AsServerT AppM)
 advanceApi i = genericServerT AdvanceApi
-    { _all = run (Advances.FindAll i)
-    , _get = \adv -> run (Advances.Find i adv) >>= notFound
+    { _all    =             run (Advances.FindAll i)
+    , _get    = \adv     -> run (Advances.Find i adv)                  >>= notFound
+    , _accept = \adv amt -> run (Advances.Activate i adv (amount amt)) >> pure NoContent
     }
 
 

@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountInfo, Advance, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Balance, Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money(..), Phone, Session, Token, decodeAccount, decodeAccountInfo, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeMoney, decodeSession, encodeAccountInfo, encodeId, expectId, getAccount, getAccountBanks, getAdvance, getApplicationResult, idValue, postApplications, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout)
+module Timely.Api exposing (Account, AccountInfo, Advance, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Balance, Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money(..), Phone, Session, Token, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeMoney, decodeSession, encodeAccountInfo, encodeAmount, encodeId, encodeMoney, expectId, getAccount, getAccountBanks, getAdvance, getApplicationResult, idValue, postAdvanceAccept, postApplications, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout)
 
 import Http exposing (Error, Expect)
 import Iso8601
@@ -84,10 +84,16 @@ type alias Advance =
     { advanceId : String
     , accountId : String
     , amount : Money
+    , offer : Money
     , due : Time.Posix
     , offered : Time.Posix
     , activated : Maybe Time.Posix
     , collected : Maybe Time.Posix
+    }
+
+
+type alias Amount =
+    { amount : Money
     }
 
 
@@ -96,6 +102,13 @@ encodeAccountInfo x =
     Encode.object
         [ ( "email", Encode.string x.email )
         , ( "publicBankToken", encodeId x.publicBankToken )
+        ]
+
+
+encodeAmount : Amount -> Encode.Value
+encodeAmount x =
+    Encode.object
+        [ ( "amount", encodeMoney x.amount )
         ]
 
 
@@ -195,12 +208,18 @@ decodeMoney =
         int
 
 
+encodeMoney : Money -> Encode.Value
+encodeMoney (Money m) =
+    Encode.int m
+
+
 decodeAdvance : Decoder Advance
 decodeAdvance =
     Decode.succeed Advance
         |> required "advanceId" string
         |> required "accountId" string
         |> required "amount" decodeMoney
+        |> required "offer" decodeMoney
         |> required "due" Iso8601.decoder
         |> required "offered" Iso8601.decoder
         |> required "activated" (nullable Iso8601.decoder)
@@ -267,6 +286,19 @@ getAdvance toMsg (Id a) (Id adv) =
         , url = String.join "/" [ "", "v1", "accounts", a, "advances", adv ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg decodeAdvance
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+postAdvanceAccept : (Result Error () -> msg) -> Id Account -> Id Advance -> Money -> Cmd msg
+postAdvanceAccept toMsg (Id a) (Id adv) amt =
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = String.join "/" [ "", "v1", "accounts", a, "advances", adv, "accept" ]
+        , body = Http.jsonBody (encodeAmount { amount = amt })
+        , expect = Http.expectWhatever toMsg
         , timeout = Nothing
         , tracker = Nothing
         }

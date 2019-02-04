@@ -20,6 +20,7 @@ import           Database.Selda            hiding (insert, query, tryCreateTable
 import           GHC.Generics              (Generic)
 import           Timely.AccountStore.Types (Account)
 import           Timely.Types.Money        (Money)
+import qualified Timely.Types.Money as Money
 
 import           Timely.Types.Guid         (Guid)
 import qualified Timely.Types.Guid         as Guid
@@ -28,6 +29,7 @@ import qualified Timely.Types.Guid         as Guid
 data Advance = Advance
     { advanceId :: Guid Advance
     , accountId :: Guid Account
+    , offer     :: Money
     , amount    :: Money
     , due       :: Day
     , offered   :: UTCTime
@@ -46,23 +48,25 @@ instance SqlRow Advance
 
 data Advances a where
     Create        :: Guid Account -> Money -> Day -> Advances Advance
-    MarkActivated :: Guid Advance -> Advances ()
-    MarkCollected :: Guid Advance -> Advances ()
+
     FindOffer     :: Guid Account -> Advances (Maybe Advance)
     FindActive    :: Guid Account -> Advances [Advance]
     FindAll       :: Guid Account -> Advances [Advance]
     Find          :: Guid Account -> Guid Advance -> Advances (Maybe Advance)
 
+    Activate      :: Guid Account -> Guid Advance -> Money -> Advances ()
+    MarkCollected :: Guid Advance -> Advances ()
+
 
 instance Selda m => Service m Advances where
     run (Create i a d)    = create i a d
-    run (MarkActivated i) = markActivated i
-    run (MarkCollected i) = markCollected i
     run (FindOffer i)     = findOffer <$> findAdvances i
     run (FindActive i)    = findActive <$> findAdvances i
     run (FindAll i)       = findAdvances i
     run (Find i adv)      = findAdvance i adv
 
+    run (Activate a adv amt)  = activate a adv amt
+    run (MarkCollected i) = markCollected i
 
 advances :: Table Advance
 advances =
@@ -77,7 +81,8 @@ create i a d = do
     let advance = Advance
                     { advanceId = id
                     , accountId = i
-                    , amount = a
+                    , offer = a
+                    , amount = Money.fromFloat 0
                     , due = d
                     , offered = time
                     , collected = Nothing
@@ -136,11 +141,18 @@ findAdvance i adv = do
 
 
 
-markActivated :: Selda m => Guid Advance -> m ()
-markActivated i = do
+activate :: Selda m => Guid Account -> Guid Advance -> Money -> m ()
+activate aid adv amt = do
   time <- liftIO $ Time.getCurrentTime
-  update_ advances (\a -> a ! #accountId .== literal i)
-                   (\a -> a `with` [#activated := just (literal time)])
+  update_ advances match (\a -> a `with` updates time)
+
+  where match a =
+          a ! #accountId .== literal aid .&& a ! #advanceId .== literal adv
+
+        updates t =
+          [ #activated := just (literal t)
+          , #amount    := literal amt
+          ]
 
 
 markCollected :: Selda m => Guid Advance -> m ()

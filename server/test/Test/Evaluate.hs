@@ -58,7 +58,7 @@ testOffer = do
 
     group "isNeeded" $ do
       test "should not advance with recent offer" $ do
-        let advance = Advance {advanceId = "34209d46-efd2-4675-aa8e-8564d9ab65b6", accountId = "758547fd-74a8-48c3-8fd6-390b515027a5", amount = Money 20000, due = parseTime "2019-02-04", offered = parseTime "2019-02-01T20:02:46", activated = Nothing, collected = Nothing}
+        let advance = Advance {advanceId = "34209d46-efd2-4675-aa8e-8564d9ab65b6", accountId = "758547fd-74a8-48c3-8fd6-390b515027a5", amount = Money 20000, offer = Money 20000, due = parseTime "2019-02-04", offered = parseTime "2019-02-01T20:02:46", activated = Nothing, collected = Nothing}
             health = Projection {expenses = Money 20000, available = Money 11000}
             now = parseTime "2019-02-01T20:04:10"
         Offer.isNeeded (Just advance) [] health now @?= False
