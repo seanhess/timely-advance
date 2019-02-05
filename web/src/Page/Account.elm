@@ -1,4 +1,4 @@
-module Page.Account exposing (Model, Msg, init, update, view)
+module Page.Account exposing (Model, Msg, init, subscriptions, update, view)
 
 import Browser.Navigation as Nav
 import Debug
@@ -7,7 +7,8 @@ import Element.Font as Font
 import Element.Input as Input
 import Http
 import Route
-import Timely.Api as Api exposing (Account, AccountId, Advance, BankAccount, BankAccountType(..), Id, formatDollars, idValue)
+import Time exposing (Zone)
+import Timely.Api as Api exposing (Account, AccountId, Advance, BankAccount, BankAccountType(..), Id, advanceIsActive, advanceIsOffer, formatDate, formatDollars, idValue)
 import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 
@@ -17,6 +18,7 @@ type alias Model =
     , account : Resource Account
     , banks : Resource (List BankAccount)
     , advances : Resource (List Advance)
+    , zone : Zone
     }
 
 
@@ -24,6 +26,7 @@ type Msg
     = OnAccount (Result Http.Error Account)
     | OnBanks (Result Http.Error (List BankAccount))
     | OnAdvances (Result Http.Error (List Advance))
+    | OnTimeZone Time.Zone
     | Logout
     | LogoutDone (Result Http.Error ())
 
@@ -34,13 +37,20 @@ init id =
       , account = Loading
       , banks = Loading
       , advances = Loading
+      , zone = Time.utc
       }
     , Cmd.batch
         [ Api.getAccount OnAccount id
         , Api.getAccountBanks OnBanks id
         , Api.getAdvances OnAdvances id
+        , Api.timezone OnTimeZone
         ]
     )
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
 
 
 update : Nav.Key -> Msg -> Model -> ( Model, Cmd Msg )
@@ -64,6 +74,9 @@ update nav msg model =
         OnAdvances (Ok adv) ->
             ( { model | advances = Ready adv }, Cmd.none )
 
+        OnTimeZone zone ->
+            ( { model | zone = zone }, Cmd.none )
+
         Logout ->
             ( model, Api.sessionsLogout LogoutDone )
 
@@ -78,9 +91,9 @@ view model =
         , Input.button [] { onPress = Just Logout, label = text "Logout" }
         , resource accountView model.account
         , el Style.header (text "Offer")
-        , resource (advancesView model.accountId) <| Resource.map (List.filter isOffer) model.advances
+        , resource (advancesView model.zone model.accountId) <| Resource.map (List.filter advanceIsOffer) model.advances
         , el Style.header (text "Advances")
-        , resource (advancesView model.accountId) <| Resource.map (List.filter isActive) model.advances
+        , resource (advancesView model.zone model.accountId) <| Resource.map (List.filter advanceIsActive) model.advances
         , el Style.header (text "Banks")
         , resource banksTable model.banks
         ]
@@ -106,57 +119,46 @@ banksTable banks =
     Element.table []
         { data = banks
         , columns =
-            [ { header = el [ Font.bold ] (Element.text "Name")
-              , width = fill
-              , view = \b -> Element.text b.name
-              }
-            , { header = el [ Font.bold ] (Element.text "Type")
-              , width = fill
-              , view = \b -> Element.text (accountType b.accountType)
-              }
-            , { header = el [ Font.bold ] (Element.text "Balance")
-              , width = fill
-              , view = \b -> Element.text (formatDollars b.balance)
-              }
+            [ column "Name" (\b -> text b.name)
+            , column "Type" (\b -> text (accountType b.accountType))
+            , column "Balance" (\b -> text (formatDollars b.balance))
             ]
         }
 
 
-advancesView : Id AccountId -> List Advance -> Element Msg
-advancesView accountId advances =
-    Element.column [ spacing 10 ] (List.map (advanceView accountId) advances)
+advancesView : Time.Zone -> Id AccountId -> List Advance -> Element Msg
+advancesView zone accountId advances =
+    Element.column [ spacing 10 ]
+        (List.map (advanceView zone accountId) advances)
 
 
-advanceView : Id AccountId -> Advance -> Element Msg
-advanceView accountId advance =
+column : String -> (a -> Element msg) -> Column a msg
+column label vw =
+    { header = el [ Font.bold ] (Element.text label)
+    , width = fill
+    , view = vw
+    }
+
+
+advanceLink : Id AccountId -> Advance -> Element Msg
+advanceLink accountId advance =
+    link [ Style.link ] { url = Route.url (Route.Account accountId (Route.Advance advance.advanceId)), label = text <| String.left 8 <| idValue advance.advanceId }
+
+
+advanceView : Time.Zone -> Id AccountId -> Advance -> Element Msg
+advanceView zone accountId advance =
     Element.row [ spacing 10 ]
-        [ link [ Style.link ] { url = Route.url (Route.Account accountId (Route.Advance advance.advanceId)), label = text <| String.left 8 <| idValue advance.advanceId }
-        , Element.el [] (text <| "$" ++ formatDollars advance.offer)
+        -- , Element.el [] (text <| "$" ++ formatDollars advance.offer)
+        [ advanceLink accountId advance
+        , Element.el [] (text <| "$" ++ formatDollars advance.amount)
+        , Element.el [] (text <| formatDate zone advance.due)
+        , Element.el [] (text <| formatDate zone advance.offered)
+        , Element.el [] (text <| Maybe.withDefault "" <| Maybe.map (formatDate zone) advance.activated)
 
         -- , Element.el [] (text <| Debug.toString advance.offered)
         -- , Element.el [] (text <| Debug.toString advance.activated)
         -- , Element.el [] (text <| Debug.toString advance.collected)
         ]
-
-
-isOffer : Advance -> Bool
-isOffer advance =
-    case advance.activated of
-        Nothing ->
-            True
-
-        Just _ ->
-            False
-
-
-isActive : Advance -> Bool
-isActive advance =
-    case ( advance.activated, advance.collected ) of
-        ( Just _, Nothing ) ->
-            True
-
-        _ ->
-            False
 
 
 accountType : BankAccountType -> String

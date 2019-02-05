@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money(..), Phone, Session, Token, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeMoney, decodeSession, encodeAccountInfo, encodeAmount, encodeId, encodeMoney, expectId, formatDollars, formatMoney, fromDollars, getAccount, getAccountBanks, getAdvance, getAdvances, getApplicationResult, idValue, postAdvanceAccept, postApplications, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout)
+module Timely.Api exposing (Account, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money, Phone, Session, Token, advanceIsActive, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeAmount, encodeId, expectId, formatDate, formatDollars, formatMoney, fromDollars, getAccount, getAccountBanks, getAdvance, getAdvances, getApplicationResult, idValue, postAdvanceAccept, postApplications, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, timezone)
 
 import Http exposing (Error, Expect)
 import Iso8601
@@ -6,6 +6,7 @@ import Json.Decode as Decode exposing (Decoder, int, list, nullable, string)
 import Json.Decode.Pipeline exposing (..)
 import Json.Encode as Encode
 import String
+import Task
 import Time
 
 
@@ -225,13 +226,12 @@ decodeBankAccountType =
 
 decodeMoney : Decoder Money
 decodeMoney =
-    Decode.map Money
-        int
+    int
 
 
 encodeMoney : Money -> Encode.Value
-encodeMoney (Money m) =
-    Encode.int m
+encodeMoney =
+    Encode.int
 
 
 decodeAdvance : Decoder Advance
@@ -377,8 +377,8 @@ decodeId =
     Decode.map Id Decode.string
 
 
-type Money
-    = Money Int
+type alias Money =
+    Int
 
 
 
@@ -452,19 +452,63 @@ expectId toMsg =
 
 
 formatMoney : Money -> String
-formatMoney (Money i) =
+formatMoney i =
     let
         cents =
             String.padLeft 2 '0' <| String.fromInt (modBy 100 i)
     in
-    formatDollars (Money i) ++ "." ++ cents
+    formatDollars i ++ "." ++ cents
 
 
 formatDollars : Money -> String
-formatDollars (Money i) =
+formatDollars i =
     String.fromInt (i // 100)
 
 
 fromDollars : Int -> Money
 fromDollars i =
-    Money (i * 100)
+    i * 100
+
+
+advanceIsOffer : Advance -> Bool
+advanceIsOffer advance =
+    case advance.activated of
+        Nothing ->
+            True
+
+        Just _ ->
+            False
+
+
+advanceIsActive : Advance -> Bool
+advanceIsActive advance =
+    case ( advance.activated, advance.collected ) of
+        ( Just _, Nothing ) ->
+            True
+
+        _ ->
+            False
+
+
+
+-- Dates ----------------------------
+
+
+formatDate : Time.Zone -> Time.Posix -> String
+formatDate zone time =
+    let
+        formatYear t =
+            String.fromInt <| Time.toYear zone time
+
+        formatMonth t =
+            Debug.toString <| Time.toMonth zone time
+
+        formatDay t =
+            String.fromInt <| Time.toDay zone time
+    in
+    formatMonth time ++ " " ++ formatDay time ++ ", " ++ formatYear time ++ " "
+
+
+timezone : (Time.Zone -> msg) -> Cmd msg
+timezone toMsg =
+    Task.perform toMsg Time.here

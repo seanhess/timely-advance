@@ -33,11 +33,24 @@ acceptAdvance a adv amt = do
   notFound ma
 
 
+-- TODO tests
 checkCredit
   :: ( MonadError ServantErr m
      , Service m AccountStore
+     , Service m Advances
      ) => Guid Account -> Money -> m ()
 checkCredit a amount = do
   account <- run (Accounts.Find a) >>= notFound
-  when (credit account < amount) $ do
+  advances <- run (Advances.FindActive a)
+
+  when (not $ isEnoughCredit amount account advances) $ do
     throwError $ err400 { errBody = "Insufficient Credit" }
+
+
+isEnoughCredit :: Money -> Account -> [Advance] -> Bool
+isEnoughCredit amount account advances =
+  let creditUsed = sum (map Advances.amount advances)
+      creditRemaining = credit account - creditUsed
+  in amount <= creditRemaining
+
+

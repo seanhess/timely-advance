@@ -266,6 +266,12 @@ subscriptions model =
         Signup mod ->
             Sub.map OnSignup (Signup.subscriptions mod)
 
+        Advance mod ->
+            Sub.map OnAdvance (Advance.subscriptions mod)
+
+        Account mod ->
+            Sub.map OnAccount (Account.subscriptions mod)
+
         _ ->
             Sub.none
 

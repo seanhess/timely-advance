@@ -11,7 +11,8 @@ import Platform.Updates exposing (Updates, base, command, set)
 import Process
 import Route
 import Task
-import Timely.Api as Api exposing (Account, AccountId, Advance, AdvanceId, Application, ApprovalResult(..), Id(..), Money(..), formatDollars, fromDollars, idValue)
+import Time
+import Timely.Api as Api exposing (Account, AccountId, Advance, AdvanceId, Application, ApprovalResult(..), Id(..), Money, advanceIsActive, formatDate, formatDollars, fromDollars, idValue)
 import Timely.Components as Components
 import Timely.Resource exposing (Resource(..), resource)
 import Timely.Style as Style
@@ -24,12 +25,16 @@ type alias Model =
     , acceptAmount : String
     , advance : Resource Advance
     , account : Resource Account
+    , advances : Resource (List Advance)
+    , zone : Time.Zone
     }
 
 
 type Msg
     = OnAdvance (Result Http.Error Advance)
     | OnAccount (Result Http.Error Account)
+    | OnAdvances (Result Http.Error (List Advance))
+    | OnTimezone Time.Zone
     | Edit String
     | Submit Advance
     | OnAccept (Result Http.Error Advance)
@@ -40,13 +45,17 @@ init key accountId advanceId =
     ( { accountId = accountId
       , advanceId = advanceId
       , advance = Loading
+      , advances = Loading
       , account = Loading
       , acceptAmount = ""
       , key = key
+      , zone = Time.utc
       }
     , Cmd.batch
         [ Api.getAdvance OnAdvance accountId advanceId
         , Api.getAccount OnAccount accountId
+        , Api.getAdvances OnAdvances accountId
+        , Api.timezone OnTimezone
         ]
     )
 
@@ -64,20 +73,25 @@ update msg model =
     in
     case msg of
         OnAdvance (Err e) ->
-            updates
-                |> set { model | advance = Failed e }
+            updates |> set { model | advance = Failed e }
 
         OnAdvance (Ok a) ->
-            updates
-                |> set { model | advance = Ready a }
+            updates |> set { model | advance = Ready a }
 
         OnAccount (Err e) ->
-            updates
-                |> set { model | account = Failed e }
+            updates |> set { model | account = Failed e }
 
         OnAccount (Ok a) ->
-            updates
-                |> set { model | account = Ready a }
+            updates |> set { model | account = Ready a }
+
+        OnAdvances (Err e) ->
+            updates |> set { model | advances = Failed e }
+
+        OnAdvances (Ok a) ->
+            updates |> set { model | advances = Ready (List.filter advanceIsActive a) }
+
+        OnTimezone zone ->
+            updates |> set { model | zone = zone }
 
         Edit s ->
             updates |> set { model | acceptAmount = s }
@@ -93,8 +107,7 @@ update msg model =
                 |> command (Api.postAdvanceAccept OnAccept model.accountId model.advanceId amount)
 
         OnAccept (Err e) ->
-            updates
-                |> set { model | advance = Failed e }
+            updates |> set { model | advance = Failed e }
 
         OnAccept (Ok a) ->
             updates |> set { model | advance = Ready a }
@@ -110,29 +123,32 @@ view model =
 
 viewStatus : Model -> Element Msg
 viewStatus model =
-    case ( model.account, model.advance ) of
-        ( Failed _, _ ) ->
+    case ( model.account, model.advance, model.advances ) of
+        ( Failed _, _, _ ) ->
             viewProblem "Account error"
 
-        ( _, Failed _ ) ->
+        ( _, Failed _, _ ) ->
             viewProblem "Advance error"
 
-        ( Ready account, Ready advance ) ->
+        ( _, _, Failed _ ) ->
+            viewProblem "Advances error"
+
+        ( Ready account, Ready advance, Ready advances ) ->
             case advance.activated of
                 Just _ ->
-                    viewAccepted model.accountId
+                    viewAccepted model.zone model.accountId advance
 
                 Nothing ->
-                    viewForm model account advance
+                    viewForm model account advance advances
 
         _ ->
             Components.spinner
 
 
-viewForm : Model -> Account -> Advance -> Element Msg
-viewForm model account advance =
+viewForm : Model -> Account -> Advance -> List Advance -> Element Msg
+viewForm model account advance advances =
     Element.column [ spacing 15 ]
-        [ Element.el [] (text <| "Credit: $" ++ formatDollars account.credit)
+        [ Element.el [] (text <| "Credit Used: $" ++ formatDollars (usedCredit advances) ++ " / $" ++ formatDollars account.credit)
         , Input.text [ htmlAttribute (Html.type_ "number") ]
             { text = model.acceptAmount
             , placeholder = Just <| Input.placeholder [] (text <| formatDollars <| advance.offer)
@@ -146,14 +162,23 @@ viewForm model account advance =
         ]
 
 
+usedCredit : List Advance -> Money
+usedCredit advances =
+    advances
+        |> List.map .amount
+        |> List.sum
+
+
 
 -- | this should be completely different: show the due date, etc
 
 
-viewAccepted : Id AccountId -> Element Msg
-viewAccepted accountId =
+viewAccepted : Time.Zone -> Id AccountId -> Advance -> Element Msg
+viewAccepted zone accountId advance =
     Element.column [ spacing 15 ]
         [ Element.el [] (text "Yay! Your money is on its way")
+        , Element.el [] (text <| "Amount: $" ++ formatDollars advance.amount)
+        , Element.el [] (text <| "Due: " ++ formatDate zone advance.due)
         , Element.link Style.button
             { url = Route.url <| Route.Account accountId <| Route.AccountMain
             , label = Element.text "My Account"
