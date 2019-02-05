@@ -88,7 +88,7 @@ view : Model -> Element Msg
 view model =
     Element.column Style.formPage
         [ el Style.header (text "Account")
-        , Input.button [] { onPress = Just Logout, label = text "Logout" }
+        , Input.button [ Style.link ] { onPress = Just Logout, label = text "Logout" }
         , resource accountView model.account
         , el Style.header (text "Offer")
         , resource (advancesView model.zone model.accountId) <| Resource.map (List.filter advanceIsOffer) model.advances
@@ -101,16 +101,35 @@ view model =
 
 accountView : Account -> Element Msg
 accountView account =
-    Element.row [ spacing 8, padding 4 ]
-        [ Element.column []
-            [ el [ Font.bold ] (text "First Name")
-            , el [] (text account.customer.firstName)
+    Element.column [ spacing 20 ]
+        [ Element.row [ spacing 10 ]
+            [ Element.column [ spacing 4 ]
+                [ el [ Font.bold ] (text "First Name")
+                , el [] (text account.customer.firstName)
+                ]
+            , Element.column [ spacing 4 ]
+                [ el [ Font.bold ] (text "Last Name")
+                , el [] (text account.customer.lastName)
+                ]
+            , Element.column [ spacing 4 ]
+                [ el [ Font.bold ] (text "Email")
+                , el [] (text account.customer.email)
+                ]
             ]
-        , el [] (text "Last Name")
-        , el [ Font.bold ] (text "Last Name")
-        , el [] (text account.customer.lastName)
-        , el [ Font.bold ] (text "Email")
-        , el [] (text account.customer.email)
+        , Element.row [ spacing 10 ]
+            [ Element.column [ spacing 4 ]
+                [ el [ Font.bold ] (text "Expenses")
+                , el [] (text <| "$" ++ formatDollars account.health.expenses)
+                ]
+            , Element.column [ spacing 4 ]
+                [ el [ Font.bold ] (text "Available")
+                , el [] (text <| "$" ++ formatDollars account.health.available)
+                ]
+            ]
+        , Element.column [ spacing 4 ]
+            [ el [ Font.bold ] (text "Credit")
+            , el [] (text <| "$" ++ formatDollars account.credit)
+            ]
         ]
 
 

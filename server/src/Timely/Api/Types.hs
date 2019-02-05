@@ -43,6 +43,7 @@ instance ToJSON BankAccountType
 instance ToJSON BankAccount
 instance ToJSON Application
 instance ToJSON Advance
+instance FromJSON Advance
 instance FromJSON Application
 
 

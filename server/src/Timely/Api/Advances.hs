@@ -1,12 +1,13 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE MonoLocalBinds    #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE MonoLocalBinds   #-}
 module Timely.Api.Advances where
 
 import           Control.Monad               (when)
 import           Control.Monad.Except        (MonadError (..))
 import           Control.Monad.Service       (Service (..))
 import           Network.AMQP.Worker.Monad   (MonadWorker)
+import qualified Network.AMQP.Worker.Monad   as Worker
 import           Servant                     (ServantErr (..), err400)
 
 import           Timely.AccountStore.Account (AccountStore)
@@ -16,6 +17,7 @@ import           Timely.Advances             (Advance (..), Advances (..))
 import qualified Timely.Advances             as Advances
 import           Timely.Api.Combinators      (notFound)
 import           Timely.Api.Types            as Types (Amount (..))
+import qualified Timely.Events               as Events
 import           Timely.Types.Guid           (Guid)
 import           Timely.Types.Money          (Money)
 
@@ -29,8 +31,9 @@ acceptAdvance
 acceptAdvance a adv amt = do
   checkCredit a (Types.amount amt)
   run $ Advances.Activate a adv (Types.amount amt)
-  ma <- run $ Advances.Find a adv
-  notFound ma
+  advance <- run (Advances.Find a adv) >>= notFound
+  Worker.publish Events.advancesActive advance
+  pure advance
 
 
 -- TODO tests
@@ -52,5 +55,3 @@ isEnoughCredit amount account advances =
   let creditUsed = sum (map Advances.amount advances)
       creditRemaining = credit account - creditUsed
   in amount <= creditRemaining
-
-

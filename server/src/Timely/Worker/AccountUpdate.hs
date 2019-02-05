@@ -45,7 +45,7 @@ import           Timely.Types.Private          (Private (..))
 
 
 queue :: Worker.Queue (Guid Account)
-queue = Worker.topic Events.accountsUpdate "app.account.update"
+queue = Worker.topic Events.transactionsNew "app.account.update"
 
 
 
@@ -64,7 +64,7 @@ schedule = do
   where
     scheduleAccountUpdate account = do
       -- liftIO $ putStrLn $ "ACCOUNT: " ++ (show $ accountId account)
-      Worker.publish Events.accountsUpdate (AccountRow.accountId account)
+      Worker.publish Events.transactionsNew (AccountRow.accountId account)
 
 
 

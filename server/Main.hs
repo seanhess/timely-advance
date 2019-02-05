@@ -9,6 +9,7 @@ import           System.Environment (getArgs)
 
 import qualified Timely.Worker.AccountOnboard as AccountOnboard
 import qualified Timely.Worker.AccountUpdate as AccountUpdate
+import qualified Timely.Worker.AdvanceSend as AdvanceSend
 import qualified Timely.Worker.WorkerM as Worker
 
 import qualified Timely.Api as Api
@@ -24,6 +25,7 @@ main = do
     ["api"]             -> startApi
     ["work-account-onboard"] -> startAccountOnboard
     ["work-account-update"]  -> startAccountUpdate
+    ["work-transfer-sends"]  -> startAdvanceSend
     ["schedule-account-update"]  -> startAccountUpdateSchedule
     ["initialize"]      -> Api.initialize
     _ -> putStrLn "please enter a command"
@@ -44,6 +46,10 @@ startAccountUpdate = Worker.start AccountUpdate.queue $ AccountUpdate.handler
 
 startAccountUpdateSchedule :: IO ()
 startAccountUpdateSchedule = Worker.runIO AccountUpdate.schedule
+
+
+startAdvanceSend :: IO ()
+startAdvanceSend = Worker.start AdvanceSend.queue AdvanceSend.handler
 
 
 -- startAll :: IO ()

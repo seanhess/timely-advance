@@ -16,6 +16,7 @@ import Timely.Api as Api exposing (Account, AccountId, Advance, AdvanceId, Appli
 import Timely.Components as Components
 import Timely.Resource exposing (Resource(..), resource)
 import Timely.Style as Style
+import Validate exposing (Validator)
 
 
 type alias Model =
@@ -97,10 +98,9 @@ update msg model =
             updates |> set { model | acceptAmount = s }
 
         Submit advance ->
-            -- TODO validator for amount, dont' allow submission without it!
             let
                 amount =
-                    Maybe.withDefault advance.offer <| Maybe.map fromDollars (String.toInt model.acceptAmount)
+                    advanceAmount advance.offer model.acceptAmount
             in
             updates
                 |> set { model | advance = Loading }
@@ -147,26 +147,56 @@ viewStatus model =
 
 viewForm : Model -> Account -> Advance -> List Advance -> Element Msg
 viewForm model account advance advances =
+    let
+        valid =
+            Validate.validate (amountValidator advance account advances) model.acceptAmount
+    in
     Element.column [ spacing 15 ]
-        [ Element.el [] (text <| "Credit Used: $" ++ formatDollars (usedCredit advances) ++ " / $" ++ formatDollars account.credit)
+        [ Element.el [] (text <| "Credit Used: $" ++ formatDollars (Api.usedCredit advances) ++ " / $" ++ formatDollars account.credit)
         , Input.text [ htmlAttribute (Html.type_ "number") ]
             { text = model.acceptAmount
             , placeholder = Just <| Input.placeholder [] (text <| formatDollars <| advance.offer)
             , onChange = Edit
             , label = Input.labelAbove [ Font.size 14 ] (text "Amount (USD)")
             }
-        , Input.button Style.button
-            { onPress = Just (Submit advance)
-            , label = Element.text "Accept"
-            }
+        , case valid of
+            Err errs ->
+                viewInvalids errs
+
+            Ok amount ->
+                viewValid advance
         ]
 
 
-usedCredit : List Advance -> Money
-usedCredit advances =
-    advances
-        |> List.map .amount
-        |> List.sum
+viewValid : Advance -> Element Msg
+viewValid advance =
+    Input.button Style.button
+        { onPress = Just (Submit advance)
+        , label = Element.text "Accept"
+        }
+
+
+viewInvalids : List Invalid -> Element Msg
+viewInvalids err =
+    Element.column [ spacing 10 ]
+        [ Input.button Style.button
+            { onPress = Nothing
+            , label = Element.text "Accept"
+            }
+        , Element.column [ spacing 10 ] (List.map viewInvalid err)
+        ]
+
+
+viewInvalid : Invalid -> Element Msg
+viewInvalid inv =
+    Element.el [ Style.error ]
+        (case inv of
+            NoCredit ->
+                text "Not enough credit"
+
+            BadAmount _ ->
+                text "Invalid amount"
+        )
 
 
 
@@ -189,3 +219,48 @@ viewAccepted zone accountId advance =
 viewProblem : String -> Element Msg
 viewProblem p =
     el [] (text p)
+
+
+type Invalid
+    = NoCredit
+    | BadAmount String
+
+
+amountValidator : Advance -> Account -> List Advance -> Validator Invalid String
+amountValidator advance account advances =
+    let
+        intOrEmpty s =
+            case s of
+                "" ->
+                    "1"
+
+                x ->
+                    x
+
+        moreThan0 s =
+            case String.toInt s of
+                Nothing ->
+                    True
+
+                Just x ->
+                    x > 0
+    in
+    Validate.all
+        [ Validate.ifNotInt intOrEmpty BadAmount
+        , Validate.ifFalse (isEnoughCredit advance account advances) NoCredit
+        , Validate.ifFalse moreThan0 (BadAmount "Greater than 0")
+        ]
+
+
+isEnoughCredit : Advance -> Account -> List Advance -> String -> Bool
+isEnoughCredit advance account advances value =
+    let
+        remaining =
+            account.credit - Api.usedCredit advances
+    in
+    advanceAmount advance.offer value <= remaining
+
+
+advanceAmount : Money -> String -> Money
+advanceAmount offer value =
+    Maybe.withDefault offer <| Maybe.map fromDollars (String.toInt value)
