@@ -93,6 +93,7 @@ library:
     - auth
     - evaluate
     - client
+    - transfers
 
 executables:
   server-exe:

@@ -32,6 +32,7 @@ import qualified Timely.AccountStore.Application      as Application
 import           Timely.AccountStore.Types            (Application)
 import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
+import qualified Timely.Transfers                     as Transfers
 import qualified Timely.Api.Applications              as Applications
 import           Timely.Api.AppM                      (AppM, AppState (..),
                                                        clientConfig, loadState,
@@ -188,6 +189,7 @@ initialize = do
       Account.initialize
       Application.initialize
       Advances.initialize
+      Transfers.initialize
 
     putStrLn "Done"
 

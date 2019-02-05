@@ -140,7 +140,7 @@ banksTable banks =
         , columns =
             [ column "Name" (\b -> text b.name)
             , column "Type" (\b -> text (accountType b.accountType))
-            , column "Balance" (\b -> text (formatDollars b.balance))
+            , column "Balance" (\b -> text <| "$" ++ (formatDollars b.balance))
             ]
         }
 
@@ -161,7 +161,7 @@ column label vw =
 
 advanceLink : Id AccountId -> Advance -> Element Msg
 advanceLink accountId advance =
-    link [ Style.link ] { url = Route.url (Route.Account accountId (Route.Advance advance.advanceId)), label = text <| String.left 8 <| idValue advance.advanceId }
+    link [ Style.link ] { url = Route.url (Route.Account accountId (Route.Advance advance.advanceId)), label = text "view" }
 
 
 advanceView : Time.Zone -> Id AccountId -> Advance -> Element Msg
@@ -170,9 +170,9 @@ advanceView zone accountId advance =
         -- , Element.el [] (text <| "$" ++ formatDollars advance.offer)
         [ advanceLink accountId advance
         , Element.el [] (text <| "$" ++ formatDollars advance.amount)
-        , Element.el [] (text <| formatDate zone advance.due)
         , Element.el [] (text <| formatDate zone advance.offered)
         , Element.el [] (text <| Maybe.withDefault "" <| Maybe.map (formatDate zone) advance.activated)
+        , Element.el [] (text <| formatDate zone advance.due)
 
         -- , Element.el [] (text <| Debug.toString advance.offered)
         -- , Element.el [] (text <| Debug.toString advance.activated)
