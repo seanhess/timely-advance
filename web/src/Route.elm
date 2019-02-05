@@ -1,4 +1,4 @@
-module Route exposing (Account(..), AccountId, Onboard(..), Route(..), fromUrl, href, replaceUrl, url)
+module Route exposing (Account(..), Onboard(..), Route(..), fromUrl, href, replaceUrl, url)
 
 -- import Article.Slug as Slug exposing (Slug)
 -- import Profile exposing (Profile)
@@ -6,7 +6,7 @@ module Route exposing (Account(..), AccountId, Onboard(..), Route(..), fromUrl, 
 import Browser.Navigation as Nav
 import Html exposing (Attribute)
 import Html.Attributes as Attr
-import Timely.Api as Api exposing (Account, Id(..))
+import Timely.Api as Api exposing (Account, AccountId, AdvanceId, Id(..))
 import Url exposing (Url)
 import Url.Parser as Parser exposing ((</>), Parser, oneOf, s, string)
 
@@ -15,27 +15,23 @@ import Url.Parser as Parser exposing ((</>), Parser, oneOf, s, string)
 -- import Username exposing (Username) ROUTING
 
 
-type alias AccountId =
-    String
-
-
 type Onboard
     = Landing
     | Signup
     | Login
-    | Approval (Id Api.Account)
+    | Approval (Id AccountId)
 
 
 type Route
     = Onboard Onboard
     | Accounts
-    | Account (Id Api.Account) Account
+    | Account (Id AccountId) Account
     | Init
 
 
 type Account
     = AccountMain
-    | Advance (Id Api.Advance)
+    | Advance (Id AdvanceId)
 
 
 
@@ -124,7 +120,7 @@ url page =
                     [ "accounts", s ]
 
                 Account (Id s) (Advance (Id adv)) ->
-                    [ "notify", s, "advance", adv ]
+                    [ "accounts", s, "advance", adv ]
 
                 Init ->
                     []

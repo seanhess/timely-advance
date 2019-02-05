@@ -4,7 +4,7 @@ import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
 import Http
-import Timely.Api as Api exposing (Account)
+import Timely.Api as Api exposing (Account, idValue)
 import Timely.Style as Style
 
 
@@ -57,7 +57,7 @@ view model =
 accountView : Account -> Element Msg
 accountView account =
     Element.row [ spacing 8, padding 4 ]
-        [ el [] (text account.accountId)
+        [ el [] (text <| idValue account.accountId)
         , el [] (text account.customer.firstName)
         , el [] (text account.customer.lastName)
         , el [] (text account.customer.email)

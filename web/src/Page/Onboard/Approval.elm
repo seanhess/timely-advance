@@ -10,14 +10,14 @@ import Platform.Updates exposing (Updates, base, command, set)
 import Process
 import Route
 import Task
-import Timely.Api as Api exposing (Account, Application, ApprovalResult(..), Id(..))
+import Timely.Api as Api exposing (Account, AccountId, Application, ApprovalResult(..), Id(..))
 import Timely.Components exposing (spinnerRipple)
 import Timely.Style as Style
 
 
 type alias Model =
     { key : Nav.Key
-    , accountId : Id Account
+    , accountId : Id AccountId
     , status : Status
     }
 
@@ -41,7 +41,7 @@ type Msg
     | OnWaited ()
 
 
-init : Nav.Key -> Id Account -> ( Model, Cmd Msg )
+init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
 init key accountId =
     ( { accountId = accountId
       , status = Loading
@@ -88,7 +88,7 @@ view model =
         ]
 
 
-viewStatus : Id Account -> Status -> Element Msg
+viewStatus : Id AccountId -> Status -> Element Msg
 viewStatus accountId status =
     case status of
         Loading ->

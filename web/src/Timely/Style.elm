@@ -1,4 +1,4 @@
-module Timely.Style exposing (..)
+module Timely.Style exposing (blue, button, darkBlue, error, formPage, grey, header, link, red, white)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -49,4 +49,10 @@ header =
 
 
 error : Attribute msg
-error = Font.color red
+error =
+    Font.color red
+
+
+link : Attribute msg
+link =
+    Font.underline

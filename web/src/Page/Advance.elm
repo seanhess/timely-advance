@@ -4,49 +4,50 @@ import Browser.Navigation as Nav
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
+import Html.Attributes as Html
 import Http
 import Json.Encode as Encode
 import Platform.Updates exposing (Updates, base, command, set)
 import Process
 import Route
 import Task
-import Timely.Api as Api exposing (Account, Advance, Application, ApprovalResult(..), Id(..), Money(..), idValue)
-import Timely.Components exposing (spinnerRipple)
+import Timely.Api as Api exposing (Account, AccountId, Advance, AdvanceId, Application, ApprovalResult(..), Id(..), Money(..), formatDollars, fromDollars, idValue)
+import Timely.Components as Components
+import Timely.Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 
 
 type alias Model =
     { key : Nav.Key
-    , accountId : Id Account
-    , advanceId : Id Advance
-    , acceptAmount : Money
-    , status : Status
+    , accountId : Id AccountId
+    , advanceId : Id AdvanceId
+    , acceptAmount : String
+    , advance : Resource Advance
+    , account : Resource Account
     }
 
 
-type Status
-    = Loading
-    | Error (List String)
-    | Loaded Advance
-    | Accepted
-
-
 type Msg
-    = OnResult (Result Http.Error Advance)
+    = OnAdvance (Result Http.Error Advance)
+    | OnAccount (Result Http.Error Account)
     | Edit String
-    | Submit
-    | OnAccept (Result Http.Error ())
+    | Submit Advance
+    | OnAccept (Result Http.Error Advance)
 
 
-init : Nav.Key -> Id Account -> Id Advance -> ( Model, Cmd Msg )
+init : Nav.Key -> Id AccountId -> Id AdvanceId -> ( Model, Cmd Msg )
 init key accountId advanceId =
     ( { accountId = accountId
       , advanceId = advanceId
-      , status = Loading
+      , advance = Loading
+      , account = Loading
+      , acceptAmount = ""
       , key = key
-      , acceptAmount = Money 0
       }
-    , Api.getAdvance OnResult accountId advanceId
+    , Cmd.batch
+        [ Api.getAdvance OnAdvance accountId advanceId
+        , Api.getAccount OnAccount accountId
+        ]
     )
 
 
@@ -62,78 +63,102 @@ update msg model =
             base model
     in
     case msg of
-        OnResult (Err e) ->
+        OnAdvance (Err e) ->
             updates
-                |> set { model | status = Error [ Debug.toString e ] }
+                |> set { model | advance = Failed e }
 
-        OnResult (Ok a) ->
+        OnAdvance (Ok a) ->
             updates
-                |> set { model | status = Loaded a, acceptAmount = a.offer }
+                |> set { model | advance = Ready a }
+
+        OnAccount (Err e) ->
+            updates
+                |> set { model | account = Failed e }
+
+        OnAccount (Ok a) ->
+            updates
+                |> set { model | account = Ready a }
 
         Edit s ->
+            updates |> set { model | acceptAmount = s }
+
+        Submit advance ->
+            -- TODO validator for amount, dont' allow submission without it!
             let
                 amount =
-                    Maybe.withDefault 0 (String.toInt s)
+                    Maybe.withDefault advance.offer <| Maybe.map fromDollars (String.toInt model.acceptAmount)
             in
-            updates |> set { model | acceptAmount = Money amount }
-
-        Submit ->
             updates
-                |> command (Api.postAdvanceAccept OnAccept model.accountId model.advanceId model.acceptAmount)
+                |> set { model | advance = Loading }
+                |> command (Api.postAdvanceAccept OnAccept model.accountId model.advanceId amount)
 
         OnAccept (Err e) ->
             updates
-                |> set { model | status = Error [ Debug.toString e ] }
+                |> set { model | advance = Failed e }
 
-        OnAccept (Ok _) ->
-            -- TODO what should we do when they accept?
-            updates |> set { model | status = Accepted }
+        OnAccept (Ok a) ->
+            updates |> set { model | advance = Ready a }
 
 
 view : Model -> Element Msg
 view model =
     Element.column Style.formPage
         [ el Style.header (text "Advance")
-        , el [] (text <| idValue model.accountId)
-        , el [] (text <| idValue model.advanceId)
-        , viewStatus model model.status
+        , viewStatus model
         ]
 
 
-viewForm : Model -> Element Msg
-viewForm model =
-    let
-        (Money v) =
-            model.acceptAmount
-    in
+viewStatus : Model -> Element Msg
+viewStatus model =
+    case ( model.account, model.advance ) of
+        ( Failed _, _ ) ->
+            viewProblem "Account error"
+
+        ( _, Failed _ ) ->
+            viewProblem "Advance error"
+
+        ( Ready account, Ready advance ) ->
+            case advance.activated of
+                Just _ ->
+                    viewAccepted model.accountId
+
+                Nothing ->
+                    viewForm model account advance
+
+        _ ->
+            Components.spinner
+
+
+viewForm : Model -> Account -> Advance -> Element Msg
+viewForm model account advance =
     Element.column [ spacing 15 ]
-        [ Input.text []
-            { text = String.fromInt v
-            , placeholder = Nothing
+        [ Element.el [] (text <| "Credit: $" ++ formatDollars account.credit)
+        , Input.text [ htmlAttribute (Html.type_ "number") ]
+            { text = model.acceptAmount
+            , placeholder = Just <| Input.placeholder [] (text <| formatDollars <| advance.offer)
             , onChange = Edit
-            , label = Input.labelAbove [ Font.size 14 ] (text "Amount")
+            , label = Input.labelAbove [ Font.size 14 ] (text "Amount (USD)")
             }
         , Input.button Style.button
-            { onPress = Just Submit
+            { onPress = Just (Submit advance)
             , label = Element.text "Accept"
             }
         ]
 
 
-viewStatus : Model -> Status -> Element Msg
-viewStatus model status =
-    case status of
-        Loading ->
-            spinnerRipple
 
-        Error ps ->
-            Element.column [] (List.map viewProblem ps)
+-- | this should be completely different: show the due date, etc
 
-        Loaded a ->
-            viewForm model
 
-        Accepted ->
-            Element.el [] (text "Yay! Your money is on its way")
+viewAccepted : Id AccountId -> Element Msg
+viewAccepted accountId =
+    Element.column [ spacing 15 ]
+        [ Element.el [] (text "Yay! Your money is on its way")
+        , Element.link Style.button
+            { url = Route.url <| Route.Account accountId <| Route.AccountMain
+            , label = Element.text "My Account"
+            }
+        ]
 
 
 viewProblem : String -> Element Msg

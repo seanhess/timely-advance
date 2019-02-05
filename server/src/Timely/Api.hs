@@ -9,7 +9,6 @@
 {-# LANGUAGE TypeOperators         #-}
 module Timely.Api where
 
-import           Control.Monad.Except                 (MonadError, throwError)
 import           Control.Monad.Service                (Service (..))
 import           Data.Proxy                           (Proxy (..))
 import           Data.Text                            (Text)
@@ -39,6 +38,8 @@ import           Timely.Api.AppM                      (AppM, AppState (..),
                                                        nt, runIO)
 import           Timely.Api.Sessions                  (SetSession)
 import qualified Timely.Api.Sessions                  as Sessions
+import Timely.Api.Combinators (notFound)
+import Timely.Api.Advances as Advances
 import           Timely.Api.Types
 import           Timely.Auth                          (AuthCode, Phone)
 import           Timely.Types.Config
@@ -73,18 +74,18 @@ data VersionedApi route = VersionedApi
 
 -- Personal Information : Account and Application ---------------------
 data AccountApi route = AccountApi
-    { _get     :: route :- Get '[JSON, HTML] Account
-    , _banks   :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
-    , _app     :: route :- "application" :> Get '[JSON] Application
-    , _result  :: route :- "application" :> "result" :> Get '[JSON] Result
-    , _advance :: route :- "advances" :> ToServantApi AdvanceApi
+    { _get      :: route :- Get '[JSON, HTML] Account
+    , _banks    :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
+    , _app      :: route :- "application" :> Get '[JSON] Application
+    , _result   :: route :- "application" :> "result" :> Get '[JSON] Result
+    , _advances :: route :- "advances" :> ToServantApi AdvanceApi
     } deriving (Generic)
 
 
 data AdvanceApi route = AdvanceApi
     { _all     :: route :- Get '[JSON] [Advance]
     , _get     :: route :- Capture "id" (Guid Advance) :> Get '[JSON] Advance
-    , _accept  :: route :- Capture "id" (Guid Advance) :> "accept" :> ReqBody '[JSON] Amount :> Post '[JSON] NoContent
+    , _accept  :: route :- Capture "id" (Guid Advance) :> "accept" :> ReqBody '[JSON] Amount :> Post '[JSON] Advance
     } deriving (Generic)
 
 
@@ -110,7 +111,7 @@ accountApi i = genericServerT AccountApi
     , _banks   = run (Account.BankAccounts i)
     , _app     = run (Application.Find i)       >>= notFound
     , _result  = run (Application.FindResult i) >>= notFound
-    , _advance = advanceApi i
+    , _advances = advanceApi i
     }
 
 
@@ -118,7 +119,7 @@ advanceApi :: Guid Account -> ToServant AdvanceApi (AsServerT AppM)
 advanceApi i = genericServerT AdvanceApi
     { _all    =             run (Advances.FindAll i)
     , _get    = \adv     -> run (Advances.Find i adv)                  >>= notFound
-    , _accept = \adv amt -> run (Advances.Activate i adv (amount amt)) >> pure NoContent
+    , _accept = acceptAdvance i
     }
 
 
@@ -200,7 +201,3 @@ start port = do
     putStrLn $ "Running on " ++ show port
     Warp.run port (application state)
 
-
-notFound :: (MonadError ServantErr m) => Maybe a -> m a
-notFound (Just a) = return a
-notFound Nothing  = throwError err404

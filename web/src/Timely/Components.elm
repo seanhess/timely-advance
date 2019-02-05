@@ -1,15 +1,20 @@
-module Timely.Components exposing (loadingButton, spinnerRing, spinnerRipple)
+module Timely.Components exposing (Spinner(..), loadingButton, spinner, spinnerDots, spinnerRing, spinnerRipple)
 
 import Element exposing (..)
 import Element.Input as Element
 import Html
 import Html.Attributes as Html
+import Http exposing (Error)
 
 
 type Spinner
     = Ripple
     | Ring
     | Dots
+
+
+spinner =
+    spinnerRipple
 
 
 spinnerRipple : Element msg

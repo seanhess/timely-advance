@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountInfo, Advance, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Balance, Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money(..), Phone, Session, Token, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeMoney, decodeSession, encodeAccountInfo, encodeAmount, encodeId, encodeMoney, expectId, getAccount, getAccountBanks, getAdvance, getApplicationResult, idValue, postAdvanceAccept, postApplications, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout)
+module Timely.Api exposing (Account, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money(..), Phone, Session, Token, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeMoney, decodeSession, encodeAccountInfo, encodeAmount, encodeId, encodeMoney, expectId, formatDollars, formatMoney, fromDollars, getAccount, getAccountBanks, getAdvance, getAdvances, getApplicationResult, idValue, postAdvanceAccept, postApplications, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout)
 
 import Http exposing (Error, Expect)
 import Iso8601
@@ -13,10 +13,22 @@ type Bank
     = Bank
 
 
+type AccountId
+    = AccountId
+
+
 type alias Account =
-    { accountId : String
+    { accountId : Id AccountId
     , phone : String
     , customer : Customer
+    , credit : Money
+    , health : AccountHealth
+    }
+
+
+type alias AccountHealth =
+    { expenses : Money
+    , available : Money
     }
 
 
@@ -27,13 +39,13 @@ type alias AccountInfo =
 
 
 type alias Application =
-    { accountId : Id Account
+    { accountId : Id AccountId
     }
 
 
 type alias Session =
     { phone : Phone
-    , accountId : Maybe (Id Account)
+    , accountId : Maybe (Id AccountId)
     }
 
 
@@ -41,7 +53,7 @@ type alias BankAccount =
     { accountId : String
     , accountType : BankAccountType
     , name : String
-    , balance : Balance
+    , balance : Money
     }
 
 
@@ -50,10 +62,6 @@ type BankAccountType
     | Savings
     | Credit
     | Other
-
-
-type alias Balance =
-    Int
 
 
 type alias Customer =
@@ -80,9 +88,13 @@ type alias Denial =
     }
 
 
+type AdvanceId
+    = AdvanceId
+
+
 type alias Advance =
-    { advanceId : String
-    , accountId : String
+    { advanceId : Id AdvanceId
+    , accountId : Id AccountId
     , amount : Money
     , offer : Money
     , due : Time.Posix
@@ -142,9 +154,18 @@ decodeAccountInfo =
 decodeAccount : Decoder Account
 decodeAccount =
     Decode.succeed Account
-        |> required "accountId" string
+        |> required "accountId" decodeId
         |> required "phone" string
         |> required "customer" decodeCustomer
+        |> required "credit" decodeMoney
+        |> required "health" decodeHealth
+
+
+decodeHealth : Decoder AccountHealth
+decodeHealth =
+    Decode.succeed AccountHealth
+        |> required "expenses" decodeMoney
+        |> required "available" decodeMoney
 
 
 decodeBankAccount : Decoder BankAccount
@@ -153,7 +174,7 @@ decodeBankAccount =
         |> required "accountId" string
         |> required "accountType" decodeBankAccountType
         |> required "name" string
-        |> required "balance" int
+        |> required "balance" decodeMoney
 
 
 decodeCustomer : Decoder Customer
@@ -216,8 +237,8 @@ encodeMoney (Money m) =
 decodeAdvance : Decoder Advance
 decodeAdvance =
     Decode.succeed Advance
-        |> required "advanceId" string
-        |> required "accountId" string
+        |> required "advanceId" decodeId
+        |> required "accountId" decodeId
         |> required "amount" decodeMoney
         |> required "offer" decodeMoney
         |> required "due" Iso8601.decoder
@@ -239,7 +260,7 @@ postApplications toMsg body =
         }
 
 
-getAccount : (Result Error Account -> msg) -> Id Account -> Cmd msg
+getAccount : (Result Error Account -> msg) -> Id AccountId -> Cmd msg
 getAccount toMsg (Id a) =
     Http.request
         { method = "GET"
@@ -252,7 +273,7 @@ getAccount toMsg (Id a) =
         }
 
 
-getAccountBanks : (Result Error (List BankAccount) -> msg) -> Id Account -> Cmd msg
+getAccountBanks : (Result Error (List BankAccount) -> msg) -> Id AccountId -> Cmd msg
 getAccountBanks toMsg (Id a) =
     Http.request
         { method = "GET"
@@ -265,7 +286,7 @@ getAccountBanks toMsg (Id a) =
         }
 
 
-getApplicationResult : (Result Error ApprovalResult -> msg) -> Id Account -> Cmd msg
+getApplicationResult : (Result Error ApprovalResult -> msg) -> Id AccountId -> Cmd msg
 getApplicationResult toMsg (Id a) =
     Http.request
         { method = "GET"
@@ -278,7 +299,7 @@ getApplicationResult toMsg (Id a) =
         }
 
 
-getAdvance : (Result Error Advance -> msg) -> Id Account -> Id Advance -> Cmd msg
+getAdvance : (Result Error Advance -> msg) -> Id AccountId -> Id AdvanceId -> Cmd msg
 getAdvance toMsg (Id a) (Id adv) =
     Http.request
         { method = "GET"
@@ -291,14 +312,27 @@ getAdvance toMsg (Id a) (Id adv) =
         }
 
 
-postAdvanceAccept : (Result Error () -> msg) -> Id Account -> Id Advance -> Money -> Cmd msg
+getAdvances : (Result Error (List Advance) -> msg) -> Id AccountId -> Cmd msg
+getAdvances toMsg (Id a) =
+    Http.request
+        { method = "GET"
+        , headers = []
+        , url = String.join "/" [ "", "v1", "accounts", a, "advances" ]
+        , body = Http.emptyBody
+        , expect = Http.expectJson toMsg (list decodeAdvance)
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+postAdvanceAccept : (Result Error Advance -> msg) -> Id AccountId -> Id AdvanceId -> Money -> Cmd msg
 postAdvanceAccept toMsg (Id a) (Id adv) amt =
     Http.request
         { method = "POST"
         , headers = []
         , url = String.join "/" [ "", "v1", "accounts", a, "advances", adv, "accept" ]
         , body = Http.jsonBody (encodeAmount { amount = amt })
-        , expect = Http.expectWhatever toMsg
+        , expect = Http.expectJson toMsg decodeAdvance
         , timeout = Nothing
         , tracker = Nothing
         }
@@ -415,3 +449,22 @@ expectId toMsg =
                     toMsg <| Err e
     in
     Http.expectString onResult
+
+
+formatMoney : Money -> String
+formatMoney (Money i) =
+    let
+        cents =
+            String.padLeft 2 '0' <| String.fromInt (modBy 100 i)
+    in
+    formatDollars (Money i) ++ "." ++ cents
+
+
+formatDollars : Money -> String
+formatDollars (Money i) =
+    String.fromInt (i // 100)
+
+
+fromDollars : Int -> Money
+fromDollars i =
+    Money (i * 100)
