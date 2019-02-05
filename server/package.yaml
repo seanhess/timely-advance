@@ -25,6 +25,7 @@ dependencies:
 - aeson-pretty
 - amqp
 - amqp-worker
+- bytestring
 - elm-export
 - envy
 - exceptions

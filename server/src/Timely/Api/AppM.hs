@@ -50,10 +50,10 @@ data AppState = AppState
 
 loadState :: (MonadIO m, MonadMask m) => m AppState
 loadState = do
-    key <- Sessions.generateKey
-    let jwtSettings = Sessions.jwtSettings key
-    let cookieSettings = Sessions.cookieSettings
     env <- loadEnv
+    let sessionKey = Sessions.secretKey (sessionSecret env)
+    let jwtSettings = Sessions.jwtSettings sessionKey
+    let cookieSettings = Sessions.cookieSettings
     amqpConn <- Worker.connect (Worker.fromURI $ cs $ amqp env)
     dbConn <- liftIO $ Pool.createPool (createConn $ cs $ postgres env) destroyConn 1 5 3
     manager <- liftIO $ HTTP.newManager HTTP.tlsManagerSettings

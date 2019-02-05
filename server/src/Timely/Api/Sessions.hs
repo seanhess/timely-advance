@@ -1,24 +1,26 @@
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds        #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MonoLocalBinds #-}
+{-# LANGUAGE MonoLocalBinds   #-}
 module Timely.Api.Sessions where
 
 
-import           Crypto.JOSE.JWK (JWK)
 import           Control.Monad.Config
-import           Control.Monad.Service (Service(..))
-import           Control.Monad.Except (MonadError(..))
-import           Control.Monad.IO.Class (MonadIO, liftIO)
-import           Servant (NoContent(..), err401, ServantErr, Headers, Header)
-import           Servant.Auth.Server (AuthResult(..), CookieSettings(..), JWTSettings, defaultJWTSettings, defaultCookieSettings, IsSecure(..), SetCookie, ThrowAll(..))
-import qualified Servant.Auth.Server as Servant
+import           Control.Monad.Except        (MonadError (..))
+import           Control.Monad.IO.Class      (MonadIO, liftIO)
+import           Control.Monad.Service       (Service (..))
+import           Crypto.JOSE.JWK             (JWK)
+import           Data.ByteString             (ByteString)
+import           Servant                     (Header, Headers, NoContent (..), ServantErr, err401)
+import           Servant.Auth.Server         (AuthResult (..), CookieSettings (..), IsSecure (..), JWTSettings,
+                                              SetCookie, ThrowAll (..), defaultCookieSettings, defaultJWTSettings)
+import qualified Servant.Auth.Server         as Servant
 
-import           Timely.Auth (Phone, AuthCode, AuthConfig)
-import qualified Timely.Auth as Auth
 import qualified Timely.AccountStore.Account as Account
-import           Timely.AccountStore.Types (Account)
-import           Timely.Types.Session (Session(..))
+import           Timely.AccountStore.Types   (Account)
+import           Timely.Auth                 (AuthCode, AuthConfig, Phone)
+import qualified Timely.Auth                 as Auth
 import           Timely.Types.Guid
+import           Timely.Types.Session        (Session (..))
 
 
 type SetSession a = Headers '[Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] a
@@ -101,10 +103,14 @@ generateKey :: MonadIO m => m JWK
 generateKey = liftIO $ Servant.generateKey
 
 
+secretKey :: ByteString -> JWK
+secretKey = Servant.fromSecret
+
+
 
 protectPhone :: ThrowAll api => (Phone -> api) -> AuthResult Session -> api
 protectPhone api (Authenticated (Session p _)) = api p
-protectPhone _ _ = throwAll err401
+protectPhone _ _                               = throwAll err401
 
 
 protectAccount :: ThrowAll api => ((Guid Account) -> api) -> AuthResult Session -> Guid Account -> api
@@ -112,4 +118,3 @@ protectAccount api (Authenticated (Session _ (Just a))) a2
   | a == a2 = api a
   | otherwise = throwAll err401
 protectAccount _ _ _ = throwAll err401
-

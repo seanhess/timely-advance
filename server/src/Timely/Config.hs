@@ -3,6 +3,7 @@
 module Timely.Config where
 
 import           Control.Monad.IO.Class  (MonadIO, liftIO)
+import           Data.ByteString         (ByteString)
 import qualified Data.Maybe              as Maybe
 import           Data.String.Conversions (cs)
 import           Data.Text               (Text)
@@ -31,6 +32,7 @@ data Env = Env
   , twilioAuthToken   :: Twilio.AuthToken
   , twilioFromPhone   :: Phone
   , endpoint          :: BaseUrl
+  , sessionSecret     :: ByteString
   } deriving (Show, Eq, Generic)
 
 
@@ -48,6 +50,7 @@ instance DefConfig Env where
     , twilioAuthToken   = Maybe.fromJust $ Twilio.parseAuthToken "01aadd9eee8a895d9f410b5e807334ee"
     , twilioFromPhone   = "5413940563"
     , endpoint          = BaseUrl Https "app.timelyadvance.com" 443 ""
+    , sessionSecret     = "cQfTjWnZr4u7x!A%D*G-KaNdRgUkXp2s"
     }
 
 instance FromEnv Env
