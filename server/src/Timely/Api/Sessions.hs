@@ -132,8 +132,8 @@ protectPhone _ _                                 = throwAll err401
 
 
 protectAccount :: ThrowAll api => ((Guid Account) -> api) -> AuthResult Session -> Guid Account -> api
-protectAccount api (Authenticated (Session _ (Just a) isAdmin)) a2
-  | isAdmin = api a
+protectAccount api (Authenticated (Session _ (Just a) _)) a2
   | a == a2 = api a
   | otherwise = throwAll err401
+protectAccount api (Authenticated (Session _ _ True)) a2 = api a2
 protectAccount _ _ _ = throwAll err401

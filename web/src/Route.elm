@@ -1,4 +1,4 @@
-module Route exposing (Account(..), Onboard(..), Route(..), fromUrl, href, replaceUrl, url)
+module Route exposing (Account(..), Admin(..), Onboard(..), Route(..), fromUrl, href, replaceUrl, url)
 
 -- import Article.Slug as Slug exposing (Slug)
 -- import Profile exposing (Profile)
@@ -22,11 +22,16 @@ type Onboard
     | Approval (Id AccountId)
 
 
+type Admin
+    = Sudo
+
+
 type Route
-    = Onboard Onboard
+    = Init
+    | Onboard Onboard
     | Accounts
     | Account (Id AccountId) Account
-    | Init
+    | Admin Admin
 
 
 type Account
@@ -46,6 +51,7 @@ parser =
     oneOf
         [ Parser.map Init Parser.top
         , Parser.map Onboard (s "onboard" </> parserOnboard)
+        , Parser.map Admin (s "admin" </> parserAdmin)
         , Parser.map Accounts (s "accounts")
         , Parser.map Account (s "accounts" </> Parser.map Id string </> parserAccount)
         ]
@@ -58,6 +64,14 @@ parserOnboard =
         , Parser.map Signup (s "signup")
         , Parser.map Login (s "login")
         , Parser.map Approval (s "approval" </> Parser.map Id string)
+        ]
+
+
+parserAdmin : Parser (Admin -> a) a
+parserAdmin =
+    oneOf
+        [ Parser.map Sudo Parser.top
+        , Parser.map Sudo (s "sudo")
         ]
 
 
@@ -112,6 +126,9 @@ url page =
 
                 Onboard (Approval (Id s)) ->
                     [ "onboard", "approval", s ]
+
+                Admin Sudo ->
+                    [ "admin", "sudo" ]
 
                 Accounts ->
                     [ "accounts" ]

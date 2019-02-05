@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money, Phone, Session, Token, advanceIsActive, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeAmount, encodeId, expectId, formatDate, formatDollars, formatMoney, fromDollars, getAccount, getAccountBanks, getAdvance, getAdvances, getApplicationResult, idValue, postAdvanceAccept, postApplications, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, timezone, usedCredit)
+module Timely.Api exposing (Account, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money, Phone, Session, Token, advanceIsActive, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeAmount, encodeId, expectId, formatDate, formatDollars, formatMoney, fromDollars, getAccount, getAccountBanks, getAdvance, getAdvances, getApplicationResult, idValue, postAdvanceAccept, postApplications, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, timezone, usedCredit)
 
 import Http exposing (Error, Expect)
 import Iso8601
@@ -405,6 +405,19 @@ sessionsCheckCode toMsg (Id p) c =
         , headers = []
         , url = String.join "/" [ "", "v1", "sessions", p ]
         , body = Http.jsonBody (encodeId c)
+        , expect = Http.expectJson toMsg decodeSession
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+sessionsAuthAdmin : (Result Error Session -> msg) -> String -> Cmd msg
+sessionsAuthAdmin toMsg s =
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = String.join "/" [ "", "v1", "sessions", "admin" ]
+        , body = Http.jsonBody (Encode.string s)
         , expect = Http.expectJson toMsg decodeSession
         , timeout = Nothing
         , tracker = Nothing
