@@ -46,6 +46,7 @@ import           Timely.Auth                          (AuthCode, Phone)
 import           Timely.Types.Config
 import           Timely.Types.Guid
 import           Timely.Types.Session
+import           Timely.Types.Secret (Secret)
 
 type Api = ToServant BaseApi AsApi
 
@@ -98,7 +99,9 @@ data AppApi route = AppApi
 
 
 data SessionsApi route = SessionsApi
-    { _code   :: route :- ReqBody '[JSON] Phone :> Post '[JSON] NoContent
+    -- admin must be before auth
+    { _admin  :: route :- "admin" :> ReqBody '[JSON] (Secret Admin) :> Post '[JSON] (SetSession Session)
+    , _code   :: route :- ReqBody '[JSON] Phone :> Post '[JSON] NoContent
     , _auth   :: route :- Capture "phone" Phone :> ReqBody '[JSON] AuthCode :> Post '[JSON] (SetSession Session)
     , _check  :: route :- Auth '[Cookie] Session :> Get '[JSON] (Session)
     , _logout :: route :- Delete '[JSON] (SetSession NoContent)
@@ -138,6 +141,7 @@ sessionsApi = genericServerT SessionsApi
     , _auth   = Sessions.authenticate
     , _check  = Sessions.checkSession
     , _logout = Sessions.logout
+    , _admin  = Sessions.authAdmin
     }
 
 

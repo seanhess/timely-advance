@@ -93,7 +93,7 @@ verifyCheck (Phone p) (AuthCode c) = do
   key <- configs apiKey
   env <- clientEnv
   res <- liftIO $ runClientM (Authy.reqVerifyCheck key p c) env
-  liftIO $ putStrLn "COMPLETED!"
+  -- liftIO $ putStrLn "COMPLETED!"
   case res of
     Left (FailureResponse gres) ->
       if responseStatusCode gres == status401

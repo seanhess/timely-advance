@@ -50,7 +50,7 @@ newApplication phone info = do
     Worker.publish Events.applicationsNew app
 
     -- set the session
-    Sessions.setSession (Session phone (Just accountId)) app
+    Sessions.setSession (Session phone (Just accountId) False) app
 
 
 

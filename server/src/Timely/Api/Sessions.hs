@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds        #-}
+{-# LANGUAGE OverloadedStrings        #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MonoLocalBinds   #-}
 module Timely.Api.Sessions where
@@ -17,10 +18,11 @@ import qualified Servant.Auth.Server         as Servant
 
 import qualified Timely.AccountStore.Account as Account
 import           Timely.AccountStore.Types   (Account)
-import           Timely.Auth                 (AuthCode, AuthConfig, Phone)
+import           Timely.Auth                 (AuthCode, AuthConfig, Phone(..))
 import qualified Timely.Auth                 as Auth
 import           Timely.Types.Guid
-import           Timely.Types.Session        (Session (..))
+import           Timely.Types.Session        (Session (..), Admin)
+import           Timely.Types.Secret        (Secret (..))
 
 
 type SetSession a = Headers '[Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] a
@@ -49,6 +51,22 @@ authenticate p c = do
      else session p
 
 
+authAdmin
+  :: ( MonadIO m
+     , MonadError ServantErr m
+     , MonadConfig CookieSettings m
+     , MonadConfig JWTSettings m
+     , MonadConfig (Secret Admin) m
+     ) => Secret Admin -> m (SetSession Session)
+authAdmin check = do
+  liftIO $ print ("HI", check)
+  good <- config
+  let session = Session (Phone "8012223333") Nothing True
+  if check == good
+     then setSession session session
+     else throwError err401
+
+
 session
   :: ( MonadIO m
      , MonadError ServantErr m
@@ -59,7 +77,7 @@ session
 session p = do
     -- they've already successfully validated the code. They're in!
     ma <- run $ Account.FindByPhone p
-    let s = Session p ma
+    let s = Session p ma False
     setSession s s
 
 
@@ -109,12 +127,13 @@ secretKey = Servant.fromSecret
 
 
 protectPhone :: ThrowAll api => (Phone -> api) -> AuthResult Session -> api
-protectPhone api (Authenticated (Session p _)) = api p
-protectPhone _ _                               = throwAll err401
+protectPhone api (Authenticated (Session p _ _)) = api p
+protectPhone _ _                                 = throwAll err401
 
 
 protectAccount :: ThrowAll api => ((Guid Account) -> api) -> AuthResult Session -> Guid Account -> api
-protectAccount api (Authenticated (Session _ (Just a))) a2
+protectAccount api (Authenticated (Session _ (Just a) isAdmin)) a2
+  | isAdmin = api a
   | a == a2 = api a
   | otherwise = throwAll err401
 protectAccount _ _ _ = throwAll err401

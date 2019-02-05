@@ -33,6 +33,8 @@ import           Timely.Auth (AuthConfig)
 import qualified Timely.Auth as Auth
 import           Timely.Config (Env(..), loadEnv)
 import           Timely.Types.Config (ClientConfig(ClientConfig), PlaidConfig(PlaidConfig))
+import           Timely.Types.Session (Admin)
+import           Timely.Types.Secret (Secret)
 import qualified Timely.Api.Sessions as Sessions
 
 
@@ -96,6 +98,8 @@ instance MonadConfig AuthConfig AppM where
           k = authyApiKey $ env state
       pure $ Auth.AuthConfig m u k
 
+instance MonadConfig (Secret Admin) AppM where
+    config = asks (adminPassphrase . env)
 
 
 nt :: AppState -> AppM a -> Handler a

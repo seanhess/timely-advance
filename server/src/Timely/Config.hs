@@ -11,13 +11,18 @@ import           Data.Typeable           (Typeable)
 import           Database.Selda          (MonadMask)
 import           GHC.Generics            (Generic)
 import           Network.Authy           (AuthyApiKey)
-import           Network.Plaid.Types     (Client, Id (..), Public, Secret)
+import           Network.Plaid.Types     (Client, Id (..), Public)
+import qualified Network.Plaid.Types as Plaid
 import           Servant.Client          (BaseUrl (..), Scheme (Https))
 import qualified Servant.Client          as Servant
 import           System.Envy             (DefConfig (..), FromEnv, Var (..))
 import qualified System.Envy             as Envy
 import           Timely.Auth             (Phone (..), phone)
+import Timely.Types.Secret (Secret(..))
+import Timely.Types.Session (Admin)
 import qualified Twilio                  as Twilio
+
+
 
 data Env = Env
   { postgres          :: Text
@@ -25,7 +30,7 @@ data Env = Env
   , plaidBaseUrl      :: BaseUrl
   , plaidPublicKey    :: Id Public
   , plaidClientId     :: Id Client
-  , plaidClientSecret :: Id Secret
+  , plaidClientSecret :: Id Plaid.Secret
   , authyBaseUrl      :: BaseUrl
   , authyApiKey       :: AuthyApiKey
   , twilioAccountId   :: Twilio.AccountSID
@@ -33,6 +38,7 @@ data Env = Env
   , twilioFromPhone   :: Phone
   , endpoint          :: BaseUrl
   , sessionSecret     :: ByteString
+  , adminPassphrase   :: Secret Admin
   } deriving (Show, Eq, Generic)
 
 
@@ -51,9 +57,14 @@ instance DefConfig Env where
     , twilioFromPhone   = "5413940563"
     , endpoint          = BaseUrl Https "app.timelyadvance.com" 443 ""
     , sessionSecret     = "cQfTjWnZr4u7x!A%D*G-KaNdRgUkXp2s"
+    , adminPassphrase   = Secret "rapidly scotland horses stuff"
     }
 
 instance FromEnv Env
+
+instance Typeable a => Var (Secret a) where
+  toVar (Secret x) = cs x
+  fromVar x = Just $ Secret $ cs x
 
 instance Var Phone where
   toVar (Phone x) = cs x
