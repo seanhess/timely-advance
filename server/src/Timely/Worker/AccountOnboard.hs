@@ -1,33 +1,35 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE MonoLocalBinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MonoLocalBinds        #-}
+{-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 module Timely.Worker.AccountOnboard where
 
 
-import           Control.Monad.Service (Service(run))
-import           Control.Monad.Catch (MonadThrow(..))
-import           Control.Exception (Exception)
-import           Data.Text (Text)
-import qualified Data.Text as Text
-import qualified Data.List as List
-import qualified Database.Selda as Selda
-import           Network.AMQP.Worker (Queue)
-import qualified Network.AMQP.Worker as Worker hiding (publish, bindQueue, worker)
+import           Control.Exception               (Exception)
+import           Control.Monad.Catch             (MonadThrow (..))
+import           Control.Monad.Logger            (MonadLogger)
+import           Control.Monad.Service           (Service (run))
+import qualified Data.List                       as List
+import           Data.Text                       (Text)
+import qualified Data.Text                       as Text
+import qualified Database.Selda                  as Selda
+import           Network.AMQP.Worker             (Queue)
+import qualified Network.AMQP.Worker             as Worker hiding (bindQueue, publish, worker)
 
-import           Timely.Bank (Banks)
-import qualified Timely.Bank as Bank
-import           Timely.Underwriting as Underwriting (Underwriting(..), Result(..), Approval(..))
-import qualified Timely.Events as Events
+import           Timely.AccountStore.Account     (AccountStore)
+import qualified Timely.AccountStore.Account     as Account
 import           Timely.AccountStore.Application (ApplicationStore)
 import qualified Timely.AccountStore.Application as Application
-import           Timely.AccountStore.Account (AccountStore)
-import qualified Timely.AccountStore.Account as Account
-import           Timely.AccountStore.Types (Application(..), Customer(..), toBankAccount, isChecking, BankAccount(balance))
-import qualified Timely.Evaluate.AccountHealth as AccountHealth
+import           Timely.AccountStore.Types       (Application (..), BankAccount (balance), Customer (..), isChecking,
+                                                  toBankAccount)
+import           Timely.Bank                     (Banks)
+import qualified Timely.Bank                     as Bank
+import qualified Timely.Evaluate.AccountHealth   as AccountHealth
+import qualified Timely.Events                   as Events
+import           Timely.Underwriting             as Underwriting (Approval (..), Result (..), Underwriting (..))
 
 
 
@@ -44,13 +46,12 @@ handler
      , Service m Underwriting
      , Service m ApplicationStore
      , MonadThrow m
+     , MonadLogger m
      )
   => Application -> m ()
 handler app = do
     let aid = accountId (app :: Application)
     let phn = phone (app :: Application)
-    -- liftIO $ putStrLn "NEW APPLICATION :)"
-    -- liftIO $ print app
 
     tok <- run $ Bank.Authenticate (publicBankToken app)
     idt <- run $ Bank.LoadIdentity tok
@@ -100,9 +101,9 @@ toNewCustomer Application {..} identity = do
     parseName = do
       case List.map Text.words (Bank.names identity) of
         [f, m, l]:_ -> pure (f, Just m, l)
-        [f, l]:_ -> pure (f, Nothing, l)
-        n:_ -> throwM $ BadName $ Text.unwords n
-        _ -> throwM $ NoNames
+        [f, l]:_    -> pure (f, Nothing, l)
+        n:_         -> throwM $ BadName $ Text.unwords n
+        _           -> throwM $ NoNames
 
 
 

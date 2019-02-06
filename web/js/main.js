@@ -12,8 +12,8 @@ console.log("Javascript!", CONFIG)
 var handler = Plaid.create({
   apiVersion: 'v2',
   clientName: 'Plaid Quickstart',
-  env: 'sandbox',
-  product: [ 'transactions' ],
+  env: CONFIG.plaid.env, // 'development',
+  product: CONFIG.plaid.products, // [ 'transactions', 'auth' ],
   key: CONFIG.plaid.publicKey,
   // webhook: 'https://your-domain.tld/plaid-webhook',
   onLoad: function() {

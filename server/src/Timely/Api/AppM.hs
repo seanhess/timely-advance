@@ -69,7 +69,7 @@ loadState = do
 clientConfig :: AppM ClientConfig
 clientConfig = do
     e <- asks env
-    pure $ ClientConfig $ PlaidConfig (plaidPublicKey e)
+    pure $ ClientConfig $ PlaidConfig (plaidPublicKey e) (plaidProducts e) (plaidEnv e)
 
 
 type AppM = ReaderT AppState Handler
