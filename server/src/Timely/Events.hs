@@ -20,3 +20,7 @@ transactionsNew = key "transactions" & word "new"
 advancesActive :: Key Routing Advance
 advancesActive = key "advances" & word "active"
 
+
+advancesDue :: Key Routing Advance
+advancesDue = key "advances" & word "due"
+

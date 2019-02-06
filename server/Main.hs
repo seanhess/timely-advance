@@ -10,6 +10,7 @@ import           System.Environment (getArgs)
 import qualified Timely.Worker.AccountOnboard as AccountOnboard
 import qualified Timely.Worker.AccountUpdate as AccountUpdate
 import qualified Timely.Worker.AdvanceSend as AdvanceSend
+import qualified Timely.Worker.AdvanceCollect as AdvanceCollect
 import qualified Timely.Worker.WorkerM as Worker
 
 import qualified Timely.Api as Api
@@ -21,14 +22,16 @@ main = do
 
   a <- getArgs
   case a of
-    ["version"        ] -> putStrLn "TODO version"
-    ["api"]             -> startApi
-    ["work-account-onboard"] -> startAccountOnboard
-    ["work-account-update"]  -> startAccountUpdate
-    ["work-transfer-sends"]  -> startAdvanceSend
+    ["version"        ]          -> putStrLn "TODO version"
+    ["api"]                      -> startApi
+    ["work-account-onboard"]     -> startAccountOnboard
+    ["work-account-update"]      -> startAccountUpdate
+    ["work-advance-send"]        -> startAdvanceSend
+    ["work-advance-collect"]     -> startAdvanceCollect
     ["schedule-account-update"]  -> startAccountUpdateSchedule
-    ["initialize"]      -> Api.initialize
-    _ -> putStrLn "please enter a command"
+    ["schedule-advance-collect"] -> startAdvanceCollectSchedule
+    ["initialize"]               -> Api.initialize
+    _                            -> putStrLn "please enter a command"
 
 
 
@@ -50,6 +53,14 @@ startAccountUpdateSchedule = Worker.runIO AccountUpdate.schedule
 
 startAdvanceSend :: IO ()
 startAdvanceSend = Worker.start AdvanceSend.queue AdvanceSend.handler
+
+
+startAdvanceCollect :: IO ()
+startAdvanceCollect = Worker.start AdvanceCollect.queue AdvanceCollect.handler
+
+
+startAdvanceCollectSchedule :: IO ()
+startAdvanceCollectSchedule = Worker.runIO AdvanceCollect.schedule
 
 
 -- startAll :: IO ()

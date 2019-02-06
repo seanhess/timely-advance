@@ -2,7 +2,9 @@ module Timely.Evaluate.Paydate
     ( DayOfWeek(..)
     , dayOfWeek
     , mon, tue, wed, thu, fri, sat, sun
+    , toDayOfWeek
     , DayOfMonth(..)
+    , nextWeekday
 
     , PayFrequency (..)
     , frequency
@@ -87,10 +89,10 @@ toDayOfWeek d =
 
 
 
-newtype DayOfMonth = DayOfMonth Int
+newtype DayOfMonth = DayOfMonth Int deriving (Show, Eq)
 
 -- Monday = 1
-newtype DayOfWeek  = DayOfWeek Int
+newtype DayOfWeek  = DayOfWeek Int deriving (Show, Eq)
 
 dayOfWeek n
     | n < 1 = Nothing

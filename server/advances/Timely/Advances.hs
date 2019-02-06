@@ -10,17 +10,17 @@ module Timely.Advances where
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
 import           Control.Monad.Selda       (Selda, insert, query, tryCreateTable, update_)
 import           Control.Monad.Service     (Service (..))
+import           Data.Aeson                (FromJSON, ToJSON)
 import qualified Data.List                 as List
-import qualified Data.Maybe as Maybe
-import           Data.Ord                  (comparing, Down(..))
+import qualified Data.Maybe                as Maybe
+import           Data.Ord                  (Down (..), comparing)
 import           Data.Time.Calendar        (Day)
-import           Data.Time.Clock           (UTCTime)
 import qualified Data.Time.Clock           as Time
 import           Database.Selda            hiding (insert, query, tryCreateTable, update_)
 import           GHC.Generics              (Generic)
 import           Timely.AccountStore.Types (Account)
 import           Timely.Types.Money        (Money)
-import qualified Timely.Types.Money as Money
+import qualified Timely.Types.Money        as Money
 
 import           Timely.Types.Guid         (Guid)
 import qualified Timely.Types.Guid         as Guid
@@ -38,6 +38,8 @@ data Advance = Advance
     } deriving (Show, Eq, Generic)
 
 instance SqlRow Advance
+instance ToJSON Advance
+instance FromJSON Advance
 
 
 -- CurrentOffer: The most recent offered but not accepted
@@ -53,20 +55,22 @@ data Advances a where
     FindActive    :: Guid Account -> Advances [Advance]
     FindAll       :: Guid Account -> Advances [Advance]
     Find          :: Guid Account -> Guid Advance -> Advances (Maybe Advance)
+    FindDue       :: Day -> Advances [Advance]
 
     Activate      :: Guid Account -> Guid Advance -> Money -> Advances ()
     MarkCollected :: Guid Advance -> Advances ()
 
 
 instance Selda m => Service m Advances where
-    run (Create i a d)    = create i a d
-    run (FindOffer i)     = findOffer <$> findAdvances i
-    run (FindActive i)    = findActive <$> findAdvances i
-    run (FindAll i)       = findAdvances i
-    run (Find i adv)      = findAdvance i adv
+    run (Create i a d)       = create i a d
+    run (FindOffer i)        = findOffer <$> findAdvances i
+    run (FindActive i)       = findActive <$> findAdvances i
+    run (FindAll i)          = findAdvances i
+    run (Find i adv)         = findAdvance i adv
+    run (FindDue d)          = findDue d
 
-    run (Activate a adv amt)  = activate a adv amt
-    run (MarkCollected i) = markCollected i
+    run (Activate a adv amt) = activate a adv amt
+    run (MarkCollected i)    = markCollected i
 
 advances :: Table Advance
 advances =
@@ -140,6 +144,20 @@ findAdvance i adv = do
     pure $ Maybe.listToMaybe as
 
 
+findDue :: Selda m => Day -> m [Advance]
+findDue d =
+  query $ do
+    a <- select advances
+    restrict (colIsActive a .&& colIsDue a)
+    pure a
+
+  where colIsActive a =
+          (isNull $ a ! #collected) .&& (not_ . isNull $ a ! #activated)
+
+        colIsDue a =
+          (a ! #due .<= literal d)
+
+
 
 activate :: Selda m => Guid Account -> Guid Advance -> Money -> m ()
 activate aid adv amt = do
@@ -158,7 +176,7 @@ activate aid adv amt = do
 markCollected :: Selda m => Guid Advance -> m ()
 markCollected i = do
   time <- liftIO $ Time.getCurrentTime
-  update_ advances (\a -> a ! #accountId .== literal i)
+  update_ advances (\a -> a ! #advanceId .== literal i)
                    (\a -> a `with` [#collected := just (literal time)])
 
 

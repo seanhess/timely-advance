@@ -8,13 +8,20 @@ import Test.Tasty.HUnit
 import Test.Tasty.Monad
 
 import qualified Timely.Advances as Advances
+import qualified Timely.Advances.Collect as Collect
 import Timely.Types.Money (Money(..))
 import Timely.Advances (Advance(..))
 
 tests :: Tests ()
 tests = do
-    group "findOffer" $ do
+    group "advances" testMain
+    group "collect" testCollect
 
+
+
+testMain :: Tests ()
+testMain = do
+    group "findOffer" $ do
       test "should find single offer" $ do
         now <- Time.getCurrentTime
         let a = sample { offered = now, activated = Nothing, collected = Nothing }
@@ -43,6 +50,24 @@ tests = do
         let a1 = sample { offered = t1, activated = Just t1, collected = Nothing }
         let a2 = sample { offered = t2, activated = Nothing, collected = Nothing }
         Advances.findOffer [a1, a2] @?= Just a2
+
+
+
+testCollect :: Tests ()
+testCollect = do
+    group "currentlyDue" $ do
+      test "12pm isn't due yet - previous day" $ do
+        Collect.currentlyDue (parseTime "2019-02-02T12:00:00") @?= (parseDay "2019-02-01")
+
+      test "11pm isn't due yet - previous day" $ do
+        Collect.currentlyDue (parseTime "2019-02-02T23:00:00") @?= (parseDay "2019-02-01")
+
+      test "12am is collection time, now the day becomes due" $ do
+        Collect.currentlyDue (parseTime "2019-02-03T00:00:00") @?= (parseDay "2019-02-02")
+
+      test "1am is past collection time" $ do
+        Collect.currentlyDue (parseTime "2019-02-03T01:00:00") @?= (parseDay "2019-02-02")
+
 
 
 times = do

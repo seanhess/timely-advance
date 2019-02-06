@@ -19,7 +19,6 @@ import           GHC.Generics                  (Generic)
 import           Servant.API.ContentTypes.HTML (Linkable (..))
 
 import           Timely.AccountStore.Types
-import           Timely.Advances               (Advance)
 import           Timely.Bank                   (Public, Token)
 import           Timely.Types.Money            (Money)
 import           Timely.Underwriting           (Approval, Denial, DenialReason, Result (..))
@@ -42,8 +41,6 @@ instance ToJSON Customer
 instance ToJSON BankAccountType
 instance ToJSON BankAccount
 instance ToJSON Application
-instance ToJSON Advance
-instance FromJSON Advance
 instance FromJSON Application
 
 

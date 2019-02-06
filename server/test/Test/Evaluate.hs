@@ -1,20 +1,55 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Evaluate where
 
-import qualified Data.Time.Clock as Time
-import qualified Data.Maybe as Maybe
-import qualified Data.Time.Format as Time
-import Test.Tasty.HUnit
-import Test.Tasty.Monad
+import qualified Data.Maybe            as Maybe
+import           Data.Time.Calendar    (Day)
+import qualified Data.Time.Calendar    as Day
+import qualified Data.Time.Clock       as Time
+import qualified Data.Time.Format      as Time
+import           Test.Tasty.HUnit
+import           Test.Tasty.Monad
 
+import           Timely.Advances       (Advance (..))
 import qualified Timely.Evaluate.Offer as Offer
-import Timely.Evaluate.Types (Projection(..))
-import Timely.Types.Money (Money(..))
-import Timely.Advances (Advance(..))
+import qualified Timely.Evaluate.Paydate as Paydate
+import           Timely.Evaluate.Types (Projection (..))
+import           Timely.Types.Money    (Money (..))
 
 tests :: Tests ()
 tests = do
     group "offer" testOffer
+    group "paydate" testPaydate
+
+
+
+
+
+
+
+testPaydate :: Tests ()
+testPaydate = do
+    let monday = parseDay "2019-02-04" :: Day
+    group "toDayOfWeek" $ do
+      test "should be monday" $ do
+        Paydate.toDayOfWeek monday @?= Paydate.mon
+
+      test "should be tuesday" $ do
+        Paydate.toDayOfWeek (Day.addDays 1 monday) @?= Paydate.tue
+
+    group "nextWeekday" $ do
+      test "next monday is 7 days away" $ do
+        Paydate.nextWeekday Paydate.mon monday @?= parseDay "2019-02-11"
+
+      test "next tuesday is 1 day away" $ do
+        Paydate.nextWeekday Paydate.tue monday @?= parseDay "2019-02-05"
+
+      test "next sunday is 6 days away" $ do
+        Paydate.nextWeekday Paydate.sun monday @?= parseDay "2019-02-10"
+
+
+
+
+
 
 
 testOffer :: Tests ()
@@ -81,7 +116,12 @@ testOffer = do
     agoIntOver  = Time.addUTCTime (-(Time.nominalDay + 60))
     agoOld      = Time.addUTCTime (-(Time.nominalDay * 2))
     agoRecent   = ago1m
-    parseTime :: Time.ParseTime a => String -> a
-    parseTime a = Maybe.fromMaybe (error a) $ Time.parseTimeM True Time.defaultTimeLocale (Time.iso8601DateFormat (Just "%H:%M:%S")) a
 
+
+
+parseTime :: Time.ParseTime a => String -> a
+parseTime a = Maybe.fromMaybe (error a) $ Time.parseTimeM True Time.defaultTimeLocale (Time.iso8601DateFormat (Just "%H:%M:%S")) a
+
+parseDay :: Time.ParseTime a => String -> a
+parseDay a = Maybe.fromMaybe (error a) $ Time.parseTimeM True Time.defaultTimeLocale (Time.iso8601DateFormat Nothing) a
 
