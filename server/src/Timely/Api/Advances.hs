@@ -12,9 +12,10 @@ import           Servant                     (ServantErr (..), err400)
 
 import           Timely.AccountStore.Account (AccountStore)
 import qualified Timely.AccountStore.Account as Accounts
-import           Timely.AccountStore.Types   (Account (credit))
+import           Timely.AccountStore.Types   (Account)
 import           Timely.Advances             (Advance (..), Advances (..))
 import qualified Timely.Advances             as Advances
+import qualified Timely.Advances.Credit      as Credit
 import           Timely.Api.Combinators      (notFound)
 import           Timely.Api.Types            as Types (Amount (..))
 import qualified Timely.Events               as Events
@@ -46,12 +47,7 @@ checkCredit a amount = do
   account <- run (Accounts.Find a) >>= notFound
   advances <- run (Advances.FindActive a)
 
-  when (not $ isEnoughCredit amount account advances) $ do
+  when (not $ Credit.isEnough amount account advances) $ do
     throwError $ err400 { errBody = "Insufficient Credit" }
 
 
-isEnoughCredit :: Money -> Account -> [Advance] -> Bool
-isEnoughCredit amount account advances =
-  let creditUsed = sum (map Advances.amount advances)
-      creditRemaining = credit account - creditUsed
-  in amount <= creditRemaining

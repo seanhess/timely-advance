@@ -1,21 +1,50 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Advances where
 
-import qualified Data.Time.Clock as Time
-import qualified Data.Maybe as Maybe
-import qualified Data.Time.Format as Time
-import Test.Tasty.HUnit
-import Test.Tasty.Monad
+import qualified Data.Maybe                as Maybe
+import qualified Data.Time.Clock           as Time
+import qualified Data.Time.Format          as Time
+import           Test.Tasty.HUnit
+import           Test.Tasty.Monad
 
-import qualified Timely.Advances as Advances
-import qualified Timely.Advances.Collect as Collect
-import Timely.Types.Money (Money(..))
-import Timely.Advances (Advance(..))
+import           Timely.AccountStore.Types as Account (Account (..))
+import           Timely.Advances           as Advance (Advance (..))
+import qualified Timely.Advances           as Advances
+import qualified Timely.Advances.Collect   as Collect
+import qualified Timely.Advances.Credit    as Credit
+import           Timely.Auth               (Phone (..))
+import           Timely.Types.Money        (Money (..))
+import qualified Timely.Types.Money        as Money
 
 tests :: Tests ()
 tests = do
     group "advances" testMain
     group "collect" testCollect
+    group "credit" testCredit
+
+
+
+testCredit :: Tests ()
+testCredit = do
+    group "isEnough" $ do
+      let account200 = sampleAccount { credit = Money.fromFloat 200.00 }
+
+      test "should be enough if less than limit" $ do
+        Credit.isEnough (Money.fromFloat 100.00) account200 [] @?= True
+
+      test "should NOT be enough if MORE than limit" $ do
+        Credit.isEnough (Money.fromFloat 250.00) account200 [] @?= False
+
+      test "should be enough if equal limit" $ do
+        Credit.isEnough (Money.fromFloat 200.00) account200 [] @?= True
+
+      test "should not be enough if advances reduce credit" $ do
+        let advance = sample { amount = Money.fromFloat 100.00 }
+        Credit.isEnough (Money.fromFloat 150.00) account200 [advance] @?= False
+
+      test "should be enough if advances leave a little credit" $ do
+        let advance = sample { amount = Money.fromFloat 50.00 }
+        Credit.isEnough (Money.fromFloat 150.00) account200 [advance] @?= True
 
 
 
@@ -76,13 +105,13 @@ times = do
   pure (t1, t2)
 
 
-sample = Advance {advanceId = "34209d46-efd2-4675-aa8e-8564d9ab65b6", accountId = "758547fd-74a8-48c3-8fd6-390b515027a5", amount = Money 20000, offer = Money 20000, due = parseDay "2019-02-04", offered = parseTime "2019-02-01T20:02:46", activated = Nothing, collected = Nothing}
+sample = Advance {advanceId = "34209d46-efd2-4675-aa8e-8564d9ab65b6", Advance.accountId = "758547fd-74a8-48c3-8fd6-390b515027a5", amount = Money 20000, offer = Money 20000, due = parseDay "2019-02-04", offered = parseTime "2019-02-01T20:02:46", activated = Nothing, collected = Nothing}
 
+sampleAccount = Account { Account.accountId = "acc09d46-efd2-4675-aa8e-8564d9ab65b6", phone = Phone "8012223333", customer = undefined, bankToken = undefined, credit = undefined, health = undefined }
 
 parseTime :: Time.ParseTime a => String -> a
 parseTime a = Maybe.fromMaybe (error a) $ Time.parseTimeM True Time.defaultTimeLocale (Time.iso8601DateFormat (Just "%H:%M:%S")) a
 
 parseDay :: Time.ParseTime a => String -> a
 parseDay a = Maybe.fromMaybe (error a) $ Time.parseTimeM True Time.defaultTimeLocale (Time.iso8601DateFormat Nothing) a
-
 
