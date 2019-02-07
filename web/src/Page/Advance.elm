@@ -153,6 +153,7 @@ viewForm model account advance advances =
     in
     Element.column [ spacing 15 ]
         [ Element.el [] (text <| "Credit Used: $" ++ formatDollars (Api.usedCredit advances) ++ " / $" ++ formatDollars account.credit)
+        , Element.el [] (text <| "Suggested: $" ++ formatDollars advance.offer)
         , Input.text [ htmlAttribute (Html.type_ "number") ]
             { text = model.acceptAmount
             , placeholder = Just <| Input.placeholder [] (text <| formatDollars <| advance.offer)

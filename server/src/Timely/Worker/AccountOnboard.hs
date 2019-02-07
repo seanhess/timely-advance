@@ -14,8 +14,7 @@ import           Control.Monad.Log               (MonadLog)
 import qualified Control.Monad.Log               as Log
 import           Control.Monad.Service           (Service (run))
 import qualified Data.List                       as List
-import           Data.Text                       (Text)
-import qualified Data.Text                       as Text
+import           Data.Text                       as Text
 import qualified Database.Selda                  as Selda
 import           Network.AMQP.Worker             (Queue)
 import qualified Network.AMQP.Worker             as Worker hiding (bindQueue, publish, worker)
@@ -26,7 +25,7 @@ import           Timely.AccountStore.Application (ApplicationStore)
 import qualified Timely.AccountStore.Application as Application
 import           Timely.AccountStore.Types       (Application (..), BankAccount (balance), Customer (..), isChecking,
                                                   toBankAccount)
-import           Timely.Bank                     (Banks)
+import           Timely.Bank                     (Banks, Identity(..))
 import qualified Timely.Bank                     as Bank
 import qualified Timely.Evaluate.AccountHealth   as AccountHealth
 import qualified Timely.Events                   as Events
@@ -61,8 +60,7 @@ handler app = do
     tok <- run $ Bank.Authenticate (publicBankToken app)
     idt <- run $ Bank.LoadIdentity tok
 
-    cust <- toNewCustomer app idt
-    Log.debug ("customer", cust)
+    let cust = toNewCustomer app idt
 
     res <- run $ Underwriting.New cust
     Log.debug ("underwriting", res)
@@ -81,9 +79,9 @@ handler app = do
 
         -- get bank accounts
         banks <- run $ Bank.LoadAccounts tok
-        let bankAccounts = map (toBankAccount aid) banks
+        let bankAccounts = List.map (toBankAccount aid) banks
         checking <- require MissingChecking $ List.find isChecking bankAccounts
-        Log.debug ("checking", checking)
+        -- Log.debug ("checking", checking)
 
         -- TODO the transactions might not be available until the webhook triggers - maybe it makes more sense to have the health in a pending state. Or just. We're good!
         let health = AccountHealth.analyze (balance checking)
@@ -93,6 +91,7 @@ handler app = do
         -- liftIO $ putStrLn " ----- Banks----------------------- "
         -- liftIO $ print bankAccounts
         run $ Account.SetBankAccounts aid bankAccounts
+        Log.info "done"
 
   where
     require :: (MonadThrow m, Exception err) => err -> (Maybe a) -> m a
@@ -100,18 +99,10 @@ handler app = do
     require _ (Just a)  = pure a
 
 
-toNewCustomer :: MonadThrow m => Application -> Bank.Identity -> m Customer
-toNewCustomer Application {..} identity = do
+toNewCustomer :: Application -> Identity -> Customer
+toNewCustomer Application {..} Identity {..} =
     let id = Selda.def
-    (firstName, middleName, lastName) <- parseName
-    pure $ Customer {..}
-  where
-    parseName = do
-      case List.map Text.words (Bank.names identity) of
-        [f, m, l]:_ -> pure (f, Just m, l)
-        [f, l]:_    -> pure (f, Nothing, l)
-        n:_         -> throwM $ BadName $ Text.unwords n
-        _           -> throwM $ NoNames
+     in Customer {..}
 
 
 
