@@ -9,7 +9,9 @@ module Timely.Worker.WorkerM where
 import           Control.Exception         (SomeException)
 import           Control.Monad.Config      (MonadConfig (..))
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
-import           Control.Monad.Logger      (LoggingT, logErrorNS, logInfoNS, runStdoutLoggingT, MonadLogger)
+import           Control.Monad.Log         (LogT, runLogT)
+import qualified Control.Monad.Log         as Log
+import Control.Monad.Logger (MonadLogger, logErrorN)
 import           Control.Monad.Reader      (ReaderT, asks, runReaderT)
 import           Control.Monad.Selda       (Selda (..))
 import           Data.Aeson                (FromJSON)
@@ -40,7 +42,14 @@ data AppState = AppState
   , env      :: Env
   }
 
-type WorkerM = ReaderT AppState (LoggingT IO)
+-- LogT must be on top since I didn't define M^2 instances for it
+type WorkerM = ReaderT AppState IO
+type HandlerM = LogT WorkerM
+
+instance Selda HandlerM where
+  withConnection action = do
+    pool <- asks dbConn
+    Pool.withResource pool action
 
 instance Selda WorkerM where
   withConnection action = do
@@ -50,14 +59,14 @@ instance Selda WorkerM where
 instance MonadWorker WorkerM where
   amqpConnection = asks amqpConn
 
-instance MonadConfig Bank.Config WorkerM where
+instance MonadConfig Bank.Config HandlerM where
   config = do
     c <- asks plaid
     m <- asks manager
     b <- asks (plaidBaseUrl . env)
     pure $ Bank.Config { Bank.manager = m, Bank.baseUrl = b, Bank.credentials = c }
 
-instance MonadConfig Notify.Config WorkerM where
+instance MonadConfig Notify.Config HandlerM where
   config = do
     e <- asks env
     pure $ Notify.Config (twilioFromPhone e) (twilioAccountId e) (twilioAuthToken e) (endpoint e)
@@ -76,37 +85,35 @@ loadState = do
         destroyConn = Selda.seldaClose
 
 
-connect :: forall a. (FromJSON a) => Queue a -> (a -> WorkerM ()) -> WorkerM ()
+
+
+
+connect :: forall a. (FromJSON a) => Queue a -> (a -> HandlerM ()) -> WorkerM ()
 connect queue handler = do
   Worker.bindQueue queue
-  Worker.worker def queue (onError $ queueName queue) onMessage
+  Worker.worker def queue
+    (\e -> runLogT $ onError (queueName queue) e)
+    (\m -> runLogT $ onMessage m)
 
-  where onMessage :: Worker.Message a -> WorkerM ()
+  where onMessage :: Worker.Message a -> HandlerM ()
         onMessage m = do
-          logInfoNS (queueName queue) "New Message"
+          Log.context (queueName queue)
           handler (Worker.value m)
 
         queueName queue = let (Queue _ name) = queue in name
 
-start :: (FromJSON a) => Queue a -> (a -> WorkerM ()) -> IO ()
+
+start :: (FromJSON a) => Queue a -> (a -> HandlerM ()) -> IO ()
 start queue handler = do
   state <- loadState
   putStrLn "Running worker"
-  runStdoutLoggingT (runReaderT (connect queue handler) state)
-
-
--- runWorkerEM :: Exception e => WorkerEM e a -> WorkerM a
--- runWorkerEM x = do
---   e <- runExceptT x
---   case e of
---     Left err -> liftIO $ throwIO err
---     Right a  -> pure a
+  runReaderT (connect queue handler) state
 
 
 runIO :: WorkerM a -> IO a
 runIO x = do
   s <- loadState
-  runStdoutLoggingT (runReaderT x s)
+  runReaderT x s
 
 
 
@@ -116,8 +123,8 @@ runIO x = do
 
 
 -- standardized error handling
+-- FOR NOW: exceptions must include all context
 onError :: (MonadLogger m) => Text -> WorkerException SomeException -> m ()
 onError n e = do
-    -- TODO send to rollbar or somewhere similar
-    -- TODO handle PII!
-    logErrorNS n (cs $ show e)
+  -- only used for AMQP-worker errors, we will catch everything ourselves!
+  logErrorN $ n <> " " <> (cs $ show e)

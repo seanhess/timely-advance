@@ -63,6 +63,9 @@ startAdvanceCollectSchedule :: IO ()
 startAdvanceCollectSchedule = Worker.runIO AdvanceCollect.schedule
 
 
+startTest :: IO ()
+startTest = Worker.start AdvanceSend.testQueue AdvanceSend.test
+
 -- startAll :: IO ()
 -- startAll = do
 --     api <- forkIO $ startApi

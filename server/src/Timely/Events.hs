@@ -3,6 +3,7 @@ module Timely.Events where
 
 
 import Data.Function ((&))
+import Data.Text (Text)
 import Network.AMQP.Worker (key, word, Key, Routing)
 import Timely.AccountStore.Types (Application, Account)
 import Timely.Advances (Advance)
@@ -23,4 +24,8 @@ advancesActive = key "advances" & word "active"
 
 advancesDue :: Key Routing Advance
 advancesDue = key "advances" & word "due"
+
+
+test :: Key Routing Text
+test = key "test"
 

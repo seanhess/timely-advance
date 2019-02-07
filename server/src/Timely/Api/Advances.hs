@@ -5,6 +5,7 @@ module Timely.Api.Advances where
 
 import           Control.Monad               (when)
 import           Control.Monad.Except        (MonadError (..))
+import           Control.Monad.Log           as Log
 import           Control.Monad.Service       (Service (..))
 import           Network.AMQP.Worker.Monad   (MonadWorker)
 import qualified Network.AMQP.Worker.Monad   as Worker
@@ -19,7 +20,7 @@ import qualified Timely.Advances.Credit      as Credit
 import           Timely.Api.Combinators      (notFound)
 import           Timely.Api.Types            as Types (Amount (..))
 import qualified Timely.Events               as Events
-import           Timely.Types.Guid           (Guid)
+import           Timely.Types.Guid           as Guid
 import           Timely.Types.Money          (Money)
 
 
@@ -28,8 +29,12 @@ acceptAdvance
      , Service m Advances
      , Service m AccountStore
      , MonadError ServantErr m
+     , MonadLog m
      ) => Guid Account -> Guid Advance -> Amount -> m Advance
 acceptAdvance a adv amt = do
+  Log.context "acceptAdvance"
+  Log.context (Guid.toText adv)
+  Log.debug ("amount", amt)
   checkCredit a (Types.amount amt)
   run $ Advances.Activate a adv (Types.amount amt)
   advance <- run (Advances.Find a adv) >>= notFound
@@ -49,5 +54,3 @@ checkCredit a amount = do
 
   when (not $ Credit.isEnough amount account advances) $ do
     throwError $ err400 { errBody = "Insufficient Credit" }
-
-

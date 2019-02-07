@@ -4,15 +4,12 @@
 module Timely.Worker.AccountUpdate where
 
 -- TODO real transaction analysis
--- TODO logging
--- TODO advance locking / tracking. Right now it creates multiple advances and counts those in the health
 import           Control.Exception             (Exception)
 import           Control.Monad                 (when)
 import           Control.Monad.Catch           (MonadThrow (..))
-import           Control.Monad.Logger          as Log (MonadLogger, logInfoNS)
+import           Control.Monad.Log             (MonadLog)
+import qualified Control.Monad.Log             as Log
 import           Control.Monad.Service         (Service (run))
-import           Data.String.Conversions       (cs)
--- import Control.Monad.IO.Class (liftIO, MonadIO)
 import qualified Data.List                     as List
 import           Data.Time.Calendar            (Day)
 import           Network.AMQP.Worker           (MonadWorker)
@@ -75,12 +72,13 @@ handler
      , Service m Time
      , Service m Notify
      , MonadThrow m
-     , MonadLogger m
+     , MonadLog m
      )
   => Guid Account -> m ()
 handler accountId = do
 
-    logInfoNS (Guid.toText accountId) "Update"
+    Log.context (Guid.toText accountId)
+    Log.info "AccountUpdate"
 
     account  <- run (AccountStore.Find accountId)
                   >>= require MissingAccount
@@ -90,7 +88,7 @@ handler accountId = do
 
     health <- updateHealth accountId checking
 
-    logInfoNS (Guid.toText accountId) (cs $ show health)
+    Log.debug ("Health", health)
     checkAdvance account health
 
     pure ()
@@ -107,7 +105,7 @@ checkAdvance
   :: ( Service m Advances
      , Service m Time
      , Service m Notify
-     , MonadLogger m
+     , MonadLog m
      )
   => Account -> Projection -> m ()
 checkAdvance account health = do
@@ -115,14 +113,15 @@ checkAdvance account health = do
     offer  <- run $ Advances.FindOffer  (Account.accountId account)
     active <- run $ Advances.FindActive (Account.accountId account)
     when (Offer.isNeeded offer active health now) $ do
-      logInfoNS (Guid.toText $ Account.accountId account) "Advance!"
-      offerAdvance account Offer.amount (Time.utctDay now)
+      a <- offerAdvance account Offer.amount (Time.utctDay now)
+      Log.debug ("advance", a)
       pure ()
 
 
 offerAdvance
    :: ( Service m Advances
       , Service m Notify
+      , MonadLog m
       )
    => Account -> Money -> Day -> m Advance
 offerAdvance account amount today = do

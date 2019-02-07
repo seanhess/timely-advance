@@ -9,9 +9,9 @@ module Timely.Worker.AdvanceCollect where
 -- yeah, that makes sens. it's "due"
 
 import           Control.Monad.Catch       (MonadThrow (..))
-import           Control.Monad.Logger      as Log (MonadLogger, logInfoNS)
+import           Control.Monad.Log         as Log
 import           Control.Monad.Service     (Service (run))
-import           Data.String.Conversions   (cs)
+-- import           Data.String.Conversions   (cs)
 import qualified Network.AMQP.Worker       as Worker hiding (publish)
 import           Network.AMQP.Worker.Monad (MonadWorker)
 import qualified Network.AMQP.Worker.Monad as Worker
@@ -24,6 +24,7 @@ import           Timely.Time               (Time)
 import qualified Timely.Time               as Time
 import           Timely.Transfers          (Transfers)
 import qualified Timely.Transfers          as Transfers
+import           Timely.Types.Guid         as Guid
 
 
 
@@ -38,14 +39,12 @@ schedule
      , Service m Time
      , MonadThrow m
      , MonadWorker m
-     , MonadLogger m
      )
   => m ()
 schedule = do
     now <- run $ Time.CurrentTime
     let dueDate = Collect.currentlyDue now
     advances <- run $ Advances.FindDue dueDate
-    logInfoNS "advance-schedule" (cs $ show (dueDate, length advances))
     mapM_ (Worker.publish Events.advancesDue) advances
 
 
@@ -54,15 +53,15 @@ handler
   :: ( Service m Advances
      , Service m Transfers
      , MonadThrow m
-     , MonadLogger m
+     , MonadLog m
      )
   => Advance -> m ()
 handler advance = do
-  logInfoNS "app.advances.collect" (cs $ show $ advanceId advance)
+  Log.context (Guid.toText $ advanceId advance)
 
-  run $ Transfers.Debit advance
+  t <- run $ Transfers.Debit advance
+  Log.debug ("transfer", t)
   run $ Advances.MarkCollected (advanceId advance)
-  logInfoNS "app.advances.collect" (cs $ show $ advanceId advance)
-
+  Log.info "collected"
 
 
