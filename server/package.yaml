@@ -29,6 +29,7 @@ dependencies:
 - elm-export
 - envy
 - exceptions
+- http-api-data
 - http-media
 - http-client
 - http-client-tls

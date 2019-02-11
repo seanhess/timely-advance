@@ -56,7 +56,7 @@ callAuth          :: Auth.Request          -> ClientM Auth.Response
 callTransactions  :: Transactions.Request  -> ClientM Transactions.Response
 callAccounts      :: Accounts.Request      -> ClientM Accounts.Response
 callIdentity      :: Identity.Request      -> ClientM Identity.Response
-callDwolla      :: Dwolla.Request      -> ClientM Dwolla.Response
+callDwolla        :: Dwolla.Request        -> ClientM Dwolla.Response
 callExchangeToken :<|> callAuth :<|> callTransactions :<|> callAccounts :<|> callIdentity :<|> callDwolla = client api
 
 

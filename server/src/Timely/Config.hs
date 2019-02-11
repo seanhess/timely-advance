@@ -12,6 +12,8 @@ import           Data.Typeable           (Typeable)
 import           Database.Selda          (MonadMask)
 import           GHC.Generics            (Generic)
 import           Network.Authy           (AuthyApiKey)
+import           Network.Dwolla          (FundingSource)
+import qualified Network.Dwolla          as Dwolla
 import           Network.Plaid.Types     (Client, Id (..), Public)
 import qualified Network.Plaid.Types     as Plaid
 import           Servant.Client          (BaseUrl (..), Scheme (Https))
@@ -19,29 +21,31 @@ import qualified Servant.Client          as Servant
 import           System.Envy             (DefConfig (..), FromEnv, Var (..))
 import qualified System.Envy             as Envy
 import           Timely.Auth             (Phone (..), phone)
-import           Timely.Types.Config     (PlaidProducts(..))
+import           Timely.Types.Config     (PlaidProducts (..))
 import           Timely.Types.Secret     (Secret (..))
 import           Timely.Types.Session    (Admin)
 import qualified Twilio                  as Twilio
 
 
 data Env = Env
-  { postgres          :: Text
-  , amqp              :: Text
-  , plaidBaseUrl      :: BaseUrl
-  , plaidPublicKey    :: Id Public
-  , plaidClientId     :: Id Client
-  , plaidClientSecret :: Id Plaid.Secret
-  , plaidEnv          :: Text
-  , plaidProducts     :: PlaidProducts
-  , authyBaseUrl      :: BaseUrl
-  , authyApiKey       :: AuthyApiKey
-  , twilioAccountId   :: Twilio.AccountSID
-  , twilioAuthToken   :: Twilio.AuthToken
-  , twilioFromPhone   :: Phone
-  , endpoint          :: BaseUrl
-  , sessionSecret     :: ByteString
-  , adminPassphrase   :: Secret Admin
+  { postgres            :: Text
+  , amqp                :: Text
+  , plaidBaseUrl        :: BaseUrl
+  , plaidPublicKey      :: Id Public
+  , plaidClientId       :: Id Client
+  , plaidClientSecret   :: Id Plaid.Secret
+  , plaidEnv            :: Text
+  , plaidProducts       :: PlaidProducts
+  , authyBaseUrl        :: BaseUrl
+  , authyApiKey         :: AuthyApiKey
+  , twilioAccountId     :: Twilio.AccountSID
+  , twilioAuthToken     :: Twilio.AuthToken
+  , twilioFromPhone     :: Phone
+  , endpoint            :: BaseUrl
+  , sessionSecret       :: ByteString
+  , adminPassphrase     :: Secret Admin
+  , dwollaBaseUrl       :: BaseUrl
+  , dwollaFundingSource :: Dwolla.Id FundingSource
   } deriving (Show, Eq, Generic)
 
 
@@ -63,6 +67,8 @@ instance DefConfig Env where
     , endpoint          = BaseUrl Https "app.timelyadvance.com" 443 ""
     , sessionSecret     = "cQfTjWnZr4u7x!A%D*G-KaNdRgUkXp2s"
     , adminPassphrase   = Secret "rapidly scotland horses stuff"
+    , dwollaBaseUrl     = BaseUrl Https "api-sandbox.dwolla.com" 443 ""
+    , dwollaFundingSource = Dwolla.Id "7c584617-958b-48d2-8e41-c88ec415694d"
     }
 
 instance FromEnv Env
@@ -94,6 +100,10 @@ instance Var BaseUrl where
 instance Typeable t => Var (Id t) where
   toVar (Id t) = toVar t
   fromVar s = Id <$> fromVar s
+
+instance Typeable t => Var (Dwolla.Id t) where
+  toVar (Dwolla.Id t) = toVar t
+  fromVar s = Dwolla.Id <$> fromVar s
 
 
 loadEnv :: (MonadIO m, MonadMask m) => m Env
