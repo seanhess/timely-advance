@@ -118,7 +118,7 @@ accountView account =
             ]
         , Element.row [ spacing 10 ]
             [ Element.column [ spacing 4 ]
-                [ el [ Font.bold ] (text "Expenses")
+                [ el [ Font.bold ] (text "Predicted Expenses")
                 , el [] (text <| "$" ++ formatDollars account.health.expenses)
                 ]
             , Element.column [ spacing 4 ]
@@ -140,7 +140,7 @@ banksTable banks =
         , columns =
             [ column "Name" (\b -> text b.name)
             , column "Type" (\b -> text (accountType b.accountType))
-            , column "Balance" (\b -> text <| "$" ++ (formatDollars b.balance))
+            , column "Balance" (\b -> text <| "$" ++ formatDollars b.balance)
             ]
         }
 

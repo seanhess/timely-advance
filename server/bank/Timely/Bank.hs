@@ -18,27 +18,30 @@ module Timely.Bank
     , AccountType(..)
     , AccountSubType(..)
     , Identity(..)
-    , Address(..)
-    , IdentityInfo(_data, _primary)
-    , AddressInfo(..)
+    , Identity.Address(..)
+    , Identity.IdentityInfo(_data, _primary)
+    , Identity.AddressInfo(..)
     , Banks(..)
     , Config(..)
     , loadIdentity -- remove me when you add it back in
     ) where
 
-import           Control.Exception      (Exception, throw)
-import           Control.Monad.Catch    (MonadThrow, throwM)
-import           Control.Monad.Config   (MonadConfig, configs)
-import           Control.Monad.IO.Class (MonadIO, liftIO)
-import           Control.Monad.Service  (Service (..))
-import           Data.List              as List
-import           Data.Text              as Text
-import           Data.Time.Calendar     (fromGregorian)
-import           Network.HTTP.Client    (Manager)
-import qualified Network.Plaid          as Plaid
-import           Network.Plaid.Types    hiding (Identity)
-import qualified Network.Plaid.Types    as Plaid
-import           Servant.Client         (BaseUrl, ClientEnv, ClientM, ServantError, mkClientEnv, runClientM)
+import           Control.Exception           (Exception, throw)
+import           Control.Monad.Catch         (MonadThrow, throwM)
+import           Control.Monad.Config        (MonadConfig, configs)
+import           Control.Monad.IO.Class      (MonadIO, liftIO)
+import           Control.Monad.Service       (Service (..))
+import           Data.List                   as List
+import           Data.Text                   as Text
+import           Data.Time.Calendar          (fromGregorian)
+import           Network.HTTP.Client         (Manager)
+import qualified Network.Plaid               as Plaid
+import qualified Network.Plaid.Accounts      as Accounts
+import qualified Network.Plaid.ExchangeToken as ExchangeToken
+import qualified Network.Plaid.Identity      as Identity
+import qualified Network.Plaid.Transactions  as Transactions
+import           Network.Plaid.Types         
+import           Servant.Client              (BaseUrl, ClientEnv, ClientM, ServantError, mkClientEnv, runClientM)
 
 -- Bank Service
 
@@ -61,14 +64,14 @@ authenticate :: (MonadIO m, MonadConfig Config m) => Token Public -> m (Token Ac
 authenticate pub = do
     creds <- configs credentials
     res <- runPlaid $ Plaid.reqExchangeToken creds pub
-    pure $ access_token (res :: ExchangeTokenResponse)
+    pure $ ExchangeToken.access_token res
 
 
 loadIdentity :: (MonadIO m, MonadConfig Config m, MonadThrow m) => Token Access -> m Identity
 loadIdentity tok = do
     creds <- configs credentials
     res <- runPlaid $ Plaid.reqIdentity creds tok
-    parseIdentity $ identity (res :: IdentityResponse)
+    parseIdentity $ Identity.identity res
 
 
 
@@ -76,7 +79,7 @@ loadAccounts :: (MonadIO m, MonadConfig Config m) => Token Access -> m [Account]
 loadAccounts tok = do
     creds <- configs credentials
     res <- runPlaid $ Plaid.reqAccounts creds tok
-    pure $ accounts (res :: AccountsResponse)
+    pure $ Accounts.accounts res
 
 
 -- which transactions should I load? How far back? 3 months?
@@ -87,9 +90,9 @@ loadTransactions tok aid = do
     creds <- configs credentials
     -- TODO how many transactions should we pull?
     -- TODO how far back should we go?
-    let options = TransactionsOptions (fromGregorian 2018 09 01) (fromGregorian 2018 12 31) 500 0 [aid]
+    let options = Transactions.Options (fromGregorian 2018 09 01) (fromGregorian 2018 12 31) 500 0 [aid]
     res <- runPlaid $ Plaid.reqTransactions creds tok options
-    pure $ transactions (res :: TransactionsResponse)
+    pure $ Transactions.transactions res
 
 
 
@@ -134,9 +137,9 @@ data Identity = Identity
     } deriving (Show, Eq)
 
 
-parseIdentity :: MonadThrow m => Plaid.Identity -> m Identity
+parseIdentity :: MonadThrow m => Identity.Identity -> m Identity
 parseIdentity identity =
-  case List.map Text.words (Plaid.names identity) of
+  case List.map Text.words (Identity.names identity) of
     [f, m, l]:_ -> pure $ Identity f (Just m) l
     [f, l]:_    -> pure $ Identity f Nothing l
     n:_         -> throwM $ BadName $ Text.unwords n

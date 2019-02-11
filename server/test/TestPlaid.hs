@@ -8,6 +8,8 @@ import Data.String.Conversions
 import Network.HTTP.Client (newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.Plaid
+import Network.Plaid.Auth as Auth
+import Network.Plaid.Accounts as Accounts
 import Network.Plaid.Types
 import Servant.Client
 import Text.Show.Pretty
@@ -15,8 +17,8 @@ import Text.Show.Pretty
 main :: IO ()
 main = putStrLn "Test suite not yet implemented"
 
-deriving instance PrettyVal AuthResponse
-deriving instance PrettyVal AccountsResponse
+deriving instance PrettyVal Auth.Response
+deriving instance PrettyVal Accounts.Response
 deriving instance PrettyVal (Id a)
 deriving instance PrettyVal Account
 deriving instance PrettyVal Balances
