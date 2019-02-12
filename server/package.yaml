@@ -25,6 +25,7 @@ dependencies:
 - aeson-pretty
 - amqp
 - amqp-worker
+- base64-bytestring
 - bytestring
 - elm-export
 - envy
@@ -118,4 +119,5 @@ tests:
     dependencies:
     - tasty
     - tasty-hunit
+    - random-strings
     - server

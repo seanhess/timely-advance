@@ -101,6 +101,6 @@ spec = Spec ["Timely", "Api", "Server"]
             , toElmDecoderSource (Proxy :: Proxy DenialReason)
             ]
 
-main :: IO ()
-main = do
+write :: IO ()
+write = do
     specsToDir [spec] "client"

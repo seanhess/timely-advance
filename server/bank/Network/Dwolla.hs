@@ -14,6 +14,7 @@ module Network.Dwolla
   , fundingSource
   , transfer
   , authenticate
+  , Credentials(..)
   , Customer(..)
   , Resource(..)
   , Static(..)
@@ -23,7 +24,9 @@ module Network.Dwolla
   , Id(..)
   , FundingSource(..)
   , Client, Secret
+  , AuthToken(..)
   ) where
+
 
 
 
@@ -31,6 +34,7 @@ import           Control.Monad.Catch     (Exception, throwM)
 import           Data.Aeson              as Aeson
 import           Data.List               as List
 import           Data.Proxy              as Proxy
+import qualified Data.ByteString.Base64 as Base64
 import           Data.String.Conversions (cs)
 import           Data.Text               as Text
 import           Data.Time.Calendar      (Day)
@@ -42,7 +46,7 @@ import           Servant.Client          (BaseUrl, ClientM, client)
 import qualified Servant.Client          as Servant
 import           Web.FormUrlEncoded      (ToForm (..))
 
-import           Network.Dwolla.HAL      (HAL)
+import           Network.Dwolla.HAL      (HAL, FromHAL(..))
 import           Network.Dwolla.Types
 
 
@@ -50,7 +54,7 @@ import           Network.Dwolla.Types
 
 
 type DwollaApi
-      = BasicAuth "" () :> "token" :> ReqBody '[FormUrlEncoded] Auth :> Post '[HAL] Access
+      = Authenticate :> "token" :> ReqBody '[FormUrlEncoded] Auth :> Post '[JSON] Access
    :<|> Authorization   :> "customers" :> ReqBody '[HAL] Customer   :> Post '[HAL] (Location Customer)
    :<|> Authorization   :> "customers" :> Capture "id" (Id Customer) :> ReqBody '[HAL] FundingSource :> Post '[HAL] (Location FundingSource)
    :<|> Authorization   :> "transfers" :> ReqBody '[HAL] Transfer   :> Post '[HAL] (Location Transfer)
@@ -63,10 +67,12 @@ type FundingSourceApi
    = "funding-sources" :> Capture "id" (Id FundingSource) :> Get '[JSON] ()
 
 
-type Location a = Headers '[Header "Location" (Resource a)] NoContent
+type Location a = Headers '[Header "Location" (Resource a)] Anything
+
+type Authenticate = Header "Authorization" Credentials
 
 
-postToken         :: BasicAuthData -> Auth -> ClientM Access
+postToken         :: Maybe Credentials -> Auth -> ClientM Access
 postCustomer      :: Maybe AuthToken -> Customer -> ClientM (Location Customer)
 postFundingSource :: Maybe AuthToken -> Id Customer -> FundingSource -> ClientM (Location FundingSource)
 postTransfer      :: Maybe AuthToken -> Transfer -> ClientM (Location Transfer)
@@ -94,9 +100,9 @@ transfer tok from to amount = do
 
 
 
-authenticate :: Id Client -> Id Secret -> ClientM AuthToken
-authenticate (Id u) (Id p) = do
-  access <- postToken (BasicAuthData (cs u) (cs p)) (Auth Static)
+authenticate :: Credentials -> ClientM AuthToken
+authenticate creds = do
+  access <- postToken (Just creds) (Auth Static)
   let (Id t) = access_token access
   pure $ AuthToken t
 
@@ -149,7 +155,7 @@ data Customer = Customer
   , address2    :: Maybe Address
   , city        :: Text
   , state       :: Text
-  , postalCost  :: Text
+  , postalCode  :: Text
   , dateOfBirth :: Day
   , ssn         :: Last4SSN
   , phone       :: Maybe Text
@@ -226,4 +232,18 @@ newtype AuthToken = AuthToken Text
    deriving (Show, Eq)
 
 instance ToHttpApiData AuthToken where
-  toUrlPiece (AuthToken t) = "Bearer: " <> t
+  toUrlPiece (AuthToken t) = "Bearer " <> t
+
+
+
+data Credentials = Credentials (Id Client) (Id Secret)
+   deriving (Show, Eq)
+
+instance ToHttpApiData Credentials where
+  toUrlPiece (Credentials (Id c) (Id s)) = cs $ "Basic " <> Base64.encode (cs c <> ":" <> cs s)
+
+
+data Anything = Anything
+
+instance FromHAL Anything where
+    fromHAL _ = pure Anything

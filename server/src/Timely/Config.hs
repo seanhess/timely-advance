@@ -45,6 +45,7 @@ data Env = Env
   , sessionSecret       :: ByteString
   , adminPassphrase     :: Secret Admin
   , dwollaBaseUrl       :: BaseUrl
+  , dwollaAuthBaseUrl   :: BaseUrl
   , dwollaClientId      :: Dwolla.Id Dwolla.Client
   , dwollaSecret        :: Dwolla.Id Dwolla.Secret
   , dwollaFundingSource :: Dwolla.Id FundingSource
@@ -70,6 +71,7 @@ instance DefConfig Env where
     , sessionSecret     = "cQfTjWnZr4u7x!A%D*G-KaNdRgUkXp2s"
     , adminPassphrase   = Secret "rapidly scotland horses stuff"
     , dwollaBaseUrl     = BaseUrl Https "api-sandbox.dwolla.com" 443 ""
+    , dwollaAuthBaseUrl = BaseUrl Https "accounts-sandbox.dwolla.com" 443 ""
     , dwollaClientId    = Dwolla.Id "6Oq3hTqVLFh5CRSINp4hI3xsTVygUfA7lDzY8XPSFjzkN6AXUE"
     , dwollaSecret      = Dwolla.Id "fuDJGJSB7A52onADZro2IeKtL4VHG4UfL8fWht00JdVkf5o1p0"
     , dwollaFundingSource = Dwolla.Id "7c584617-958b-48d2-8e41-c88ec415694d"

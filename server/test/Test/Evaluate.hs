@@ -1,19 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Evaluate where
 
-import qualified Data.Maybe            as Maybe
-import           Data.Time.Calendar    (Day)
-import qualified Data.Time.Calendar    as Day
-import qualified Data.Time.Clock       as Time
-import qualified Data.Time.Format      as Time
+import           Data.Time.Calendar      (Day)
+import qualified Data.Time.Calendar      as Day
+import qualified Data.Time.Clock         as Time
+import           Test.Dates              (parseDay, parseTime)
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
 
-import           Timely.Advances       (Advance (..))
-import qualified Timely.Evaluate.Offer as Offer
+import           Timely.Advances         (Advance (..))
+import qualified Timely.Evaluate.Offer   as Offer
 import qualified Timely.Evaluate.Paydate as Paydate
-import           Timely.Evaluate.Types (Projection (..))
-import           Timely.Types.Money    (Money (..))
+import           Timely.Evaluate.Types   (Projection (..))
+import           Timely.Types.Money      (Money (..))
 
 tests :: Tests ()
 tests = do
@@ -116,12 +115,4 @@ testOffer = do
     agoIntOver  = Time.addUTCTime (-(Time.nominalDay + 60))
     agoOld      = Time.addUTCTime (-(Time.nominalDay * 2))
     agoRecent   = ago1m
-
-
-
-parseTime :: Time.ParseTime a => String -> a
-parseTime a = Maybe.fromMaybe (error a) $ Time.parseTimeM True Time.defaultTimeLocale (Time.iso8601DateFormat (Just "%H:%M:%S")) a
-
-parseDay :: Time.ParseTime a => String -> a
-parseDay a = Maybe.fromMaybe (error a) $ Time.parseTimeM True Time.defaultTimeLocale (Time.iso8601DateFormat Nothing) a
 
