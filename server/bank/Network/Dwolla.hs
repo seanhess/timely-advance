@@ -6,8 +6,6 @@
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeOperators              #-}
 module Network.Dwolla
   ( DwollaApi
@@ -24,29 +22,28 @@ module Network.Dwolla
   , PhoneDigits(..)
   , Id(..)
   , FundingSource(..)
+  , Client, Secret
   ) where
 
 
 
-import           Control.Monad.Catch      (Exception, throwM)
-import           Data.Aeson               as Aeson
-import           Data.List                as List
-import           Data.List.NonEmpty       (NonEmpty ((:|)))
-import           Data.Proxy               as Proxy
-import           Data.String.Conversions  (cs)
-import           Data.Text                as Text
-import           Data.Time.Calendar       (Day)
-import           GHC.Generics             (Generic)
-import           GHC.TypeLits             (KnownSymbol, Symbol, symbolVal)
-import           Network.HTTP.Media       ((//))
-import           Network.Plaid.Dwolla     (Dwolla)
-import qualified Network.Plaid.Types      as Plaid
-import qualified Numeric
+import           Control.Monad.Catch     (Exception, throwM)
+import           Data.Aeson              as Aeson
+import           Data.List               as List
+import           Data.Proxy              as Proxy
+import           Data.String.Conversions (cs)
+import           Data.Text               as Text
+import           Data.Time.Calendar      (Day)
+import           GHC.Generics            (Generic)
+import           Network.Plaid.Dwolla    (Dwolla)
+import qualified Network.Plaid.Types     as Plaid
 import           Servant
-import qualified Servant.API.ContentTypes as Servant
-import           Servant.Client           (BaseUrl, ClientM, client)
-import qualified Servant.Client           as Servant
-import           Web.FormUrlEncoded       (ToForm (..))
+import           Servant.Client          (BaseUrl, ClientM, client)
+import qualified Servant.Client          as Servant
+import           Web.FormUrlEncoded      (ToForm (..))
+
+import           Network.Dwolla.HAL      (HAL)
+import           Network.Dwolla.Types
 
 
 
@@ -59,7 +56,7 @@ type DwollaApi
    :<|> Authorization   :> "transfers" :> ReqBody '[HAL] Transfer   :> Post '[HAL] (Location Transfer)
 
 
-type Authorization = Header "Authorization" (Bearer Access)
+type Authorization = Header "Authorization" AuthToken
 
 
 type FundingSourceApi
@@ -70,37 +67,38 @@ type Location a = Headers '[Header "Location" (Resource a)] NoContent
 
 
 postToken         :: BasicAuthData -> Auth -> ClientM Access
-postCustomer      :: Maybe (Bearer Access) -> Customer -> ClientM (Location Customer)
-postFundingSource :: Maybe (Bearer Access) -> Id Customer -> FundingSource -> ClientM (Location FundingSource)
-postTransfer      :: Maybe (Bearer Access) -> Transfer -> ClientM (Location Transfer)
+postCustomer      :: Maybe AuthToken -> Customer -> ClientM (Location Customer)
+postFundingSource :: Maybe AuthToken -> Id Customer -> FundingSource -> ClientM (Location FundingSource)
+postTransfer      :: Maybe AuthToken -> Transfer -> ClientM (Location Transfer)
 postToken :<|> postCustomer :<|> postFundingSource :<|> postTransfer = client (Proxy :: Proxy DwollaApi)
 
 
 
-createCustomer :: Token Access -> Customer -> ClientM (Id Customer)
+createCustomer :: AuthToken -> Customer -> ClientM (Id Customer)
 createCustomer tok cust =
-  postCustomer (auth tok) cust >>= parseId
+  postCustomer (Just tok) cust >>= parseId
 
 
-createFundingSource :: Token Access -> Id Customer -> FundingSource -> ClientM (Id FundingSource)
+createFundingSource :: AuthToken -> Id Customer -> FundingSource -> ClientM (Id FundingSource)
 createFundingSource tok id source =
-  postFundingSource (auth tok) id source >>= parseId
+  postFundingSource (Just tok) id source >>= parseId
 
 
 
-transfer :: Token Access -> Resource FundingSource -> Resource FundingSource -> Amount -> ClientM (Id Transfer)
+transfer :: AuthToken -> Resource FundingSource -> Resource FundingSource -> Amount -> ClientM (Id Transfer)
 transfer tok from to amount = do
   let tamount = TransferAmount Static amount
       links   = TransferLinks (RelLink from) (RelLink to)
-  res <- postTransfer (auth tok) $ Transfer links tamount
+  res <- postTransfer (Just tok) $ Transfer links tamount
   parseId res
 
 
 
-authenticate :: Id Client -> Id Secret -> ClientM (Token Access)
+authenticate :: Id Client -> Id Secret -> ClientM AuthToken
 authenticate (Id u) (Id p) = do
   access <- postToken (BasicAuthData (cs u) (cs p)) (Auth Static)
-  pure $ access_token access
+  let (Id t) = access_token access
+  pure $ AuthToken t
 
 
 fundingSource :: BaseUrl -> Id FundingSource -> Resource FundingSource
@@ -135,61 +133,11 @@ data DwollaError
 instance Exception DwollaError
 
 
--- HAL ----------------------------------------
-
-data HAL
-
-
-instance Accept HAL where
-  contentTypes _ = "application" // "vnd.dwolla.v1.hal+json" :| []
-
-instance FromJSON a => MimeUnrender HAL a where
-  mimeUnrender _ b = Servant.eitherDecodeLenient b
-
-instance ToJSON a => MimeRender HAL a where
-  mimeRender _ = encode
 
 
 
 
 
--- Types ----------------------------------------
-
-
-newtype Id a = Id Text
-  deriving (Show, Eq, Generic, ToHttpApiData, FromJSON)
-
-type Token = Id
-
-newtype Resource a = Resource Text
-  deriving (Show, Eq, Generic, FromJSON, ToJSON, FromHttpApiData)
-
-data Static (s :: Symbol) = Static
-  deriving (Show, Eq)
-
-instance forall s. KnownSymbol s => ToJSON (Static s) where
-  toJSON _ = Aeson.String $ cs $ symbolVal (Proxy :: Proxy s)
-
-instance forall s. KnownSymbol s => ToHttpApiData (Static s) where
-  toUrlPiece _ = cs $ symbolVal (Proxy :: Proxy s)
-
-newtype Last4SSN = Last4SSN Text
-  deriving (Show, Eq, Generic, ToJSON)
-
-newtype PhoneDigits = PhoneDigits Text
-  deriving (Show, Eq, Generic, ToJSON)
-
-newtype Address = Address Text
-  deriving (Show, Eq, Generic)
-
-instance ToJSON Address where
-  toJSON (Address t) = Aeson.String $ Text.take 50 t
-
-newtype Amount = Amount Float
-  deriving (Show, Eq)
-
-instance ToJSON Amount where
-  toJSON (Amount f) = Aeson.String $ cs $ Numeric.showFFloat (Just 2) f ""
 
 data Customer = Customer
   { firstName   :: Text
@@ -273,10 +221,9 @@ instance ToForm Auth
 data Secret
 data Client
 
-newtype Bearer a = Bearer Text
 
-instance ToHttpApiData (Bearer a) where
-  toUrlPiece (Bearer t) = "Bearer: " <> t
+newtype AuthToken = AuthToken Text
+   deriving (Show, Eq)
 
-auth :: Token Access -> Maybe (Bearer Access)
-auth (Id a) = Just $ Bearer a
+instance ToHttpApiData AuthToken where
+  toUrlPiece (AuthToken t) = "Bearer: " <> t
