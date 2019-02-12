@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -11,7 +12,7 @@ import           Control.Monad.Config      (MonadConfig (..))
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
 import           Control.Monad.Log         (LogT, runLogT)
 import qualified Control.Monad.Log         as Log
-import Control.Monad.Logger (MonadLogger, logErrorN)
+import           Control.Monad.Logger      (MonadLogger, logErrorN)
 import           Control.Monad.Reader      (ReaderT, asks, runReaderT)
 import           Control.Monad.Selda       (Selda (..))
 import           Data.Aeson                (FromJSON)
@@ -26,6 +27,7 @@ import           Network.AMQP.Worker       (Queue (Queue), WorkerException, def)
 import qualified Network.AMQP.Worker       as Worker hiding (bindQueue, publish, worker)
 import           Network.AMQP.Worker.Monad (MonadWorker (..))
 import qualified Network.AMQP.Worker.Monad as Worker
+import qualified Network.Dwolla            as Dwolla
 import qualified Network.HTTP.Client       as HTTP
 import qualified Network.HTTP.Client.TLS   as HTTP
 import qualified Network.Plaid             as Plaid
@@ -71,6 +73,11 @@ instance MonadConfig Notify.Config HandlerM where
     e <- asks env
     pure $ Notify.Config (twilioFromPhone e) (twilioAccountId e) (twilioAuthToken e) (endpoint e)
 
+instance MonadConfig Dwolla.Credentials HandlerM where
+    config = do
+      e <- asks env
+      pure $ Dwolla.Credentials (dwollaClientId e) (dwollaSecret e)
+
 
 loadState :: (MonadIO m, MonadMask m) => m AppState
 loadState = do
@@ -110,10 +117,10 @@ start queue handler = do
   runReaderT (connect queue handler) state
 
 
-runIO :: WorkerM a -> IO a
+runIO :: HandlerM a -> IO a
 runIO x = do
   s <- loadState
-  runReaderT x s
+  runReaderT (runLogT x) s
 
 
 

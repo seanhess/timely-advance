@@ -25,6 +25,7 @@ module Network.Dwolla
   , FundingSource(..)
   , Client, Secret
   , AuthToken(..)
+  , Amount(..)
   ) where
 
 
@@ -56,7 +57,7 @@ import           Network.Dwolla.Types
 type DwollaApi
       = Authenticate :> "token" :> ReqBody '[FormUrlEncoded] Auth :> Post '[JSON] Access
    :<|> Authorization   :> "customers" :> ReqBody '[HAL] Customer   :> Post '[HAL] (Location Customer)
-   :<|> Authorization   :> "customers" :> Capture "id" (Id Customer) :> ReqBody '[HAL] FundingSource :> Post '[HAL] (Location FundingSource)
+   :<|> Authorization   :> "customers" :> Capture "id" (Id Customer) :> "funding-sources" :> ReqBody '[HAL] FundingSource :> Post '[HAL] (Location FundingSource)
    :<|> Authorization   :> "transfers" :> ReqBody '[HAL] Transfer   :> Post '[HAL] (Location Transfer)
 
 

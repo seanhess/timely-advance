@@ -56,11 +56,14 @@ instance DefConfig Env where
   defConfig = Env
     { postgres          = "postgresql://postgres@localhost:5432"
     , amqp              = "amqp://guest:guest@localhost:5672"
-    , plaidBaseUrl      = BaseUrl Https "development.plaid.com" 443 ""
+    -- , plaidBaseUrl      = BaseUrl Https "development.plaid.com" 443 ""
+    -- , plaidClientSecret = Id "ce8f112af86209ce870a6d01c0af76"
+    -- , plaidEnv          = "development"
+    , plaidBaseUrl      = BaseUrl Https "sandbox.plaid.com" 443 ""
+    , plaidClientSecret = Id "db8bad5d68d41340cba767615c7aea"
+    , plaidEnv          = "sandbox"
     , plaidPublicKey    = Id "447ab26f3980c45b7202e2006dd9bf"
     , plaidClientId     = Id "5c1a663c5eca930011ff67ee"
-    , plaidClientSecret = Id "ce8f112af86209ce870a6d01c0af76"
-    , plaidEnv          = "development"
     , plaidProducts     = PlaidProducts [ "transactions", "auth" ]
     , authyApiKey       = "bmGKSWu6xZ8vGEhtfvsIBZKcxLarHs64"
     , authyBaseUrl      = BaseUrl Https "api.authy.com" 443 ""

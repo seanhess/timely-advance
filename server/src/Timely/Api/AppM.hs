@@ -13,7 +13,6 @@ module Timely.Api.AppM
 
 
 import           Control.Monad.Config      (MonadConfig (..))
-import           Control.Monad.Fail        (MonadFail (..))
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
 import           Control.Monad.Log         as Log
 import           Control.Monad.Reader      (ReaderT, ask, asks, runReaderT)
@@ -26,12 +25,12 @@ import           Database.Selda.Backend    (SeldaConnection)
 import qualified Database.Selda.PostgreSQL as Selda
 import qualified Network.AMQP.Worker       as Worker
 import           Network.AMQP.Worker.Monad (MonadWorker (..))
-import qualified Network.Dwolla            as Dwolla
 import qualified Network.HTTP.Client       as HTTP
 import qualified Network.HTTP.Client.TLS   as HTTP
 import           Servant                   (Handler (..), runHandler)
 import           Servant.Auth.Server       (CookieSettings (..), JWTSettings)
 
+-- import qualified Timely.Bank               as Bank
 import qualified Timely.Api.Sessions       as Sessions
 import           Timely.Auth               (AuthConfig)
 import qualified Timely.Auth               as Auth
@@ -104,10 +103,13 @@ instance MonadConfig AuthConfig AppM where
 instance MonadConfig (Secret Admin) AppM where
     config = asks (adminPassphrase . env)
 
-instance MonadConfig Dwolla.Credentials AppM where
-    config = do
-      e <- asks env
-      pure $ Dwolla.Credentials (dwollaClientId e) (dwollaSecret e)
+-- instance MonadConfig Bank.Config AppM where
+--   config = do
+--     c <- asks plaid
+--     m <- asks manager
+--     b <- asks (plaidBaseUrl . env)
+--     pure $ Bank.Config { Bank.manager = m, Bank.baseUrl = b, Bank.credentials = c }
+
 
 
 nt :: AppState -> AppM a -> Handler a

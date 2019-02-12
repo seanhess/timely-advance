@@ -46,6 +46,7 @@ dependencies:
 - servant-server
 - servant-elm
 - servant-client
+- servant-client-core
 - servant-auth
 - servant-auth-server
 - selda

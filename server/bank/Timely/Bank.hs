@@ -24,6 +24,7 @@ module Timely.Bank
     , Banks(..)
     , Config(..)
     , loadIdentity -- remove me when you add it back in
+    , runPlaid
     ) where
 
 import           Control.Exception           (Exception, throw)

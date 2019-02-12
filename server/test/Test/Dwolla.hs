@@ -8,10 +8,13 @@ import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
 
 import           Network.Dwolla          as Dwolla
+import           Network.Plaid           as Plaid
+import qualified Network.Plaid.Dwolla    as Plaid
+import qualified Network.Plaid.Types     as Plaid
 import           Servant.Client          (BaseUrl (..), Scheme (..))
 
 import           Control.Monad.Catch     (throwM)
-import           Control.Monad.Config    (MonadConfig (..))
+import           Control.Monad.Config    (MonadConfig (..), configs)
 import           Control.Monad.IO.Class  (MonadIO, liftIO)
 import           Control.Monad.Reader    (asks)
 import           Data.String.Conversions (cs)
@@ -19,8 +22,10 @@ import           Data.Text               (Text)
 import qualified Servant
 import           Servant.Client          (mkClientEnv, runClientM)
 import           Test.RandomStrings      (onlyAlphaNum, randomASCII, randomString)
-import           Timely.Api.AppM         as AppM
+import           Timely.Worker.WorkerM         as WorkerM
 import           Timely.Config           (dwollaAuthBaseUrl, dwollaBaseUrl)
+import qualified Timely.Bank as Bank
+
 
 import qualified Network.HTTP.Client     as HTTP
 import qualified Network.HTTP.Client.TLS as HTTP
@@ -55,8 +60,7 @@ testAuthorization = do
 
 integration :: IO ()
 integration = do
-  state <- AppM.loadState
-  AppM.runIO state $ do
+  WorkerM.runIO $ do
     creds <- config
     mgr <- asks manager
     -- mgr <- debugManager
@@ -76,26 +80,85 @@ integrationAuth tok = do
     r <- randomName
     res <- liftIO $ runClientM (Dwolla.createCustomer tok (customer r)) clientEnv
     liftIO $ print ("Created", res)
-    id <- result res
+    custId <- result res
+    dwolla <- dwollaToken
+    liftIO $ print ("DwollaToken", dwolla)
+
+    fundId <- integrationFundingSource tok dwolla custId
+
+    transId <- integrationTransfer tok fundId
+
+    liftIO $ print ("DONE", fundId, transId)
+
+
+
+
+    -- TODO: need to get plaid account id, so we can get the plaid-dwolla token, so we can test create funding source
 
     pure ()
+
+
+integrationFundingSource tok dwolla custId = do
+    url <- asks (dwollaBaseUrl . env)
+    mgr <- debugManager
+    let clientEnv = mkClientEnv mgr url
+    let source = Dwolla.FundingSource dwolla "test funding source"
+    res <- liftIO $ runClientM (Dwolla.createFundingSource tok custId source) clientEnv
+    liftIO $ print ("Funding Source", res)
+    id <- result res
+    pure id
+
+
+integrationTransfer tok fundId = do
+    url <- asks (dwollaBaseUrl . env)
+    mgr <- asks manager
+    let clientEnv = mkClientEnv mgr url
+
+    let balance = Dwolla.fundingSource url $ Id "114c60d1-9e0a-441b-ae94-a510b6f1c344"
+    let to = Dwolla.fundingSource url $ fundId
+    let amount = Dwolla.Amount 123.45
+    res <- liftIO $ runClientM (Dwolla.transfer tok balance to amount) clientEnv
+    liftIO $ print ("Transfer", res)
+    id <- result res
+    pure id
+
+
+
+
+dwollaToken :: HandlerM (Plaid.Token Plaid.Dwolla)
+dwollaToken = do
+    creds <- configs Bank.credentials
+    let access = Bank.Token "access-sandbox-444c2045-c342-46d6-9c18-ab0f17297fd1"
+    let account = Bank.Id "nV4v57dE7RtRwpmQBenvSPXjLMb75mC6XrnAG"
+    res <- Bank.runPlaid $ Plaid.reqDwolla creds access account
+    liftIO $ print ("Plaid", res)
+    pure $ Plaid.processor_token res
+
 
 
 
 
 result res = do
     case res of
-      Left e -> throwM e
+      Left e  -> throwM e
       Right v -> pure v
 
 
-debugManager :: AppM HTTP.Manager
+debugManager :: HandlerM HTTP.Manager
 debugManager =
-  liftIO $ HTTP.newManager HTTP.tlsManagerSettings { HTTP.managerModifyRequest = modifyRequest }
+  liftIO $ HTTP.newManager HTTP.tlsManagerSettings
+    { HTTP.managerModifyRequest = modifyRequest
+    , HTTP.managerModifyResponse = modifyResponse
+    }
   where
     modifyRequest req = do
       print req
       pure req
+
+    modifyResponse res = do
+      body <- HTTP.responseBody res
+      putStrLn $ cs body
+      pure res
 
 
 randomName :: MonadIO m => m Text
