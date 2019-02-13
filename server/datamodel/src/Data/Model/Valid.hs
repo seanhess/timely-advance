@@ -57,10 +57,3 @@ instance Typeable t => SqlType (Valid t) where
     sqlType _ = sqlType (Proxy :: Proxy Text)
     fromSql v = Valid $ fromSql v
     defaultValue = LCustom (defaultValue :: Lit Text)
-
-
-isDigits :: Text -> Bool
-isDigits = Text.all Char.isDigit
-
-isLength :: Int -> Text -> Bool
-isLength n t = Text.length t == n

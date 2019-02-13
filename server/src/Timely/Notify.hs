@@ -13,7 +13,7 @@ import           Control.Monad.Config      (MonadConfig (..))
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
 import           Control.Monad.Service     (Service (..))
 import           Data.Model.Guid           as Guid
-import           Data.Model.Valid          (Valid (..))
+import           Data.Model.Types          (Phone, Valid(..))
 import           Data.String.Conversions   (cs)
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
@@ -21,7 +21,7 @@ import           GHC.Generics              (Generic)
 import           Prelude                   hiding (id)
 import           Servant.Client            (BaseUrl)
 import qualified Servant.Client            as Servant
-import           Timely.AccountStore.Types (Account (..), Phone)
+import           Timely.AccountStore.Types (Account (..))
 import qualified Timely.AccountStore.Types as Account
 import qualified Twilio                    as Twilio
 import qualified Twilio.Messages           as Twilio
@@ -80,7 +80,7 @@ data Message a = Message
 
 -- phone number in 10-digit format
 data Config = Config
-  { fromPhone  :: Phone
+  { fromPhone  :: Valid Phone
   , accountSid :: Twilio.AccountSID
   , authToken  :: Twilio.AuthToken
   , appBaseUrl :: BaseUrl

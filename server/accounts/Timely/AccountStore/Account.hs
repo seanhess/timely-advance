@@ -13,6 +13,8 @@ import           Control.Monad.Service     (Service (..))
 import           Data.Maybe                (listToMaybe)
 import           Data.Model.Guid
 import           Data.Model.Money
+import           Data.Model.Valid          (Valid)
+import           Data.Model.Types          (Phone)
 import           Database.Selda            hiding (deleteFrom, insert, query, tryCreateTable)
 
 import           Timely.AccountStore.Types
@@ -26,7 +28,7 @@ import           Timely.Types.Private
 data AccountStore a where
     All            :: AccountStore [AccountRow]
     Find           :: Guid Account -> AccountStore (Maybe Account)
-    FindByPhone    :: Phone -> AccountStore (Maybe (Guid Account))
+    FindByPhone    :: Valid Phone -> AccountStore (Maybe (Guid Account))
     BankAccounts   :: Guid Account -> AccountStore [BankAccount]
     SetHealth      :: Guid Account -> Projection -> AccountStore ()
 
@@ -86,7 +88,7 @@ getAccount i = do
     account (AccountRow {..} :*: customer :*: health) = Account {..}
 
 
-getAccountIdByPhone :: Selda m => Phone -> m (Maybe (Guid Account))
+getAccountIdByPhone :: Selda m => Valid Phone -> m (Maybe (Guid Account))
 getAccountIdByPhone p = do
     as <- query $ do
       a <- select accounts
@@ -123,7 +125,7 @@ createAccount acc = do
     pure ()
 
 
-account :: Guid Account -> Phone -> Customer -> Token Access -> Money -> Projection -> Account
+account :: Guid Account -> Valid Phone -> Customer -> Token Access -> Money -> Projection -> Account
 account accountId phone customer tok credit Projection {..} = Account {..}
   where bankToken = Private tok
         health = Health {..}

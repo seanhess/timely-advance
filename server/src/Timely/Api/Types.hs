@@ -13,6 +13,7 @@ module Timely.Api.Types
 import           Data.Aeson                    (FromJSON, ToJSON (..))
 import qualified Data.Model.Guid               as Guid
 import           Data.Model.Money              (Money)
+import           Data.Model.Types              (SSN)
 import           Data.Model.Valid              (Valid)
 import           Data.String.Conversions       (cs)
 import           Data.Text                     (Text)

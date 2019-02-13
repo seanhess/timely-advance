@@ -9,6 +9,7 @@ import           Data.ByteString         (ByteString)
 import qualified Data.Maybe              as Maybe
 import           Data.Model.Id           (Id (..), Token (..))
 import           Data.Model.Valid        as Valid
+import           Data.Model.Types        (Phone)
 import           Data.String.Conversions (cs)
 import           Data.Text               (Text)
 import qualified Data.Text               as Text
@@ -24,7 +25,6 @@ import           Servant.Client          (BaseUrl (..), Scheme (Https))
 import qualified Servant.Client          as Servant
 import           System.Envy             (DefConfig (..), FromEnv, Var (..))
 import qualified System.Envy             as Envy
-import           Timely.AccountStore.Types (Phone)
 import           Timely.Types.Config     (PlaidProducts (..))
 import           Timely.Types.Session    (Admin)
 import qualified Twilio                  as Twilio
@@ -43,7 +43,7 @@ data Env = Env
   , authyApiKey         :: AuthyApiKey
   , twilioAccountId     :: Twilio.AccountSID
   , twilioAuthToken     :: Twilio.AuthToken
-  , twilioFromPhone     :: Phone
+  , twilioFromPhone     :: Valid Phone
   , endpoint            :: BaseUrl
   , sessionSecret       :: ByteString
   , adminPassphrase     :: Token Admin

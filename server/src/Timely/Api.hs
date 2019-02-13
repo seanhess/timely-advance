@@ -12,6 +12,7 @@ module Timely.Api where
 import           Control.Monad.Service                (Service (..))
 import           Data.Model.Guid                      as Guid
 import           Data.Model.Id                        (Token)
+import           Data.Model.Types                     (Phone, Valid)
 import           Data.Proxy                           (Proxy (..))
 import           Data.Text                            (Text)
 import           GHC.Generics                         (Generic)
@@ -26,7 +27,7 @@ import           Servant.Auth.Server                  (Auth, Cookie, CookieSetti
 import           Servant.Server.Generic               (AsServerT, genericServerT)
 import qualified Timely.AccountStore.Account          as Account
 import qualified Timely.AccountStore.Application      as Application
-import           Timely.AccountStore.Types            (Application, Phone)
+import           Timely.AccountStore.Types            (Application)
 import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
 import           Timely.Api.Advances                  as Advances
@@ -94,8 +95,8 @@ data AppApi route = AppApi
 data SessionsApi route = SessionsApi
     -- admin must be before auth
     { _admin  :: route :- "admin" :> ReqBody '[JSON] (Token Admin) :> Post '[JSON] (SetSession Session)
-    , _code   :: route :- ReqBody '[JSON] Phone :> Post '[JSON] NoContent
-    , _auth   :: route :- Capture "phone" Phone :> ReqBody '[JSON] AuthCode :> Post '[JSON] (SetSession Session)
+    , _code   :: route :- ReqBody '[JSON] (Valid Phone) :> Post '[JSON] NoContent
+    , _auth   :: route :- Capture "phone" (Valid Phone) :> ReqBody '[JSON] AuthCode :> Post '[JSON] (SetSession Session)
     , _check  :: route :- Auth '[Cookie] Session :> Get '[JSON] (Session)
     , _logout :: route :- Delete '[JSON] (SetSession NoContent)
     } deriving Generic
@@ -122,7 +123,7 @@ advanceApi i = genericServerT AdvanceApi
 
 -- the ONLY route that needs to authenticate via phone only is newApplication
 -- EVERY other route uses an accountId, including applications
-applicationApi :: Phone -> ToServant AppApi (AsServerT AppM)
+applicationApi :: Valid Phone -> ToServant AppApi (AsServerT AppM)
 applicationApi p = genericServerT AppApi
     { _post   = Applications.newApplication p
     }

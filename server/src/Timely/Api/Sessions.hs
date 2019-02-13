@@ -12,6 +12,7 @@ import           Control.Monad.Service       (Service (..))
 import           Crypto.JOSE.JWK             (JWK)
 import           Data.ByteString             (ByteString)
 import           Data.Model.Valid            as Valid
+import           Data.Model.Types            (Phone)
 import           Data.Model.Guid             as Guid
 import           Data.Model.Id               (Token (..))
 import           Servant                     (Header, Headers, NoContent (..), ServantErr, err401)
@@ -20,7 +21,7 @@ import           Servant.Auth.Server         (AuthResult (..), CookieSettings (.
 import qualified Servant.Auth.Server         as Servant
 
 import qualified Timely.AccountStore.Account as Account
-import           Timely.AccountStore.Types   (Account, Phone)
+import           Timely.AccountStore.Types   (Account)
 import           Timely.Auth                 (AuthCode, AuthConfig)
 import qualified Timely.Auth                 as Auth
 import           Timely.Types.Session        (Admin, Session (..))
@@ -30,7 +31,7 @@ type SetSession a = Headers '[Header "Set-Cookie" SetCookie, Header "Set-Cookie"
 
 
 
-generateCode :: Service m Auth.AuthService => Phone -> m NoContent
+generateCode :: Service m Auth.AuthService => Valid Phone -> m NoContent
 generateCode p = do
   run $ Auth.CodeGenerate p
   pure NoContent
@@ -44,7 +45,7 @@ authenticate
      , MonadConfig JWTSettings m
      , MonadConfig AuthConfig m
      , Service m Account.AccountStore
-     ) => Phone -> AuthCode -> m (SetSession Session)
+     ) => Valid Phone -> AuthCode -> m (SetSession Session)
 authenticate p c = do
   res <- run $ Auth.CodeCheck p c
   if not res
@@ -74,7 +75,7 @@ session
      , Service m Account.AccountStore
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
-     ) => Phone -> m (SetSession Session)
+     ) => Valid Phone -> m (SetSession Session)
 session p = do
     -- they've already successfully validated the code. They're in!
     ma <- run $ Account.FindByPhone p
@@ -127,7 +128,7 @@ secretKey = Servant.fromSecret
 
 
 
-protectPhone :: ThrowAll api => (Phone -> api) -> AuthResult Session -> api
+protectPhone :: ThrowAll api => (Valid Phone -> api) -> AuthResult Session -> api
 protectPhone api (Authenticated (Session p _ _)) = api p
 protectPhone _ _                                 = throwAll err401
 

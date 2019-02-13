@@ -8,24 +8,23 @@
 {-# LANGUAGE UndecidableInstances       #-}
 module Timely.Auth where
 
-import           Control.Exception      (Exception, throw)
-import           Control.Monad.Config   (MonadConfig (..), configs)
-import           Control.Monad.Except   (MonadError)
-import           Control.Monad.IO.Class (MonadIO, liftIO)
-import           Control.Monad.Service  (Service (..))
-import           Data.Aeson             (FromJSON, ToJSON)
-import           Data.Model.Valid       (Valid (..))
-import           Data.Text              (Text)
-import           GHC.Generics           (Generic)
-import           Network.HTTP.Client    (Manager)
-import           Network.HTTP.Types     (status401)
+import           Control.Exception         (Exception, throw)
+import           Control.Monad.Config      (MonadConfig (..), configs)
+import           Control.Monad.Except      (MonadError)
+import           Control.Monad.IO.Class    (MonadIO, liftIO)
+import           Control.Monad.Service     (Service (..))
+import           Data.Aeson                (FromJSON, ToJSON)
+import           Data.Model.Types          (Phone, Valid(..))
+import           Data.Text                 (Text)
+import           GHC.Generics              (Generic)
+import           Network.Authy             (AuthyApiKey)
+import qualified Network.Authy             as Authy
+import           Network.HTTP.Client       (Manager)
+import           Network.HTTP.Types        (status401)
 import           Servant
 import           Servant.Auth.Server
-import           Servant.Client         (BaseUrl, ClientEnv, ClientM, GenResponse (..), ServantError (..), mkClientEnv,
-                                         runClientM)
-import           Network.Authy          (AuthyApiKey)
-import qualified Network.Authy          as Authy
-import Timely.AccountStore.Types (Phone)
+import           Servant.Client            (BaseUrl, ClientEnv, ClientM, GenResponse (..), ServantError (..),
+                                            mkClientEnv, runClientM)
 
 -- Roles
 -- 1. Generate SMS codes
@@ -47,8 +46,8 @@ instance MimeUnrender PlainText AuthCode where
 
 
 data AuthService a where
-    CodeGenerate :: Phone -> AuthService ()
-    CodeCheck    :: Phone -> AuthCode -> AuthService Bool
+    CodeGenerate :: Valid Phone -> AuthService ()
+    CodeCheck    :: Valid Phone -> AuthCode -> AuthService Bool
 
 
 instance (MonadIO m, MonadConfig AuthConfig m) => Service m AuthService where
@@ -65,14 +64,14 @@ data AuthConfig = AuthConfig
 
 
 
-verifyStart :: (MonadIO m, MonadConfig AuthConfig m) => Phone -> m ()
+verifyStart :: (MonadIO m, MonadConfig AuthConfig m) => Valid Phone -> m ()
 verifyStart (Valid p) = do
   key <- configs apiKey
   _ <- runAuthy (Authy.reqVerifyStart key p)
   pure ()
 
 
-verifyCheck :: (MonadIO m, MonadConfig AuthConfig m) => Phone -> AuthCode -> m Bool
+verifyCheck :: (MonadIO m, MonadConfig AuthConfig m) => Valid Phone -> AuthCode -> m Bool
 verifyCheck (Valid p) (AuthCode c) = do
   key <- configs apiKey
   env <- clientEnv

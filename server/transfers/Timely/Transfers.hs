@@ -16,6 +16,7 @@ import           Data.Model.Guid           (Guid)
 import           Data.Model.Id             (Token)
 import           Data.Model.Money          (Money)
 import           Data.Model.Valid          (Valid)
+import           Data.Model.Types          (SSN, Address)
 import           Data.Time.Clock           (UTCTime)
 import qualified Data.Time.Clock           as Time
 import           Data.Typeable             (Typeable)
@@ -23,7 +24,7 @@ import           Database.Selda            hiding (insert, query, tryCreateTable
 import           GHC.Generics              (Generic)
 import           Network.Dwolla            (FundingSource, Id)
 import           Network.Plaid.Dwolla      (Dwolla)
-import           Timely.AccountStore.Types (Account, SSN)
+import           Timely.AccountStore.Types (Account)
 
 import           Timely.Advances           (Advance (..))
 
@@ -50,11 +51,7 @@ data AccountInfo = AccountInfo
   , firstName   :: Text
   , lastName    :: Text
   , email       :: Text
-  , address1    :: Text
-  , address2    :: Maybe Text
-  , city        :: Text
-  , state       :: Text
-  , postalCode  :: Text
+  , address     :: Address
   , dateOfBirth :: Day
   , ssn         :: Valid SSN
   , plaidToken  :: Token Dwolla

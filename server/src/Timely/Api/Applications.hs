@@ -12,12 +12,13 @@ import           Control.Monad.Except            (MonadError (..))
 import           Control.Monad.Log               as Log
 import           Control.Monad.Service           (Service (..))
 import           Data.Model.Guid                 as Guid
+import           Data.Model.Types                (Phone, Valid)
 import           Data.String.Conversions         (cs)
 import           Network.AMQP.Worker.Monad       as Worker
 import           Servant                         (ServantErr)
 import           Servant.Auth.Server             (CookieSettings, JWTSettings)
 import           Timely.AccountStore.Application as Application
-import           Timely.AccountStore.Types       (Account, Application (..), Phone)
+import           Timely.AccountStore.Types       (Account, Application (..))
 import           Timely.Api.Sessions             as Sessions
 import           Timely.Api.Types                (AccountInfo (..))
 import           Timely.Events                   as Events
@@ -31,7 +32,7 @@ newApplication
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
      , MonadLog m
-     ) => Phone -> AccountInfo -> m (SetSession Application)
+     ) => Valid Phone -> AccountInfo -> m (SetSession Application)
 newApplication phone info = do
     -- create an application
     accountId <- Guid.randomId
@@ -53,7 +54,7 @@ newApplication phone info = do
 
 
 
-fromAccountInfo :: Guid Account -> Phone -> AccountInfo -> Application
+fromAccountInfo :: Guid Account -> Valid Phone -> AccountInfo -> Application
 fromAccountInfo i phone AccountInfo { email, ssn, dateOfBirth, publicBankToken } =
   Application
     { accountId = i, phone, email, ssn, dateOfBirth, publicBankToken }

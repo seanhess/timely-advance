@@ -9,6 +9,7 @@ import           Data.Model.Guid           (Guid)
 import           Data.Model.Id             (Id (..), Token (..))
 import           Data.Model.Money          as Money
 import           Data.Model.Valid          as Valid
+import           Data.Model.Types          (Phone, SSN)
 import           Data.Text                 as Text
 import           Data.Typeable             (Typeable)
 import           Database.Selda            as Selda
@@ -23,7 +24,7 @@ import           Timely.Underwriting.Types (DenialReason)
 -- aggregate all account information
 data Account = Account
     { accountId :: Guid Account
-    , phone     :: Phone
+    , phone     :: Valid Phone
     , customer  :: Customer
     , bankToken :: Private (Token Access)
     , credit    :: Money
@@ -34,7 +35,7 @@ data Account = Account
 
 data AccountRow = AccountRow
     { accountId :: Guid Account
-    , phone     :: Phone
+    , phone     :: Valid Phone
     , bankToken :: Private (Token Access)
     , credit    :: Money
     } deriving (Generic, Eq, Show)
@@ -55,24 +56,6 @@ data Customer = Customer
 
 instance SqlRow Customer
 
-
--- only digits
-data SSN
-
-instance Validate SSN where
-  validate t
-    | Valid.isDigits t && Valid.isLength 9 t = Just $ Valid t
-    | otherwise = Nothing
-
-
-data PhoneNumber
-type Phone = Valid PhoneNumber
-
-
-instance Validate PhoneNumber where
-  validate t
-    | Valid.isDigits t && Valid.isLength 10 t = Just $ Valid t
-    | otherwise = Nothing
 
 
 
@@ -106,7 +89,7 @@ instance SqlRow BankAccount
 -- Can we have more than one application per phone number? NO
 data Application = Application
     { accountId       :: Guid Account
-    , phone           :: Phone
+    , phone           :: Valid Phone
     , email           :: Text
     , ssn             :: Valid SSN
     , dateOfBirth     :: Day
