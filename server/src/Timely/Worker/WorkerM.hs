@@ -35,6 +35,7 @@ import qualified Network.Plaid             as Plaid
 import qualified Timely.Bank               as Bank
 import           Timely.Config             (Env (..), loadEnv)
 import qualified Timely.Notify             as Notify
+import qualified Timely.Transfers          as Transfers
 
 data AppState = AppState
   { dbConn   :: Pool SeldaConnection
@@ -61,6 +62,9 @@ instance Selda WorkerM where
 instance MonadWorker WorkerM where
   amqpConnection = asks amqpConn
 
+instance MonadWorker HandlerM where
+  amqpConnection = asks amqpConn
+
 instance MonadConfig Bank.Config HandlerM where
   config = do
     c <- asks plaid
@@ -77,6 +81,15 @@ instance MonadConfig Dwolla.Credentials HandlerM where
     config = do
       e <- asks env
       pure $ Dwolla.Credentials (dwollaClientId e) (dwollaSecret e)
+
+instance MonadConfig Transfers.Config HandlerM where
+    config = do
+      dwolla <- config
+      mgr <- asks manager
+      base <- asks (dwollaBaseUrl . env)
+      auth <- asks (dwollaAuthBaseUrl . env)
+      src <- asks (dwollaFundingSource . env)
+      pure $ Transfers.Config mgr base auth dwolla src
 
 
 loadState :: (MonadIO m, MonadMask m) => m AppState

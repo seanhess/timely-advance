@@ -94,8 +94,7 @@ handler app = do
         run $ Account.CreateAccount $ Account.account aid phn cust tok amt health transId
 
         -- save the bank accounts
-        -- liftIO $ putStrLn " ----- Banks----------------------- "
-        -- liftIO $ print bankAccounts
+        -- TODO make it impossible to forget this and the health...
         run $ Account.SetBankAccounts aid bankAccounts
         Log.info "done"
 

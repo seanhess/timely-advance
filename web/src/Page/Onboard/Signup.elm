@@ -7,10 +7,11 @@ import Element.Font as Font
 import Element.Input as Input
 import Html.Attributes as Html
 import Http
+import Iso8601
 import Json.Encode as Encode
 import Platform.Updates exposing (Updates, command, set, updates)
 import Route
-import Timely.Api as Api exposing (AccountInfo, Application, Auth, AuthCode, Bank, Id(..), Phone, Session, Token, idValue)
+import Timely.Api as Api exposing (AccountInfo, Application, Auth, AuthCode, Bank, Id(..), Phone, SSN, Session, Token, Valid(..), idValue)
 import Timely.Components exposing (loadingButton)
 import Timely.Style as Style
 
@@ -27,6 +28,8 @@ port plaidLinkDone : (String -> msg) -> Sub msg
 type alias Model =
     { email : String
     , phone : Phone
+    , dob : String
+    , ssn : String
     , code : Token AuthCode
     , plaidToken : Token Bank
     , key : Nav.Key
@@ -56,6 +59,8 @@ type Status
 type Msg
     = EditPhone String
     | EditEmail String
+    | EditDob String
+    | EditSSN String
     | SubmitForm
     | EditCode String
     | SubmitCode
@@ -71,6 +76,8 @@ init : Nav.Key -> Mode -> Model
 init key mode =
     { phone = Id ""
     , email = ""
+    , ssn = ""
+    , dob = ""
     , code = Id ""
     , plaidToken = Id ""
     , step = EditingForm
@@ -93,6 +100,8 @@ update msg model =
     let
         newApplication token =
             { email = model.email
+            , ssn = Valid model.ssn
+            , dateOfBirth = model.dob
             , publicBankToken = token
             }
     in
@@ -103,6 +112,12 @@ update msg model =
 
         EditEmail s ->
             updates { model | email = s }
+
+        EditSSN s ->
+            updates { model | ssn = s }
+
+        EditDob d ->
+            updates { model | dob = d }
 
         SubmitForm ->
             updates { model | status = Loading }
@@ -143,6 +158,7 @@ update msg model =
             updates model
 
         PlaidDone token ->
+            -- TODO validation
             updates { model | plaidToken = Id token }
                 |> command (Api.postApplications CompletedSignup <| newApplication (Id token))
 
@@ -178,6 +194,8 @@ viewSignupForm model =
         [ el Style.header (text "Sign up for Timely")
         , viewEmailInput model
         , viewPhoneInput model
+        , viewSSNInput model
+        , viewDobInput model
         , Input.button Style.button
             { onPress = Just SubmitForm
             , label = Element.text "Sign up"
@@ -216,6 +234,26 @@ viewEmailInput model =
         , placeholder = Nothing
         , onChange = EditEmail
         , label = label "Email"
+        }
+
+
+viewSSNInput : Model -> Element Msg
+viewSSNInput model =
+    Input.text []
+        { text = model.ssn
+        , placeholder = Nothing
+        , onChange = EditSSN
+        , label = label "SSN"
+        }
+
+
+viewDobInput : Model -> Element Msg
+viewDobInput model =
+    Input.text []
+        { text = model.dob
+        , placeholder = Nothing
+        , onChange = EditDob
+        , label = label "Date of Birth"
         }
 
 

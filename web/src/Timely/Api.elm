@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money, Phone, Session, Token, advanceIsActive, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeAmount, encodeId, expectId, formatDate, formatDollars, formatMoney, fromDollars, getAccount, getAccountBanks, getAdvance, getAdvances, getApplicationResult, idValue, postAdvanceAccept, postApplications, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, timezone, usedCredit)
+module Timely.Api exposing (Account, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money, Phone, SSN, Session, Token, Valid(..), advanceIsActive, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeAmount, encodeId, expectId, formatDate, formatDollars, formatMoney, fromDollars, getAccount, getAccountBanks, getAdvance, getAdvances, getApplicationResult, idValue, postAdvanceAccept, postApplications, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, timezone, usedCredit)
 
 import Http exposing (Error, Expect)
 import Iso8601
@@ -35,8 +35,8 @@ type alias AccountHealth =
 
 type alias AccountInfo =
     { email : String
-    , ssn : Digits SSN
-    , dateOfBirth : Time.Posix
+    , ssn : Valid SSN
+    , dateOfBirth : String
     , publicBankToken : Id Bank
     }
 
@@ -73,7 +73,7 @@ type alias Customer =
     , middleName : Maybe String
     , lastName : String
     , email : String
-    , ssn : Digits SSN
+    , ssn : Valid SSN
     , dateOfBirth : Time.Posix
     }
 
@@ -82,8 +82,8 @@ type SSN
     = SSN
 
 
-type Digits a
-    = Digits String
+type Valid a
+    = Valid String
 
 
 type ApprovalResult
@@ -126,8 +126,8 @@ encodeAccountInfo : AccountInfo -> Encode.Value
 encodeAccountInfo x =
     Encode.object
         [ ( "email", Encode.string x.email )
-        , ( "ssn", encodeDigits x.ssn )
-        , ( "dateOfBirth", Iso8601.encode x.dateOfBirth )
+        , ( "ssn", encodeValid x.ssn )
+        , ( "dateOfBirth", Encode.string x.dateOfBirth )
         , ( "publicBankToken", encodeId x.publicBankToken )
         ]
 
@@ -163,8 +163,8 @@ decodeAccountInfo : Decoder AccountInfo
 decodeAccountInfo =
     Decode.succeed AccountInfo
         |> required "email" string
-        |> required "ssn" decodeDigits
-        |> required "dateOfBirth" Iso8601.decoder
+        |> required "ssn" decodeValid
+        |> required "dateOfBirth" string
         |> required "publicBankToken" decodeId
 
 
@@ -202,7 +202,7 @@ decodeCustomer =
         |> required "middleName" (nullable string)
         |> required "lastName" string
         |> required "email" string
-        |> required "ssn" decodeDigits
+        |> required "ssn" decodeValid
         |> required "dateOfBirth" Iso8601.decoder
 
 
@@ -252,13 +252,13 @@ encodeMoney =
     Encode.int
 
 
-decodeDigits : Decoder (Digits a)
-decodeDigits =
-    Decode.map Digits string
+decodeValid : Decoder (Valid a)
+decodeValid =
+    Decode.map Valid string
 
 
-encodeDigits : Digits a -> Encode.Value
-encodeDigits (Digits t) =
+encodeValid : Valid a -> Encode.Value
+encodeValid (Valid t) =
     Encode.string t
 
 

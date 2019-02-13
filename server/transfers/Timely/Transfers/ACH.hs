@@ -15,7 +15,7 @@ import           Network.Dwolla            (Credentials, Customer (..), DwollaEr
 import qualified Network.Dwolla            as Dwolla
 import qualified Network.Dwolla.Types      as Dwolla
 import           Network.HTTP.Client       (Manager)
-import           Servant.Client            (BaseUrl, ClientEnv, ClientM, mkClientEnv, runClientM)
+import           Servant.Client            (BaseUrl, ClientM, mkClientEnv, runClientM)
 import           Timely.Transfers.Types
 
 
@@ -24,8 +24,8 @@ import           Timely.Transfers.Types
 initAccount :: (MonadThrow m, MonadIO m, MonadConfig Config m) => AccountInfo -> m (Id FundingSource)
 initAccount account = do
   creds <- configs credentials
+  tok    <- runDwollaAuth $ Dwolla.authenticate creds
   fundId <- runDwolla $ do
-    tok    <- Dwolla.authenticate creds
     custId <- Dwolla.createCustomer tok (customer account)
     fundId <- Dwolla.createFundingSource tok custId (fundingSource account)
     pure $ fundId
@@ -62,9 +62,8 @@ transferMoney :: (MonadThrow m, MonadConfig Config m, MonadIO m) => Id FundingSo
 transferMoney src dest t = do
   url    <- configs baseUrl
   creds  <- configs credentials
-  runDwolla $ do
-    tok <- Dwolla.authenticate creds
-    Dwolla.transfer tok (Dwolla.fundingSource url src) (Dwolla.fundingSource url dest) (toAmount t)
+  tok <- runDwollaAuth $ Dwolla.authenticate creds
+  runDwolla $ Dwolla.transfer tok (Dwolla.fundingSource url src) (Dwolla.fundingSource url dest) (toAmount t)
 
 
 
@@ -101,24 +100,29 @@ toAmount t = Amount $ Money.toFloat $ amount (t :: Transfer a)
 data Config = Config
     { manager     :: Manager
     , baseUrl     :: BaseUrl
+    , baseUrlAuth :: BaseUrl
     , credentials :: Credentials
     , source      :: Id FundingSource
     }
 
 
+runDwollaAuth :: (MonadThrow m, MonadIO m, MonadConfig Config m) => ClientM a -> m a
+runDwollaAuth req = do
+    url <- configs baseUrlAuth
+    runDwollaClient url req
+
+
 runDwolla :: (MonadThrow m, MonadIO m, MonadConfig Config m) => ClientM a -> m a
 runDwolla req = do
-    env <- clientEnv
+    url <- configs baseUrl
+    runDwollaClient url req
+
+
+runDwollaClient :: (MonadThrow m, MonadIO m, MonadConfig Config m) => BaseUrl -> ClientM a -> m a
+runDwollaClient url req = do
+    mgr <- configs manager
+    let env = mkClientEnv mgr url
     res <- liftIO $ runClientM req env
     case res of
       Left err -> throwM $ DwollaApiError err
       Right a  -> pure a
-
-
-clientEnv :: MonadConfig Config m => m ClientEnv
-clientEnv = do
-    mgr <- configs manager
-    url <- configs baseUrl
-    pure $ mkClientEnv mgr url
-
-
