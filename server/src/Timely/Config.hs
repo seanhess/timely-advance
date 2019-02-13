@@ -7,8 +7,8 @@ module Timely.Config where
 import           Control.Monad.IO.Class  (MonadIO, liftIO)
 import           Data.ByteString         (ByteString)
 import qualified Data.Maybe              as Maybe
-import           Data.Model.Digits       as Digits
 import           Data.Model.Id           (Id (..), Token (..))
+import           Data.Model.Valid        as Valid
 import           Data.String.Conversions (cs)
 import           Data.Text               (Text)
 import qualified Data.Text               as Text
@@ -24,7 +24,7 @@ import           Servant.Client          (BaseUrl (..), Scheme (Https))
 import qualified Servant.Client          as Servant
 import           System.Envy             (DefConfig (..), FromEnv, Var (..))
 import qualified System.Envy             as Envy
-import           Timely.Auth             (Phone, phone)
+import           Timely.AccountStore.Types (Phone)
 import           Timely.Types.Config     (PlaidProducts (..))
 import           Timely.Types.Session    (Admin)
 import qualified Twilio                  as Twilio
@@ -72,7 +72,7 @@ instance DefConfig Env where
     , authyBaseUrl      = BaseUrl Https "api.authy.com" 443 ""
     , twilioAccountId   = Twilio.AccountSID "ACea89d7047fbce75c97607b517303f27a"
     , twilioAuthToken   = Maybe.fromJust $ Twilio.parseAuthToken "01aadd9eee8a895d9f410b5e807334ee"
-    , twilioFromPhone   = Digits "5413940563"
+    , twilioFromPhone   = Valid "5413940563"
     , endpoint          = BaseUrl Https "app.timelyadvance.com" 443 ""
     , sessionSecret     = "cQfTjWnZr4u7x!A%D*G-KaNdRgUkXp2s"
     , adminPassphrase   = Token "rapidly scotland horses stuff"
@@ -93,9 +93,9 @@ instance Typeable a => Var (Token a) where
   toVar (Token x) = cs x
   fromVar x = Just $ Token $ cs x
 
-instance Var Phone where
-  toVar (Digits x) = cs x
-  fromVar x = phone $ cs x
+instance (Typeable a, Validate a) => Var (Valid a) where
+  toVar (Valid x) = cs x
+  fromVar x = validate $ cs x
 
 instance Var Twilio.AccountSID where
   toVar x = cs $ Twilio.getSID x

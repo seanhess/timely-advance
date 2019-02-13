@@ -6,8 +6,7 @@ import           Data.Model.Guid           (Guid)
 import           GHC.Generics              (Generic)
 import           Servant.Auth.Server       (FromJWT, ToJWT)
 
-import           Timely.AccountStore.Types (Account)
-import           Timely.Auth               (Phone)
+import           Timely.AccountStore.Types (Account, Phone)
 
 
 

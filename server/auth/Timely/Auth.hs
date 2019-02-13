@@ -14,10 +14,8 @@ import           Control.Monad.Except   (MonadError)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Control.Monad.Service  (Service (..))
 import           Data.Aeson             (FromJSON, ToJSON)
-import qualified Data.Char              as Char
-import           Data.Model.Digits      (Digits(..))
+import           Data.Model.Valid       (Valid (..))
 import           Data.Text              (Text)
-import qualified Data.Text              as Text
 import           GHC.Generics           (Generic)
 import           Network.HTTP.Client    (Manager)
 import           Network.HTTP.Types     (status401)
@@ -25,9 +23,9 @@ import           Servant
 import           Servant.Auth.Server
 import           Servant.Client         (BaseUrl, ClientEnv, ClientM, GenResponse (..), ServantError (..), mkClientEnv,
                                          runClientM)
-
 import           Network.Authy          (AuthyApiKey)
 import qualified Network.Authy          as Authy
+import Timely.AccountStore.Types (Phone)
 
 -- Roles
 -- 1. Generate SMS codes
@@ -38,18 +36,6 @@ import qualified Network.Authy          as Authy
 -- TODO properly parse phones
 
 
-data PhoneNumber
-type Phone = Digits PhoneNumber
-
-
--- should be exactly 10 digits
-phone :: Text -> Maybe Phone
-phone t
-  | isDigits t && isLength 10 t = Just $ Digits t
-  | otherwise = Nothing
-  where
-    isDigits = Text.all Char.isDigit
-    isLength n t = Text.length t == n
 
 
 newtype AuthCode = AuthCode Text
@@ -80,14 +66,14 @@ data AuthConfig = AuthConfig
 
 
 verifyStart :: (MonadIO m, MonadConfig AuthConfig m) => Phone -> m ()
-verifyStart (Digits p) = do
+verifyStart (Valid p) = do
   key <- configs apiKey
   _ <- runAuthy (Authy.reqVerifyStart key p)
   pure ()
 
 
 verifyCheck :: (MonadIO m, MonadConfig AuthConfig m) => Phone -> AuthCode -> m Bool
-verifyCheck (Digits p) (AuthCode c) = do
+verifyCheck (Valid p) (AuthCode c) = do
   key <- configs apiKey
   env <- clientEnv
   res <- liftIO $ runClientM (Authy.reqVerifyCheck key p c) env

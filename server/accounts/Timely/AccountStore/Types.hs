@@ -5,18 +5,14 @@
 module Timely.AccountStore.Types where
 
 
-import           Data.Aeson                (FromJSON, ToJSON)
-import           Data.Char                 as Char
-import           Data.Proxy                (Proxy (..))
+import           Data.Model.Guid           (Guid)
+import           Data.Model.Id             (Id (..), Token (..))
+import           Data.Model.Money          as Money
+import           Data.Model.Valid          as Valid
 import           Data.Text                 as Text
 import           Data.Typeable             (Typeable)
 import           Database.Selda            as Selda
-import           Database.Selda.SqlType    (Lit (..))
 import           GHC.Generics              (Generic)
-import           Data.Model.Guid           (Guid)
-import           Data.Model.Money          as Money
-import           Data.Model.Id             (Token(..), Id(..))
-import           Timely.Auth               (Phone)
 import           Timely.Bank               (Access, Public)
 import qualified Timely.Bank               as Bank
 import           Timely.Types.Private
@@ -53,7 +49,7 @@ data Customer = Customer
     , middleName  :: Maybe Text
     , lastName    :: Text
     , email       :: Text
-    , ssn         :: Digits SSN
+    , ssn         :: Valid SSN
     , dateOfBirth :: Day
     } deriving (Generic, Eq, Show)
 
@@ -62,18 +58,23 @@ instance SqlRow Customer
 
 -- only digits
 data SSN
-newtype Digits a = Digits Text
-  deriving (Show, Eq, Generic, ToJSON, FromJSON)
+
+instance Validate SSN where
+  validate t
+    | Valid.isDigits t && Valid.isLength 9 t = Just $ Valid t
+    | otherwise = Nothing
 
 
-digits :: Text -> Digits a
-digits = Digits . Text.filter Char.isDigit
+data PhoneNumber
+type Phone = Valid PhoneNumber
 
-instance Typeable t => SqlType (Digits t) where
-    mkLit (Digits t) =  LCustom $ mkLit t
-    sqlType _ = sqlType (Proxy :: Proxy Text)
-    fromSql v = Digits $ fromSql v
-    defaultValue = LCustom (defaultValue :: Lit Text)
+
+instance Validate PhoneNumber where
+  validate t
+    | Valid.isDigits t && Valid.isLength 10 t = Just $ Valid t
+    | otherwise = Nothing
+
+
 
 
 data BankAccountType
@@ -107,7 +108,7 @@ data Application = Application
     { accountId       :: Guid Account
     , phone           :: Phone
     , email           :: Text
-    , ssn             :: Digits SSN
+    , ssn             :: Valid SSN
     , dateOfBirth     :: Day
     , publicBankToken :: Token Public
     } deriving (Generic, Show)

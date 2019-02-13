@@ -11,7 +11,7 @@ import           Control.Monad.IO.Class      (MonadIO, liftIO)
 import           Control.Monad.Service       (Service (..))
 import           Crypto.JOSE.JWK             (JWK)
 import           Data.ByteString             (ByteString)
-import           Data.Model.Digits           as Digits
+import           Data.Model.Valid            as Valid
 import           Data.Model.Guid             as Guid
 import           Data.Model.Id               (Token (..))
 import           Servant                     (Header, Headers, NoContent (..), ServantErr, err401)
@@ -20,8 +20,8 @@ import           Servant.Auth.Server         (AuthResult (..), CookieSettings (.
 import qualified Servant.Auth.Server         as Servant
 
 import qualified Timely.AccountStore.Account as Account
-import           Timely.AccountStore.Types   (Account)
-import           Timely.Auth                 (AuthCode, AuthConfig, Phone)
+import           Timely.AccountStore.Types   (Account, Phone)
+import           Timely.Auth                 (AuthCode, AuthConfig)
 import qualified Timely.Auth                 as Auth
 import           Timely.Types.Session        (Admin, Session (..))
 
@@ -62,7 +62,7 @@ authAdmin
 authAdmin check = do
   liftIO $ print ("HI", check)
   good <- config
-  let session = Session (Digits "8012223333") Nothing True
+  let session = Session (Valid "8012223333") Nothing True
   if check == good
      then setSession session session
      else throwError err401

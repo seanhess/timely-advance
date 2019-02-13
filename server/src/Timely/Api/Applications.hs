@@ -17,10 +17,9 @@ import           Network.AMQP.Worker.Monad       as Worker
 import           Servant                         (ServantErr)
 import           Servant.Auth.Server             (CookieSettings, JWTSettings)
 import           Timely.AccountStore.Application as Application
-import           Timely.AccountStore.Types       (Account, Application (..))
+import           Timely.AccountStore.Types       (Account, Application (..), Phone)
 import           Timely.Api.Sessions             as Sessions
 import           Timely.Api.Types                (AccountInfo (..))
-import           Timely.Auth                     (Phone)
 import           Timely.Events                   as Events
 import           Timely.Types.Session            (Session (..))
 

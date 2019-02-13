@@ -16,7 +16,6 @@ import           Data.Model.Money
 import           Database.Selda            hiding (deleteFrom, insert, query, tryCreateTable)
 
 import           Timely.AccountStore.Types
-import           Timely.Auth               (Phone)
 import           Timely.Bank               (Access, Token)
 import           Timely.Evaluate.Types     (Projection (..))
 import           Timely.Types.Private
