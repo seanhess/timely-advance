@@ -8,14 +8,15 @@ module Timely.AccountStore.Types where
 import           Data.Model.Guid           (Guid)
 import           Data.Model.Id             (Id (..), Token (..))
 import           Data.Model.Money          as Money
+import           Data.Model.Types          (Phone, SSN, State, PostalCode)
 import           Data.Model.Valid          as Valid
-import           Data.Model.Types          (Phone, SSN)
 import           Data.Text                 as Text
 import           Data.Typeable             (Typeable)
 import           Database.Selda            as Selda
 import           GHC.Generics              (Generic)
 import           Timely.Bank               (Access, Public)
 import qualified Timely.Bank               as Bank
+import           Timely.Transfers.Account  (TransferAccount)
 import           Timely.Types.Private
 import           Timely.Underwriting.Types (DenialReason)
 
@@ -26,6 +27,7 @@ data Account = Account
     { accountId :: Guid Account
     , phone     :: Valid Phone
     , customer  :: Customer
+    , transferId :: Id TransferAccount
     , bankToken :: Private (Token Access)
     , credit    :: Money
     , health    :: Health
@@ -34,10 +36,11 @@ data Account = Account
 
 
 data AccountRow = AccountRow
-    { accountId :: Guid Account
-    , phone     :: Valid Phone
-    , bankToken :: Private (Token Access)
-    , credit    :: Money
+    { accountId  :: Guid Account
+    , phone      :: Valid Phone
+    , transferId :: Id TransferAccount
+    , bankToken  :: Private (Token Access)
+    , credit     :: Money
     } deriving (Generic, Eq, Show)
 
 instance SqlRow AccountRow
@@ -52,6 +55,11 @@ data Customer = Customer
     , email       :: Text
     , ssn         :: Valid SSN
     , dateOfBirth :: Day
+    , street1    :: Text
+    , street2    :: Maybe Text
+    , city        :: Text
+    , state       :: Valid State
+    , postalCode  :: Valid PostalCode
     } deriving (Generic, Eq, Show)
 
 instance SqlRow Customer

@@ -128,7 +128,7 @@ offerAdvance account amount today = do
         frequency    = Paydate.frequency transactions
         nextPayday   = Paydate.next frequency today
         due          = nextPayday
-    advance <- run $ Advances.Create id amount due
+    advance <- run $ Advances.Create id (Account.transferId account) amount due
     run $ Notify.Send account (Notify.Message (Advances.advanceId advance) Notify.Advance message)
     pure advance
   where

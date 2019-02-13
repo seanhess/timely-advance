@@ -1,9 +1,10 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE OverloadedLabels      #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 module Timely.AccountStore.Account (AccountStore(..), initialize, account) where
 
@@ -12,14 +13,16 @@ import           Control.Monad.Selda       (Selda, deleteFrom, insert, query, tr
 import           Control.Monad.Service     (Service (..))
 import           Data.Maybe                (listToMaybe)
 import           Data.Model.Guid
+import           Data.Model.Id             (Id)
 import           Data.Model.Money
-import           Data.Model.Valid          (Valid)
 import           Data.Model.Types          (Phone)
+import           Data.Model.Valid          (Valid)
 import           Database.Selda            hiding (deleteFrom, insert, query, tryCreateTable)
 
 import           Timely.AccountStore.Types
 import           Timely.Bank               (Access, Token)
 import           Timely.Evaluate.Types     (Projection (..))
+import           Timely.Transfers.Account  (TransferAccount)
 import           Timely.Types.Private
 
 
@@ -85,7 +88,15 @@ getAccount i = do
       pure (a :*: c :*: h)
     pure $ account <$> listToMaybe as
   where
-    account (AccountRow {..} :*: customer :*: health) = Account {..}
+    account (AccountRow {accountId, phone, transferId, bankToken, credit} :*: customer :*: health) =
+      Account
+        { accountId
+        , phone
+        , customer
+        , transferId
+        , bankToken
+        , credit
+        , health}
 
 
 getAccountIdByPhone :: Selda m => Valid Phone -> m (Maybe (Guid Account))
@@ -109,10 +120,9 @@ getBankAccounts i =
 
 
 setHealth :: Selda m => Guid Account -> Projection -> m ()
-setHealth i Projection {..} = do
-    let accountId = i
+setHealth i Projection {expenses, available} = do
     deleteFrom healths (\h -> h ! #accountId .== literal i)
-    insert healths [Health {..}]
+    insert healths [Health {accountId = i, expenses, available}]
     pure ()
 
 
@@ -125,14 +135,21 @@ createAccount acc = do
     pure ()
 
 
-account :: Guid Account -> Valid Phone -> Customer -> Token Access -> Money -> Projection -> Account
-account accountId phone customer tok credit Projection {..} = Account {..}
-  where bankToken = Private tok
-        health = Health {..}
+account :: Guid Account -> Valid Phone -> Customer -> Token Access -> Money -> Projection -> Id TransferAccount -> Account
+account accountId phone customer tok credit Projection {expenses, available} transferId =
+  Account
+    { accountId
+    , phone
+    , customer
+    , transferId
+    , bankToken = Private tok
+    , credit
+    , health = Health { accountId, expenses, available }
+    }
 
 
 accountRow :: Account -> AccountRow
-accountRow Account {..} = AccountRow {..}
+accountRow Account { accountId, phone, transferId, bankToken, credit } = AccountRow { accountId, phone, transferId, bankToken, credit }
 
 
 

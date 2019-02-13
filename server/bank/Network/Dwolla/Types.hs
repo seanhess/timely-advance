@@ -32,6 +32,9 @@ instance forall s. KnownSymbol s => ToHttpApiData (Static s) where
 newtype Last4SSN = Last4SSN Text
   deriving (Show, Eq, Generic, ToJSON)
 
+last4SSN :: Text -> Last4SSN
+last4SSN t = Last4SSN $ Text.takeEnd 4 t
+
 newtype PhoneDigits = PhoneDigits Text
   deriving (Show, Eq, Generic, ToJSON)
 

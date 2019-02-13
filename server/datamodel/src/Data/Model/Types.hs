@@ -59,8 +59,8 @@ instance Validate PostalCode where
 
 
 data Address = Address
-  { address1   :: Text
-  , address2   :: Maybe Text
+  { street1    :: Text
+  , street2    :: Maybe Text
   , city       :: Text
   , state      :: Valid State
   , postalCode :: Valid PostalCode

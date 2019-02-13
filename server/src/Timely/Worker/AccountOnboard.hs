@@ -14,6 +14,8 @@ import qualified Control.Monad.Log               as Log
 import           Control.Monad.Service           (Service (run))
 import qualified Data.List                       as List
 import qualified Data.Model.Guid                 as Guid
+import           Data.Model.Types                (Address (..))
+import           Data.Model.Id                   (Token)
 import           Data.Text                       as Text
 import qualified Database.Selda                  as Selda
 import           Network.AMQP.Worker             (Queue)
@@ -22,12 +24,14 @@ import           Timely.AccountStore.Account     (AccountStore)
 import qualified Timely.AccountStore.Account     as Account
 import           Timely.AccountStore.Application (ApplicationStore)
 import qualified Timely.AccountStore.Application as Application
-import           Timely.AccountStore.Types       (Application (..), BankAccount (balance), Customer (..), isChecking,
+import           Timely.AccountStore.Types       (Application (..), BankAccount (balance, bankAccountId), Customer (..), isChecking,
                                                   toBankAccount)
-import           Timely.Bank                     (Banks, Identity (..))
+import           Timely.Bank                     (Banks, Identity (..), Dwolla, Names(..))
 import qualified Timely.Bank                     as Bank
 import qualified Timely.Evaluate.AccountHealth   as AccountHealth
 import qualified Timely.Events                   as Events
+import           Timely.Transfers                (AccountInfo (..), Transfers)
+import qualified Timely.Transfers                as Transfers
 import           Timely.Underwriting             as Underwriting (Approval (..), Result (..), Underwriting (..))
 
 
@@ -44,6 +48,7 @@ handler
      , Service m AccountStore
      , Service m Underwriting
      , Service m ApplicationStore
+     , Service m Transfers
      , MonadThrow m
      , MonadLog m
      )
@@ -79,11 +84,14 @@ handler app = do
         banks <- run $ Bank.LoadAccounts tok
         let bankAccounts = List.map (toBankAccount aid) banks
         checking <- require MissingChecking $ List.find isChecking bankAccounts
-        -- Log.debug ("checking", checking)
+
+        -- initialize the transfers account
+        achTok <- run $ Bank.GetACH tok (bankAccountId checking)
+        transId <- run $ Transfers.CreateAccount $ toTransferAccountInfo achTok cust
 
         -- TODO the transactions might not be available until the webhook triggers - maybe it makes more sense to have the health in a pending state. Or just. We're good!
         let health = AccountHealth.analyze (balance checking)
-        run $ Account.CreateAccount $ Account.account aid phn cust tok amt health
+        run $ Account.CreateAccount $ Account.account aid phn cust tok amt health transId
 
         -- save the bank accounts
         -- liftIO $ putStrLn " ----- Banks----------------------- "
@@ -98,19 +106,26 @@ handler app = do
 
 
 toNewCustomer :: Application -> Identity -> Customer
-toNewCustomer Application {accountId, email, dateOfBirth, ssn} Identity {firstName, middleName, lastName} =
-    Customer
-      { accountId , email, id = Selda.def
-      , firstName , middleName , lastName
+toNewCustomer Application {accountId, email, dateOfBirth, ssn} Identity {names, address} =
+  let Address {street1, street2, city, state, postalCode } = address
+      Names {firstName, middleName, lastName} = names
+  in Customer
+      { accountId, email, id = Selda.def
+      , firstName, middleName, lastName
       , ssn, dateOfBirth
+      , street1, street2, city, state, postalCode
       }
 
-    -- { accountId       :: Guid Account
-    -- , phone           :: Phone
-    -- , email           :: Text
-    -- , publicBankToken :: Token Public
 
-
+toTransferAccountInfo :: Token Dwolla -> Customer -> Transfers.AccountInfo
+toTransferAccountInfo processorToken Customer { accountId, firstName, lastName, email, dateOfBirth, ssn, street1, street2, city, state, postalCode } =
+  AccountInfo
+    { accountId, email
+    , firstName, lastName
+    , dateOfBirth, ssn
+    , processorToken
+    , address = Address { street1, street2, city, state, postalCode }
+    }
 
 
 

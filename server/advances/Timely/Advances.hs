@@ -14,6 +14,7 @@ import           Data.Aeson                (FromJSON, ToJSON)
 import qualified Data.List                 as List
 import qualified Data.Maybe                as Maybe
 import           Data.Model.Guid           as Guid
+import           Data.Model.Id             (Id)
 import           Data.Model.Money          as Money
 import           Data.Ord                  (Down (..), comparing)
 import           Data.Time.Calendar        (Day)
@@ -21,17 +22,19 @@ import qualified Data.Time.Clock           as Time
 import           Database.Selda            hiding (insert, query, tryCreateTable, update_)
 import           GHC.Generics              (Generic)
 import           Timely.AccountStore.Types (Account)
+import           Timely.Transfers.Account  (TransferAccount)
 
 
 data Advance = Advance
-    { advanceId :: Guid Advance
-    , accountId :: Guid Account
-    , offer     :: Money
-    , amount    :: Money
-    , due       :: Day
-    , offered   :: UTCTime
-    , activated :: Maybe UTCTime
-    , collected :: Maybe UTCTime
+    { advanceId  :: Guid Advance
+    , accountId  :: Guid Account
+    , transferId :: Id TransferAccount
+    , offer      :: Money
+    , amount     :: Money
+    , due        :: Day
+    , offered    :: UTCTime
+    , activated  :: Maybe UTCTime
+    , collected  :: Maybe UTCTime
     } deriving (Show, Eq, Generic)
 
 instance SqlRow Advance
@@ -46,7 +49,7 @@ instance FromJSON Advance
 
 
 data Advances a where
-    Create        :: Guid Account -> Money -> Day -> Advances Advance
+    Create        :: Guid Account -> Id TransferAccount -> Money -> Day -> Advances Advance
 
     FindOffer     :: Guid Account -> Advances (Maybe Advance)
     FindActive    :: Guid Account -> Advances [Advance]
@@ -59,7 +62,7 @@ data Advances a where
 
 
 instance Selda m => Service m Advances where
-    run (Create i a d)       = create i a d
+    run (Create i ti a d)       = create i ti a d
     run (FindOffer i)        = findOffer <$> findAdvances i
     run (FindActive i)       = findActive <$> findAdvances i
     run (FindAll i)          = findAdvances i
@@ -75,13 +78,14 @@ advances =
       [ #advanceId :- primary ]
 
 
-create :: Selda m => Guid Account -> Money -> Day -> m Advance
-create i a d = do
+create :: Selda m => Guid Account -> Id TransferAccount -> Money -> Day -> m Advance
+create i tid a d = do
     time <- liftIO $ Time.getCurrentTime
     id <- Guid.randomId
     let advance = Advance
                     { advanceId = id
                     , accountId = i
+                    , transferId = tid
                     , offer = a
                     , amount = Money.fromFloat 0
                     , due = d

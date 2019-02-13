@@ -59,7 +59,7 @@ handler
 handler advance = do
   Log.context (Guid.toText $ advanceId advance)
 
-  t <- run $ Transfers.Debit advance
+  t <- Transfers.debit advance
   Log.debug ("transfer", t)
   run $ Advances.MarkCollected (advanceId advance)
   Log.info "collected"

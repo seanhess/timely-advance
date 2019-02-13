@@ -26,6 +26,8 @@ module Network.Dwolla
   , Client, Secret
   , AuthToken(..)
   , Amount(..)
+  , DwollaError(..)
+  , Transfer
   ) where
 
 
@@ -43,7 +45,7 @@ import           Data.Time.Calendar      (Day)
 import           GHC.Generics            (Generic)
 import           Network.Plaid.Dwolla    (Dwolla)
 import           Servant
-import           Servant.Client          (BaseUrl, ClientM, client)
+import           Servant.Client          (BaseUrl, ClientM, client, ServantError)
 import qualified Servant.Client          as Servant
 import           Web.FormUrlEncoded      (ToForm (..))
 
@@ -135,6 +137,7 @@ locationToId _ = Nothing
 
 data DwollaError
   = BadLocation
+  | DwollaApiError ServantError
   deriving (Show, Eq, Generic)
 
 instance Exception DwollaError

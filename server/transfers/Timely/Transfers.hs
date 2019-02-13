@@ -4,128 +4,76 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedLabels      #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RecordWildCards       #-}
-module Timely.Transfers where
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE UndecidableInstances  #-}
+module Timely.Transfers
+  ( Store.initialize
+  , Transfers(..)
+  , ACH.Config(..)
+  , TransferAccount
+  , AccountInfo(..)
+  , credit
+  , debit
+  ) where
 
-import           Control.Monad.IO.Class    (MonadIO, liftIO)
-import           Control.Monad.Selda       (Selda, insert, tryCreateTable)
-import           Control.Monad.Service     (Service (..))
-import           Data.Model.Guid           (Guid)
-import           Data.Model.Id             (Token)
-import           Data.Model.Money          (Money)
-import           Data.Model.Valid          (Valid)
-import           Data.Model.Types          (SSN, Address)
-import           Data.Time.Clock           (UTCTime)
-import qualified Data.Time.Clock           as Time
-import           Data.Typeable             (Typeable)
-import           Database.Selda            hiding (insert, query, tryCreateTable, update_)
-import           GHC.Generics              (Generic)
-import           Network.Dwolla            (FundingSource, Id)
-import           Network.Plaid.Dwolla      (Dwolla)
-import           Timely.AccountStore.Types (Account)
+import           Control.Monad.Catch      (MonadThrow)
+import           Control.Monad.Config     (MonadConfig (..))
+import           Control.Monad.Selda      (Selda)
+import           Control.Monad.Service    (Service (..))
+import           Data.Model.Id            (Id)
+import           Data.Typeable            (Typeable)
+import           Timely.Transfers.Account
+import           Timely.Transfers.ACH     (Config)
+import qualified Timely.Transfers.ACH     as ACH
+import           Timely.Transfers.Store   (TransferStore)
+import qualified Timely.Transfers.Store   as Store
+import           Timely.Transfers.Types
 
-import           Timely.Advances           (Advance (..))
-
-
-
--- there's only one transfer per advance... for now
-data Transfer a = Transfer
-    { advanceId :: Guid Advance
-    , accountId :: Guid Account
-    , amount    :: Money
-    , created   :: UTCTime
-    , success   :: Maybe UTCTime
-    } deriving (Show, Eq, Generic)
-
-instance Typeable a => SqlRow (Transfer a)
+import           Timely.Advances          (Advance (..))
+import qualified Timely.Advances          as Advances
 
 
-data Credit
-data Debit
-
-
-data AccountInfo = AccountInfo
-  { accountId   :: Guid Account
-  , firstName   :: Text
-  , lastName    :: Text
-  , email       :: Text
-  , address     :: Address
-  , dateOfBirth :: Day
-  , ssn         :: Valid SSN
-  , plaidToken  :: Token Dwolla
-  } deriving (Show, Eq, Generic)
-
-
-
-data TransferAccount = TransferAccount
-  { accountId     :: Guid Account
-  , fundingSource :: Id FundingSource
-  } deriving (Show, Eq, Generic)
-
-instance SqlRow TransferAccount
 
 
 data Transfers a where
-    Credit :: Advance -> Transfers (Transfer Credit)
-    Debit  :: Advance -> Transfers (Transfer Debit)
+    ACHSend    :: Id TransferAccount -> Transfer Credit -> Transfers ()
+    ACHCollect :: Id TransferAccount -> Transfer Debit -> Transfers ()
 
-    -- this creates the funding source, etc, and saves the information for later
-    Init   :: AccountInfo -> Transfers ()
+    CreateAccount  :: AccountInfo -> Transfers (Id TransferAccount)
 
-
-instance Selda m => Service m Transfers where
-  run (Credit a) = credit a
-  run (Debit  a) = debit a
-
-  run (Init _)   = undefined -- init i
-
-
-credits :: Table (Transfer Credit)
-credits =
-    table "transfers_credits"
-      [ #advanceId :- primary ]
-
-
-debits :: Table (Transfer Debit)
-debits =
-    table "transfers_debits"
-      [ #advanceId :- primary ]
-
-
-accounts :: Table (Transfer Debit)
-accounts =
-    table "transfers_accounts"
-      [ #accountId :- primary ]
-
-
-credit :: Selda m => Advance -> m (Transfer Credit)
-credit adv = do
-    credit <- transfer adv
-    insert credits [credit]
-    pure credit
-
-
-debit :: Selda m => Advance -> m (Transfer Debit)
-debit adv = do
-    debit <- transfer adv
-    insert debits [debit]
-    pure debit
-
-
-transfer :: MonadIO m => Advance -> m (Transfer a)
-transfer Advance {..} = do
-    created <- liftIO $ Time.getCurrentTime
-    let success = Nothing
-    pure Transfer {..}
+    SaveCredit :: Advance -> Transfers (Transfer Credit)
+    SaveDebit  :: Advance -> Transfers (Transfer Debit)
+    MarkSuccess :: (Typeable s, TransferStore s) => Transfer s -> Transfers ()
 
 
 
+instance (MonadThrow m, Selda m, MonadConfig Config m) => Service m Transfers where
+  run (SaveCredit a)    = Store.saveCredit a
+  run (SaveDebit a)     = Store.saveDebit a
+  run (MarkSuccess t)   = Store.markSuccess t
 
-initialize :: (Selda m, MonadIO m) => m ()
-initialize = do
-    -- drop the table / db first to run migrations
-    tryCreateTable credits
-    tryCreateTable debits
-    tryCreateTable accounts
+  run (ACHSend i t)     = ACH.sendMoney i t
+  run (ACHCollect i t)  = ACH.collectMoney i t
+  run (CreateAccount a) = ACH.initAccount a
+
+
+
+-- Main actions --------------------------------
+
+
+credit :: (Service m Transfers) => Advance -> m (Transfer Credit)
+credit a = do
+  t <- run $ SaveCredit a
+  run $ ACHSend (Advances.transferId a) t
+  run $ MarkSuccess t
+  pure t
+
+
+debit :: (Service m Transfers) => Advance -> m (Transfer Debit)
+debit a = do
+  t <- run $ SaveDebit a
+  run $ ACHCollect (Advances.transferId a) t
+  run $ MarkSuccess t
+  pure t
+

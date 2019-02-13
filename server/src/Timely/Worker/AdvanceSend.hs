@@ -5,7 +5,7 @@ module Timely.Worker.AdvanceSend where
 
 import           Control.Monad.Catch   (Exception, MonadThrow (..))
 import           Control.Monad.Log     as Log
-import           Control.Monad.Service (Service (run))
+import           Control.Monad.Service (Service)
 import           Data.Model.Guid       as Guid
 import           Data.Text             (Text)
 import qualified Network.AMQP.Worker   as Worker hiding (publish)
@@ -34,7 +34,7 @@ handler
   => Advance -> m ()
 handler advance = do
   Log.context (Guid.toText $ advanceId advance)
-  _ <- run $ Transfers.Credit advance
+  Transfers.credit advance
   Log.info "sent"
   pure ()
 
