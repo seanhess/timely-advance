@@ -6,6 +6,7 @@ module Network.Plaid.Accounts where
 
 
 import           Data.Aeson          (FromJSON, ToJSON)
+import           Data.Model.Id       (Id (..), Token (..))
 import           GHC.Generics        (Generic)
 import           Network.Plaid.Types
 import           Servant
@@ -64,20 +65,19 @@ type Endpoint = "accounts" :> "get"
 
 
 data Request = Request
-    { client_id :: Id Client
-    , secret :: Id Secret
+    { client_id    :: Id Client
+    , secret       :: Id Secret
     , access_token :: Token Access
     } deriving (Generic, Show, Eq)
 
 instance ToJSON Request
 
 data Response = Response
-    { accounts :: [ Account ]
-    , item :: Item
+    { accounts   :: [ Account ]
+    , item       :: Item
     , request_id :: Id Request
     } deriving (Generic, Show, Eq)
 
 instance FromJSON Response
-
 
 

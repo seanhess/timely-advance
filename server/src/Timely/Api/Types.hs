@@ -11,16 +11,16 @@ module Timely.Api.Types
   ) where
 
 import           Data.Aeson                    (FromJSON, ToJSON (..))
+import qualified Data.Model.Guid               as Guid
+import           Data.Model.Money              (Money)
 import           Data.String.Conversions       (cs)
 import           Data.Text                     (Text)
-import qualified Data.UUID                     as UUID
+import           Data.Time.Calendar            (Day)
 import           Database.Selda                (ID, fromId)
 import           GHC.Generics                  (Generic)
 import           Servant.API.ContentTypes.HTML (Linkable (..))
-
 import           Timely.AccountStore.Types
 import           Timely.Bank                   (Public, Token)
-import           Timely.Types.Money            (Money)
 import           Timely.Underwriting           (Approval, Denial, DenialReason, Result (..))
 
 
@@ -54,6 +54,8 @@ instance FromJSON Amount
 -- AccountInfo ---------------------
 data AccountInfo = AccountInfo
     { email           :: Text
+    , ssn             :: Digits SSN
+    , dateOfBirth     :: Day
     , publicBankToken :: Token Public
     } deriving (Generic, Show)
 
@@ -64,11 +66,11 @@ instance ToJSON AccountInfo
 
 
 instance Linkable Account where
-    self a = cs $ UUID.toText $ accountId (a :: Account)
+    self a = cs $ Guid.toText $ accountId (a :: Account)
     relations _ = ["bank-accounts"]
 
 instance Linkable Application where
-    self a = cs $ UUID.toText $ accountId (a :: Application)
+    self a = cs $ Guid.toText $ accountId (a :: Application)
     relations _ = ["result"]
 
 instance Linkable BankAccount where

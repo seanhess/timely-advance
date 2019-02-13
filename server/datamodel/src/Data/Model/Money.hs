@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Timely.Types.Money where
+module Data.Model.Money where
 
 import           Data.Aeson             (FromJSON, ToJSON)
 import           Data.Proxy             (Proxy (..))

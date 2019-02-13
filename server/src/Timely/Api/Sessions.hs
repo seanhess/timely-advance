@@ -1,7 +1,7 @@
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE OverloadedStrings        #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MonoLocalBinds   #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE MonoLocalBinds    #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Timely.Api.Sessions where
 
 
@@ -11,6 +11,9 @@ import           Control.Monad.IO.Class      (MonadIO, liftIO)
 import           Control.Monad.Service       (Service (..))
 import           Crypto.JOSE.JWK             (JWK)
 import           Data.ByteString             (ByteString)
+import           Data.Model.Digits           as Digits
+import           Data.Model.Guid             as Guid
+import           Data.Model.Id               (Token (..))
 import           Servant                     (Header, Headers, NoContent (..), ServantErr, err401)
 import           Servant.Auth.Server         (AuthResult (..), CookieSettings (..), IsSecure (..), JWTSettings,
                                               SetCookie, ThrowAll (..), defaultCookieSettings, defaultJWTSettings)
@@ -18,11 +21,9 @@ import qualified Servant.Auth.Server         as Servant
 
 import qualified Timely.AccountStore.Account as Account
 import           Timely.AccountStore.Types   (Account)
-import           Timely.Auth                 (AuthCode, AuthConfig, Phone(..))
+import           Timely.Auth                 (AuthCode, AuthConfig, Phone)
 import qualified Timely.Auth                 as Auth
-import           Timely.Types.Guid
-import           Timely.Types.Session        (Session (..), Admin)
-import           Timely.Types.Secret        (Secret (..))
+import           Timely.Types.Session        (Admin, Session (..))
 
 
 type SetSession a = Headers '[Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] a
@@ -56,12 +57,12 @@ authAdmin
      , MonadError ServantErr m
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
-     , MonadConfig (Secret Admin) m
-     ) => Secret Admin -> m (SetSession Session)
+     , MonadConfig (Token Admin) m
+     ) => Token Admin -> m (SetSession Session)
 authAdmin check = do
   liftIO $ print ("HI", check)
   good <- config
-  let session = Session (Phone "8012223333") Nothing True
+  let session = Session (Digits "8012223333") Nothing True
   if check == good
      then setSession session session
      else throwError err401

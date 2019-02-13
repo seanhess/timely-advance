@@ -3,9 +3,10 @@
 module Timely.Types.Config where
 
 import           Data.Aeson          (ToJSON)
+import           Data.Model.Id       (Id)
 import           Data.Text           (Text)
 import           GHC.Generics        (Generic)
-import           Network.Plaid.Types (Id, Public)
+import           Network.Plaid.Types (Public)
 
 data ClientConfig = ClientConfig
     { plaid :: PlaidConfig

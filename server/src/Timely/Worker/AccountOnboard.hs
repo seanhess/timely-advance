@@ -3,7 +3,6 @@
 {-# LANGUAGE MonoLocalBinds        #-}
 {-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 module Timely.Worker.AccountOnboard where
 
@@ -14,22 +13,21 @@ import           Control.Monad.Log               (MonadLog)
 import qualified Control.Monad.Log               as Log
 import           Control.Monad.Service           (Service (run))
 import qualified Data.List                       as List
+import qualified Data.Model.Guid                 as Guid
 import           Data.Text                       as Text
 import qualified Database.Selda                  as Selda
 import           Network.AMQP.Worker             (Queue)
 import qualified Network.AMQP.Worker             as Worker hiding (bindQueue, publish, worker)
-
 import           Timely.AccountStore.Account     (AccountStore)
 import qualified Timely.AccountStore.Account     as Account
 import           Timely.AccountStore.Application (ApplicationStore)
 import qualified Timely.AccountStore.Application as Application
 import           Timely.AccountStore.Types       (Application (..), BankAccount (balance), Customer (..), isChecking,
                                                   toBankAccount)
-import           Timely.Bank                     (Banks, Identity(..))
+import           Timely.Bank                     (Banks, Identity (..))
 import qualified Timely.Bank                     as Bank
 import qualified Timely.Evaluate.AccountHealth   as AccountHealth
 import qualified Timely.Events                   as Events
-import qualified Timely.Types.Guid               as Guid
 import           Timely.Underwriting             as Underwriting (Approval (..), Result (..), Underwriting (..))
 
 
@@ -100,9 +98,17 @@ handler app = do
 
 
 toNewCustomer :: Application -> Identity -> Customer
-toNewCustomer Application {..} Identity {..} =
-    let id = Selda.def
-     in Customer {..}
+toNewCustomer Application {accountId, email, dateOfBirth, ssn} Identity {firstName, middleName, lastName} =
+    Customer
+      { accountId , email, id = Selda.def
+      , firstName , middleName , lastName
+      , ssn, dateOfBirth
+      }
+
+    -- { accountId       :: Guid Account
+    -- , phone           :: Phone
+    -- , email           :: Text
+    -- , publicBankToken :: Token Public
 
 
 

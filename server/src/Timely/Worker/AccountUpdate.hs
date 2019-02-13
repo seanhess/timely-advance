@@ -11,11 +11,12 @@ import           Control.Monad.Log             (MonadLog)
 import qualified Control.Monad.Log             as Log
 import           Control.Monad.Service         (Service (run))
 import qualified Data.List                     as List
+import           Data.Model.Guid               as Guid
+import           Data.Model.Money              (Money)
 import           Data.Time.Calendar            (Day)
 import           Network.AMQP.Worker           (MonadWorker)
 import qualified Network.AMQP.Worker           as Worker hiding (publish)
 import qualified Network.AMQP.Worker.Monad     as Worker
-
 import           Timely.AccountStore.Account   (AccountStore)
 import qualified Timely.AccountStore.Account   as AccountStore
 import           Timely.AccountStore.Types     (Account (bankToken), BankAccount (balance), isChecking, toBankAccount)
@@ -34,9 +35,6 @@ import           Timely.Notify                 (Notify)
 import qualified Timely.Notify                 as Notify
 import           Timely.Time                   (Time)
 import qualified Timely.Time                   as Time
-import           Timely.Types.Guid             (Guid)
-import qualified Timely.Types.Guid             as Guid
-import           Timely.Types.Money            (Money)
 import           Timely.Types.Private          (Private (..))
 
 

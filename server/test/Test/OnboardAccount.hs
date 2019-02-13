@@ -8,9 +8,8 @@ import Test.Tasty.Monad
 import           Timely.Bank as Bank
 import           Timely.AccountStore.Types (BankAccount(..))
 import qualified Timely.AccountStore.Types as Account
--- import           Timely.Worker.OnboardAccount
-import qualified Timely.Types.Guid as Guid
-import qualified Timely.Types.Money as Money
+import qualified Data.Model.Guid as Guid
+import qualified Data.Model.Money as Money
 
 tests :: Tests ()
 tests = do

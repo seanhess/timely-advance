@@ -17,11 +17,6 @@ import qualified Numeric
 import           Servant                 (FromHttpApiData (..), ToHttpApiData (..))
 
 
-newtype Id a = Id Text
-  deriving (Show, Eq, Generic, ToHttpApiData, FromJSON)
-
-type Token = Id
-
 newtype Resource a = Resource Text
   deriving (Show, Eq, Generic, FromJSON, ToJSON, FromHttpApiData)
 

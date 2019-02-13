@@ -1,10 +1,14 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric        #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 module Timely.Config where
 
 import           Control.Monad.IO.Class  (MonadIO, liftIO)
 import           Data.ByteString         (ByteString)
 import qualified Data.Maybe              as Maybe
+import           Data.Model.Digits       as Digits
+import           Data.Model.Id           (Id (..), Token (..))
 import           Data.String.Conversions (cs)
 import           Data.Text               (Text)
 import qualified Data.Text               as Text
@@ -14,15 +18,14 @@ import           GHC.Generics            (Generic)
 import           Network.Authy           (AuthyApiKey)
 import           Network.Dwolla          (FundingSource)
 import qualified Network.Dwolla          as Dwolla
-import           Network.Plaid.Types     (Client, Id (..), Public)
+import           Network.Plaid.Types     (Client, Public)
 import qualified Network.Plaid.Types     as Plaid
 import           Servant.Client          (BaseUrl (..), Scheme (Https))
 import qualified Servant.Client          as Servant
 import           System.Envy             (DefConfig (..), FromEnv, Var (..))
 import qualified System.Envy             as Envy
-import           Timely.Auth             (Phone (..), phone)
+import           Timely.Auth             (Phone, phone)
 import           Timely.Types.Config     (PlaidProducts (..))
-import           Timely.Types.Secret     (Secret (..))
 import           Timely.Types.Session    (Admin)
 import qualified Twilio                  as Twilio
 
@@ -43,7 +46,7 @@ data Env = Env
   , twilioFromPhone     :: Phone
   , endpoint            :: BaseUrl
   , sessionSecret       :: ByteString
-  , adminPassphrase     :: Secret Admin
+  , adminPassphrase     :: Token Admin
   , dwollaBaseUrl       :: BaseUrl
   , dwollaAuthBaseUrl   :: BaseUrl
   , dwollaClientId      :: Dwolla.Id Dwolla.Client
@@ -69,15 +72,15 @@ instance DefConfig Env where
     , authyBaseUrl      = BaseUrl Https "api.authy.com" 443 ""
     , twilioAccountId   = Twilio.AccountSID "ACea89d7047fbce75c97607b517303f27a"
     , twilioAuthToken   = Maybe.fromJust $ Twilio.parseAuthToken "01aadd9eee8a895d9f410b5e807334ee"
-    , twilioFromPhone   = "5413940563"
+    , twilioFromPhone   = Digits "5413940563"
     , endpoint          = BaseUrl Https "app.timelyadvance.com" 443 ""
     , sessionSecret     = "cQfTjWnZr4u7x!A%D*G-KaNdRgUkXp2s"
-    , adminPassphrase   = Secret "rapidly scotland horses stuff"
+    , adminPassphrase   = Token "rapidly scotland horses stuff"
     , dwollaBaseUrl     = BaseUrl Https "api-sandbox.dwolla.com" 443 ""
     , dwollaAuthBaseUrl = BaseUrl Https "accounts-sandbox.dwolla.com" 443 ""
-    , dwollaClientId    = Dwolla.Id "6Oq3hTqVLFh5CRSINp4hI3xsTVygUfA7lDzY8XPSFjzkN6AXUE"
-    , dwollaSecret      = Dwolla.Id "fuDJGJSB7A52onADZro2IeKtL4VHG4UfL8fWht00JdVkf5o1p0"
-    , dwollaFundingSource = Dwolla.Id "7c584617-958b-48d2-8e41-c88ec415694d"
+    , dwollaClientId    = Id "6Oq3hTqVLFh5CRSINp4hI3xsTVygUfA7lDzY8XPSFjzkN6AXUE"
+    , dwollaSecret      = Id "fuDJGJSB7A52onADZro2IeKtL4VHG4UfL8fWht00JdVkf5o1p0"
+    , dwollaFundingSource = Id "7c584617-958b-48d2-8e41-c88ec415694d"
     }
 
 instance FromEnv Env
@@ -86,12 +89,12 @@ instance Var PlaidProducts where
   toVar (PlaidProducts ps) = cs $ Text.unwords ps
   fromVar t = Just $ PlaidProducts $ Text.words $ cs t
 
-instance Typeable a => Var (Secret a) where
-  toVar (Secret x) = cs x
-  fromVar x = Just $ Secret $ cs x
+instance Typeable a => Var (Token a) where
+  toVar (Token x) = cs x
+  fromVar x = Just $ Token $ cs x
 
 instance Var Phone where
-  toVar (Phone x) = cs x
+  toVar (Digits x) = cs x
   fromVar x = phone $ cs x
 
 instance Var Twilio.AccountSID where
@@ -109,10 +112,6 @@ instance Var BaseUrl where
 instance Typeable t => Var (Id t) where
   toVar (Id t) = toVar t
   fromVar s = Id <$> fromVar s
-
-instance Typeable t => Var (Dwolla.Id t) where
-  toVar (Dwolla.Id t) = toVar t
-  fromVar s = Dwolla.Id <$> fromVar s
 
 
 loadEnv :: (MonadIO m, MonadMask m) => m Env

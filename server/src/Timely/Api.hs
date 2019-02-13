@@ -10,6 +10,8 @@
 module Timely.Api where
 
 import           Control.Monad.Service                (Service (..))
+import           Data.Model.Guid                      as Guid
+import           Data.Model.Id                        (Token)
 import           Data.Proxy                           (Proxy (..))
 import           Data.Text                            (Text)
 import           GHC.Generics                         (Generic)
@@ -19,34 +21,25 @@ import           Servant                              hiding (Application, Link)
 import qualified Servant
 import           Servant.API.ContentTypes.HTML        (HTML, Link (..))
 import           Servant.API.ContentTypes.JS          (JS)
-import           Servant.API.Generic                  ((:-), AsApi, ToServant,
-                                                       ToServantApi)
-import           Servant.Auth.Server                  (Auth, Cookie,
-                                                       CookieSettings (..),
-                                                       JWTSettings)
-import           Servant.Server.Generic               (AsServerT,
-                                                       genericServerT)
-
+import           Servant.API.Generic                  ((:-), AsApi, ToServant, ToServantApi)
+import           Servant.Auth.Server                  (Auth, Cookie, CookieSettings (..), JWTSettings)
+import           Servant.Server.Generic               (AsServerT, genericServerT)
 import qualified Timely.AccountStore.Account          as Account
 import qualified Timely.AccountStore.Application      as Application
 import           Timely.AccountStore.Types            (Application)
 import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
-import qualified Timely.Transfers                     as Transfers
+import           Timely.Api.Advances                  as Advances
 import qualified Timely.Api.Applications              as Applications
-import           Timely.Api.AppM                      (AppM, AppState (..),
-                                                       clientConfig, loadState,
-                                                       nt, runIO)
+import           Timely.Api.AppM                      (AppM, AppState (..), clientConfig, loadState, nt, runIO)
+import           Timely.Api.Combinators               (notFound)
 import           Timely.Api.Sessions                  (SetSession)
 import qualified Timely.Api.Sessions                  as Sessions
-import Timely.Api.Combinators (notFound)
-import Timely.Api.Advances as Advances
 import           Timely.Api.Types
 import           Timely.Auth                          (AuthCode, Phone)
+import qualified Timely.Transfers                     as Transfers
 import           Timely.Types.Config
-import           Timely.Types.Guid
 import           Timely.Types.Session
-import           Timely.Types.Secret (Secret)
 
 type Api = ToServant BaseApi AsApi
 
@@ -85,9 +78,9 @@ data AccountApi route = AccountApi
 
 
 data AdvanceApi route = AdvanceApi
-    { _all     :: route :- Get '[JSON] [Advance]
-    , _get     :: route :- Capture "id" (Guid Advance) :> Get '[JSON] Advance
-    , _accept  :: route :- Capture "id" (Guid Advance) :> "accept" :> ReqBody '[JSON] Amount :> Post '[JSON] Advance
+    { _all    :: route :- Get '[JSON] [Advance]
+    , _get    :: route :- Capture "id" (Guid Advance) :> Get '[JSON] Advance
+    , _accept :: route :- Capture "id" (Guid Advance) :> "accept" :> ReqBody '[JSON] Amount :> Post '[JSON] Advance
     } deriving (Generic)
 
 
@@ -100,7 +93,7 @@ data AppApi route = AppApi
 
 data SessionsApi route = SessionsApi
     -- admin must be before auth
-    { _admin  :: route :- "admin" :> ReqBody '[JSON] (Secret Admin) :> Post '[JSON] (SetSession Session)
+    { _admin  :: route :- "admin" :> ReqBody '[JSON] (Token Admin) :> Post '[JSON] (SetSession Session)
     , _code   :: route :- ReqBody '[JSON] Phone :> Post '[JSON] NoContent
     , _auth   :: route :- Capture "phone" Phone :> ReqBody '[JSON] AuthCode :> Post '[JSON] (SetSession Session)
     , _check  :: route :- Auth '[Cookie] Session :> Get '[JSON] (Session)
@@ -206,4 +199,3 @@ start port = do
 
     putStrLn $ "Running on " ++ show port
     Warp.run port (application state)
-

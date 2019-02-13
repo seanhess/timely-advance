@@ -3,7 +3,7 @@ module Timely.Evaluate.Types where
 
 import           Data.Aeson         (FromJSON, ToJSON)
 import           GHC.Generics       (Generic)
-import           Timely.Types.Money
+import           Data.Model.Money
 
 data Projection = Projection
     { expenses  :: Money

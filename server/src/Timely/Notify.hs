@@ -9,21 +9,21 @@
 {-# LANGUAGE UndecidableInstances  #-}
 module Timely.Notify where
 
-import Prelude hiding (id)
 import           Control.Monad.Config      (MonadConfig (..))
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
 import           Control.Monad.Service     (Service (..))
+import           Data.Model.Digits         (Digits(..))
+import           Data.Model.Guid           as Guid
 import           Data.String.Conversions   (cs)
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
 import           GHC.Generics              (Generic)
+import           Prelude                   hiding (id)
 import           Servant.Client            (BaseUrl)
 import qualified Servant.Client            as Servant
-import           Timely.AccountStore.Types (Account(..))
+import           Timely.AccountStore.Types (Account (..))
 import qualified Timely.AccountStore.Types as Account
-import           Timely.Auth               (Phone (..))
-import           Timely.Types.Guid         (Guid)
-import Timely.Types.Guid as Guid
+import           Timely.Auth               (Phone)
 import qualified Twilio                    as Twilio
 import qualified Twilio.Messages           as Twilio
 
@@ -43,10 +43,10 @@ send
   => Account -> Message a -> m ()
 send account message = do
   Config { fromPhone, accountSid, authToken, appBaseUrl } <- config
-  let (Phone from) = "+1" <> fromPhone
-      (Phone to)   = "+1" <> Account.phone (account :: Account)
+  let (Digits from) = fromPhone
+      (Digits to)   = Account.phone (account :: Account)
   liftIO $ Twilio.runTwilio (accountSid, authToken) $ do
-    Twilio.post $ Twilio.PostMessage to from (body appBaseUrl (accountId account) message) Nothing
+    Twilio.post $ Twilio.PostMessage ("+1" <> to) ("+1" <> from) (body appBaseUrl (accountId account) message) Nothing
   pure ()
 
 

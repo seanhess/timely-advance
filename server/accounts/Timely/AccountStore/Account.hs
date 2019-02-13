@@ -11,14 +11,14 @@ module Timely.AccountStore.Account (AccountStore(..), initialize, account) where
 import           Control.Monad.Selda       (Selda, deleteFrom, insert, query, tryCreateTable)
 import           Control.Monad.Service     (Service (..))
 import           Data.Maybe                (listToMaybe)
+import           Data.Model.Guid
+import           Data.Model.Money
 import           Database.Selda            hiding (deleteFrom, insert, query, tryCreateTable)
 
 import           Timely.AccountStore.Types
 import           Timely.Auth               (Phone)
 import           Timely.Bank               (Access, Token)
 import           Timely.Evaluate.Types     (Projection (..))
-import           Timely.Types.Guid
-import           Timely.Types.Money
 import           Timely.Types.Private
 
 

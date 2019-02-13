@@ -33,6 +33,7 @@ import           Control.Monad.Config        (MonadConfig, configs)
 import           Control.Monad.IO.Class      (MonadIO, liftIO)
 import           Control.Monad.Service       (Service (..))
 import           Data.List                   as List
+import           Data.Model.Id               (Id (..), Token (..))
 import           Data.Text                   as Text
 import           Data.Time.Calendar          (fromGregorian)
 import           Network.HTTP.Client         (Manager)
@@ -41,7 +42,7 @@ import qualified Network.Plaid.Accounts      as Accounts
 import qualified Network.Plaid.ExchangeToken as ExchangeToken
 import qualified Network.Plaid.Identity      as Identity
 import qualified Network.Plaid.Transactions  as Transactions
-import           Network.Plaid.Types         
+import           Network.Plaid.Types
 import           Servant.Client              (BaseUrl, ClientEnv, ClientM, ServantError, mkClientEnv, runClientM)
 
 -- Bank Service

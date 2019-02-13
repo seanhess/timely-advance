@@ -1,7 +1,8 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE MonoLocalBinds   #-}
-{-# LANGUAGE RecordWildCards  #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MonoLocalBinds        #-}
+{-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE OverloadedStrings     #-}
 module Timely.Api.Applications
     ( newApplication
     ) where
@@ -10,18 +11,17 @@ import           Control.Monad.Config            (MonadConfig (..))
 import           Control.Monad.Except            (MonadError (..))
 import           Control.Monad.Log               as Log
 import           Control.Monad.Service           (Service (..))
+import           Data.Model.Guid                 as Guid
 import           Data.String.Conversions         (cs)
 import           Network.AMQP.Worker.Monad       as Worker
 import           Servant                         (ServantErr)
 import           Servant.Auth.Server             (CookieSettings, JWTSettings)
-
 import           Timely.AccountStore.Application as Application
 import           Timely.AccountStore.Types       (Account, Application (..))
 import           Timely.Api.Sessions             as Sessions
 import           Timely.Api.Types                (AccountInfo (..))
 import           Timely.Auth                     (Phone)
 import           Timely.Events                   as Events
-import           Timely.Types.Guid               as Guid
 import           Timely.Types.Session            (Session (..))
 
 
@@ -55,6 +55,6 @@ newApplication phone info = do
 
 
 fromAccountInfo :: Guid Account -> Phone -> AccountInfo -> Application
-fromAccountInfo i phone AccountInfo {..} = Application {..}
-  where
-    accountId = i
+fromAccountInfo i phone AccountInfo { email, ssn, dateOfBirth, publicBankToken } =
+  Application
+    { accountId = i, phone, email, ssn, dateOfBirth, publicBankToken }

@@ -35,6 +35,8 @@ type alias AccountHealth =
 
 type alias AccountInfo =
     { email : String
+    , ssn : Digits SSN
+    , dateOfBirth : Time.Posix
     , publicBankToken : Id Bank
     }
 
@@ -71,7 +73,17 @@ type alias Customer =
     , middleName : Maybe String
     , lastName : String
     , email : String
+    , ssn : Digits SSN
+    , dateOfBirth : Time.Posix
     }
+
+
+type SSN
+    = SSN
+
+
+type Digits a
+    = Digits String
 
 
 type ApprovalResult
@@ -114,6 +126,8 @@ encodeAccountInfo : AccountInfo -> Encode.Value
 encodeAccountInfo x =
     Encode.object
         [ ( "email", Encode.string x.email )
+        , ( "ssn", encodeDigits x.ssn )
+        , ( "dateOfBirth", Iso8601.encode x.dateOfBirth )
         , ( "publicBankToken", encodeId x.publicBankToken )
         ]
 
@@ -149,6 +163,8 @@ decodeAccountInfo : Decoder AccountInfo
 decodeAccountInfo =
     Decode.succeed AccountInfo
         |> required "email" string
+        |> required "ssn" decodeDigits
+        |> required "dateOfBirth" Iso8601.decoder
         |> required "publicBankToken" decodeId
 
 
@@ -186,6 +202,8 @@ decodeCustomer =
         |> required "middleName" (nullable string)
         |> required "lastName" string
         |> required "email" string
+        |> required "ssn" decodeDigits
+        |> required "dateOfBirth" Iso8601.decoder
 
 
 decodeApplication : Decoder Application
@@ -232,6 +250,16 @@ decodeMoney =
 encodeMoney : Money -> Encode.Value
 encodeMoney =
     Encode.int
+
+
+decodeDigits : Decoder (Digits a)
+decodeDigits =
+    Decode.map Digits string
+
+
+encodeDigits : Digits a -> Encode.Value
+encodeDigits (Digits t) =
+    Encode.string t
 
 
 decodeAdvance : Decoder Advance

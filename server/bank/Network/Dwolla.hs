@@ -33,26 +33,26 @@ module Network.Dwolla
 
 import           Control.Monad.Catch     (Exception, throwM)
 import           Data.Aeson              as Aeson
+import qualified Data.ByteString.Base64  as Base64
 import           Data.List               as List
+import           Data.Model.Id           (Id(..), Token(..))
 import           Data.Proxy              as Proxy
-import qualified Data.ByteString.Base64 as Base64
 import           Data.String.Conversions (cs)
 import           Data.Text               as Text
 import           Data.Time.Calendar      (Day)
 import           GHC.Generics            (Generic)
 import           Network.Plaid.Dwolla    (Dwolla)
-import qualified Network.Plaid.Types     as Plaid
 import           Servant
 import           Servant.Client          (BaseUrl, ClientM, client)
 import qualified Servant.Client          as Servant
 import           Web.FormUrlEncoded      (ToForm (..))
 
-import           Network.Dwolla.HAL      (HAL, FromHAL(..))
+import           Network.Dwolla.HAL      (FromHAL (..), HAL)
 import           Network.Dwolla.Types
 
 
 
-
+-- I can "initialize" an account with the transfers service. And save everything I need
 
 type DwollaApi
       = Authenticate :> "token" :> ReqBody '[FormUrlEncoded] Auth :> Post '[JSON] Access
@@ -104,7 +104,7 @@ transfer tok from to amount = do
 authenticate :: Credentials -> ClientM AuthToken
 authenticate creds = do
   access <- postToken (Just creds) (Auth Static)
-  let (Id t) = access_token access
+  let (Token t) = access_token access
   pure $ AuthToken t
 
 
@@ -170,7 +170,7 @@ removeUnderscores = Aeson.defaultOptions { fieldLabelModifier = List.dropWhileEn
 
 
 data FundingSource = FundingSource
-  { plaidToken :: Plaid.Token Dwolla
+  { plaidToken :: Token Dwolla
   , name       :: Text
   } deriving (Show, Eq, Generic)
 

@@ -23,6 +23,7 @@ resolver: lts-13.2
 # Various formats can be used as shown in the example below.
 #
 # packages:
+# - some-directory
 # - https://example.com/foo/bar/baz-0.0.2.tar.gz
 # - location:
 #    git: https://github.com/commercialhaskell/stack.git
@@ -33,30 +34,10 @@ resolver: lts-13.2
 #  - wai
 packages:
 - .
-- location:
-   git: https://github.com/seanhess/amqp-worker.git
-   commit: 0.3.1
-  extra-dep: true
-- location:
-   git: https://github.com/seanhess/twilio-haskell.git
-   commit: master
-  extra-dep: true
-- location:
-   git: https://github.com/hercules-ci/elm-export
-   commit: 3a8c979e439feff3e6d2bae913b07ed2c025c9d8
-  extra-dep: true
-- location: "datamodel"
-  extra-dep: true
-
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
-extra-deps:
-- random-strings-0.1.1.0
-# - containers-0.5.11.0
-# - amqp-worker-0.2.5
-# - git: https://github.com/NoRedInk/servant-elm.git
-#   commit: 96bafc59c87b72606a75dfff3188002d90680735
+# extra-deps: []
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

@@ -17,6 +17,7 @@ module Network.Plaid
   ) where
 
 
+import           Data.Model.Id               (Id (..), Token (..))
 import           Data.Proxy                  (Proxy (..))
 import qualified Network.Plaid.Accounts      as Accounts
 import qualified Network.Plaid.Auth          as Auth

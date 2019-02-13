@@ -6,6 +6,7 @@ module Timely.Worker.AdvanceSend where
 import           Control.Monad.Catch   (Exception, MonadThrow (..))
 import           Control.Monad.Log     as Log
 import           Control.Monad.Service (Service (run))
+import           Data.Model.Guid       as Guid
 import           Data.Text             (Text)
 import qualified Network.AMQP.Worker   as Worker hiding (publish)
 
@@ -13,7 +14,6 @@ import           Timely.Advances       (Advance (..), Advances)
 import           Timely.Events         as Events
 import           Timely.Transfers      (Transfers)
 import qualified Timely.Transfers      as Transfers
-import           Timely.Types.Guid     as Guid
 
 
 

@@ -6,6 +6,7 @@ module Network.Plaid.Transactions where
 
 
 import           Data.Aeson          (FromJSON, ToJSON)
+import           Data.Model.Id       (Id (..), Token (..))
 import           Data.Time.Calendar  (Day)
 import           GHC.Generics        (Generic)
 import           Network.Plaid.Types
@@ -135,7 +136,6 @@ data Response = Response
     } deriving (Generic, Show, Eq)
 
 instance FromJSON Response
-
 
 
 

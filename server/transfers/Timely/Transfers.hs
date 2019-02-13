@@ -1,26 +1,30 @@
 {-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE RecordWildCards         #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedLabels      #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RecordWildCards       #-}
 module Timely.Transfers where
 
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
 import           Control.Monad.Selda       (Selda, insert, tryCreateTable)
 import           Control.Monad.Service     (Service (..))
+import           Data.Model.Guid           (Guid)
+import           Data.Model.Id             (Token)
+import           Data.Model.Money          (Money)
 import           Data.Time.Clock           (UTCTime)
 import qualified Data.Time.Clock           as Time
-import Data.Typeable (Typeable)
+import           Data.Typeable             (Typeable)
 import           Database.Selda            hiding (insert, query, tryCreateTable, update_)
 import           GHC.Generics              (Generic)
-import           Timely.AccountStore.Types (Account)
-import           Timely.Types.Money        (Money)
+import           Network.Dwolla            (FundingSource, Id)
+import           Network.Plaid.Dwolla      (Dwolla)
+import           Timely.AccountStore.Types (Account, Digits, SSN)
 
-import           Timely.Types.Guid         (Guid)
-import Timely.Advances (Advance(..))
+import           Timely.Advances           (Advance (..))
 
 
 
@@ -40,15 +44,44 @@ data Credit
 data Debit
 
 
+data AccountInfo = AccountInfo
+  { accountId   :: Guid Account
+  , firstName   :: Text
+  , lastName    :: Text
+  , email       :: Text
+  , address1    :: Text
+  , address2    :: Maybe Text
+  , city        :: Text
+  , state       :: Text
+  , postalCode  :: Text
+  , dateOfBirth :: Day
+  , ssn         :: Digits SSN
+  , plaidToken  :: Token Dwolla
+  } deriving (Show, Eq, Generic)
+
+
+
+data TransferAccount = TransferAccount
+  { accountId     :: Guid Account
+  , fundingSource :: Id FundingSource
+  } deriving (Show, Eq, Generic)
+
+instance SqlRow TransferAccount
+
 
 data Transfers a where
     Credit :: Advance -> Transfers (Transfer Credit)
     Debit  :: Advance -> Transfers (Transfer Debit)
 
+    -- this creates the funding source, etc, and saves the information for later
+    Init   :: AccountInfo -> Transfers ()
+
 
 instance Selda m => Service m Transfers where
-  run (Credit a)    = credit a
-  run (Debit  a)    = debit a
+  run (Credit a) = credit a
+  run (Debit  a) = debit a
+
+  run (Init _)   = undefined -- init i
 
 
 credits :: Table (Transfer Credit)
@@ -61,6 +94,12 @@ debits :: Table (Transfer Debit)
 debits =
     table "transfers_debits"
       [ #advanceId :- primary ]
+
+
+accounts :: Table (Transfer Debit)
+accounts =
+    table "transfers_accounts"
+      [ #accountId :- primary ]
 
 
 credit :: Selda m => Advance -> m (Transfer Credit)
@@ -91,3 +130,4 @@ initialize = do
     -- drop the table / db first to run migrations
     tryCreateTable credits
     tryCreateTable debits
+    tryCreateTable accounts

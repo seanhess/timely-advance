@@ -6,6 +6,7 @@ module Network.Plaid.Dwolla where
 
 
 import           Data.Aeson          (FromJSON, ToJSON)
+import           Data.Model.Id       (Id, Token)
 import           GHC.Generics        (Generic)
 import           Network.Plaid.Types
 import           Servant
@@ -13,7 +14,7 @@ import           Servant
 
 -- Dwolla -------------------
 -- # Create processor token
--- curl -X POST 
+-- curl -X POST
 -- https://sandbox.plaid.com/processor/dwolla/processor_token/create \
 -- -H 'Content-Type: application/json'
 -- -d '{
@@ -32,10 +33,10 @@ data Dwolla
 
 
 data Request = Request
-    { client_id :: Id Client
-    , secret :: Id Secret
+    { client_id    :: Id Client
+    , secret       :: Id Secret
     , access_token :: Token Access
-    , account_id :: Id Account
+    , account_id   :: Id Account
     } deriving (Generic, Show, Eq)
 
 instance ToJSON Request
@@ -43,8 +44,7 @@ instance ToJSON Request
 
 data Response = Response
     { processor_token :: Token Dwolla
-    , request_id :: Id Request
+    , request_id      :: Id Request
     } deriving (Generic, Show, Eq)
 
 instance FromJSON Response
-

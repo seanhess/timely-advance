@@ -7,10 +7,11 @@ import           Control.Monad               (when)
 import           Control.Monad.Except        (MonadError (..))
 import           Control.Monad.Log           as Log
 import           Control.Monad.Service       (Service (..))
+import           Data.Model.Guid             as Guid
+import           Data.Model.Money            (Money)
 import           Network.AMQP.Worker.Monad   (MonadWorker)
 import qualified Network.AMQP.Worker.Monad   as Worker
 import           Servant                     (ServantErr (..), err400)
-
 import           Timely.AccountStore.Account (AccountStore)
 import qualified Timely.AccountStore.Account as Accounts
 import           Timely.AccountStore.Types   (Account)
@@ -20,8 +21,6 @@ import qualified Timely.Advances.Credit      as Credit
 import           Timely.Api.Combinators      (notFound)
 import           Timely.Api.Types            as Types (Amount (..))
 import qualified Timely.Events               as Events
-import           Timely.Types.Guid           as Guid
-import           Timely.Types.Money          (Money)
 
 
 acceptAdvance

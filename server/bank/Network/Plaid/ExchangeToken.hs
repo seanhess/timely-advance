@@ -5,6 +5,7 @@ module Network.Plaid.ExchangeToken where
 
 
 import           Data.Aeson          (FromJSON, ToJSON)
+import           Data.Model.Id       (Id (..), Token (..))
 import           GHC.Generics        (Generic)
 import           Network.Plaid.Types
 import           Servant

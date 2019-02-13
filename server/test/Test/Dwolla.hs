@@ -7,10 +7,10 @@ import           Test.Dates              (parseDay)
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
 
+import           Data.Model.Id           (Token)
 import           Network.Dwolla          as Dwolla
 import           Network.Plaid           as Plaid
 import qualified Network.Plaid.Dwolla    as Plaid
-import qualified Network.Plaid.Types     as Plaid
 import           Servant.Client          (BaseUrl (..), Scheme (..))
 
 import           Control.Monad.Catch     (throwM)
@@ -22,9 +22,9 @@ import           Data.Text               (Text)
 import qualified Servant
 import           Servant.Client          (mkClientEnv, runClientM)
 import           Test.RandomStrings      (onlyAlphaNum, randomASCII, randomString)
-import           Timely.Worker.WorkerM         as WorkerM
+import qualified Timely.Bank             as Bank
 import           Timely.Config           (dwollaAuthBaseUrl, dwollaBaseUrl)
-import qualified Timely.Bank as Bank
+import           Timely.Worker.WorkerM   as WorkerM
 
 
 import qualified Network.HTTP.Client     as HTTP
@@ -90,11 +90,6 @@ integrationAuth tok = do
 
     liftIO $ print ("DONE", fundId, transId)
 
-
-
-
-    -- TODO: need to get plaid account id, so we can get the plaid-dwolla token, so we can test create funding source
-
     pure ()
 
 
@@ -125,7 +120,7 @@ integrationTransfer tok fundId = do
 
 
 
-dwollaToken :: HandlerM (Plaid.Token Plaid.Dwolla)
+dwollaToken :: HandlerM (Token Plaid.Dwolla)
 dwollaToken = do
     creds <- configs Bank.credentials
     let access = Bank.Token "access-sandbox-444c2045-c342-46d6-9c18-ab0f17297fd1"

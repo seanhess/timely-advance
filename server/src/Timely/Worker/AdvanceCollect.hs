@@ -12,6 +12,7 @@ import           Control.Monad.Catch       (MonadThrow (..))
 import           Control.Monad.Log         as Log
 import           Control.Monad.Service     (Service (run))
 -- import           Data.String.Conversions   (cs)
+import           Data.Model.Guid           as Guid
 import qualified Network.AMQP.Worker       as Worker hiding (publish)
 import           Network.AMQP.Worker.Monad (MonadWorker)
 import qualified Network.AMQP.Worker.Monad as Worker
@@ -24,7 +25,6 @@ import           Timely.Time               (Time)
 import qualified Timely.Time               as Time
 import           Timely.Transfers          (Transfers)
 import qualified Timely.Transfers          as Transfers
-import           Timely.Types.Guid         as Guid
 
 
 
@@ -63,5 +63,4 @@ handler advance = do
   Log.debug ("transfer", t)
   run $ Advances.MarkCollected (advanceId advance)
   Log.info "collected"
-
 

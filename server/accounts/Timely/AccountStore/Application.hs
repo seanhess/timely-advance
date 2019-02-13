@@ -1,23 +1,23 @@
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses     #-}
-{-# LANGUAGE GADTs             #-}
-{-# LANGUAGE OverloadedLabels  #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE RecordWildCards  #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedLabels      #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RecordWildCards       #-}
 module Timely.AccountStore.Application
     ( initialize
     , ApplicationStore(..)
     ) where
 
 
-import Control.Monad.Selda (Selda, query, insert, tryCreateTable)
-import Database.Selda hiding (query, insert, tryCreateTable, Result)
-import Data.Maybe (listToMaybe)
-import Control.Monad.Service (Service(..))
+import           Control.Monad.Selda       (Selda, insert, query, tryCreateTable)
+import           Control.Monad.Service     (Service (..))
+import           Data.Maybe                (listToMaybe)
+import           Data.Model.Guid           (Guid)
+import           Database.Selda            hiding (Result, insert, query, tryCreateTable)
 
-import Timely.Underwriting.Types (Result(..), Approval(..), Denial(..))
-import Timely.AccountStore.Types
-import Timely.Types.Guid (Guid)
+import           Timely.AccountStore.Types
+import           Timely.Underwriting.Types (Approval (..), Denial (..), Result (..))
 
 
 data ApplicationStore a where
@@ -29,11 +29,11 @@ data ApplicationStore a where
     FindResult :: Guid Account -> ApplicationStore (Maybe Result)
 
 instance (Selda m) => Service m ApplicationStore where
-    run (Save a) = save a
-    run (Find i) = loadById i
-    run All      = loadAll
+    run (Save a)         = save a
+    run (Find i)         = loadById i
+    run All              = loadAll
     run (SaveResult i r) = saveResult i r
-    run (FindResult i) = findResult i
+    run (FindResult i)   = findResult i
 
 
 
@@ -111,4 +111,3 @@ initialize = do
     tryCreateTable applications
     tryCreateTable approvals
     tryCreateTable denials
-

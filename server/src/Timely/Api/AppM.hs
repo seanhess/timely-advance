@@ -17,6 +17,7 @@ import           Control.Monad.IO.Class    (MonadIO, liftIO)
 import           Control.Monad.Log         as Log
 import           Control.Monad.Reader      (ReaderT, ask, asks, runReaderT)
 import           Control.Monad.Selda       (Selda (..))
+import           Data.Model.Id             (Token (..))
 import           Data.Pool                 (Pool)
 import qualified Data.Pool                 as Pool
 import           Data.String.Conversions   (cs)
@@ -36,7 +37,6 @@ import           Timely.Auth               (AuthConfig)
 import qualified Timely.Auth               as Auth
 import           Timely.Config             (Env (..), loadEnv)
 import           Timely.Types.Config       (ClientConfig (ClientConfig), PlaidConfig (PlaidConfig))
-import           Timely.Types.Secret       (Secret)
 import           Timely.Types.Session      (Admin)
 
 
@@ -100,7 +100,7 @@ instance MonadConfig AuthConfig AppM where
           k = authyApiKey $ env state
       pure $ Auth.AuthConfig m u k
 
-instance MonadConfig (Secret Admin) AppM where
+instance MonadConfig (Token Admin) AppM where
     config = asks (adminPassphrase . env)
 
 -- instance MonadConfig Bank.Config AppM where

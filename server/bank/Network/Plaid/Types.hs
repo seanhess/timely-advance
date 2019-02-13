@@ -1,16 +1,17 @@
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DuplicateRecordFields      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE RecordWildCards            #-}
 module Network.Plaid.Types where
 
-import Data.Aeson (Value, ToJSON, FromJSON, parseJSON, withText, genericParseJSON, defaultOptions, Options(..))
-import Data.Char (toLower)
-import Data.Text (Text)
-import Data.Time.Calendar (Day)
-import Data.Typeable (Typeable)
-import GHC.Generics (Generic)
+import           Data.Aeson         (FromJSON, Options (..), ToJSON, Value, defaultOptions, genericParseJSON, parseJSON,
+                                     withText)
+import           Data.Char          (toLower)
+import           Data.Model.Id      (Id (..), Token (..))
+import           Data.Text          (Text)
+import           Data.Time.Calendar (Day)
+import           GHC.Generics       (Generic)
 
 
 
@@ -19,7 +20,7 @@ import GHC.Generics (Generic)
 
 data Credentials = Credentials
     { client_id :: Id Client
-    , secret :: Id Secret
+    , secret    :: Id Secret
     } deriving (Generic, Show, Eq)
 
 
@@ -57,8 +58,8 @@ data Credentials = Credentials
 -- Token types
 data Public
 data Access = Access
-    { client_id :: Id Client
-    , secret :: Id Secret
+    { client_id    :: Id Client
+    , secret       :: Id Secret
     , access_token :: Token Access
     }
 
@@ -74,12 +75,6 @@ data WireRouting
 data Institution
 data Branch
 
-
-newtype Token t = Token Text
-    deriving (Generic, FromJSON, ToJSON, Show, Eq, Typeable)
-
-newtype Id t = Id Text
-    deriving (Generic, FromJSON, ToJSON, Show, Eq, Typeable)
 
 newtype Number t = Number Text
     deriving (Generic, FromJSON, ToJSON, Show, Eq)
@@ -124,17 +119,17 @@ instance FromJSON AccountSubType where
   parseJSON = withText "AccountSubType" (pure . subType)
     where
       subType "checking" = Checking
-      subType "savings" = Savings
-      subType t = SubType t
+      subType "savings"  = Savings
+      subType t          = SubType t
 
 data Account = Account
-    { account_id :: Id Account
-    , balances :: Balances
-    , mask :: Text
-    , name :: Text
+    { account_id    :: Id Account
+    , balances      :: Balances
+    , mask          :: Text
+    , name          :: Text
     , official_name :: Text
-    , subtype :: AccountSubType
-    , _type :: AccountType
+    , subtype       :: AccountSubType
+    , _type         :: AccountType
     } deriving (Generic, Show, Eq)
 
 instance FromJSON Account where
@@ -142,9 +137,9 @@ instance FromJSON Account where
                   { fieldLabelModifier = dropWhile (== '_') }
 
 data Balances = Balances
-    { current :: Currency
-    , available :: Maybe Currency
-    , iso_currency_code :: Maybe CurrencyCode
+    { current                  :: Currency
+    , available                :: Maybe Currency
+    , iso_currency_code        :: Maybe CurrencyCode
     , unofficial_currency_code :: Maybe CurrencyCode
     } deriving (Generic, Show, Eq)
 
@@ -183,19 +178,19 @@ newtype Category = Category Text
 
 
 data Transaction = Transaction
-    { account_id :: Id Account
-    , amount :: Currency
-    , iso_currency_code :: Maybe CurrencyCode
+    { account_id               :: Id Account
+    , amount                   :: Currency
+    , iso_currency_code        :: Maybe CurrencyCode
     , unofficial_currency_code :: Maybe CurrencyCode
-    , category :: Maybe [ Category ]
-    , category_id :: Maybe (Id Category)
-    , date :: Day
-    , location :: Location
-    , name :: Text
-    , pending :: Bool
-    , pending_transaction_id :: Maybe Text
-    , transaction_id :: Id Transaction
-    , transaction_type :: TransactionType
+    , category                 :: Maybe [ Category ]
+    , category_id              :: Maybe (Id Category)
+    , date                     :: Day
+    , location                 :: Location
+    , name                     :: Text
+    , pending                  :: Bool
+    , pending_transaction_id   :: Maybe Text
+    , transaction_id           :: Id Transaction
+    , transaction_type         :: TransactionType
     -- , "payment_meta": Object,
     -- , "account_owner": null,
     } deriving (Generic, Show, Eq)
@@ -205,15 +200,14 @@ instance FromJSON Transaction
 
 data Location = Location
     { address :: Maybe Text
-    , city :: Maybe Text
-    , state :: Maybe Text
-    , zip :: Maybe Text
-    , lat :: Maybe Float
-    , lon :: Maybe Float
+    , city    :: Maybe Text
+    , state   :: Maybe Text
+    , zip     :: Maybe Text
+    , lat     :: Maybe Float
+    , lon     :: Maybe Float
     } deriving (Generic, Show, Eq)
 
 instance FromJSON Location
-
 
 
 

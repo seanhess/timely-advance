@@ -15,10 +15,9 @@ import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Control.Monad.Service  (Service (..))
 import           Data.Aeson             (FromJSON, ToJSON)
 import qualified Data.Char              as Char
-import           Data.String            (IsString)
+import           Data.Model.Digits      (Digits(..))
 import           Data.Text              (Text)
 import qualified Data.Text              as Text
-import           Data.Typeable          (Typeable)
 import           GHC.Generics           (Generic)
 import           Network.HTTP.Client    (Manager)
 import           Network.HTTP.Types     (status401)
@@ -39,15 +38,14 @@ import qualified Network.Authy          as Authy
 -- TODO properly parse phones
 
 
-
-newtype Phone = Phone Text
-    deriving (Show, Eq, Generic, ToJSON, FromJSON, FromHttpApiData, Typeable, IsString, Monoid, Semigroup)
+data PhoneNumber
+type Phone = Digits PhoneNumber
 
 
 -- should be exactly 10 digits
 phone :: Text -> Maybe Phone
 phone t
-  | isDigits t && isLength 10 t = Just $ Phone t
+  | isDigits t && isLength 10 t = Just $ Digits t
   | otherwise = Nothing
   where
     isDigits = Text.all Char.isDigit
@@ -82,14 +80,14 @@ data AuthConfig = AuthConfig
 
 
 verifyStart :: (MonadIO m, MonadConfig AuthConfig m) => Phone -> m ()
-verifyStart (Phone p) = do
+verifyStart (Digits p) = do
   key <- configs apiKey
   _ <- runAuthy (Authy.reqVerifyStart key p)
   pure ()
 
 
 verifyCheck :: (MonadIO m, MonadConfig AuthConfig m) => Phone -> AuthCode -> m Bool
-verifyCheck (Phone p) (AuthCode c) = do
+verifyCheck (Digits p) (AuthCode c) = do
   key <- configs apiKey
   env <- clientEnv
   res <- liftIO $ runClientM (Authy.reqVerifyCheck key p c) env

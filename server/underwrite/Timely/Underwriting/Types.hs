@@ -1,9 +1,8 @@
 {-# LANGUAGE DeriveGeneric #-}
 module Timely.Underwriting.Types where
 
-import GHC.Generics (Generic)
-
-import Timely.Types.Money
+import           Data.Model.Money
+import           GHC.Generics     (Generic)
 
 
 data Result
@@ -22,6 +21,5 @@ data DenialReason = NoReason | SomeReason
 data Denial = Denial
     { denial :: DenialReason
     } deriving (Generic, Show, Eq)
-
 
 

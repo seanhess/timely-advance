@@ -34,6 +34,10 @@ instance ElmType (Private a) where
 
 instance ElmType (ID a) where
     toElmType i = toElmType $ fromId i
+
+instance ElmType (Digits a) where
+    toElmType (Digits t) = toElmType t
+
 instance ElmType Account
 instance ElmType Application
 

@@ -1,41 +1,27 @@
-{-# LANGUAGE DuplicateRecordFields, DeriveGeneric #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DuplicateRecordFields      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RecordWildCards            #-}
 module Timely.AccountStore.Types where
 
 
-import Database.Selda as Selda
-import Database.Selda.SqlType (Lit(..))
-import Data.Proxy (Proxy(..))
-import Data.Text (Text)
-import Data.Typeable (Typeable)
-import GHC.Generics (Generic)
-
-import           Timely.Bank (Token(..), Public, Access, Id(..))
-import qualified Timely.Bank as Bank
-import           Timely.Underwriting.Types (DenialReason)
-import           Timely.Auth (Phone(..))
-import           Timely.Types.Guid (Guid)
+import           Data.Aeson                (FromJSON, ToJSON)
+import           Data.Char                 as Char
+import           Data.Proxy                (Proxy (..))
+import           Data.Text                 as Text
+import           Data.Typeable             (Typeable)
+import           Database.Selda            as Selda
+import           Database.Selda.SqlType    (Lit (..))
+import           GHC.Generics              (Generic)
+import           Data.Model.Guid           (Guid)
+import           Data.Model.Money          as Money
+import           Data.Model.Id             (Token(..), Id(..))
+import           Timely.Auth               (Phone)
+import           Timely.Bank               (Access, Public)
+import qualified Timely.Bank               as Bank
 import           Timely.Types.Private
-import           Timely.Types.Money as Money
+import           Timely.Underwriting.Types (DenialReason)
 
-
-instance Typeable t => SqlType (Token t) where
-    mkLit (Token t) =  LCustom $ mkLit t
-    sqlType _ = sqlType (Proxy :: Proxy Text)
-    fromSql v = Token $ fromSql v
-    defaultValue = LCustom (defaultValue :: Lit Text)
-
-instance Typeable t => SqlType (Id t) where
-    mkLit (Id t) =  LCustom $ mkLit t
-    sqlType _ = sqlType (Proxy :: Proxy Text)
-    fromSql v = Id $ fromSql v
-    defaultValue = LCustom (defaultValue :: Lit Text)
-
-instance SqlType Phone where
-    mkLit (Phone t) =  LCustom $ mkLit t
-    sqlType _ = sqlType (Proxy :: Proxy Text)
-    fromSql v = Phone $ fromSql v
-    defaultValue = LCustom (defaultValue :: Lit Text)
 
 
 -- aggregate all account information
@@ -61,15 +47,33 @@ instance SqlRow AccountRow
 
 
 data Customer = Customer
-    { id :: ID Customer
-    , accountId :: Guid Account
-    , firstName :: Text
-    , middleName :: Maybe Text
-    , lastName :: Text
-    , email :: Text
+    { id          :: ID Customer
+    , accountId   :: Guid Account
+    , firstName   :: Text
+    , middleName  :: Maybe Text
+    , lastName    :: Text
+    , email       :: Text
+    , ssn         :: Digits SSN
+    , dateOfBirth :: Day
     } deriving (Generic, Eq, Show)
 
 instance SqlRow Customer
+
+
+-- only digits
+data SSN
+newtype Digits a = Digits Text
+  deriving (Show, Eq, Generic, ToJSON, FromJSON)
+
+
+digits :: Text -> Digits a
+digits = Digits . Text.filter Char.isDigit
+
+instance Typeable t => SqlType (Digits t) where
+    mkLit (Digits t) =  LCustom $ mkLit t
+    sqlType _ = sqlType (Proxy :: Proxy Text)
+    fromSql v = Digits $ fromSql v
+    defaultValue = LCustom (defaultValue :: Lit Text)
 
 
 data BankAccountType
@@ -84,12 +88,12 @@ instance SqlType BankAccountType
 
 
 data BankAccount = BankAccount
-    { id :: ID BankAccount
-    , accountId :: Guid Account
-    , accountType :: BankAccountType
+    { id            :: ID BankAccount
+    , accountId     :: Guid Account
+    , accountType   :: BankAccountType
     , bankAccountId :: Id Bank.Account
-    , name :: Text
-    , balance :: Money
+    , name          :: Text
+    , balance       :: Money
     } deriving (Generic, Eq, Show)
 
 
@@ -100,9 +104,11 @@ instance SqlRow BankAccount
 
 -- Can we have more than one application per phone number? NO
 data Application = Application
-    { accountId :: Guid Account
-    , phone :: Phone
-    , email :: Text
+    { accountId       :: Guid Account
+    , phone           :: Phone
+    , email           :: Text
+    , ssn             :: Digits SSN
+    , dateOfBirth     :: Day
     , publicBankToken :: Token Public
     } deriving (Generic, Show)
 
@@ -110,7 +116,7 @@ instance SqlRow Application
 
 
 data AppApproval = AppApproval
-    { accountId :: Guid Account
+    { accountId      :: Guid Account
     , approvalAmount :: Money
     } deriving (Generic, Show)
 
@@ -119,7 +125,7 @@ instance SqlRow AppApproval
 
 data AppDenial = AppDenial
     { accountId :: Guid Account
-    , denial :: DenialReason
+    , denial    :: DenialReason
     } deriving (Generic, Show)
 
 instance SqlType DenialReason

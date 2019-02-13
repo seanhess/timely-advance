@@ -1,9 +1,9 @@
 {-# LANGUAGE RecordWildCards #-}
 module Timely.Evaluate.AccountHealth where
 
+import           Data.Model.Money      (Money)
+import qualified Data.Model.Money      as Money
 import           Timely.Evaluate.Types (Projection (..))
-import           Timely.Types.Money    (Money)
-import qualified Timely.Types.Money    as Money
 
 
 
@@ -20,4 +20,3 @@ analyze checking =
 -- TODO inputs
 projectedSpending :: Money
 projectedSpending = Money.fromFloat 200.00
-

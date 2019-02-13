@@ -6,8 +6,9 @@ module Network.Plaid.Identity where
 
 
 import           Data.Aeson          as Aeson
-import           Data.Text           as Text
 import           Data.List           as List
+import           Data.Model.Id       (Id (..), Token (..))
+import           Data.Text           as Text
 import           GHC.Generics        (Generic)
 import           Network.Plaid.Types
 import           Servant

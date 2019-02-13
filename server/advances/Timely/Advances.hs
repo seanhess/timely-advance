@@ -13,17 +13,14 @@ import           Control.Monad.Service     (Service (..))
 import           Data.Aeson                (FromJSON, ToJSON)
 import qualified Data.List                 as List
 import qualified Data.Maybe                as Maybe
+import           Data.Model.Guid           as Guid
+import           Data.Model.Money          as Money
 import           Data.Ord                  (Down (..), comparing)
 import           Data.Time.Calendar        (Day)
 import qualified Data.Time.Clock           as Time
 import           Database.Selda            hiding (insert, query, tryCreateTable, update_)
 import           GHC.Generics              (Generic)
 import           Timely.AccountStore.Types (Account)
-import           Timely.Types.Money        (Money)
-import qualified Timely.Types.Money        as Money
-
-import           Timely.Types.Guid         (Guid)
-import qualified Timely.Types.Guid         as Guid
 
 
 data Advance = Advance

@@ -1,13 +1,13 @@
 module Timely.Evaluate.Offer where
 
 
-import qualified Data.Maybe as Maybe
 import qualified Data.List             as List
-import           Data.Time.Clock       (UTCTime (..), NominalDiffTime)
+import qualified Data.Maybe            as Maybe
+import           Data.Model.Money      as Money
+import           Data.Time.Clock       (NominalDiffTime, UTCTime (..))
 import qualified Data.Time.Clock       as Time
 import           Timely.Advances       (Advance (..))
 import           Timely.Evaluate.Types (Projection (..))
-import           Timely.Types.Money    as Money
 
 -- If they have any active advances, the trigger amount changes to 250.00
 -- If they have aby recent advances, don't advance

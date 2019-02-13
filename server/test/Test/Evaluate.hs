@@ -1,18 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Evaluate where
 
+import           Data.Model.Money        (Money (..))
 import           Data.Time.Calendar      (Day)
 import qualified Data.Time.Calendar      as Day
 import qualified Data.Time.Clock         as Time
 import           Test.Dates              (parseDay, parseTime)
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
-
 import           Timely.Advances         (Advance (..))
 import qualified Timely.Evaluate.Offer   as Offer
 import qualified Timely.Evaluate.Paydate as Paydate
 import           Timely.Evaluate.Types   (Projection (..))
-import           Timely.Types.Money      (Money (..))
 
 tests :: Tests ()
 tests = do
@@ -115,4 +114,3 @@ testOffer = do
     agoIntOver  = Time.addUTCTime (-(Time.nominalDay + 60))
     agoOld      = Time.addUTCTime (-(Time.nominalDay * 2))
     agoRecent   = ago1m
-

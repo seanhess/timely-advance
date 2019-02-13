@@ -27,6 +27,7 @@ dependencies:
 - amqp-worker
 - base64-bytestring
 - bytestring
+- datamodel
 - elm-export
 - envy
 - exceptions
@@ -95,7 +96,7 @@ library:
     - advances
     - auth
     - evaluate
-    - client
+    # - client
     - transfers
 
 executables:
