@@ -89,7 +89,7 @@ instance MonadConfig Transfers.Config HandlerM where
       base <- asks (dwollaBaseUrl . env)
       auth <- asks (dwollaAuthBaseUrl . env)
       src <- asks (dwollaFundingSource . env)
-      pure $ Transfers.Config mgr base auth dwolla src
+      pure $ Transfers.Config src (Dwolla.Config mgr base auth dwolla)
 
 
 loadState :: (MonadIO m, MonadMask m) => m AppState

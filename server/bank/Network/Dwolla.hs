@@ -11,9 +11,10 @@ module Network.Dwolla
   ( DwollaApi
   , createCustomer
   , createFundingSource
-  , fundingSource
-  , transfer
   , authenticate
+  , transfer
+
+  , fundingSource
   , Credentials(..)
   , Customer(..)
   , Resource(..)
@@ -22,30 +23,34 @@ module Network.Dwolla
   , Last4SSN(..)
   , PhoneDigits(..)
   , Id(..)
-  , FundingSource(..)
+  , CreateFundingSource(..)
+  , FundingSource
   , Client, Secret
   , AuthToken(..)
   , Amount(..)
   , DwollaError(..)
+  , Config(..)
   , Transfer
   ) where
 
 
 
 
-import           Control.Monad.Catch     (Exception, throwM)
+import           Control.Monad.Catch     (Exception, MonadThrow, throwM)
+import           Control.Monad.IO.Class  (MonadIO, liftIO)
 import           Data.Aeson              as Aeson
 import qualified Data.ByteString.Base64  as Base64
 import           Data.List               as List
-import           Data.Model.Id           (Id(..), Token(..))
+import           Data.Model.Id           (Id (..), Token (..))
 import           Data.Proxy              as Proxy
 import           Data.String.Conversions (cs)
 import           Data.Text               as Text
 import           Data.Time.Calendar      (Day)
 import           GHC.Generics            (Generic)
+import qualified Network.HTTP.Client     as HTTP
 import           Network.Plaid.Dwolla    (Dwolla)
 import           Servant
-import           Servant.Client          (BaseUrl, ClientM, client, ServantError)
+import           Servant.Client          (BaseUrl, ClientM, ServantError, client)
 import qualified Servant.Client          as Servant
 import           Web.FormUrlEncoded      (ToForm (..))
 
@@ -54,12 +59,35 @@ import           Network.Dwolla.Types
 
 
 
--- I can "initialize" an account with the transfers service. And save everything I need
+-- Main Actions ----------------------------
+
+
+authenticate :: (MonadIO m, MonadThrow m) => Config -> m AuthToken
+authenticate config = runDwollaAuth config $ reqAuthenticate (credentials config)
+
+
+createCustomer :: (MonadIO m, MonadThrow m) => Config -> AuthToken -> Customer -> m (Id Customer)
+createCustomer config tok cust = runDwolla config $ reqCreateCustomer tok cust
+
+
+createFundingSource :: (MonadIO m, MonadThrow m) => Config -> AuthToken -> Id Customer -> CreateFundingSource -> m (Id FundingSource)
+createFundingSource config tok id cfs = runDwolla config $ reqCreateFundingSource tok id cfs
+
+
+transfer :: (MonadIO m, MonadThrow m) => Config -> AuthToken -> Id FundingSource -> Id FundingSource -> Amount -> m (Id Transfer)
+transfer config tok from to amount = do
+  let base = baseUrl config
+  runDwolla config $ reqTransfer tok (fundingSource base from) (fundingSource base to) amount
+
+
+
+
+-- Remote API --------------------------
 
 type DwollaApi
       = Authenticate :> "token" :> ReqBody '[FormUrlEncoded] Auth :> Post '[JSON] Access
    :<|> Authorization   :> "customers" :> ReqBody '[HAL] Customer   :> Post '[HAL] (Location Customer)
-   :<|> Authorization   :> "customers" :> Capture "id" (Id Customer) :> "funding-sources" :> ReqBody '[HAL] FundingSource :> Post '[HAL] (Location FundingSource)
+   :<|> Authorization   :> "customers" :> Capture "id" (Id Customer) :> "funding-sources" :> ReqBody '[HAL] CreateFundingSource :> Post '[HAL] (Location CreateFundingSource)
    :<|> Authorization   :> "transfers" :> ReqBody '[HAL] Transfer   :> Post '[HAL] (Location Transfer)
 
 
@@ -83,19 +111,19 @@ postToken :<|> postCustomer :<|> postFundingSource :<|> postTransfer = client (P
 
 
 
-createCustomer :: AuthToken -> Customer -> ClientM (Id Customer)
-createCustomer tok cust =
+reqCreateCustomer :: AuthToken -> Customer -> ClientM (Id Customer)
+reqCreateCustomer tok cust =
   postCustomer (Just tok) cust >>= parseId
 
 
-createFundingSource :: AuthToken -> Id Customer -> FundingSource -> ClientM (Id FundingSource)
-createFundingSource tok id source =
+reqCreateFundingSource :: AuthToken -> Id Customer -> FundingSource -> ClientM (Id FundingSource)
+reqCreateFundingSource tok id source =
   postFundingSource (Just tok) id source >>= parseId
 
 
 
-transfer :: AuthToken -> Resource FundingSource -> Resource FundingSource -> Amount -> ClientM (Id Transfer)
-transfer tok from to amount = do
+reqTransfer :: AuthToken -> Resource FundingSource -> Resource FundingSource -> Amount -> ClientM (Id Transfer)
+reqTransfer tok from to amount = do
   let tamount = TransferAmount Static amount
       links   = TransferLinks (RelLink from) (RelLink to)
   res <- postTransfer (Just tok) $ Transfer links tamount
@@ -103,8 +131,8 @@ transfer tok from to amount = do
 
 
 
-authenticate :: Credentials -> ClientM AuthToken
-authenticate creds = do
+reqAuthenticate :: Credentials -> ClientM AuthToken
+reqAuthenticate creds = do
   access <- postToken (Just creds) (Auth Static)
   let (Token t) = access_token access
   pure $ AuthToken t
@@ -172,12 +200,13 @@ removeUnderscores :: Aeson.Options
 removeUnderscores = Aeson.defaultOptions { fieldLabelModifier = List.dropWhileEnd ((==) '_') }
 
 
-data FundingSource = FundingSource
+data CreateFundingSource = CreateFundingSource
   { plaidToken :: Token Dwolla
   , name       :: Text
   } deriving (Show, Eq, Generic)
 
-instance ToJSON FundingSource
+instance ToJSON CreateFundingSource
+type FundingSource = CreateFundingSource
 
 
 data Transfer = Transfer
@@ -188,8 +217,8 @@ data Transfer = Transfer
 instance ToJSON Transfer
 
 data TransferLinks = TransferLinks
-  { source      :: RelLink FundingSource
-  , destination :: RelLink FundingSource
+  { source      :: RelLink CreateFundingSource
+  , destination :: RelLink CreateFundingSource
   } deriving (Show, Eq, Generic)
 
 instance ToJSON TransferLinks
@@ -251,3 +280,38 @@ data Anything = Anything
 
 instance FromHAL Anything where
     fromHAL _ = pure Anything
+
+
+
+
+
+-- Dwolla API Helpers ----------------------------------------------
+
+data Config = Config
+    { manager     :: HTTP.Manager
+    , baseUrl     :: BaseUrl
+    , baseUrlAuth :: BaseUrl
+    , credentials :: Credentials
+    }
+
+
+
+-- make it so you can only run authenticate with the right one
+
+runDwollaAuth :: (MonadThrow m, MonadIO m) => Config -> ClientM a -> m a
+runDwollaAuth config req =
+    runDwollaClient baseUrlAuth config req
+
+
+runDwolla :: (MonadThrow m, MonadIO m) => Config -> ClientM a -> m a
+runDwolla config req =
+    runDwollaClient baseUrl config req
+
+
+runDwollaClient :: (MonadThrow m, MonadIO m) => (Config -> BaseUrl) -> Config -> ClientM a -> m a
+runDwollaClient url config req = do
+    let env = Servant.mkClientEnv (manager config) (url config)
+    res <- liftIO $ Servant.runClientM req env
+    case res of
+      Left err -> throwM $ DwollaApiError err
+      Right a  -> pure a
