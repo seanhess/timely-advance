@@ -7,19 +7,48 @@
 //
 
 import UIKit
+import WebKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
 
+
+    @IBOutlet weak var webView: WKWebView!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        let url = URL(string: "http://orca.local:8000")!
+        let request = URLRequest(url: url)
+        print("HELLO", url, request)
+        webView.load(request)
+        webView.uiDelegate = self
+        webView.navigationDelegate = self
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
+    
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        print("didFinish")
+    }
+    
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        print("didCommit")
+    }
+    
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        print("didStartProvisional")
+    }
 
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        print("didFail")
+    }
+    
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        print("didFail Providiona", error)
+    }
 
 }
 
