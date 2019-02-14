@@ -1,4 +1,4 @@
-module Timely.Style exposing (blue, button, darkBlue, error, formPage, grey, header, link, red, white)
+module Timely.Style exposing (blue, button, darkBlue, error, formPage, grey, header, info, lightBlue, link, page, red, section, white)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -17,6 +17,10 @@ grey =
 
 blue =
     Element.rgb 0 0 0.8
+
+
+lightBlue =
+    Element.rgb 0.25 0.6 0.83
 
 
 red =
@@ -56,3 +60,18 @@ error =
 link : Attribute msg
 link =
     Font.underline
+
+
+page : List (Attribute msg)
+page =
+    [ height fill, width fill ]
+
+
+info : List (Attribute msg)
+info =
+    [ spacing 20, padding 20, height fill, width fill, Background.color lightBlue, Font.color white ]
+
+
+section : List (Attribute msg)
+section =
+    [ spacing 20, padding 20, width fill ]

@@ -4,6 +4,7 @@ import Browser.Navigation as Nav
 import Date exposing (Date)
 import Debug
 import Element exposing (..)
+import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 import Html.Attributes as Html
@@ -207,29 +208,39 @@ view model =
             viewPlaidLanding model
 
 
+
+-- formPage : List (Attribute msg)
+-- formPage =
+--     [ height shrink, centerY, centerX, width (fill |> maximum 800), spacing 36, padding 20 ]
+
+
 viewSignupForm : Model -> Element Msg
 viewSignupForm model =
-    column Style.formPage
-        [ el Style.header (text "Sign up for Timely")
-        , viewPhoneInput model
-        , Input.button Style.button
-            { onPress = Just SubmitForm
-            , label = Element.text "Sign up"
-            }
-        , viewProblems model.status
+    column Style.page
+        [ column Style.info []
+        , column Style.section
+            [ viewPhoneInput model
+            , Input.button Style.button
+                { onPress = Just SubmitForm
+                , label = Element.text "Join Timely"
+                }
+            , viewProblems model.status
+            ]
         ]
 
 
 viewLoginForm : Model -> Element Msg
 viewLoginForm model =
-    column Style.formPage
-        [ el Style.header (text "Log in to Timely")
-        , viewPhoneInput model
-        , Input.button Style.button
-            { onPress = Just SubmitForm
-            , label = Element.text "Login"
-            }
-        , viewProblems model.status
+    column Style.page
+        [ column Style.info []
+        , column Style.section
+            [ viewPhoneInput model
+            , Input.button Style.button
+                { onPress = Just SubmitForm
+                , label = Element.text "Login"
+                }
+            , viewProblems model.status
+            ]
         ]
 
 
@@ -237,9 +248,9 @@ viewPhoneInput : Model -> Element Msg
 viewPhoneInput model =
     Input.text [ htmlAttribute (Html.type_ "tel") ]
         { text = idValue model.phone
-        , placeholder = Nothing
+        , placeholder = Just <| Input.placeholder [] (text "Enter your mobile number")
         , onChange = EditPhone
-        , label = label "Phone"
+        , label = Input.labelHidden "Phone"
         }
 
 
@@ -255,20 +266,22 @@ viewEmailInput model =
 
 viewPhoneCode : Model -> Element Msg
 viewPhoneCode model =
-    column Style.formPage
-        [ el Style.header (text "Enter Code")
-        , paragraph [] [ text "We sent a message to your phone number" ]
-        , Input.text [ htmlAttribute (Html.type_ "tel") ]
-            { text = idValue model.code
-            , placeholder = Nothing
-            , onChange = EditCode
-            , label = label "Code"
-            }
-        , Input.button Style.button
-            { onPress = Just SubmitCode
-            , label = Element.text "Check code"
-            }
-        , viewProblems model.status
+    column Style.page
+        [ column Style.info
+            [ paragraph [] [ text "We sent a message to your phone number, please enter the code below" ] ]
+        , column Style.section
+            [ Input.text [ htmlAttribute (Html.type_ "tel") ]
+                { text = idValue model.code
+                , placeholder = Just <| Input.placeholder [] (text "Enter 4 digit code")
+                , onChange = EditCode
+                , label = Input.labelHidden "Code"
+                }
+            , Input.button Style.button
+                { onPress = Just SubmitCode
+                , label = Element.text "Check code"
+                }
+            , viewProblems model.status
+            ]
         ]
 
 

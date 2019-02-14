@@ -3,6 +3,7 @@ port module Main exposing (Model, Msg(..), PageModel(..), changeRouteTo, init, m
 import Browser exposing (Document)
 import Browser.Navigation as Nav
 import Element
+import Element.Background as Background
 import Html exposing (Html, a, b, button, div, li, text, ul)
 import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
@@ -18,6 +19,7 @@ import Page.Onboard.Landing as Landing
 import Page.Onboard.Signup as Signup
 import Route exposing (Route)
 import Timely.Api exposing (Account)
+import Timely.Style as Style
 import Url exposing (Url)
 
 
@@ -279,9 +281,7 @@ view model =
                     Element.map OnSudo <| Sudo.view m
     in
     { title = "TODO: Title"
-    , body =
-        [ div [] [ Element.layout [] (pageView model.page) ]
-        ]
+    , body = [ Element.layout [] (pageView model.page) ]
     }
 
 

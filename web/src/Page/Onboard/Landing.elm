@@ -1,6 +1,6 @@
 module Page.Onboard.Landing exposing (Model, Msg, init, update, view)
 
-import Element exposing (Element, column, el, link, padding, spacing, text)
+import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
@@ -34,8 +34,11 @@ update msg model =
 
 view : Model -> Element Msg
 view model =
-    column [ padding 10, spacing 8 ]
-        [ el [ Region.heading 1 ] (text "Timely Advance")
-        , link Style.button { url = Route.url (Onboard Signup), label = text "Get Started" }
-        , link [ Style.link ] { url = Route.url (Onboard Login), label = text "Log in" }
+    column Style.page
+        [ column Style.info
+            [ el [ Region.heading 1 ] (text "Welcome to Timely Advance") ]
+        , column Style.section
+            [ link Style.button { url = Route.url (Onboard Signup), label = text "Get Started" }
+            , link [ Style.link, centerX ] { url = Route.url (Onboard Login), label = text "Log in" }
+            ]
         ]
