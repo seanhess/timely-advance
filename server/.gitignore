@@ -1,5 +1,5 @@
 .stack-work/
-**.cabal
+**/*.cabal
 *~
 *.sqlite
 
