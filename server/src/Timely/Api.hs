@@ -27,7 +27,7 @@ import           Servant.Auth.Server                  (Auth, Cookie, CookieSetti
 import           Servant.Server.Generic               (AsServerT, genericServerT)
 import qualified Timely.AccountStore.Account          as Account
 import qualified Timely.AccountStore.Application      as Application
-import           Timely.AccountStore.Types            (Application)
+import           Timely.AccountStore.Types            (Application, AppResult)
 import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
 import           Timely.Api.Advances                  as Advances
@@ -73,7 +73,7 @@ data AccountApi route = AccountApi
     { _get      :: route :- Get '[JSON, HTML] Account
     , _banks    :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
     , _app      :: route :- "application" :> Get '[JSON] Application
-    , _result   :: route :- "application" :> "result" :> Get '[JSON] Result
+    , _result   :: route :- "application" :> "result" :> Get '[JSON] AppResult
     , _advances :: route :- "advances" :> ToServantApi AdvanceApi
     } deriving (Generic)
 

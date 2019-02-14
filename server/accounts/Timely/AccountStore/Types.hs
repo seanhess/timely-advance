@@ -5,10 +5,11 @@
 module Timely.AccountStore.Types where
 
 
+import           Data.Aeson                (ToJSON(..))
 import           Data.Model.Guid           (Guid)
 import           Data.Model.Id             (Id (..), Token (..))
 import           Data.Model.Money          as Money
-import           Data.Model.Types          (Phone, SSN, State, PostalCode)
+import           Data.Model.Types          (Phone, PostalCode, SSN, State)
 import           Data.Model.Valid          as Valid
 import           Data.Text                 as Text
 import           Data.Typeable             (Typeable)
@@ -24,13 +25,13 @@ import           Timely.Underwriting.Types (DenialReason)
 
 -- aggregate all account information
 data Account = Account
-    { accountId :: Guid Account
-    , phone     :: Valid Phone
-    , customer  :: Customer
+    { accountId  :: Guid Account
+    , phone      :: Valid Phone
+    , customer   :: Customer
     , transferId :: Id TransferAccount
-    , bankToken :: Private (Token Access)
-    , credit    :: Money
-    , health    :: Health
+    , bankToken  :: Private (Token Access)
+    , credit     :: Money
+    , health     :: Health
     } deriving (Show, Eq, Generic)
 
 
@@ -55,8 +56,8 @@ data Customer = Customer
     , email       :: Text
     , ssn         :: Valid SSN
     , dateOfBirth :: Day
-    , street1    :: Text
-    , street2    :: Maybe Text
+    , street1     :: Text
+    , street2     :: Maybe Text
     , city        :: Text
     , state       :: Valid State
     , postalCode  :: Valid PostalCode
@@ -107,12 +108,35 @@ data Application = Application
 instance SqlRow Application
 
 
+data Onboarding
+    = Pending
+    | Complete
+    | Error
+    deriving (Show, Eq, Generic, Enum, Bounded, Read)
+
+instance SqlType Onboarding
+instance ToJSON Onboarding
+instance ToJSON DenialReason
+
+
+
+data AppResult
+    = AppResultDenial AppDenial
+    | AppResultApproval AppApproval
+
+instance ToJSON AppResult where
+  toJSON (AppResultDenial d) = toJSON d
+  toJSON (AppResultApproval a) = toJSON a
+
+
 data AppApproval = AppApproval
     { accountId      :: Guid Account
     , approvalAmount :: Money
+    , onboarding     :: Onboarding
     } deriving (Generic, Show)
 
 instance SqlRow AppApproval
+instance ToJSON AppApproval
 
 
 data AppDenial = AppDenial
@@ -122,6 +146,7 @@ data AppDenial = AppDenial
 
 instance SqlType DenialReason
 instance SqlRow AppDenial
+instance ToJSON AppDenial
 
 
 

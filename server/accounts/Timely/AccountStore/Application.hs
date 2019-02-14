@@ -1,20 +1,20 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedLabels      #-}
+{-# LANGUAGE MultiParamTypeClasses #-} {-# LANGUAGE OverloadedLabels      #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE NamedFieldPuns       #-}
+{-# LANGUAGE DuplicateRecordFields       #-}
 module Timely.AccountStore.Application
     ( initialize
     , ApplicationStore(..)
     ) where
 
 
-import           Control.Monad.Selda       (Selda, insert, query, tryCreateTable)
+import           Control.Monad.Selda       (Selda, insert, query, tryCreateTable, update_)
 import           Control.Monad.Service     (Service (..))
 import           Data.Maybe                (listToMaybe)
 import           Data.Model.Guid           (Guid)
-import           Database.Selda            hiding (Result, insert, query, tryCreateTable)
+import           Database.Selda            hiding (Result, insert, query, tryCreateTable, update_)
 
 import           Timely.AccountStore.Types
 import           Timely.Underwriting.Types (Approval (..), Denial (..), Result (..))
@@ -26,7 +26,8 @@ data ApplicationStore a where
     All       :: ApplicationStore [Application]
 
     SaveResult :: Guid Account -> Result -> ApplicationStore ()
-    FindResult :: Guid Account -> ApplicationStore (Maybe Result)
+    FindResult :: Guid Account -> ApplicationStore (Maybe AppResult)
+    MarkResultOnboarding :: Guid Account -> Onboarding -> ApplicationStore ()
 
 instance (Selda m) => Service m ApplicationStore where
     run (Save a)         = save a
@@ -34,6 +35,7 @@ instance (Selda m) => Service m ApplicationStore where
     run All              = loadAll
     run (SaveResult i r) = saveResult i r
     run (FindResult i)   = findResult i
+    run (MarkResultOnboarding i o) = markOnboarding i o
 
 
 
@@ -72,20 +74,24 @@ loadAll =
 -- Underwriting results ---------------------------------
 
 saveResult :: (Selda m) => Guid Account -> Result -> m ()
-saveResult accountId (Approved (Approval {..})) = do
-    insert approvals [AppApproval {..}]
+saveResult accountId (Approved (Approval {approvalAmount})) = do
+    insert approvals [ AppApproval {accountId, approvalAmount, onboarding = Pending} ]
     pure ()
-saveResult accountId (Denied (Denial {..})) = do
-    insert denials [AppDenial {..}]
+saveResult accountId (Denied (Denial {denial})) = do
+    insert denials [AppDenial {accountId, denial}]
     pure ()
 
 
+markOnboarding :: Selda m => Guid Account -> Onboarding -> m ()
+markOnboarding i o = do
+    update_ approvals (\a -> a ! #accountId .== literal i)
+                      (\a -> a `with` [#onboarding := literal o])
 
 
 
 
 -- take the first result you find, favoring denials
-findResult :: Selda m => Guid Account -> m (Maybe Result)
+findResult :: Selda m => Guid Account -> m (Maybe AppResult)
 findResult i = do
     ds <- query $ do
       d <- select denials
@@ -97,8 +103,8 @@ findResult i = do
       pure a
     pure $ listToMaybe $ map fromAppDenial ds ++ map fromAppApproval as
   where
-    fromAppDenial (AppDenial {..}) = Denied $ Denial {..}
-    fromAppApproval (AppApproval {..}) = Approved $ Approval {..}
+    fromAppDenial appDenial = AppResultDenial appDenial
+    fromAppApproval appApproval = AppResultApproval appApproval
 
 
 

@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money, Phone, SSN, Session, Token, Valid(..), advanceIsActive, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeAmount, encodeId, expectId, formatDate, formatDollars, formatMoney, fromDollars, getAccount, getAccountBanks, getAdvance, getAdvances, getApplicationResult, idValue, postAdvanceAccept, postApplications, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, timezone, usedCredit)
+module Timely.Api exposing (Account, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money, Onboarding(..), Phone, SSN, Session, Token, Valid(..), advanceIsActive, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeAmount, encodeId, expectId, formatDate, formatDollars, formatMoney, fromDollars, getAccount, getAccountBanks, getAdvance, getAdvances, getApplicationResult, idValue, postAdvanceAccept, postApplications, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, timezone, usedCredit)
 
 import Http exposing (Error, Expect)
 import Iso8601
@@ -91,8 +91,15 @@ type ApprovalResult
     | Denied Denial
 
 
+type Onboarding
+    = Pending
+    | Complete
+    | Error
+
+
 type alias Approval =
     { approvalAmount : Int
+    , onboarding : Onboarding
     }
 
 
@@ -157,6 +164,7 @@ decodeApproval : Decoder Approval
 decodeApproval =
     Decode.succeed Approval
         |> required "approvalAmount" int
+        |> required "onboarding" decodeOnboarding
 
 
 decodeAccountInfo : Decoder AccountInfo
@@ -239,6 +247,26 @@ decodeBankAccountType =
 
                     _ ->
                         Decode.fail ("Invalid BankAccountType, " ++ string)
+            )
+
+
+decodeOnboarding : Decoder Onboarding
+decodeOnboarding =
+    Decode.string
+        |> Decode.andThen
+            (\string ->
+                case string of
+                    "Pending" ->
+                        Decode.succeed Pending
+
+                    "Error" ->
+                        Decode.succeed Error
+
+                    "Complete" ->
+                        Decode.succeed Complete
+
+                    _ ->
+                        Decode.fail ("Invalid Onboarding, " ++ string)
             )
 
 

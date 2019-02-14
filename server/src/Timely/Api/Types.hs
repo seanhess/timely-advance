@@ -23,7 +23,7 @@ import           GHC.Generics                  (Generic)
 import           Servant.API.ContentTypes.HTML (Linkable (..))
 import           Timely.AccountStore.Types
 import           Timely.Bank                   (Public, Token)
-import           Timely.Underwriting           (Approval, Denial, DenialReason, Result (..))
+import           Timely.Underwriting           (Approval, Denial, Result (..))
 
 
 instance ToJSON Result where
@@ -32,7 +32,6 @@ instance ToJSON Result where
 
 instance ToJSON Approval
 instance ToJSON Denial
-instance ToJSON DenialReason
 
 
 instance ToJSON (ID a) where

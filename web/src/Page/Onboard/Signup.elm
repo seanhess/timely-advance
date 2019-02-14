@@ -211,7 +211,6 @@ viewSignupForm : Model -> Element Msg
 viewSignupForm model =
     column Style.formPage
         [ el Style.header (text "Sign up for Timely")
-        , viewEmailInput model
         , viewPhoneInput model
         , Input.button Style.button
             { onPress = Just SubmitForm
@@ -309,6 +308,7 @@ viewIdentityForm model =
     column Style.formPage
         [ el Style.header (text "Identity")
         , paragraph [] [ text "Please give us a few more details" ]
+        , viewEmailInput model
         , viewSSNInput model
         , viewDobInput model
         , Input.button Style.button
@@ -325,7 +325,7 @@ viewSSNInput model =
         { text = model.ssn
         , placeholder = Nothing
         , onChange = EditSSN
-        , label = label "SSN"
+        , label = label "SSN (9 digits)"
         }
 
 

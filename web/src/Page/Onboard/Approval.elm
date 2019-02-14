@@ -61,6 +61,22 @@ update msg model =
     let
         updates =
             base model
+
+        isComplete result =
+            case result of
+                Approved app ->
+                    case app.onboarding of
+                        Api.Complete ->
+                            True
+
+                        Api.Error ->
+                            True
+
+                        _ ->
+                            False
+
+                _ ->
+                    False
     in
     case msg of
         OnResult (Err (Http.BadStatus 404)) ->
@@ -74,6 +90,13 @@ update msg model =
         OnResult (Ok r) ->
             updates
                 |> set { model | status = Complete r }
+                |> command
+                    (if isComplete r then
+                        Cmd.none
+
+                     else
+                        Process.sleep 1000 |> Task.perform OnWaited
+                    )
 
         OnWaited () ->
             updates
@@ -105,10 +128,18 @@ viewStatus accountId status =
                 [ Element.el [] (text "Approved!")
                 , Element.el [] (text <| String.fromInt a.approvalAmount)
                 , Element.column []
-                    [ Element.link Style.button
-                        { url = Route.url <| Route.Account accountId <| Route.AccountMain
-                        , label = Element.text "My Account"
-                        }
+                    [ case a.onboarding of
+                        Api.Pending ->
+                            Element.el [] (text "Creating your account...")
+
+                        Api.Error ->
+                            Element.el [ Style.error ] (text "There was an error!")
+
+                        Api.Complete ->
+                            Element.link Style.button
+                                { url = Route.url <| Route.Account accountId <| Route.AccountMain
+                                , label = Element.text "My Account"
+                                }
                     ]
                 ]
 
