@@ -185,10 +185,18 @@ changeRouteTo key maybeRoute =
             ( Landing mod, Cmd.map OnLanding cmd )
 
         Just (Route.Onboard Route.Signup) ->
-            ( Signup (Signup.init key Signup.Signup), Cmd.none )
+            let
+                ( mod, cmd ) =
+                    Signup.init key Signup.Signup
+            in
+            ( Signup mod, Cmd.map OnSignup cmd )
 
         Just (Route.Onboard Route.Login) ->
-            ( Signup (Signup.init key Signup.Login), Cmd.none )
+            let
+                ( mod, cmd ) =
+                    Signup.init key Signup.Login
+            in
+            ( Signup mod, Cmd.map OnSignup cmd )
 
         Just (Route.Onboard (Route.Approval i)) ->
             let

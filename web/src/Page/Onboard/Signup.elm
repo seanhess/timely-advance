@@ -1,6 +1,7 @@
 port module Page.Onboard.Signup exposing (Mode(..), Model, Msg, init, subscriptions, update, view)
 
 import Browser.Navigation as Nav
+import Date exposing (Date)
 import Debug
 import Element exposing (..)
 import Element.Font as Font
@@ -11,6 +12,8 @@ import Iso8601
 import Json.Encode as Encode
 import Platform.Updates exposing (Updates, command, set, updates)
 import Route
+import Task
+import Time
 import Timely.Api as Api exposing (AccountInfo, Application, Auth, AuthCode, Bank, Id(..), Phone, SSN, Session, Token, Valid(..), idValue)
 import Timely.Components exposing (loadingButton)
 import Timely.Style as Style
@@ -26,7 +29,8 @@ port plaidLinkDone : (String -> msg) -> Sub msg
 
 
 type alias Model =
-    { email : String
+    { now : String
+    , email : String
     , phone : Phone
     , dob : String
     , ssn : String
@@ -47,6 +51,7 @@ type Mode
 type Step
     = EditingForm
     | EditingCode
+    | EditingIdentity
     | Plaid
 
 
@@ -61,9 +66,11 @@ type Msg
     | EditEmail String
     | EditDob String
     | EditSSN String
+    | OnTime Time.Posix
     | SubmitForm
     | EditCode String
     | SubmitCode
+    | SubmitIdentity
     | PlaidOpen
     | PlaidExited
     | PlaidDone String
@@ -72,19 +79,22 @@ type Msg
     | CompletedSignup (Result Http.Error Application)
 
 
-init : Nav.Key -> Mode -> Model
+init : Nav.Key -> Mode -> ( Model, Cmd Msg )
 init key mode =
-    { phone = Id ""
-    , email = ""
-    , ssn = ""
-    , dob = ""
-    , code = Id ""
-    , plaidToken = Id ""
-    , step = EditingForm
-    , status = Ready
-    , key = key
-    , mode = mode
-    }
+    ( { now = ""
+      , phone = Id ""
+      , email = ""
+      , ssn = ""
+      , dob = "2000-01-01"
+      , code = Id ""
+      , plaidToken = Id ""
+      , step = EditingForm
+      , status = Ready
+      , key = key
+      , mode = mode
+      }
+    , Time.now |> Task.perform OnTime
+    )
 
 
 subscriptions : Model -> Sub Msg
@@ -107,6 +117,9 @@ update msg model =
     in
     -- Debug.log (Debug.toString msg) <|
     case msg of
+        OnTime t ->
+            updates { model | now = Date.toDateString t }
+
         EditPhone s ->
             updates { model | phone = Id s }
 
@@ -159,8 +172,11 @@ update msg model =
 
         PlaidDone token ->
             -- TODO validation
-            updates { model | plaidToken = Id token }
-                |> command (Api.postApplications CompletedSignup <| newApplication (Id token))
+            updates { model | plaidToken = Id token, step = EditingIdentity }
+
+        SubmitIdentity ->
+            updates model
+                |> command (Api.postApplications CompletedSignup <| newApplication model.plaidToken)
 
         CompletedSignup (Err e) ->
             updates { model | status = Failed "Signup server error" e }
@@ -184,6 +200,9 @@ view model =
         EditingCode ->
             viewPhoneCode model
 
+        EditingIdentity ->
+            viewIdentityForm model
+
         Plaid ->
             viewPlaidLanding model
 
@@ -194,8 +213,6 @@ viewSignupForm model =
         [ el Style.header (text "Sign up for Timely")
         , viewEmailInput model
         , viewPhoneInput model
-        , viewSSNInput model
-        , viewDobInput model
         , Input.button Style.button
             { onPress = Just SubmitForm
             , label = Element.text "Sign up"
@@ -234,26 +251,6 @@ viewEmailInput model =
         , placeholder = Nothing
         , onChange = EditEmail
         , label = label "Email"
-        }
-
-
-viewSSNInput : Model -> Element Msg
-viewSSNInput model =
-    Input.text []
-        { text = model.ssn
-        , placeholder = Nothing
-        , onChange = EditSSN
-        , label = label "SSN"
-        }
-
-
-viewDobInput : Model -> Element Msg
-viewDobInput model =
-    Input.text []
-        { text = model.dob
-        , placeholder = Nothing
-        , onChange = EditDob
-        , label = label "Date of Birth"
         }
 
 
@@ -301,3 +298,47 @@ viewProblems status =
 
         _ ->
             el [] (text "")
+
+
+
+-- Identity ---------------------
+
+
+viewIdentityForm : Model -> Element Msg
+viewIdentityForm model =
+    column Style.formPage
+        [ el Style.header (text "Identity")
+        , paragraph [] [ text "Please give us a few more details" ]
+        , viewSSNInput model
+        , viewDobInput model
+        , Input.button Style.button
+            { onPress = Just SubmitIdentity
+            , label = Element.text "Finish"
+            }
+        , viewProblems model.status
+        ]
+
+
+viewSSNInput : Model -> Element Msg
+viewSSNInput model =
+    Input.text []
+        { text = model.ssn
+        , placeholder = Nothing
+        , onChange = EditSSN
+        , label = label "SSN"
+        }
+
+
+viewDobInput : Model -> Element Msg
+viewDobInput model =
+    Input.text
+        [ htmlAttribute (Html.type_ "date")
+        , htmlAttribute (Html.min "1900-01-01")
+        , htmlAttribute (Html.max model.now)
+        , htmlAttribute (Html.style "flex-direction" "row")
+        ]
+        { text = model.dob
+        , placeholder = Nothing
+        , onChange = EditDob
+        , label = label "Date of Birth"
+        }
