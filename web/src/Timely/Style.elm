@@ -5,6 +5,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Region as Region
+import Html.Attributes as Html
 
 
 white =
@@ -69,7 +70,16 @@ page =
 
 info : List (Attribute msg)
 info =
-    [ spacing 20, padding 20, height fill, width fill, Background.color lightBlue, Font.color white ]
+    [ spacing 20
+    , padding 20
+    , height (fill |> minimum 200)
+    , width fill
+    , alignTop
+    , htmlAttribute (Html.style "border-top-left-radius" "10px")
+    , htmlAttribute (Html.style "border-top-right-radius" "10px")
+    , Background.color lightBlue
+    , Font.color white
+    ]
 
 
 section : List (Attribute msg)

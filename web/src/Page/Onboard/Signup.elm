@@ -12,11 +12,11 @@ import Http
 import Iso8601
 import Json.Encode as Encode
 import Platform.Updates exposing (Updates, command, set, updates)
-import Route
+import Route exposing (Route)
 import Task
 import Time
 import Timely.Api as Api exposing (AccountInfo, Application, Auth, AuthCode, Bank, Id(..), Phone, SSN, Session, Token, Valid(..), idValue)
-import Timely.Components exposing (loadingButton)
+import Timely.Components as Components exposing (loadingButton)
 import Timely.Style as Style
 
 
@@ -50,7 +50,7 @@ type Mode
 
 
 type Step
-    = EditingForm
+    = EditingPhone
     | EditingCode
     | EditingIdentity
     | Plaid
@@ -67,11 +67,13 @@ type Msg
     | EditEmail String
     | EditDob String
     | EditSSN String
+    | Navigate Route
     | OnTime Time.Posix
     | SubmitForm
     | EditCode String
     | SubmitCode
     | SubmitIdentity
+    | Step Step
     | PlaidOpen
     | PlaidExited
     | PlaidDone String
@@ -89,7 +91,7 @@ init key mode =
       , dob = "2000-01-01"
       , code = Id ""
       , plaidToken = Id ""
-      , step = EditingForm
+      , step = EditingPhone
       , status = Ready
       , key = key
       , mode = mode
@@ -120,6 +122,13 @@ update msg model =
     case msg of
         OnTime t ->
             updates { model | now = Date.toDateString t }
+
+        Navigate route ->
+            updates model
+                |> command (Route.pushUrl model.key route)
+
+        Step step ->
+            updates { model | step = step }
 
         EditPhone s ->
             updates { model | phone = Id s }
@@ -161,7 +170,7 @@ update msg model =
 
                 Just id ->
                     updates model
-                        |> command (Nav.pushUrl model.key (Route.url <| Route.Account id <| Route.AccountMain))
+                        |> command (Route.pushUrl model.key (Route.Account id <| Route.AccountMain))
 
         PlaidOpen ->
             updates model
@@ -190,7 +199,7 @@ update msg model =
 view : Model -> Element Msg
 view model =
     case model.step of
-        EditingForm ->
+        EditingPhone ->
             case model.mode of
                 Signup ->
                     viewSignupForm model
@@ -217,7 +226,12 @@ view model =
 viewSignupForm : Model -> Element Msg
 viewSignupForm model =
     column Style.page
-        [ column Style.info []
+        [ column Style.info
+            [ row [ spacing 15 ]
+                [ Components.back <| Navigate (Route.Onboard Route.Landing)
+                , paragraph [] [ text "Start by entering your phone number" ]
+                ]
+            ]
         , column Style.section
             [ viewPhoneInput model
             , Input.button Style.button
@@ -232,7 +246,12 @@ viewSignupForm model =
 viewLoginForm : Model -> Element Msg
 viewLoginForm model =
     column Style.page
-        [ column Style.info []
+        [ column Style.info
+            [ row [ spacing 15 ]
+                [ Components.back <| Navigate (Route.Onboard Route.Landing)
+                , paragraph [] [ text "Welcome back! Please enter your phone number" ]
+                ]
+            ]
         , column Style.section
             [ viewPhoneInput model
             , Input.button Style.button
@@ -268,7 +287,11 @@ viewPhoneCode : Model -> Element Msg
 viewPhoneCode model =
     column Style.page
         [ column Style.info
-            [ paragraph [] [ text "We sent a message to your phone number, please enter the code below" ] ]
+            [ row [ spacing 15 ]
+                [ Components.back (Step EditingPhone)
+                , paragraph [] [ text "We sent a message to your phone number, please enter the code below" ]
+                ]
+            ]
         , column Style.section
             [ Input.text [ htmlAttribute (Html.type_ "tel") ]
                 { text = idValue model.code
@@ -287,13 +310,20 @@ viewPhoneCode model =
 
 viewPlaidLanding : Model -> Element Msg
 viewPlaidLanding model =
-    column Style.formPage
-        [ el Style.header (text "Connect your bank")
-        , Input.button Style.button
-            { onPress = Just PlaidOpen
-            , label = Element.text "Connect Bank"
-            }
-        , viewProblems model.status
+    column Style.page
+        [ column Style.info
+            [ row [ spacing 15 ]
+                [ Components.back (Step EditingCode)
+                , paragraph [] [ text "Connect your bank" ]
+                ]
+            ]
+        , column Style.section
+            [ Input.button Style.button
+                { onPress = Just PlaidOpen
+                , label = Element.text "Connect Bank"
+                }
+            , viewProblems model.status
+            ]
         ]
 
 
@@ -318,17 +348,23 @@ viewProblems status =
 
 viewIdentityForm : Model -> Element Msg
 viewIdentityForm model =
-    column Style.formPage
-        [ el Style.header (text "Identity")
-        , paragraph [] [ text "Please give us a few more details" ]
-        , viewEmailInput model
-        , viewSSNInput model
-        , viewDobInput model
-        , Input.button Style.button
-            { onPress = Just SubmitIdentity
-            , label = Element.text "Finish"
-            }
-        , viewProblems model.status
+    column Style.page
+        [ column Style.info
+            [ row [ spacing 15 ]
+                [ Components.back (Step Plaid)
+                , paragraph [] [ text "Please give us a few more details" ]
+                ]
+            ]
+        , column Style.section
+            [ viewEmailInput model
+            , viewSSNInput model
+            , viewDobInput model
+            , Input.button Style.button
+                { onPress = Just SubmitIdentity
+                , label = Element.text "Finish"
+                }
+            , viewProblems model.status
+            ]
         ]
 
 

@@ -1,10 +1,12 @@
-module Timely.Components exposing (Spinner(..), loadingButton, spinner, spinnerDots, spinnerRing, spinnerRipple)
+module Timely.Components exposing (Spinner(..), back, loadingButton, spinner, spinnerDots, spinnerRing, spinnerRipple)
 
 import Element exposing (..)
-import Element.Input as Element
+import Element.Font as Font
+import Element.Input as Input
 import Html
 import Html.Attributes as Html
 import Http exposing (Error)
+import Route exposing (Route)
 
 
 type Spinner
@@ -48,13 +50,24 @@ spinnerDots =
 loadingButton : List (Attribute msg) -> { onPress : msg, label : Element msg, isLoading : Bool } -> Element msg
 loadingButton atts info =
     if info.isLoading then
-        Element.button (atts ++ [ Element.alpha 0.5 ])
+        Input.button (atts ++ [ Element.alpha 0.5 ])
             { onPress = Nothing
             , label = Element.el [ height (shrink |> maximum 20), moveUp 20, centerX ] spinnerRipple
             }
 
     else
-        Element.button atts
+        Input.button atts
             { onPress = Just info.onPress
             , label = info.label
             }
+
+
+back : msg -> Element msg
+back onBack =
+    Input.button []
+        { onPress = Just onBack
+        , label =
+            Element.el
+                [ rotate pi, Font.size 32 ]
+                (text "➜")
+        }

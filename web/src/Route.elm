@@ -1,4 +1,4 @@
-module Route exposing (Account(..), Admin(..), Onboard(..), Route(..), fromUrl, href, replaceUrl, url)
+module Route exposing (Account(..), Admin(..), Onboard(..), Route(..), fromUrl, href, pushUrl, replaceUrl, url)
 
 -- import Article.Slug as Slug exposing (Slug)
 -- import Profile exposing (Profile)
@@ -95,6 +95,11 @@ href targetRoute =
 replaceUrl : Nav.Key -> Route -> Cmd msg
 replaceUrl key route =
     Nav.replaceUrl key (url route)
+
+
+pushUrl : Nav.Key -> Route -> Cmd msg
+pushUrl key route =
+    Nav.pushUrl key (url route)
 
 
 fromUrl : Url -> Maybe Route
