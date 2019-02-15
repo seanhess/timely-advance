@@ -1,13 +1,13 @@
 all: test
 
 build: Main.hs
-	stack docker pull
-	stack setup --docker
-	stack build --docker --only-dependencies
-	stack build --docker
+	# stack docker pull
+	stack setup
+	stack build --only-dependencies
+	stack build
 
 test: Main.hs
-	stack test --docker
+	stack test
 
 image: Main.hs
-	stack image container --docker
+	stack image container
