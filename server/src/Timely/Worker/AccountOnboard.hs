@@ -8,14 +8,14 @@ module Timely.Worker.AccountOnboard where
 
 
 import           Control.Exception               (Exception)
-import           Control.Monad.Catch             (MonadThrow (..), try, MonadCatch, SomeException)
+import           Control.Monad.Catch             (MonadCatch, MonadThrow (..), SomeException, try)
 import           Control.Monad.Log               (MonadLog)
 import qualified Control.Monad.Log               as Log
 import           Control.Monad.Service           (Service (run))
 import qualified Data.List                       as List
 import           Data.Model.Guid                 as Guid
 import           Data.Model.Id                   (Token)
-import           Data.Model.Types                (Address (..), Valid, Phone)
+import           Data.Model.Types                (Address (..), Phone, Valid)
 import           Data.Text                       as Text
 import qualified Database.Selda                  as Selda
 import           Network.AMQP.Worker             (Queue)
@@ -24,12 +24,13 @@ import           Timely.AccountStore.Account     (AccountStore)
 import qualified Timely.AccountStore.Account     as Account
 import           Timely.AccountStore.Application (ApplicationStore)
 import qualified Timely.AccountStore.Application as Application
-import           Timely.AccountStore.Types       (Application (..), BankAccount (balance, bankAccountId), Customer (..),
-                                                  Onboarding (..), isChecking, toBankAccount, Account)
+import           Timely.AccountStore.Types       (Account, Application (..), BankAccount (balance, bankAccountId),
+                                                  Customer (..), Onboarding (..), isChecking, toBankAccount)
 import           Timely.Bank                     (Banks, Dwolla, Identity (..), Names (..))
 import qualified Timely.Bank                     as Bank
 import qualified Timely.Evaluate.AccountHealth   as AccountHealth
 import qualified Timely.Events                   as Events
+import           Timely.Time                     as Time
 import           Timely.Transfers                (AccountInfo (..), Transfers)
 import qualified Timely.Transfers                as Transfers
 import           Timely.Underwriting             as Underwriting (Approval (..), Result (..), Underwriting (..))
@@ -49,6 +50,7 @@ handler
      , Service m Underwriting
      , Service m ApplicationStore
      , Service m Transfers
+     , Service m Time
      , MonadThrow m, MonadCatch m
      , MonadLog m
      )
@@ -60,10 +62,12 @@ handler app = do
 
     Log.info "AccountOnboard"
 
+
     tok <- run $ Bank.Authenticate (publicBankToken app)
     idt <- run $ Bank.LoadIdentity tok
 
-    let cust = toNewCustomer app idt
+    now <- run $ Time.CurrentTime
+    let cust = toNewCustomer now app idt
 
     res <- run $ Underwriting.New cust
     Log.debug ("underwriting", res)
@@ -94,6 +98,7 @@ onboardAccount
      , Service m AccountStore
      , Service m ApplicationStore
      , Service m Transfers
+     , Service m Time
      , MonadThrow m
      , MonadCatch m
      , MonadLog m
@@ -101,8 +106,9 @@ onboardAccount
   => Guid Account -> Token Bank.Access -> Customer -> Valid Phone -> Approval -> m ()
 onboardAccount aid tok cust phone (Approval amt) = do
     -- get bank accounts
+    now <- run $ Time.CurrentTime
     banks <- run $ Bank.LoadAccounts tok
-    let bankAccounts = List.map (toBankAccount aid) banks
+    let bankAccounts = List.map (toBankAccount aid now) banks
     checking <- require MissingChecking $ List.find isChecking bankAccounts
 
     -- initialize the transfers account
@@ -112,7 +118,7 @@ onboardAccount aid tok cust phone (Approval amt) = do
 
     -- TODO the transactions might not be available until the webhook triggers - maybe it makes more sense to have the health in a pending state. Or just: We're good!
     let health = AccountHealth.analyze (balance checking)
-    run $ Account.CreateAccount $ Account.account aid phone cust tok amt health transId
+    run $ Account.CreateAccount $ Account.account aid now phone cust tok amt health transId
 
     -- save the bank accounts
     -- TODO make it impossible to forget this
@@ -126,8 +132,8 @@ onboardAccount aid tok cust phone (Approval amt) = do
     require err Nothing = throwM err
     require _ (Just a)  = pure a
 
-toNewCustomer :: Application -> Identity -> Customer
-toNewCustomer Application {accountId, email, dateOfBirth, ssn} Identity {names, address} =
+toNewCustomer :: UTCTime -> Application -> Identity -> Customer
+toNewCustomer now Application {accountId, email, dateOfBirth, ssn} Identity {names, address} =
   let Address {street1, street2, city, state, postalCode } = address
       Names {firstName, middleName, lastName} = names
   in Customer
@@ -135,6 +141,7 @@ toNewCustomer Application {accountId, email, dateOfBirth, ssn} Identity {names, 
       , firstName, middleName, lastName
       , ssn, dateOfBirth
       , street1, street2, city, state, postalCode
+      , created = now
       }
 
 

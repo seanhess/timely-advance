@@ -32,6 +32,7 @@ data Account = Account
     , bankToken  :: Private (Token Access)
     , credit     :: Money
     , health     :: Health
+    , created    :: UTCTime
     } deriving (Show, Eq, Generic)
 
 
@@ -42,6 +43,7 @@ data AccountRow = AccountRow
     , transferId :: Id TransferAccount
     , bankToken  :: Private (Token Access)
     , credit     :: Money
+    , created    :: UTCTime
     } deriving (Generic, Eq, Show)
 
 instance SqlRow AccountRow
@@ -61,6 +63,7 @@ data Customer = Customer
     , city        :: Text
     , state       :: Valid State
     , postalCode  :: Valid PostalCode
+    , created    :: UTCTime
     } deriving (Generic, Eq, Show)
 
 instance SqlRow Customer
@@ -87,6 +90,7 @@ data BankAccount = BankAccount
     , bankAccountId :: Id Bank.Account
     , name          :: Text
     , balance       :: Money
+    , created    :: UTCTime
     } deriving (Generic, Eq, Show)
 
 
@@ -103,6 +107,7 @@ data Application = Application
     , ssn             :: Valid SSN
     , dateOfBirth     :: Day
     , publicBankToken :: Token Public
+    , created    :: UTCTime
     } deriving (Generic, Show)
 
 instance SqlRow Application
@@ -133,6 +138,7 @@ data AppApproval = AppApproval
     { accountId      :: Guid Account
     , approvalAmount :: Money
     , onboarding     :: Onboarding
+    , created    :: UTCTime
     } deriving (Generic, Show)
 
 instance SqlRow AppApproval
@@ -142,6 +148,7 @@ instance ToJSON AppApproval
 data AppDenial = AppDenial
     { accountId :: Guid Account
     , denial    :: DenialReason
+    , created    :: UTCTime
     } deriving (Generic, Show)
 
 instance SqlType DenialReason
@@ -151,10 +158,11 @@ instance ToJSON AppDenial
 
 
 
-toBankAccount :: Guid Account -> Bank.Account -> BankAccount
-toBankAccount accountId acc = BankAccount {..}
+toBankAccount :: Guid Account -> UTCTime -> Bank.Account -> BankAccount
+toBankAccount accountId now acc = BankAccount {..}
   where
     id = Selda.def
+    created = now
     accountType
       | Bank.subtype acc == Bank.Checking = Checking
       | Bank.subtype acc == Bank.Savings = Savings
@@ -181,6 +189,7 @@ data Health = Health
     { accountId :: Guid Account
     , expenses  :: Money
     , available :: Money
+    , created    :: UTCTime
     } deriving (Show, Eq, Generic)
 
 instance SqlRow Health

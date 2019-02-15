@@ -22,6 +22,8 @@ import           Timely.AccountStore.Types       (Account, Application (..))
 import           Timely.Api.Sessions             as Sessions
 import           Timely.Api.Types                (AccountInfo (..))
 import           Timely.Events                   as Events
+import           Timely.Time                     (UTCTime)
+import qualified Timely.Time                     as Time
 import           Timely.Types.Session            (Session (..))
 
 
@@ -39,7 +41,8 @@ newApplication phone info = do
     Log.context (cs $ show phone)
     Log.context (Guid.toText accountId)
     Log.info "new application"
-    let app = fromAccountInfo accountId phone info
+    now <- run $ Time.CurrentTime
+    let app = fromAccountInfo accountId now phone info
     Log.debug ("application", app)
 
     -- save it
@@ -54,7 +57,7 @@ newApplication phone info = do
 
 
 
-fromAccountInfo :: Guid Account -> Valid Phone -> AccountInfo -> Application
-fromAccountInfo i phone AccountInfo { email, ssn, dateOfBirth, publicBankToken } =
+fromAccountInfo :: Guid Account -> UTCTime -> Valid Phone -> AccountInfo -> Application
+fromAccountInfo i now phone AccountInfo { email, ssn, dateOfBirth, publicBankToken } =
   Application
-    { accountId = i, phone, email, ssn, dateOfBirth, publicBankToken }
+    { accountId = i, phone, email, ssn, dateOfBirth, publicBankToken, created = now }

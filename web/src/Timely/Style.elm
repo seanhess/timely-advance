@@ -1,4 +1,4 @@
-module Timely.Style exposing (blue, button, darkBlue, error, formPage, grey, header, info, lightBlue, link, page, red, section, white)
+module Timely.Style exposing (blue, button, dark, darkBlue, error, formPage, grey, header, info, lightBlue, link, page, red, section, white)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -6,6 +6,10 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Region as Region
 import Html.Attributes as Html
+
+
+dark =
+    Element.rgb 0.3 0.3 0.3
 
 
 white =
@@ -68,13 +72,17 @@ page =
     [ height fill, width fill ]
 
 
+space : List (Attribute msg)
+space =
+    [ height fill, width fill ]
+
+
 info : List (Attribute msg)
 info =
     [ spacing 20
     , padding 20
-    , height (fill |> minimum 200)
+    , height fill
     , width fill
-    , alignTop
     , htmlAttribute (Html.style "border-top-left-radius" "10px")
     , htmlAttribute (Html.style "border-top-right-radius" "10px")
     , Background.color lightBlue

@@ -14,6 +14,7 @@ import           Control.Monad.Service     (Service (..))
 import           Data.Maybe                (listToMaybe)
 import           Data.Model.Guid
 import           Data.Model.Id             (Id)
+import qualified Data.Time.Clock as Time
 import           Data.Model.Money
 import           Data.Model.Types          (Phone)
 import           Data.Model.Valid          (Valid)
@@ -88,7 +89,7 @@ getAccount i = do
       pure (a :*: c :*: h)
     pure $ account <$> listToMaybe as
   where
-    account (AccountRow {accountId, phone, transferId, bankToken, credit} :*: customer :*: health) =
+    account (AccountRow {accountId, phone, transferId, bankToken, credit, created} :*: customer :*: health) =
       Account
         { accountId
         , phone
@@ -96,7 +97,9 @@ getAccount i = do
         , transferId
         , bankToken
         , credit
-        , health}
+        , health
+        , created
+        }
 
 
 getAccountIdByPhone :: Selda m => Valid Phone -> m (Maybe (Guid Account))
@@ -121,8 +124,9 @@ getBankAccounts i =
 
 setHealth :: Selda m => Guid Account -> Projection -> m ()
 setHealth i Projection {expenses, available} = do
+    now <- liftIO $ Time.getCurrentTime
     deleteFrom healths (\h -> h ! #accountId .== literal i)
-    insert healths [Health {accountId = i, expenses, available}]
+    insert healths [Health {accountId = i, expenses, available, created = now }]
     pure ()
 
 
@@ -135,8 +139,8 @@ createAccount acc = do
     pure ()
 
 
-account :: Guid Account -> Valid Phone -> Customer -> Token Access -> Money -> Projection -> Id TransferAccount -> Account
-account accountId phone customer tok credit Projection {expenses, available} transferId =
+account :: Guid Account -> UTCTime -> Valid Phone -> Customer -> Token Access -> Money -> Projection -> Id TransferAccount -> Account
+account accountId now phone customer tok credit Projection {expenses, available} transferId =
   Account
     { accountId
     , phone
@@ -144,12 +148,15 @@ account accountId phone customer tok credit Projection {expenses, available} tra
     , transferId
     , bankToken = Private tok
     , credit
-    , health = Health { accountId, expenses, available }
+    , created = now
+    , health = Health { accountId, expenses, available, created  = now}
     }
 
 
+
 accountRow :: Account -> AccountRow
-accountRow Account { accountId, phone, transferId, bankToken, credit } = AccountRow { accountId, phone, transferId, bankToken, credit }
+accountRow Account { accountId, phone, transferId, bankToken, credit, created } =
+  AccountRow { accountId, phone, transferId, bankToken, credit, created }
 
 
 

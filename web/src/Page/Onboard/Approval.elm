@@ -11,7 +11,7 @@ import Process
 import Route
 import Task
 import Timely.Api as Api exposing (Account, AccountId, Application, ApprovalResult(..), Id(..))
-import Timely.Components exposing (spinnerRipple)
+import Timely.Components as Components exposing (spinnerRipple)
 import Timely.Style as Style
 
 
@@ -39,6 +39,7 @@ type alias Problem =
 type Msg
     = OnResult (Result Http.Error ApprovalResult)
     | OnWaited ()
+    | Close
 
 
 init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
@@ -102,12 +103,23 @@ update msg model =
             updates
                 |> command (Api.getApplicationResult OnResult model.accountId)
 
+        Close ->
+            updates
+                |> command (Route.pushUrl model.key (Route.Onboard Route.Landing))
+
 
 view : Model -> Element Msg
 view model =
-    Element.column Style.formPage
-        [ el Style.header (text "Approval")
-        , viewStatus model.accountId model.status
+    column Style.page
+        [ column Style.info
+            [ row [ spacing 15 ]
+                [ Components.back Close
+                , el Style.header (text "Approval")
+                ]
+            ]
+        , column Style.section
+            [ viewStatus model.accountId model.status
+            ]
         ]
 
 
@@ -124,10 +136,10 @@ viewStatus accountId status =
             Element.el [] (text "Denied")
 
         Complete (Approved a) ->
-            Element.column [ spacing 10 ]
+            Element.column [ spacing 10, width fill ]
                 [ Element.el [] (text "Approved!")
                 , Element.el [] (text <| String.fromInt a.approvalAmount)
-                , Element.column []
+                , Element.column [ width fill ]
                     [ case a.onboarding of
                         Api.Pending ->
                             Element.el [] (text "Creating your account...")

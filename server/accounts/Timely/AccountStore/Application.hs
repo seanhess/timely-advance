@@ -15,6 +15,7 @@ import           Control.Monad.Service     (Service (..))
 import           Data.Maybe                (listToMaybe)
 import           Data.Model.Guid           (Guid)
 import           Database.Selda            hiding (Result, insert, query, tryCreateTable, update_)
+import qualified Data.Time.Clock as Time
 
 import           Timely.AccountStore.Types
 import           Timely.Underwriting.Types (Approval (..), Denial (..), Result (..))
@@ -75,10 +76,12 @@ loadAll =
 
 saveResult :: (Selda m) => Guid Account -> Result -> m ()
 saveResult accountId (Approved (Approval {approvalAmount})) = do
-    insert approvals [ AppApproval {accountId, approvalAmount, onboarding = Pending} ]
+    now <- liftIO $ Time.getCurrentTime
+    insert approvals [ AppApproval {accountId, approvalAmount, onboarding = Pending, created = now} ]
     pure ()
 saveResult accountId (Denied (Denial {denial})) = do
-    insert denials [AppDenial {accountId, denial}]
+    now <- liftIO $ Time.getCurrentTime
+    insert denials [AppDenial {accountId, denial, created = now}]
     pure ()
 
 

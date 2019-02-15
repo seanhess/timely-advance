@@ -152,11 +152,13 @@ updateHealth accountId checking = do
 updateBankBalances
     :: ( Service m Banks
        , Service m AccountStore
+       , Service m Time
        )
     => Guid Account -> Token Access -> m (Maybe BankAccount)
 updateBankBalances accountId token = do
+    now <- run $ Time.CurrentTime
     banks <- run $ Bank.LoadAccounts token
-    let accounts = List.map (toBankAccount accountId) banks
+    let accounts = List.map (toBankAccount accountId now) banks
     run $ AccountStore.SetBankAccounts accountId accounts
     pure $ List.find isChecking accounts
 

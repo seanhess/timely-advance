@@ -10,6 +10,7 @@ import           Timely.AccountStore.Types (BankAccount(..))
 import qualified Timely.AccountStore.Types as Account
 import qualified Data.Model.Guid as Guid
 import qualified Data.Model.Money as Money
+import Data.Time.Clock (getCurrentTime)
 
 tests :: Tests ()
 tests = do
@@ -19,15 +20,17 @@ tests = do
 testBankAccounts :: Tests ()
 testBankAccounts = do
     test "should convert savings account" $ do
+      now <- getCurrentTime
       let Just id = Guid.fromText "24a6b6e8-b2e2-49a0-ad7f-770c9b7a8e67"
-      let ba = Account.toBankAccount id savings
+      let ba = Account.toBankAccount id now savings
       accountType ba @?= Account.Savings
       accountId ba @?= id
       balance ba @?= Money.fromFloat 210.0
 
     test "should convert checking account" $ do
+      now <- getCurrentTime
       let Just id = Guid.fromText "24a6b6e8-b2e2-49a0-ad7f-770c9b7a8e67"
-      let ba = Account.toBankAccount id checking
+      let ba = Account.toBankAccount id now checking
       accountType ba @?= Account.Checking
 
 
