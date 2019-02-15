@@ -8,3 +8,9 @@ build:
   script:
     - cd server
     - make build
+
+test:
+  stage: test
+  script:
+    - cd server
+    - make test
