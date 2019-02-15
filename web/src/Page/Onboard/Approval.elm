@@ -148,7 +148,7 @@ viewStatus accountId status =
                             Element.el [ Style.error ] (text "There was an error!")
 
                         Api.Complete ->
-                            Element.link Style.button
+                            Element.link (Style.button Style.primary)
                                 { url = Route.url <| Route.Account accountId <| Route.AccountMain
                                 , label = Element.text "My Account"
                                 }

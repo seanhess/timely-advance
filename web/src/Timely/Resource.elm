@@ -1,4 +1,4 @@
-module Timely.Resource exposing (Resource(..), error, map, resource, resource_)
+module Timely.Resource exposing (Resource(..), error, map, map2, resource, resource_)
 
 import Element exposing (Element, el, text)
 import Http exposing (Error)
@@ -46,3 +46,19 @@ map f res =
 
         Ready a ->
             Ready (f a)
+
+
+map2 : (a -> b -> c) -> Resource a -> Resource b -> Resource c
+map2 f ra rb =
+    case ( ra, rb ) of
+        ( Failed e, _ ) ->
+            Failed e
+
+        ( _, Failed e ) ->
+            Failed e
+
+        ( Ready a, Ready b ) ->
+            Ready (f a b)
+
+        _ ->
+            Loading

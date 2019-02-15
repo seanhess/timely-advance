@@ -110,7 +110,7 @@ viewLogin model =
             , onChange = EditSecret
             , label = label "Passphrase"
             }
-        , Input.button Style.button
+        , Input.button (Style.button Style.primary)
             { onPress = Just Submit
             , label = Element.text "Go"
             }

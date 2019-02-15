@@ -38,7 +38,7 @@ view model =
         [ column Style.info
             [ el [ Region.heading 1 ] (text "Welcome to Timely Advance") ]
         , column Style.section
-            [ link Style.button { url = Route.url (Onboard Signup), label = text "Get Started" }
+            [ link (Style.button Style.primary) { url = Route.url (Onboard Signup), label = text "Get Started" }
             , link [ Style.link, centerX ] { url = Route.url (Onboard Login), label = text "Log in" }
             ]
         ]

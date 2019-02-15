@@ -1,4 +1,4 @@
-module Timely.Style exposing (blue, button, dark, darkBlue, error, formPage, grey, header, info, lightBlue, link, page, red, section, white)
+module Timely.Style exposing (blue, box, button, dark, darkBlue, darkGreen, error, formPage, gray, green, header, info, lightBlue, lightRed, link, page, primary, red, secondary, section, space, success, white)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -6,6 +6,20 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Region as Region
 import Html.Attributes as Html
+
+
+green =
+    -- Element.rgb 0.22 0.73 0.39
+    -- (Triad complement)
+    Element.rgb 0.42 0.62 0.39
+
+
+darkGreen =
+    Element.rgb 0.32 0.52 0.3
+
+
+lightRed =
+    Element.rgb 0.83 0.3 0.34
 
 
 dark =
@@ -16,12 +30,12 @@ white =
     Element.rgb 1 1 1
 
 
-grey =
+gray =
     Element.rgb 0.9 0.9 0.9
 
 
 blue =
-    Element.rgb 0 0 0.8
+    Element.rgb 0 0.4 0.72
 
 
 lightBlue =
@@ -36,14 +50,36 @@ darkBlue =
     Element.rgb 0 0 0.9
 
 
-button : List (Attribute msg)
-button =
+button : List (Attribute msg) -> List (Attribute msg)
+button styles =
+    styles
+        ++ [ paddingXY 32 16
+           , Border.rounded 3
+           , width fill
+           ]
+
+
+primary : List (Attribute msg)
+primary =
     [ Background.color blue
     , Font.color white
     , Border.color darkBlue
-    , paddingXY 32 16
-    , Border.rounded 3
-    , width fill
+    ]
+
+
+success : List (Attribute msg)
+success =
+    [ Background.color green
+    , Font.color white
+    , Border.color darkGreen
+    ]
+
+
+secondary : List (Attribute msg)
+secondary =
+    [ Background.color gray
+    , Font.color dark
+    , Border.color gray
     ]
 
 
@@ -93,3 +129,8 @@ info =
 section : List (Attribute msg)
 section =
     [ spacing 20, padding 20, width fill ]
+
+
+box : Attribute msg
+box =
+    Border.rounded 3

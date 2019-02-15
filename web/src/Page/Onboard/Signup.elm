@@ -234,7 +234,7 @@ viewSignupForm model =
             ]
         , column Style.section
             [ viewPhoneInput model
-            , Input.button Style.button
+            , Input.button (Style.button Style.primary)
                 { onPress = Just SubmitForm
                 , label = Element.text "Join Timely"
                 }
@@ -254,7 +254,7 @@ viewLoginForm model =
             ]
         , column Style.section
             [ viewPhoneInput model
-            , Input.button Style.button
+            , Input.button (Style.button Style.primary)
                 { onPress = Just SubmitForm
                 , label = Element.text "Login"
                 }
@@ -299,7 +299,7 @@ viewPhoneCode model =
                 , onChange = EditCode
                 , label = Input.labelHidden "Code"
                 }
-            , Input.button Style.button
+            , Input.button (Style.button Style.primary)
                 { onPress = Just SubmitCode
                 , label = Element.text "Check code"
                 }
@@ -318,7 +318,7 @@ viewPlaidLanding model =
                 ]
             ]
         , column Style.section
-            [ Input.button Style.button
+            [ Input.button (Style.button Style.primary)
                 { onPress = Just PlaidOpen
                 , label = Element.text "Connect Bank"
                 }
@@ -359,7 +359,7 @@ viewIdentityForm model =
             [ viewEmailInput model
             , viewSSNInput model
             , viewDobInput model
-            , Input.button Style.button
+            , Input.button (Style.button Style.primary)
                 { onPress = Just SubmitIdentity
                 , label = Element.text "Finish"
                 }

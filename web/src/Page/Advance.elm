@@ -35,6 +35,7 @@ type Msg
     = OnAdvance (Result Http.Error Advance)
     | OnAccount (Result Http.Error Account)
     | OnAdvances (Result Http.Error (List Advance))
+    | OnBack
     | OnTimezone Time.Zone
     | Edit String
     | Submit Advance
@@ -112,12 +113,20 @@ update msg model =
         OnAccept (Ok a) ->
             updates |> set { model | advance = Ready a }
 
+        OnBack ->
+            updates |> command (Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain)
+
 
 view : Model -> Element Msg
 view model =
-    Element.column Style.formPage
-        [ el Style.header (text "Advance")
-        , viewStatus model
+    column Style.page
+        [ column Style.info
+            [ row [ spacing 15 ]
+                [ Components.back OnBack
+                , el Style.header (text "Advance")
+                ]
+            ]
+        , column Style.section [ viewStatus model ]
         ]
 
 
@@ -151,8 +160,9 @@ viewForm model account advance advances =
         valid =
             Validate.validate (amountValidator advance account advances) model.acceptAmount
     in
-    Element.column [ spacing 15 ]
-        [ Element.el [] (text <| "Credit Used: $" ++ formatDollars (Api.usedCredit advances) ++ " / $" ++ formatDollars account.credit)
+    Element.column [ spacing 15, width fill ]
+        [ paragraph [] [ text "We predict that you will need some money before your next paycheck. How much would you like?" ]
+        , Element.el [] (text <| "Credit Used: $" ++ formatDollars (Api.usedCredit advances) ++ " / $" ++ formatDollars account.credit)
         , Element.el [] (text <| "Suggested: $" ++ formatDollars advance.offer)
         , Input.text [ htmlAttribute (Html.type_ "number") ]
             { text = model.acceptAmount
@@ -171,7 +181,7 @@ viewForm model account advance advances =
 
 viewValid : Advance -> Element Msg
 viewValid advance =
-    Input.button Style.button
+    Input.button (Style.button Style.success)
         { onPress = Just (Submit advance)
         , label = Element.text "Accept"
         }
@@ -180,7 +190,7 @@ viewValid advance =
 viewInvalids : List Invalid -> Element Msg
 viewInvalids err =
     Element.column [ spacing 10 ]
-        [ Input.button Style.button
+        [ Input.button (Style.button Style.primary)
             { onPress = Nothing
             , label = Element.text "Accept"
             }
@@ -206,11 +216,11 @@ viewInvalid inv =
 
 viewAccepted : Time.Zone -> Id AccountId -> Advance -> Element Msg
 viewAccepted zone accountId advance =
-    Element.column [ spacing 15 ]
+    Element.column [ spacing 15, width fill ]
         [ Element.el [] (text "Yay! Your money is on its way")
         , Element.el [] (text <| "Amount: $" ++ formatDollars advance.amount)
         , Element.el [] (text <| "Due: " ++ formatDate zone advance.due)
-        , Element.link Style.button
+        , Element.link (Style.button Style.secondary)
             { url = Route.url <| Route.Account accountId <| Route.AccountMain
             , label = Element.text "My Account"
             }

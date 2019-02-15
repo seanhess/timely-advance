@@ -87,18 +87,28 @@ update nav msg model =
 
 view : Model -> Element Msg
 view model =
+    let
+        active =
+            Resource.map (List.filter advanceIsActive) model.advances
+
+        offers =
+            Resource.map (List.filter advanceIsOffer) model.advances
+    in
     column Style.page
         [ column Style.info
-            [ el Style.header (text "Account")
-            , resource (offersView model.zone model.accountId) <| Resource.map (List.filter advanceIsOffer) model.advances
+            [ row [ width fill ]
+                [ el Style.header (text "Account")
+                , row [ width fill ] []
+                , Input.button [ Style.link ] { onPress = Just Logout, label = text "Logout" }
+                ]
+            , resource (offersView model.zone model.accountId) offers
             ]
         , column Style.section
             [ resource accountHealth model.account
-            , resource accountInfo model.account
-            , resource (advancesView model.zone model.accountId) <| Resource.map (List.filter advanceIsActive) model.advances
+            , resource (\( a, advs ) -> accountInfo a advs) <| Resource.map2 (\a b -> ( a, b )) model.account active
+            , resource (advancesView model.zone model.accountId) active
             , resource customerView <| Resource.map .customer model.account
             , resource banksTable model.banks
-            , Input.button [ Style.link ] { onPress = Just Logout, label = text "Logout" }
 
             -- , el Style.header (text "Advances")
             ]
@@ -116,33 +126,38 @@ accountHealth account =
 
         healthyColor =
             if isHealthy then
-                Style.grey
+                Style.green
 
             else
-                Style.red
+                Style.lightRed
     in
     Element.column
         [ spacing 4
         , padding 20
         , width fill
-        , Background.color Style.grey
-        , Font.color healthyColor
+        , Background.color healthyColor
+        , Font.color Style.white
+        , Style.box
         ]
         [ el [ Font.bold, centerX ] (text "Safe to Spend")
         , el [ Font.bold, Font.size 40, centerX ] (text <| "$" ++ formatDollars projectedBalance)
         ]
 
 
-accountInfo : Account -> Element Msg
-accountInfo account =
+accountInfo : Account -> List Advance -> Element Msg
+accountInfo account advances =
     wrappedRow [ spacing 20 ]
         [ column [ spacing 4 ]
             [ el [ Font.bold ] (text "Balance")
-            , el [] (text <| "$" ++ formatDollars account.health.available)
+            , el [ Font.color Style.darkGreen ] (text <| "$" ++ formatDollars account.health.available)
             ]
         , column [ spacing 4 ]
             [ el [ Font.bold ] (text "Future Expenses")
-            , el [] (text <| "$" ++ formatDollars account.health.expenses)
+            , el [ Font.color Style.red ] (text <| "$" ++ formatDollars account.health.expenses)
+            ]
+        , column [ spacing 4 ]
+            [ el [ Font.bold ] (text "Owed")
+            , el [] (text <| "$" ++ (formatDollars <| List.sum <| List.map .amount advances))
             ]
         , column [ spacing 4 ]
             [ el [ Font.bold ] (text "Max Credit")
@@ -203,8 +218,9 @@ offerView zone accountId advance =
     in
     Element.link
         [ width fill
-        , Background.color Style.grey
-        , Font.color Style.dark
+        , Background.color Style.gray
+        , Font.color Style.darkGreen
+        , Style.box
         , padding 20
         ]
         { url = advanceUrl
@@ -236,15 +252,16 @@ advanceView zone accountId advance =
             Route.url (Route.Account accountId (Route.Advance advance.advanceId))
     in
     wrappedRow
-        [ padding 10
+        [ padding 15
         , width fill
-        , Background.color Style.grey
+        , Background.color Style.gray
         , Font.color Style.dark
+        , Style.box
         ]
         [ link [ Font.bold, Style.link, width fill ]
             { label = text "Advance", url = advanceUrl }
         , link []
-            { label = text ("$" ++ formatDollars advance.offer ++ " due " ++ formatDate zone advance.due)
+            { label = text ("$" ++ formatDollars advance.amount ++ " due " ++ formatDate zone advance.due)
             , url = advanceUrl
             }
         ]
