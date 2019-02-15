@@ -19,7 +19,7 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
         // Do any additional setup after loading the view, typically from a nib.
         let url = URL(string: "http://orca.local:8000")!
         let request = URLRequest(url: url)
-        print("HELLO", url, request)
+        print("LOAD", request)
         webView.load(request)
         webView.uiDelegate = self
         webView.navigationDelegate = self
