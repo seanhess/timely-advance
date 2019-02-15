@@ -1,0 +1,10 @@
+image: fpco/stack-build:lts-13.2
+
+stages:
+  - build
+
+build:
+  stage: build
+  script:
+    - cd server
+    - make build
