@@ -2,6 +2,8 @@ image: fpco/stack-build:lts-13.2
 
 stages:
   - build
+  - test
+  - deploy
 
 build:
   stage: build
@@ -14,3 +16,8 @@ test:
   script:
     - cd server
     - make test
+
+deploy:
+  stage: deploy
+  script:
+    - echo "DEPLOY"
