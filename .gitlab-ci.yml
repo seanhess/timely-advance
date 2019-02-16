@@ -6,9 +6,16 @@
 image: haskell:8
 
 
+# TODO: docker (for uploading)
 before_script:
   - apt-get update -y
   - apt-get install libpq-dev -y
+
+  # for Elm
+  - curl -sL https://deb.nodesource.com/setup_11.x | sudo -E bash -
+  - sudo apt-get install -y nodejs
+  - npm install -g elm
+  - elm make --yes src/Main.elm --output=public/script.js
 
 
 # these stages should match the pipeline
@@ -24,6 +31,13 @@ build:
     - cd server
     - stack setup
     - stack build --test --only-dependencies
+
+build-elm:
+  stage: build
+  script:
+    - cd web
+    - elm --version
+    - elm make src/Main.elm --output=elm.js
 
 
 test:
