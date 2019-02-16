@@ -29,6 +29,7 @@ build:
     - apt-get update -y
     - apt-get install libpq-dev -y
 
+
 build-elm:
   stage: build
   image: node:8
@@ -40,7 +41,8 @@ build-elm:
     - elm make src/Main.elm --output=elm.js
   before_script:
     # - apt-get install nodejs -y
-    - npm install -g elm
+    - npm install elm
+    - ls node_modules/.bin
   artifacts:
     paths:
     - web/elm.js
