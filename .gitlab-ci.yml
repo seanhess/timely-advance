@@ -19,17 +19,6 @@ stages:
   - deploy
 
 
-build:
-  stage: build
-  script:
-    - cd server
-    - stack setup
-    - stack build --test --only-dependencies
-  before_script:
-    - apt-get update -y
-    - apt-get install libpq-dev -y
-
-
 build-elm:
   stage: build
   image: node:8
@@ -40,7 +29,7 @@ build-elm:
     - ./elm --version
     - ./elm make src/Main.elm --output=elm.js
   before_script:
-    # - apt-get install nodejs -y
+    - cd web
     - npm install elm
     - mv node_modules/.bin/elm ./elm
   artifacts:
@@ -48,11 +37,24 @@ build-elm:
     - web/elm.js
 
 
+
+build:
+  stage: build
+  script:
+    - cd server
+    - stack setup
+    - stack build --fast --test --only-dependencies
+  before_script:
+    - apt-get update -y
+    - apt-get install libpq-dev -y
+
+
+
 test:
   stage: test
   script:
     - cd server
-    - stack test
+    - stack test --fast
 
 
 deploy:
