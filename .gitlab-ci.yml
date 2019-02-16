@@ -46,7 +46,7 @@ deploy:
 cache:
   paths:
     - .stack
-    - .stack-work
+    - server/.stack-work
 
 variables:
   STACK_ROOT: "${CI_PROJECT_DIR}/.stack"
