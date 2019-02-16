@@ -42,7 +42,7 @@ build-elm:
   before_script:
     # - apt-get install nodejs -y
     - npm install elm
-    - ls node_modules/.bin
+    - mv node_modules/.bin/elm ./elm
   artifacts:
     paths:
     - web/elm.js
