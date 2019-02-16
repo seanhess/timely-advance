@@ -2,7 +2,8 @@
 # Caching! https://docs.gitlab.com/ee/ci/yaml/README.html#cache
 
 # this should match stack.yaml
-image: fpco/stack-build:lts-13.7
+# image: fpco/stack-build:lts-13.7
+image: haskell:8
 
 
 
@@ -31,9 +32,9 @@ test:
 deploy:
   stage: deploy
   script:
-    - echo "DEPLOY"
-    - stack image container
-    - docker run -it timely /usr/local/bin/timely
+    - echo "DEPLOY - it looks like nothing is cached between these"
+    # - stack image container
+    # - docker run -it timely /usr/local/bin/timely
 
 
 # before_script:
