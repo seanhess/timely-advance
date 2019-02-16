@@ -100,7 +100,7 @@ library:
     - transfers
 
 executables:
-  server-exe:
+  timely:
     main:                Main.hs
     source-dirs:         .
     ghc-options:
@@ -111,7 +111,7 @@ executables:
     - server
 
 tests:
-  server-test:
+  test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:

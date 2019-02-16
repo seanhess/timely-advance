@@ -2,33 +2,47 @@
 image: fpco/stack-build:lts-13.7
 
 
+
+
 # these stages should match the pipeline
 stages:
   - build
   - test
   - deploy
 
-# before_script:
-  # - apt-get update
-  # - apt-get install make xz-utils
 
 build:
   stage: build
   script:
     - cd server
-    - make build
+    - stack setup
+    - stack build --only-dependencies
+    - stack build
 
 test:
   stage: test
   script:
     - cd server
-    - make test
+    - stack test
 
 deploy:
   stage: deploy
   script:
     - echo "DEPLOY"
-
+    - stack image container
+    - docker run -it timely /usr/local/bin/timely
 
 
 # Caching! https://docs.gitlab.com/ee/ci/yaml/README.html#cache
+
+# before_script:
+  # - apt-get update
+  # - apt-get install make xz-utils
+
+cache:
+  paths:
+    - .stack
+    - .stack-work
+
+variables:
+  STACK_ROOT: "${CI_PROJECT_DIR}/.stack"
