@@ -25,17 +25,13 @@ build-elm:
   cache:
     paths: []
   script:
-    - cd web
     - pwd
-    - ls .
-    - ./elm --version
-    - ./elm make src/Main.elm --output=elm.js
+    - ls node_modules/.bin
+    - node_modules/.bin/elm --version
+    - node_modules/.bin/elm make src/Main.elm --output=elm.js
   before_script:
+    - cd web
     - npm install elm
-    - mv node_modules/.bin/elm ./web/elm
-    - pwd
-    - ls .
-    - ls web
   artifacts:
     paths:
     - web/elm.js
