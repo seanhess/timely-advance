@@ -23,18 +23,19 @@ build:
   script:
     - cd server
     - stack setup
-    - stack build --test --only-dependencies
 
 test:
   stage: test
   script:
     - cd server
+    - stack build --test --only-dependencies
     - stack test
 
 deploy:
   stage: deploy
   script:
     - echo "DEPLOY - it looks like nothing is cached between these"
+    - cd server
     - stack image container
     # - docker run -it timely /usr/local/bin/timely
 
