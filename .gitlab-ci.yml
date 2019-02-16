@@ -1,3 +1,6 @@
+# https://vadosware.io/post/zero-to-continuous-integrated-testing-a-haskell-project-with-gitlab/
+# Caching! https://docs.gitlab.com/ee/ci/yaml/README.html#cache
+
 # this should match stack.yaml
 image: fpco/stack-build:lts-13.7
 
@@ -32,8 +35,6 @@ deploy:
     - stack image container
     - docker run -it timely /usr/local/bin/timely
 
-
-# Caching! https://docs.gitlab.com/ee/ci/yaml/README.html#cache
 
 # before_script:
   # - apt-get update
