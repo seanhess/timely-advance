@@ -26,11 +26,14 @@ build-elm:
     paths: []
   script:
     - cd web
+    - pwd
+    - ls .
     - ./elm --version
     - ./elm make src/Main.elm --output=elm.js
   before_script:
     - npm install elm
     - mv node_modules/.bin/elm ./web/elm
+    - pwd
     - ls .
     - ls web
   artifacts:
