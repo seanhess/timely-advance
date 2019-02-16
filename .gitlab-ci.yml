@@ -31,6 +31,8 @@ build-elm:
   before_script:
     - npm install elm
     - mv node_modules/.bin/elm ./web/elm
+    - ls .
+    - ls web
   artifacts:
     paths:
     - web/elm.js
