@@ -23,7 +23,7 @@ build:
   script:
     - cd server
     - stack setup
-    - stack build --only-dependencies
+    - stack build --test --only-dependencies
 
 test:
   stage: test
