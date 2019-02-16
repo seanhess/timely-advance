@@ -7,8 +7,8 @@ image: haskell:8
 
 
 before_script:
-  - apt-get update
-  - apt-get install libpq-dev
+  - apt-get update -y
+  - apt-get install libpq-dev -y
 
 
 # these stages should match the pipeline
