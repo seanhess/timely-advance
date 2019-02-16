@@ -13,17 +13,25 @@ before_script:
 
 # these stages should match the pipeline
 stages:
+  - build
   - test
   - deploy
+
+
+build:
+  stage: build
+  script:
+    - cd server
+    - stack setup
+    - stack build --test --only-dependencies
 
 
 test:
   stage: test
   script:
     - cd server
-    - stack setup
-    - stack build --test --only-dependencies
     - stack test
+
 
 deploy:
   stage: deploy
