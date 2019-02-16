@@ -24,7 +24,6 @@ build:
     - cd server
     - stack setup
     - stack build --only-dependencies
-    - stack build
 
 test:
   stage: test
@@ -36,7 +35,7 @@ deploy:
   stage: deploy
   script:
     - echo "DEPLOY - it looks like nothing is cached between these"
-    # - stack image container
+    - stack image container
     # - docker run -it timely /usr/local/bin/timely
 
 
