@@ -7,6 +7,7 @@ image: haskell:8
 
 
 # TODO: docker (for uploading)
+# TODO: make my own image? with haskell:8, node, etc?
 
 before_script:
   - apt-get update -y
@@ -29,13 +30,19 @@ build:
 
 build-elm:
   stage: build
+  image: node:8
+  cache:
+    paths: []
   script:
     - cd web
     - elm --version
     - elm make src/Main.elm --output=elm.js
   before_script:
-    - sudo apt-get install nodejs -y
+    # - sudo apt-get install nodejs -y
     - npm install -g elm
+  artifacts:
+    paths:
+    - web/elm.js
 
 
 test:
