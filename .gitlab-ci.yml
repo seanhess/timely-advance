@@ -9,8 +9,8 @@ image: haskell:8
 # TODO: docker (for uploading)
 # TODO: make my own image? with haskell:8, node, etc?
 
-before_script:
-  - apt-get update -y
+# before_script:
+#   - apt-get update -y
 
 # these stages should match the pipeline
 stages:
@@ -26,6 +26,7 @@ build:
     - stack setup
     - stack build --test --only-dependencies
   before_script:
+    - apt-get update -y
     - apt-get install libpq-dev -y
 
 build-elm:
@@ -38,7 +39,7 @@ build-elm:
     - elm --version
     - elm make src/Main.elm --output=elm.js
   before_script:
-    # - sudo apt-get install nodejs -y
+    # - apt-get install nodejs -y
     - npm install -g elm
   artifacts:
     paths:
