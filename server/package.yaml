@@ -1,4 +1,4 @@
-name:                server
+name:                timely
 version:             0.1.0.0
 github:              "seanhess/server"
 license:             BSD3
@@ -25,6 +25,7 @@ dependencies:
 - aeson-pretty
 - amqp
 - amqp-worker
+- async-timer
 - base64-bytestring
 - bytestring
 - datamodel
@@ -32,35 +33,35 @@ dependencies:
 - envy
 - exceptions
 - http-api-data
-- http-media
 - http-client
 - http-client-tls
+- http-media
 - http-types
 - jose
-- mtl
 - monad-control
 - monad-logger
-- random
+- mtl
 - pretty-show
+- random
 - resource-pool
-- servant
-- servant-server
-- servant-elm
-- servant-client
-- servant-client-core
-- servant-auth
-- servant-auth-server
 - selda
 - selda-postgresql
 - selda-sqlite
-- string-conversions
+- servant
+- servant-auth
+- servant-auth-server
+- servant-client
+- servant-client-core
+- servant-elm
+- servant-server
 - stm
-- transformers-base
-- time
-- twilio
+- string-conversions
 - text
-- uuid
+- time
+- transformers-base
+- twilio
 - unix
+- uuid
 - wai
 - wai-extra
 - warp
@@ -108,7 +109,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - server
+    - timely
 
 tests:
   test:
@@ -122,4 +123,4 @@ tests:
     - tasty
     - tasty-hunit
     - random-strings
-    - server
+    - timely

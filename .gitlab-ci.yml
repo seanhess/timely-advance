@@ -1,5 +1,7 @@
 # https://vadosware.io/post/zero-to-continuous-integrated-testing-a-haskell-project-with-gitlab/
 # Caching! https://docs.gitlab.com/ee/ci/yaml/README.html#cache
+# https://docs.gitlab.com/ee/ci/docker/using_docker_build.html
+# https://angristan.xyz/build-push-docker-images-gitlab-ci/
 
 # this should match stack.yaml
 # image: fpco/stack-build:lts-13.7
@@ -12,6 +14,10 @@ image: haskell:8
 # before_script:
 #   - apt-get update -y
 
+
+# The goal is produce docker containers
+# don't do it this way
+
 # these stages should match the pipeline
 stages:
   - build
@@ -19,22 +25,23 @@ stages:
   - deploy
 
 
-build-elm:
-  stage: build
-  image: node:8
-  cache:
-    paths: []
-  script:
-    - pwd
-    - ls node_modules/.bin
-    - node_modules/.bin/elm --version
-    - node_modules/.bin/elm make src/Main.elm --output=elm.js
-  before_script:
-    - cd web
-    - npm install elm
-  artifacts:
-    paths:
-    - web/elm.js
+# build-elm:
+#   stage: build
+#   image: node:8
+#   cache:
+#     paths: []
+#       # - web/elm-stuff
+#   script:
+#     - pwd
+#     - ls node_modules/.bin
+#     - node_modules/.bin/elm --version
+#     - node_modules/.bin/elm make src/Main.elm --output=elm.js
+#   before_script:
+#     - cd web
+#     - npm install elm
+#   artifacts:
+#     paths:
+#     - web/elm.js
 
 
 

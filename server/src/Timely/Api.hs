@@ -27,17 +27,19 @@ import           Servant.Auth.Server                  (Auth, Cookie, CookieSetti
 import           Servant.Server.Generic               (AsServerT, genericServerT)
 import qualified Timely.AccountStore.Account          as Account
 import qualified Timely.AccountStore.Application      as Application
-import           Timely.AccountStore.Types            (Application, AppResult)
+import           Timely.AccountStore.Types            (AppResult, Application)
 import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
 import           Timely.Api.Advances                  as Advances
 import qualified Timely.Api.Applications              as Applications
 import           Timely.Api.AppM                      (AppM, AppState (..), clientConfig, loadState, nt, runIO)
+import qualified Timely.Api.AppM                      as AppM
 import           Timely.Api.Combinators               (notFound)
 import           Timely.Api.Sessions                  (SetSession)
 import qualified Timely.Api.Sessions                  as Sessions
 import           Timely.Api.Types
 import           Timely.Auth                          (AuthCode)
+import           Timely.Config                        (port)
 import qualified Timely.Transfers                     as Transfers
 import           Timely.Types.Config
 import           Timely.Types.Session
@@ -193,10 +195,11 @@ initialize = do
 
 
 -- TODO use secret to generate key so sessions aren't invalidated
-start :: Warp.Port -> IO ()
-start port = do
+start :: IO ()
+start = do
     -- Load state
     state <- loadState
+    let p = port $ AppM.env state
 
-    putStrLn $ "Running on " ++ show port
-    Warp.run port (application state)
+    putStrLn $ "Running on " ++ show p
+    Warp.run p (application state)

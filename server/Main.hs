@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 -- import           Control.Concurrent (forkIO, killThread)
@@ -6,6 +7,8 @@ import           System.Environment (getArgs)
 -- import           System.Exit (ExitCode(..))
 -- import           System.Posix.Signals (installHandler, keyboardSignal, Handler(Catch))
 -- import           System.Posix.Process (exitImmediately)
+-- import qualified System.Cron.Schedule as Cron
+import qualified Control.Concurrent.Async.Timer as Timer
 
 import qualified Timely.Worker.AccountOnboard as AccountOnboard
 import qualified Timely.Worker.AccountUpdate as AccountUpdate
@@ -14,6 +17,9 @@ import qualified Timely.Worker.AdvanceCollect as AdvanceCollect
 import qualified Timely.Worker.WorkerM as Worker
 
 import qualified Timely.Api as Api
+import Data.Function ((&))
+import Control.Monad (forM_)
+import Data.Time.Clock (getCurrentTime)
 
 main :: IO ()
 main = do
@@ -36,7 +42,7 @@ main = do
 
 
 startApi :: IO ()
-startApi = Api.start 3001
+startApi = Api.start
 
 
 startAccountOnboard :: IO ()
@@ -91,3 +97,24 @@ startTest = Worker.start AdvanceSend.testQueue AdvanceSend.test
 --       if c == '\n'
 --          then waitAnyKey
 --          else pure ()
+
+
+testScheduler :: IO ()
+testScheduler = do
+  let conf = Timer.defaultConf & Timer.setInitDelay 0 & Timer.setInterval 1000
+  print "HI"
+  Timer.withAsyncTimer conf $ \timer -> do
+    forM_ [1..] $ \i -> do
+      Timer.wait timer
+      -- it happens immediately, because I don't wait first
+      print =<< getCurrentTime
+      print ("Tick", i)
+
+job1 :: IO ()
+job1 = do
+  putStrLn "job 1"
+
+job2 :: IO ()
+job2 = do
+  putStrLn "job 2"
+

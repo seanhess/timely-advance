@@ -2,14 +2,17 @@
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-module Timely.Config where
+module Timely.Config
+  ( Env(..)
+  , loadEnv
+  ) where
 
 import           Control.Monad.IO.Class  (MonadIO, liftIO)
 import           Data.ByteString         (ByteString)
 import qualified Data.Maybe              as Maybe
 import           Data.Model.Id           (Id (..), Token (..))
-import           Data.Model.Valid        as Valid
 import           Data.Model.Types        (Phone)
+import           Data.Model.Valid        as Valid
 import           Data.String.Conversions (cs)
 import           Data.Text               (Text)
 import qualified Data.Text               as Text
@@ -33,6 +36,7 @@ import qualified Twilio                  as Twilio
 data Env = Env
   { postgres            :: Text
   , amqp                :: Text
+  , port                :: Int
   , plaidBaseUrl        :: BaseUrl
   , plaidPublicKey      :: Id Public
   , plaidClientId       :: Id Client
@@ -59,6 +63,7 @@ instance DefConfig Env where
   defConfig = Env
     { postgres          = "postgresql://postgres@localhost:5432"
     , amqp              = "amqp://guest:guest@localhost:5672"
+    , port              = 3001
     -- , plaidBaseUrl      = BaseUrl Https "development.plaid.com" 443 ""
     -- , plaidClientSecret = Id "ce8f112af86209ce870a6d01c0af76"
     -- , plaidEnv          = "development"

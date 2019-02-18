@@ -1,6 +1,15 @@
 version: "3"
 services:
 
+  api:
+    image: timely-api:latest
+    ports:
+    - "3001:3002"
+    environment:
+      - PORT=3002
+      - POSTGRES=postgresql://postgres@postgres:5432
+      - AMQP=amqp://guest:guest@amqp:5672
+
   postgres:
     image: postgres
     ports:
