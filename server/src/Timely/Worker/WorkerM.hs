@@ -126,8 +126,10 @@ connect queue handler = do
 start :: (FromJSON a) => Queue a -> (a -> HandlerM ()) -> IO ()
 start queue handler = do
   state <- loadState
-  putStrLn "Running worker"
+  putStrLn $ "Worker: " ++ cs (queueName queue)
   runReaderT (connect queue handler) state
+  where
+    queueName queue = let (Queue _ name) = queue in name
 
 
 runIO :: HandlerM a -> IO a

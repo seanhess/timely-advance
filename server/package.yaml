@@ -26,6 +26,7 @@ dependencies:
 - amqp
 - amqp-worker
 - async-timer
+- async
 - base64-bytestring
 - bytestring
 - datamodel

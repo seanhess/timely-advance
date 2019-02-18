@@ -39,13 +39,20 @@ schedule
      , Service m Time
      , MonadThrow m
      , MonadWorker m
+     , MonadLog m
      )
   => m ()
 schedule = do
+    Log.context "Schedule AdvanceCollect"
     now <- run $ Time.CurrentTime
     let dueDate = Collect.currentlyDue now
     advances <- run $ Advances.FindDue dueDate
-    mapM_ (Worker.publish Events.advancesDue) advances
+    mapM_ scheduleAdvanceCollect advances
+  where
+    scheduleAdvanceCollect a = do
+      Log.info $ Guid.toText $ advanceId a
+      Worker.publish Events.advancesDue a
+
 
 
 

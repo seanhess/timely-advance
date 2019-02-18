@@ -19,7 +19,7 @@ import qualified Network.AMQP.Worker           as Worker hiding (publish)
 import qualified Network.AMQP.Worker.Monad     as Worker
 import           Timely.AccountStore.Account   (AccountStore)
 import qualified Timely.AccountStore.Account   as AccountStore
-import           Timely.AccountStore.Types     (Account (bankToken), BankAccount (balance), isChecking, toBankAccount)
+import           Timely.AccountStore.Types     (Account (bankToken), BankAccount (balance), isChecking, toBankAccount, AccountRow(accountId))
 import qualified Timely.AccountStore.Types     as Account (Account (..))
 import qualified Timely.AccountStore.Types     as AccountRow (AccountRow (..))
 import           Timely.Advances               (Advance, Advances)
@@ -49,16 +49,17 @@ schedule
   :: ( Service m AccountStore
      , MonadThrow m
      , MonadWorker m
+     , MonadLog m
      )
   => m ()
 schedule = do
-    -- for now, update all accounts every hour
+    Log.context "Schedule AccountUpdate"
     accounts <- run $ AccountStore.All
     mapM scheduleAccountUpdate accounts
     pure ()
   where
     scheduleAccountUpdate account = do
-      -- liftIO $ putStrLn $ "ACCOUNT: " ++ (show $ accountId account)
+      Log.info $ Guid.toText $ accountId account
       Worker.publish Events.transactionsNew (AccountRow.accountId account)
 
 

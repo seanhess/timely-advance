@@ -201,5 +201,5 @@ start = do
     state <- loadState
     let p = port $ AppM.env state
 
-    putStrLn $ "Running on " ++ show p
+    putStrLn $ "API | Running on " ++ show p
     Warp.run p (application state)
