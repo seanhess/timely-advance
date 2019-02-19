@@ -2,13 +2,58 @@ version: "3"
 services:
 
   api:
-    image: timely-api:latest
+    image: timely:latest
+    command: /usr/local/bin/timely api
     ports:
     - "3001:3002"
     environment:
       - PORT=3002
-      - POSTGRES=postgresql://postgres@postgres:5432
       - AMQP=amqp://guest:guest@amqp:5672
+      - POSTGRES=postgresql://postgres@postgres:5432
+
+  initialize:
+    image: timely:latest
+    command: /usr/local/bin/timely initialize
+    environment:
+      - AMQP=amqp://guest:guest@amqp:5672
+      - POSTGRES=postgresql://postgres@postgres:5432
+
+  # scheduler
+  schedule:
+    image: timely:latest
+    command: /usr/local/bin/timely schedule
+    environment:
+      - AMQP=amqp://guest:guest@amqp:5672
+      - POSTGRES=postgresql://postgres@postgres:5432
+
+  # workers
+  work-account-onboard:
+    image: timely:latest
+    command: /usr/local/bin/timely work-account-onboard
+    environment:
+      - AMQP=amqp://guest:guest@amqp:5672
+      - POSTGRES=postgresql://postgres@postgres:5432
+
+  work-account-update:
+    image: timely:latest
+    command: /usr/local/bin/timely work-account-update
+    environment:
+      - AMQP=amqp://guest:guest@amqp:5672
+      - POSTGRES=postgresql://postgres@postgres:5432
+
+  work-advance-send:
+    image: timely:latest
+    command: /usr/local/bin/timely work-advance-send
+    environment:
+      - AMQP=amqp://guest:guest@amqp:5672
+      - POSTGRES=postgresql://postgres@postgres:5432
+
+  work-advance-collect:
+    image: timely:latest
+    command: /usr/local/bin/timely work-advance-collect
+    environment:
+      - AMQP=amqp://guest:guest@amqp:5672
+      - POSTGRES=postgresql://postgres@postgres:5432
 
   postgres:
     image: postgres

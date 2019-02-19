@@ -30,6 +30,7 @@ dependencies:
 - base64-bytestring
 - bytestring
 - datamodel
+- data-default
 - elm-export
 - envy
 - exceptions
@@ -45,6 +46,7 @@ dependencies:
 - pretty-show
 - random
 - resource-pool
+- retry
 - selda
 - selda-postgresql
 - selda-sqlite

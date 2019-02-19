@@ -198,6 +198,7 @@ initialize = do
 start :: IO ()
 start = do
     -- Load state
+    putStrLn "API"
     state <- loadState
     let p = port $ AppM.env state
 

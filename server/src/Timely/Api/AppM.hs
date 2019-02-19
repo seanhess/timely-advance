@@ -33,10 +33,12 @@ import           Servant.Auth.Server       (CookieSettings (..), JWTSettings)
 
 -- import qualified Timely.Bank               as Bank
 import qualified Timely.Api.Sessions       as Sessions
+import           Timely.App                (retry)
 import           Timely.Auth               (AuthConfig)
 import qualified Timely.Auth               as Auth
 import           Timely.Config             (Env (..), loadEnv)
-import           Timely.Types.Config       (ClientConfig (ClientConfig), PlaidConfig (PlaidConfig))
+import           Timely.Types.Config       (ClientConfig (ClientConfig),
+                                            PlaidConfig (PlaidConfig))
 import           Timely.Types.Session      (Admin)
 
 
@@ -58,7 +60,7 @@ loadState = do
     let sessionKey = Sessions.secretKey (sessionSecret env)
     let jwtSettings = Sessions.jwtSettings sessionKey
     let cookieSettings = Sessions.cookieSettings
-    amqpConn <- Worker.connect (Worker.fromURI $ cs $ amqp env)
+    amqpConn <- retry $ Worker.connect (Worker.fromURI $ cs $ amqp env)
     dbConn <- liftIO $ Pool.createPool (createConn $ cs $ postgres env) destroyConn 1 5 3
     manager <- liftIO $ HTTP.newManager HTTP.tlsManagerSettings
     pure AppState {..}
