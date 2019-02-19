@@ -2,6 +2,7 @@
   "name": "web",
   "version": "1.0.0",
   "description": "web",
+  "repository":"https://gitlab.com/timely-advance/timely",
   "main": "build/elm.js",
   "scripts": {
     "test": "echo \"test\"",

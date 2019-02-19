@@ -6,6 +6,7 @@ module Timely.Api.AppM
   ( AppState(..)
   , loadState
   , nt
+  , debug
   , AppM
   , clientConfig
   , runIO
@@ -14,13 +15,15 @@ module Timely.Api.AppM
 
 import           Control.Monad.Config      (MonadConfig (..))
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
-import           Control.Monad.Log         as Log
+import           Control.Monad.Log         (LogT)
+import qualified Control.Monad.Log         as Log
 import           Control.Monad.Reader      (ReaderT, ask, asks, runReaderT)
 import           Control.Monad.Selda       (Selda (..))
 import           Data.Model.Id             (Token (..))
 import           Data.Pool                 (Pool)
 import qualified Data.Pool                 as Pool
 import           Data.String.Conversions   (cs)
+import           Data.Text                 (Text)
 import           Database.Selda            (MonadMask)
 import           Database.Selda.Backend    (SeldaConnection)
 import qualified Database.Selda.PostgreSQL as Selda
@@ -30,6 +33,7 @@ import qualified Network.HTTP.Client       as HTTP
 import qualified Network.HTTP.Client.TLS   as HTTP
 import           Servant                   (Handler (..), runHandler)
 import           Servant.Auth.Server       (CookieSettings (..), JWTSettings)
+import qualified Text.Show.Pretty          as Pretty
 
 -- import qualified Timely.Bank               as Bank
 import qualified Timely.Api.Sessions       as Sessions
@@ -37,8 +41,7 @@ import           Timely.App                (retry)
 import           Timely.Auth               (AuthConfig)
 import qualified Timely.Auth               as Auth
 import           Timely.Config             (Env (..), loadEnv)
-import           Timely.Types.Config       (ClientConfig (ClientConfig),
-                                            PlaidConfig (PlaidConfig))
+import           Timely.Types.Config       (ClientConfig (ClientConfig), PlaidConfig (PlaidConfig))
 import           Timely.Types.Session      (Admin)
 
 
@@ -51,6 +54,13 @@ data AppState = AppState
     , manager        :: HTTP.Manager
     }
 
+
+
+
+debug :: AppM Text
+debug = do
+  e <- asks env
+  pure $ cs $ Pretty.dumpStr e
 
 
 

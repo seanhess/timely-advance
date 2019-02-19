@@ -25,6 +25,7 @@ import           Servant.API.ContentTypes.JS          (JS)
 import           Servant.API.Generic                  ((:-), AsApi, ToServant, ToServantApi)
 import           Servant.Auth.Server                  (Auth, Cookie, CookieSettings (..), JWTSettings)
 import           Servant.Server.Generic               (AsServerT, genericServerT)
+import           Servant.Server.StaticFiles           (serveDirectoryFileServer)
 import qualified Timely.AccountStore.Account          as Account
 import qualified Timely.AccountStore.Application      as Application
 import           Timely.AccountStore.Types            (AppResult, Application)
@@ -39,7 +40,7 @@ import           Timely.Api.Sessions                  (SetSession)
 import qualified Timely.Api.Sessions                  as Sessions
 import           Timely.Api.Types
 import           Timely.Auth                          (AuthCode)
-import           Timely.Config                        (port)
+import           Timely.Config                        (port, serveDir)
 import qualified Timely.Transfers                     as Transfers
 import           Timely.Types.Config
 import           Timely.Types.Session
@@ -50,6 +51,8 @@ type Api = ToServant BaseApi AsApi
 data BaseApi route = BaseApi
     { _info      :: route :- Get '[JSON] Text
     , _versioned :: route :- "v1" :> ToServantApi VersionedApi
+    , _debug     :: route :- "debug" :> Get '[PlainText] Text
+    , _files     :: route :- "app" :> Raw
     } deriving (Generic)
 
 
@@ -141,10 +144,12 @@ sessionsApi = genericServerT SessionsApi
     }
 
 
-baseApi :: ToServant BaseApi (AsServerT AppM)
-baseApi = genericServerT BaseApi
+baseApi :: FilePath -> ToServant BaseApi (AsServerT AppM)
+baseApi p = genericServerT BaseApi
     { _info = pure "Timely"
     , _versioned = versionedApi
+    , _files = serveDirectoryFileServer p
+    , _debug = AppM.debug
     }
 
 versionedApi :: ToServant VersionedApi (AsServerT AppM)
@@ -164,10 +169,12 @@ apiProxy = Proxy
 
 
 server :: AppState -> Server Api
-server st = hoistServerWithContext apiProxy context (nt st) (baseApi)
+server st = hoistServerWithContext apiProxy context (nt st) (baseApi $ filesDir st)
   where
     context :: Proxy '[CookieSettings, JWTSettings]
     context = Proxy
+
+    filesDir = serveDir . AppM.env
 
 -- https://haskell-servant.readthedocs.io/en/stable/cookbook/jwt-and-basic-auth/JWTAndBasicAuth.html
 -- https://github.com/haskell-servant/servant-auth#readme

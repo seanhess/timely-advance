@@ -31,7 +31,7 @@ import qualified Network.Dwolla            as Dwolla
 import qualified Network.HTTP.Client       as HTTP
 import qualified Network.HTTP.Client.TLS   as HTTP
 import qualified Network.Plaid             as Plaid
-
+import           Timely.App                (retry)
 import qualified Timely.Bank               as Bank
 import           Timely.Config             (Env (..), loadEnv)
 import qualified Timely.Notify             as Notify
@@ -95,7 +95,7 @@ instance MonadConfig Transfers.Config HandlerM where
 loadState :: (MonadIO m, MonadMask m) => m AppState
 loadState = do
   env <- loadEnv
-  amqpConn <- Worker.connect (Worker.fromURI $ cs $ amqp env)
+  amqpConn <- retry $ Worker.connect (Worker.fromURI $ cs $ amqp env)
   dbConn <- liftIO $ Pool.createPool (createConn $ cs $ postgres env) destroyConn 1 5 3
   manager <- liftIO $ HTTP.newManager HTTP.tlsManagerSettings
   let plaid = Plaid.Credentials (plaidClientId env) (plaidClientSecret env)

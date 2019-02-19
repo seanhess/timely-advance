@@ -28,6 +28,7 @@ import           Servant.Client          (BaseUrl (..), Scheme (Https))
 import qualified Servant.Client          as Servant
 import           System.Envy             (DefConfig (..), FromEnv, Var (..))
 import qualified System.Envy             as Envy
+import           Text.Show.Pretty        (PrettyVal(..))
 import           Timely.Types.Config     (PlaidProducts (..))
 import           Timely.Types.Session    (Admin)
 import qualified Twilio                  as Twilio
@@ -37,6 +38,7 @@ data Env = Env
   { postgres            :: Text
   , amqp                :: Text
   , port                :: Int
+  , serveDir            :: FilePath
   , plaidBaseUrl        :: BaseUrl
   , plaidPublicKey      :: Id Public
   , plaidClientId       :: Id Client
@@ -63,6 +65,7 @@ instance DefConfig Env where
   defConfig = Env
     { postgres          = "postgresql://postgres@localhost:5432"
     , amqp              = "amqp://guest:guest@localhost:5672"
+    , serveDir          = "../web/build"
     , port              = 3001
     -- , plaidBaseUrl      = BaseUrl Https "development.plaid.com" 443 ""
     -- , plaidClientSecret = Id "ce8f112af86209ce870a6d01c0af76"
@@ -89,6 +92,39 @@ instance DefConfig Env where
     }
 
 instance FromEnv Env
+
+
+instance PrettyVal Env
+
+instance PrettyVal (Valid a) where
+  prettyVal (Valid a) = prettyVal a
+
+instance PrettyVal (Token a) where
+  prettyVal (Token a) = prettyVal a
+
+instance PrettyVal (Id a) where
+  prettyVal (Id a) = prettyVal a
+
+instance PrettyVal BaseUrl where
+  prettyVal url = prettyVal $ Servant.showBaseUrl url
+
+instance PrettyVal PlaidProducts where
+  prettyVal (PlaidProducts ps) = prettyVal ps
+
+instance PrettyVal Twilio.AccountSID where
+  prettyVal x = prettyVal $ Twilio.getSID x
+
+instance PrettyVal Twilio.AuthToken where
+  prettyVal x = prettyVal $ Twilio.getAuthToken x
+
+instance PrettyVal ByteString where
+  prettyVal x = prettyVal (cs x :: Text)
+
+
+
+
+------------------------------------------------
+
 
 instance Var PlaidProducts where
   toVar (PlaidProducts ps) = cs $ Text.unwords ps

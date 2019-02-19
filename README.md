@@ -3,6 +3,14 @@ Timely Advance
 
 
 
+K8
+-------
+- You don't need minikube. Docker comes with everything
+- https://medium.com/slalom-technology/get-kubernetes-running-locally-on-osx-and-windows-b3b5f176b5bb
+- https://github.com/kubernetes/dashboard
+
+
+
 Todo
 ----
 

@@ -1,22 +1,45 @@
 version: "3"
+
+volumes:
+  web-html:
+
 services:
 
+  # don't forget to rebuild!
+  # stack image container --docker
   api:
     image: timely:latest
     command: /usr/local/bin/timely api
     ports:
     - "3001:3002"
+    volumes:
+      - web-html:/var/www/html
     environment:
       - PORT=3002
       - AMQP=amqp://guest:guest@amqp:5672
       - POSTGRES=postgresql://postgres@postgres:5432
+      - SERVE_DIR=/var/www/html
 
-  initialize:
-    image: timely:latest
-    command: /usr/local/bin/timely initialize
-    environment:
-      - AMQP=amqp://guest:guest@amqp:5672
-      - POSTGRES=postgresql://postgres@postgres:5432
+
+  # You must rebuild to refresh!
+  # docker build -t timely-web ./web
+  web:
+    image: timely-web:latest
+    volumes:
+      - web-html:/var/www/html
+
+
+  # this attempts to run migrations every time you up
+  # is that what we want? We can already run it from API
+  # >> docker-compose run api /bin/bash
+  # >> /usr/local/bin/timely initialize
+  # initialize:
+  #   image: timely:latest
+  #   command: /usr/local/bin/timely initialize
+  #   environment:
+  #     - AMQP=amqp://guest:guest@amqp:5672
+  #     - POSTGRES=postgresql://postgres@postgres:5432
+
 
   # scheduler
   schedule:
@@ -65,3 +88,4 @@ services:
     ports:
     - "5672:5672"
     - "15672:15672"
+
