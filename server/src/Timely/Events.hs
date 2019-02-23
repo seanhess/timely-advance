@@ -10,6 +10,10 @@ import           Timely.AccountStore.Types (Account, Application)
 import           Timely.Advances           (Advance)
 
 
+health :: Key Routing Text
+health = key "health"
+
+
 applicationsNew :: Key Routing Application
 applicationsNew = key "applications" & word "new"
 

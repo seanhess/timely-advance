@@ -1,0 +1,50 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: api
+  name: api
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        io.kompose.service: api
+    spec:
+      imagePullSecrets:
+        - name: gitlab-docker-registry
+      containers:
+      - args:
+        - /usr/local/bin/timely
+        - api
+        env:
+        - name: AMQP
+          value: amqp://guest:guest@amqp:5672
+        - name: PORT
+          value: "3002"
+        - name: POSTGRES
+          value: postgresql://postgres@postgres:5432
+        - name: SERVE_DIR
+          value: /var/www/html
+        image: registry.gitlab.com/timely-advance/timely:0.1.1
+        name: api
+        ports:
+        - containerPort: 3002
+        resources: {}
+        volumeMounts:
+        - mountPath: /var/www
+          name: web-html-mount
+      initContainers:
+        - name: install
+          image: registry.gitlab.com/timely-advance/timely/web:0.1.1
+          command: ["mv", "./build", "/var/www/html"]
+          volumeMounts:
+          - name: web-html-mount
+            mountPath: "/var/www"
+      restartPolicy: Always
+      volumes:
+      - name: web-html-mount
+        emptyDir: {}
+# status: {}

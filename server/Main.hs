@@ -19,7 +19,7 @@ main = do
 
   a <- Environment.getArgs
   case a of
-    ["version"        ]      -> putStrLn "TODO version"
+    ["version"        ]      -> printVersion
     ["api"]                  -> startApi
     ["work-account-onboard"] -> startAccountOnboard
     ["work-account-update"]  -> startAccountUpdate
@@ -28,6 +28,11 @@ main = do
     ["schedule"]             -> startScheduler
     ["initialize"]           -> Api.initialize
     _                        -> putStrLn "please enter a command"
+
+
+printVersion :: IO ()
+printVersion =
+  putStrLn $ Api.version
 
 
 

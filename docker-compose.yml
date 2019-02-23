@@ -8,7 +8,7 @@ services:
   # don't forget to rebuild!
   # stack image container --docker
   api:
-    image: timely:latest
+    image: registry.gitlab.com/timely-advance/timely
     command: /usr/local/bin/timely api
     ports:
     - "3001:3002"
@@ -24,7 +24,7 @@ services:
   # You must rebuild to refresh!
   # docker build -t timely-web ./web
   web:
-    image: timely-web:latest
+    image: registry.gitlab.com/timely-advance/timely/web
     volumes:
       - web-html:/var/www/html
 
@@ -43,7 +43,7 @@ services:
 
   # scheduler
   schedule:
-    image: timely:latest
+    image: registry.gitlab.com/timely-advance/timely
     command: /usr/local/bin/timely schedule
     environment:
       - AMQP=amqp://guest:guest@amqp:5672
@@ -51,28 +51,28 @@ services:
 
   # workers
   work-account-onboard:
-    image: timely:latest
+    image: registry.gitlab.com/timely-advance/timely
     command: /usr/local/bin/timely work-account-onboard
     environment:
       - AMQP=amqp://guest:guest@amqp:5672
       - POSTGRES=postgresql://postgres@postgres:5432
 
   work-account-update:
-    image: timely:latest
+    image: registry.gitlab.com/timely-advance/timely
     command: /usr/local/bin/timely work-account-update
     environment:
       - AMQP=amqp://guest:guest@amqp:5672
       - POSTGRES=postgresql://postgres@postgres:5432
 
   work-advance-send:
-    image: timely:latest
+    image: registry.gitlab.com/timely-advance/timely
     command: /usr/local/bin/timely work-advance-send
     environment:
       - AMQP=amqp://guest:guest@amqp:5672
       - POSTGRES=postgresql://postgres@postgres:5432
 
   work-advance-collect:
-    image: timely:latest
+    image: registry.gitlab.com/timely-advance/timely
     command: /usr/local/bin/timely work-advance-collect
     environment:
       - AMQP=amqp://guest:guest@amqp:5672

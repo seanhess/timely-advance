@@ -5,9 +5,97 @@ Timely Advance
 
 K8
 -------
+
+Configure KUBECONFIG to look for kube.config in the current directory
+
+    export KUBECONFIG=$KUBECONFIG:kube.config
+
+
 - You don't need minikube. Docker comes with everything
 - https://medium.com/slalom-technology/get-kubernetes-running-locally-on-osx-and-windows-b3b5f176b5bb
 - https://github.com/kubernetes/dashboard
+- kubectl proxy
+
+
+https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/ - You can specify the --kubeconfig flag to specify a specific file
+
+    kubectl config --kubeconfig=config-demo use-context dev-frontend
+    kubectl config --kubeconfig=config-demo view --minify
+
+    export  KUBECONFIG=$KUBECONFIG:config-demo:config-demo-2
+
+You could set $KUBECONFIG to be equal to something like the following, which would check for a local file and merge global
+
+    export KUBECONFIG=$KUBECONFIG:kube.config:$HOME/.kube/config
+
+
+https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/ - they merge config files using an environment variable.. weird. 
+
+
+https://kubernetes.io/docs/concepts/configuration/overview/
+
+* Store in a single file
+* kubectl can be called on a directory of config files
+* Pods should be bound to a ReplicaSet or Deployment, or they won't come back up. 
+
+https://docs.gitlab.com/ee/user/project/clusters/
+
+
+
+https://kubernetes.io/docs/concepts/overview/object-management-kubectl/overview/
+
+Imperitive management - well, this is doable at least
+
+    kubectl create -f cron.yaml
+    kubectl delete -f cron.yaml
+    kubectl replace -f cron.yaml
+
+Declarative management
+
+    kubectl create -f cron.yaml --save-config
+    kubectl apply -f cron.yaml
+
+https://kubernetes.io/docs/reference/kubectl/conventions/
+
+* don't use :latest
+
+ https://kubernetes.io/docs/reference/kubectl/cheatsheet/
+
+     kubectl logs my-pod   
+
+https://stackoverflow.com/questions/50069920/why-should-i-store-kubernetes-deployment-configuration-into-source-control-if-ku
+
+* Rollback is for emergencies. Store config in repositories and manage that way.
+
+
+https://kubernetes.io/docs/tutorials/stateless-application/expose-external-ip-address/
+https://kubernetes.io/docs/concepts/services-networking/connect-applications-service/
+
+* Expose with a service. 
+
+   kubectl exec -it postgres-556644cdfc-6r9tm -- /bin/bash
+
+ https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+
+* Pull from a private registry
+
+
+
+
+### Digital Ocean Tutorials
+
+    kubectl get services
+    kubectl get pv
+    kubectl describe service sample-load-balancer
+
+
+
+
+Docker
+------
+Gitlab private registry: https://gitlab.com/timely-advance/timely/container_registry
+
+    > docker tag timely:latest registry.gitlab.com/timely-advance/timely
 
 
 

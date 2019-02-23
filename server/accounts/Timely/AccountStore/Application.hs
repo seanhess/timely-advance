@@ -25,6 +25,7 @@ data ApplicationStore a where
     Save      :: Application -> ApplicationStore ()
     Find      :: Guid Account -> ApplicationStore (Maybe Application)
     All       :: ApplicationStore [Application]
+    Check     :: ApplicationStore [Application]
 
     SaveResult :: Guid Account -> Result -> ApplicationStore ()
     FindResult :: Guid Account -> ApplicationStore (Maybe AppResult)
@@ -33,6 +34,7 @@ data ApplicationStore a where
 instance (Selda m) => Service m ApplicationStore where
     run (Save a)         = save a
     run (Find i)         = loadById i
+    run (Check)          = check
     run All              = loadAll
     run (SaveResult i r) = saveResult i r
     run (FindResult i)   = findResult i
@@ -70,6 +72,12 @@ loadById i = do
 loadAll :: (Selda m) => m [Application]
 loadAll =
     query $ select applications
+
+
+check :: Selda m => m [Application]
+check = query $ limit 0 1 $ select applications
+
+
 
 
 -- Underwriting results ---------------------------------

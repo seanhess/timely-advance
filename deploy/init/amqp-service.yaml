@@ -1,0 +1,26 @@
+# kubectl port-forward svc/amqp 15672:15672
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.17.0 ()
+  creationTimestamp: null
+  labels:
+    io.kompose.service: amqp
+  name: amqp
+spec:
+  ports:
+  - name: "5672"
+    port: 5672
+    targetPort: 5672
+  - name: "15672"
+    port: 15672
+    targetPort: 15672
+  selector:
+    io.kompose.service: amqp
+status:
+  loadBalancer: {}
+
+# https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/
+# You can use port-forwarding to access amqp

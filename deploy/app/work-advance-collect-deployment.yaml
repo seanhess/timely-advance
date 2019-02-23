@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.17.0 ()
+  creationTimestamp: null
+  labels:
+    io.kompose.service: work-advance-collect
+  name: work-advance-collect
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: work-advance-collect
+    spec:
+      containers:
+      - args:
+        - /usr/local/bin/timely
+        - work-advance-collect
+        env:
+        - name: AMQP
+          value: amqp://guest:guest@amqp:5672
+        - name: POSTGRES
+          value: postgresql://postgres@postgres:5432
+        image: registry.gitlab.com/timely-advance/timely
+        name: work-advance-collect
+        resources: {}
+      restartPolicy: Always
+status: {}

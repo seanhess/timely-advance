@@ -14,10 +14,13 @@ import           Data.Model.Guid                      as Guid
 import           Data.Model.Id                        (Token)
 import           Data.Model.Types                     (Phone, Valid)
 import           Data.Proxy                           (Proxy (..))
+import           Data.String.Conversions              (cs)
 import           Data.Text                            (Text)
+import           Data.Version                         (showVersion)
 import           GHC.Generics                         (Generic)
 import qualified Network.Wai.Handler.Warp             as Warp
 import qualified Network.Wai.Middleware.RequestLogger as RequestLogger
+import qualified Paths_timely                         as Paths
 import           Servant                              hiding (Application, Link)
 import qualified Servant
 import           Servant.API.ContentTypes.HTML        (HTML, Link (..))
@@ -51,6 +54,7 @@ type Api = ToServant BaseApi AsApi
 data BaseApi route = BaseApi
     { _info      :: route :- Get '[JSON] Text
     , _versioned :: route :- "v1" :> ToServantApi VersionedApi
+    , _health    :: route :- "health" :> Get '[PlainText] Text
     , _debug     :: route :- "debug" :> Get '[PlainText] Text
     , _files     :: route :- "app" :> Raw
     } deriving (Generic)
@@ -146,10 +150,11 @@ sessionsApi = genericServerT SessionsApi
 
 baseApi :: FilePath -> ToServant BaseApi (AsServerT AppM)
 baseApi p = genericServerT BaseApi
-    { _info = pure "Timely"
+    { _info = pure $ "Timely v" <> cs version
     , _versioned = versionedApi
     , _files = serveDirectoryFileServer p
     , _debug = AppM.debug
+    , _health = Applications.health
     }
 
 versionedApi :: ToServant VersionedApi (AsServerT AppM)
@@ -185,6 +190,11 @@ application st =
     logger = RequestLogger.logStdout
     context = (jwtSettings st) :. (cookieSettings st) :. EmptyContext
 
+
+
+
+version :: String
+version = showVersion Paths.version
 
 
 initialize :: IO ()
