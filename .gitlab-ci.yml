@@ -53,10 +53,12 @@ stages:
 
 build:
   stage: build
+  image: haskell:8
   before_script:
     - docker --version
   script:
     - docker --version
+    - stack --version
     # - cd server
     # - stack setup
     # - stack build --fast --test --only-dependencies
