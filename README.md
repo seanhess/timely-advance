@@ -11,7 +11,11 @@ Gitlab Runner
 * https://about.gitlab.com/2016/04/19/how-to-set-up-gitlab-runner-on-digitalocean/
 * https://docs.gitlab.com/ee/ci/docker/using_docker_build.html
 
+Install stack, docker, etc
 
+    apt-get update -y
+    apt-get install libpq-dev -y
+    https://docs.haskellstack.org/en/stable/README/
 
 
 K8

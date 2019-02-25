@@ -50,7 +50,7 @@ stages:
 #   #   - web/elm.js
 
 
-image: haskell:8
+# image: haskell:8
 
 
 build:
