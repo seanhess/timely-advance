@@ -50,10 +50,11 @@ stages:
 #   #   - web/elm.js
 
 
+image: haskell:8
+
 
 build:
   stage: build
-  image: haskell:8
   before_script:
     - docker --version
   script:
@@ -62,9 +63,9 @@ build:
     # - cd server
     # - stack setup
     # - stack build --fast --test --only-dependencies
-  before_script:
-    - apt-get update -y
-    - apt-get install libpq-dev -y
+  # before_script:
+  #   - apt-get update -y
+  #   - apt-get install libpq-dev -y
 
 
 
