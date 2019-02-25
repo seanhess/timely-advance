@@ -84,6 +84,12 @@ https://helm.sh/docs/using_helm/#using-ssl-between-helm-and-tiller
 
 * install Helm and tiller using SSH
 
+https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nginx-ingress-with-cert-manager-on-digitalocean-kubernetes
+
+* Install an ingress controller (nginx)
+* Includes a load balancer
+* Multiple domains
+* SSL / TLS
 
 
 

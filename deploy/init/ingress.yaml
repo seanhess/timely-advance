@@ -1,0 +1,40 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: echo-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    certmanager.k8s.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+  - hosts:
+    - echo1.timelyadvance.com
+    - echo2.timelyadvance.com
+    - app.timelyadvance.com
+    - timelyadvance.com
+    secretName: letsencrypt-prod
+  rules:
+  - host: echo1.timelyadvance.com
+    http:
+      paths:
+      - backend:
+          serviceName: echo1
+          servicePort: 80
+  - host: echo2.timelyadvance.com
+    http:
+      paths:
+      - backend:
+          serviceName: echo2
+          servicePort: 80
+  - host: timelyadvance.com
+    http:
+      paths:
+      - backend:
+          serviceName: api
+          servicePort: 80
+  - host: app.timelyadvance.com
+    http:
+      paths:
+      - backend:
+          serviceName: api
+          servicePort: 80
