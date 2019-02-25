@@ -30,7 +30,7 @@ spec:
         - name: SERVE_DIR
           value: /var/www/html
         - name: APP_ENDPOINT
-          value: https://timelyadvance.com/app/
+          value: http://timelyadvance.com/app/
         image: registry.gitlab.com/timely-advance/timely:0.1.1
         name: api
         ports:
