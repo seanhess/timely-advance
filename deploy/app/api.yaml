@@ -17,7 +17,7 @@ metadata:
   name: api
 spec:
   revisionHistoryLimit: 2
-  replicas: 1
+  replicas: 2
   strategy:
     type: Recreate
   template:
@@ -42,7 +42,7 @@ spec:
           value: /var/www/html
         - name: APP_ENDPOINT
           value: http://timelyadvance.com/app/
-        image: registry.gitlab.com/timely-advance/timely:0.1.1
+        image: registry.gitlab.com/timely-advance/timely:0.1.4
         name: api
         ports:
         - containerPort: 3002
@@ -52,7 +52,7 @@ spec:
           name: web-html-mount
       initContainers:
         - name: install
-          image: registry.gitlab.com/timely-advance/timely/web:0.1.1
+          image: registry.gitlab.com/timely-advance/timely/web:0.1.4
           command: ["mv", "./build", "/var/www/html"]
           volumeMounts:
           - name: web-html-mount

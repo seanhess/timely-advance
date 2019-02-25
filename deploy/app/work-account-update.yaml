@@ -22,6 +22,6 @@ spec:
           value: amqp://guest:guest@amqp:5672
         - name: POSTGRES
           value: postgresql://postgres@postgres:5432
-        image: registry.gitlab.com/timely-advance/timely:0.1.3
+        image: registry.gitlab.com/timely-advance/timely:0.1.4
         name: work-account-update
       restartPolicy: Always

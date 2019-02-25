@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: work-advance-collect
+  name: work-advance-send
 spec:
   replicas: 1
   revisionHistoryLimit: 2
@@ -9,19 +9,19 @@ spec:
   template:
     metadata:
       labels:
-        name: work-advance-collect
+        name: work-advance-send
     spec:
       imagePullSecrets:
         - name: gitlab-docker-registry
       containers:
       - args:
         - /usr/local/bin/timely
-        - work-advance-collect
+        - work-advance-send
         env:
         - name: AMQP
           value: amqp://guest:guest@amqp:5672
         - name: POSTGRES
           value: postgresql://postgres@postgres:5432
-        image: registry.gitlab.com/timely-advance/timely:0.1.3
-        name: work-advance-collect
+        image: registry.gitlab.com/timely-advance/timely:0.1.4
+        name: work-advance-send
       restartPolicy: Always

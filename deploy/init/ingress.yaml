@@ -8,24 +8,10 @@ metadata:
 spec:
   tls:
   - hosts:
-    - echo1.timelyadvance.com
-    - echo2.timelyadvance.com
     - app.timelyadvance.com
     - timelyadvance.com
     secretName: letsencrypt-prod
   rules:
-  - host: echo1.timelyadvance.com
-    http:
-      paths:
-      - backend:
-          serviceName: echo1
-          servicePort: 80
-  - host: echo2.timelyadvance.com
-    http:
-      paths:
-      - backend:
-          serviceName: echo2
-          servicePort: 80
   - host: timelyadvance.com
     http:
       paths:

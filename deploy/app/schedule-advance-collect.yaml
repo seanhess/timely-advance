@@ -1,7 +1,7 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: schedule-account-update
+  name: schedule-advance-collect
 spec:
   schedule: '0 * * * *'
   jobTemplate:
@@ -13,12 +13,12 @@ spec:
           containers:
             - args:
               - /usr/local/bin/timely
-              - schedule-account-update
+              - schedule-advance-collect
               env:
               - name: AMQP
                 value: amqp://guest:guest@amqp:5672
               - name: POSTGRES
                 value: postgresql://postgres@postgres:5432
-              name: schedule-account-update
-              image: registry.gitlab.com/timely-advance/timely:0.1.3
+              name: schedule-advance-collect
+              image: registry.gitlab.com/timely-advance/timely:0.1.4
           restartPolicy: OnFailure

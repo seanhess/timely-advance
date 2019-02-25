@@ -3,6 +3,16 @@ Timely Advance
 
 
 
+Gitlab Runner
+-------------
+
+* https://gitlab.com/groups/timely-advance/-/settings/ci_cd
+* https://about.gitlab.com/2016/04/19/how-to-set-up-gitlab-runner-on-digitalocean/
+* https://docs.gitlab.com/ee/ci/docker/using_docker_build.html
+
+
+
+
 K8
 -------
 

@@ -5,15 +5,15 @@
 
 # this should match stack.yaml
 # image: fpco/stack-build:lts-13.7
-image: haskell:8
+# image: haskell:8
 # image: docker:stable
 
 
 # TODO: docker (for uploading)
 # TODO: make my own image? with haskell:8, node, etc?
 
-before_script:
-  - docker info
+# before_script:
+#   - docker info
 
 
 # before_script:
@@ -57,9 +57,9 @@ build:
     - docker --version
   script:
     - docker --version
-    - cd server
-    - stack setup
-    - stack build --fast --test --only-dependencies
+    # - cd server
+    # - stack setup
+    # - stack build --fast --test --only-dependencies
   before_script:
     - apt-get update -y
     - apt-get install libpq-dev -y
@@ -70,7 +70,8 @@ test:
   stage: test
   script:
     - cd server
-    - stack test --fast
+    - echo "TEST"
+    # - stack test --fast
 
 
 # I NEED to get docker on this image
@@ -80,8 +81,8 @@ deploy:
   stage: deploy
   script:
     - echo "DEPLOY"
-    - cd server
-    - stack image container
+    # - cd server
+    # - stack image container
   # artifacts:
   #   paths:
   #   - web/elm.js

@@ -1,31 +1,27 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  # labels:
-  #   io.kompose.service: work-account-onboard
-  name: work-account-onboard
+  name: work-advance-collect
 spec:
   replicas: 1
   revisionHistoryLimit: 2
   strategy: {}
   template:
     metadata:
-      # creationTimestamp: null
       labels:
-        name: work-account-onboard
+        name: work-advance-collect
     spec:
       imagePullSecrets:
         - name: gitlab-docker-registry
       containers:
       - args:
         - /usr/local/bin/timely
-        - work-account-onboard
+        - work-advance-collect
         env:
         - name: AMQP
           value: amqp://guest:guest@amqp:5672
         - name: POSTGRES
           value: postgresql://postgres@postgres:5432
-        image: registry.gitlab.com/timely-advance/timely:0.1.3
-        name: work-account-onboard
-        # resources: {}
+        image: registry.gitlab.com/timely-advance/timely:0.1.4
+        name: work-advance-collect
       restartPolicy: Always
