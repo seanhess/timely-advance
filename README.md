@@ -80,6 +80,12 @@ https://kubernetes.io/docs/concepts/services-networking/connect-applications-ser
 * Pull from a private registry
 
 
+https://helm.sh/docs/using_helm/#using-ssl-between-helm-and-tiller
+
+* install Helm and tiller using SSH
+
+
+
 
 
 ### Digital Ocean Tutorials
