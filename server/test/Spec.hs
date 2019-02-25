@@ -6,6 +6,7 @@ import qualified Test.OnboardAccount
 import qualified Test.Evaluate
 import qualified Test.Advances
 import qualified Test.Dwolla
+import qualified Test.Notify
 
 
 
@@ -20,5 +21,6 @@ allTests = do
     group "Evaluate"       Test.Evaluate.tests
     group "Advances"       Test.Advances.tests
     group "Dwolla"         Test.Dwolla.tests
+    group "Notify"         Test.Notify.tests
 
 

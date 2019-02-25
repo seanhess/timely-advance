@@ -75,7 +75,7 @@ instance MonadConfig Bank.Config HandlerM where
 instance MonadConfig Notify.Config HandlerM where
   config = do
     e <- asks env
-    pure $ Notify.Config (twilioFromPhone e) (twilioAccountId e) (twilioAuthToken e) (endpoint e)
+    pure $ Notify.Config (twilioFromPhone e) (twilioAccountId e) (twilioAuthToken e) (appEndpoint e)
 
 instance MonadConfig Dwolla.Credentials HandlerM where
     config = do

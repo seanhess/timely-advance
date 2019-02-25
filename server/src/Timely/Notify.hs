@@ -63,7 +63,7 @@ url b a m =
     , rurl (resource m)
     , Guid.toText (id m)
     ]
-  where rurl Advance = "advance"
+  where rurl Advance = "advances"
 
 
 data Resource

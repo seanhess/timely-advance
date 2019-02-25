@@ -24,7 +24,7 @@ import           Network.Dwolla          (FundingSource)
 import qualified Network.Dwolla          as Dwolla
 import           Network.Plaid.Types     (Client, Public)
 import qualified Network.Plaid.Types     as Plaid
-import           Servant.Client          (BaseUrl (..), Scheme (Https))
+import           Servant.Client          (BaseUrl (..), Scheme (..))
 import qualified Servant.Client          as Servant
 import           System.Envy             (DefConfig (..), FromEnv, Var (..))
 import qualified System.Envy             as Envy
@@ -35,7 +35,8 @@ import qualified Twilio                  as Twilio
 
 
 data Env = Env
-  { postgres            :: Text
+  { appEndpoint         :: BaseUrl
+  , postgres            :: Text
   , amqp                :: Text
   , port                :: Int
   , serveDir            :: FilePath
@@ -50,7 +51,6 @@ data Env = Env
   , twilioAccountId     :: Twilio.AccountSID
   , twilioAuthToken     :: Twilio.AuthToken
   , twilioFromPhone     :: Valid Phone
-  , endpoint            :: BaseUrl
   , sessionSecret       :: ByteString
   , adminPassphrase     :: Token Admin
   , dwollaBaseUrl       :: BaseUrl
@@ -63,7 +63,8 @@ data Env = Env
 
 instance DefConfig Env where
   defConfig = Env
-    { postgres          = "postgresql://postgres@localhost:5432"
+    { appEndpoint       = BaseUrl Http "localhost" 80 "app"
+    , postgres          = "postgresql://postgres@localhost:5432"
     , amqp              = "amqp://guest:guest@localhost:5672"
     , serveDir          = "../web/build"
     , port              = 3001
@@ -81,7 +82,6 @@ instance DefConfig Env where
     , twilioAccountId   = Twilio.AccountSID "ACea89d7047fbce75c97607b517303f27a"
     , twilioAuthToken   = Maybe.fromJust $ Twilio.parseAuthToken "01aadd9eee8a895d9f410b5e807334ee"
     , twilioFromPhone   = Valid "5413940563"
-    , endpoint          = BaseUrl Https "app.timelyadvance.com" 443 ""
     , sessionSecret     = "cQfTjWnZr4u7x!A%D*G-KaNdRgUkXp2s"
     , adminPassphrase   = Token "rapidly scotland horses stuff"
     , dwollaBaseUrl     = BaseUrl Https "api-sandbox.dwolla.com" 443 ""
