@@ -61,6 +61,7 @@ build:
   stage: build
   script:
     - cd server
+    - stack docker pull
     - stack setup --docker
     - stack build --docker --fast --test --only-dependencies
 
