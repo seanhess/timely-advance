@@ -52,20 +52,17 @@ stages:
 
 # image: haskell:8
 
+before_script:
+  - docker --version
+  - stack --version
+
 
 build:
   stage: build
-  before_script:
-    - docker --version
   script:
-    - docker --version
-    - stack --version
-    # - cd server
-    # - stack setup
-    # - stack build --fast --test --only-dependencies
-  # before_script:
-  #   - apt-get update -y
-  #   - apt-get install libpq-dev -y
+    - cd server
+    - stack setup --docker
+    - stack build --docker --fast --test --only-dependencies
 
 
 
@@ -73,8 +70,8 @@ test:
   stage: test
   script:
     - cd server
-    - echo "TEST"
-    # - stack test --fast
+    - stack test --docker
+
 
 
 # I NEED to get docker on this image
@@ -83,14 +80,8 @@ test:
 deploy:
   stage: deploy
   script:
-    - echo "DEPLOY"
-    # - cd server
-    # - stack image container
-  # artifacts:
-  #   paths:
-  #   - web/elm.js
-
-    # - docker run -it timely /usr/local/bin/timely
+    - cd server
+    - stack image container --docker
 
 cache:
   paths:
