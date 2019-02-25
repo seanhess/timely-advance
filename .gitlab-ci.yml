@@ -6,10 +6,15 @@
 # this should match stack.yaml
 # image: fpco/stack-build:lts-13.7
 image: haskell:8
+# image: docker:stable
 
 
 # TODO: docker (for uploading)
 # TODO: make my own image? with haskell:8, node, etc?
+
+before_script:
+  - docker info
+
 
 # before_script:
 #   - apt-get update -y
@@ -25,23 +30,24 @@ stages:
   - deploy
 
 
+# TODO - use the docker image to build
 # build-elm:
 #   stage: build
-#   image: node:8
-#   cache:
-#     paths: []
+#   image: docker:stable
+#   # cache:
+#   #   paths: []
 #       # - web/elm-stuff
 #   script:
-#     - pwd
-#     - ls node_modules/.bin
-#     - node_modules/.bin/elm --version
-#     - node_modules/.bin/elm make src/Main.elm --output=elm.js
+#     - docker build -t timely/web web
+#   #   - pwd
+#   #   - ls node_modules/.bin
+#   #   - node_modules/.bin/elm --version
+#   #   - node_modules/.bin/elm make src/Main.elm --output=elm.js
 #   before_script:
-#     - cd web
-#     - npm install elm
-#   artifacts:
-#     paths:
-#     - web/elm.js
+#     - docker info
+#   # artifacts:
+#   #   paths:
+#   #   - web/elm.js
 
 
 
@@ -64,12 +70,19 @@ test:
     - stack test --fast
 
 
+# I NEED to get docker on this image
+# because otherwise it won't be able to push...
+# hmm... I could also put secrets on it
 deploy:
   stage: deploy
   script:
     - echo "DEPLOY"
     - cd server
     - stack image container
+  # artifacts:
+  #   paths:
+  #   - web/elm.js
+
     # - docker run -it timely /usr/local/bin/timely
 
 cache:
