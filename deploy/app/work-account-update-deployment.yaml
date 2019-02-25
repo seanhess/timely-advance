@@ -1,22 +1,18 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  annotations:
-    kompose.cmd: kompose convert
-    kompose.version: 1.17.0 ()
-  creationTimestamp: null
-  labels:
-    io.kompose.service: work-account-update
   name: work-account-update
 spec:
   replicas: 1
+  revisionHistoryLimit: 2
   strategy: {}
   template:
     metadata:
-      creationTimestamp: null
       labels:
-        io.kompose.service: work-account-update
+        name: work-account-update
     spec:
+      imagePullSecrets:
+        - name: gitlab-docker-registry
       containers:
       - args:
         - /usr/local/bin/timely
@@ -26,8 +22,6 @@ spec:
           value: amqp://guest:guest@amqp:5672
         - name: POSTGRES
           value: postgresql://postgres@postgres:5432
-        image: registry.gitlab.com/timely-advance/timely
+        image: registry.gitlab.com/timely-advance/timely:0.1.3
         name: work-account-update
-        resources: {}
       restartPolicy: Always
-status: {}

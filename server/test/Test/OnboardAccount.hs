@@ -35,11 +35,11 @@ testBankAccounts = do
 
 
 savings :: Account
-savings = Account {account_id = Id "KEERg7Mdw9Iv7Me36RPvhw43JkXkjXTVQAbpr", balances = Balances {current = Currency 210.0, available = Just (Currency 200.0), iso_currency_code = Just (CurrencyCode "USD"), unofficial_currency_code = Nothing}, mask = "1111", name = "Plaid Saving", official_name = "Plaid Silver Standard 0.1% Interest Saving", subtype = Savings, _type = Depository}
+savings = Account {account_id = Id "KEERg7Mdw9Iv7Me36RPvhw43JkXkjXTVQAbpr", balances = Balances {current = Currency 210.0, available = Just (Currency 200.0), iso_currency_code = Just (CurrencyCode "USD"), unofficial_currency_code = Nothing}, mask = "1111", name = "Plaid Saving", official_name = Just "Plaid Silver Standard 0.1% Interest Saving", subtype = Savings, _type = Depository}
 
 
 checking :: Account
-checking = Account {account_id = Id "J88kojZxdRs81ZEnmkV8Fb8NKpapGaudPgq6Z", balances = Balances {current = Currency 110.0, available = Just (Currency 100.0), iso_currency_code = Just (CurrencyCode "USD"), unofficial_currency_code = Nothing}, mask = "0000", name = "Plaid Checking", official_name = "Plaid Gold Standard 0% Interest Checking", subtype = Checking, _type = Depository}
+checking = Account {account_id = Id "J88kojZxdRs81ZEnmkV8Fb8NKpapGaudPgq6Z", balances = Balances {current = Currency 110.0, available = Just (Currency 100.0), iso_currency_code = Just (CurrencyCode "USD"), unofficial_currency_code = Nothing}, mask = "0000", name = "Plaid Checking", official_name = Just "Plaid Gold Standard 0% Interest Checking", subtype = Checking, _type = Depository}
 
 
 -- , Account {account_id = Id "KEERg7Mdw9Iv7Me36RPvhw43JkXkjXTVQAbpr", balances = Balances {current = Currency 210.0, available = Just (Currency 200.0), iso_currency_code = Just (CurrencyCode "USD"), unofficial_currency_code = Nothing}, mask = "1111", name = "Plaid Saving", official_name = "Plaid Silver Standard 0.1% Interest Saving", subtype = Savings, _type = Depository}

@@ -127,7 +127,7 @@ data Account = Account
     , balances      :: Balances
     , mask          :: Text
     , name          :: Text
-    , official_name :: Text
+    , official_name :: Maybe Text
     , subtype       :: AccountSubType
     , _type         :: AccountType
     } deriving (Generic, Show, Eq)

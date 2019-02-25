@@ -9,7 +9,7 @@ import qualified Timely.Worker.AccountOnboard as AccountOnboard
 import qualified Timely.Worker.AccountUpdate  as AccountUpdate
 import qualified Timely.Worker.AdvanceCollect as AdvanceCollect
 import qualified Timely.Worker.AdvanceSend    as AdvanceSend
-import qualified Timely.Worker.Schedule       as Schedule
+-- import qualified Timely.Worker.Schedule       as Schedule
 import qualified Timely.Worker.WorkerM        as Worker
 
 main :: IO ()
@@ -25,7 +25,8 @@ main = do
     ["work-account-update"]  -> startAccountUpdate
     ["work-advance-send"]    -> startAdvanceSend
     ["work-advance-collect"] -> startAdvanceCollect
-    ["schedule"]             -> startScheduler
+    ["schedule-advance-collect"] -> startAdvanceCollectSchedule
+    ["schedule-account-update"] -> startAccountUpdateSchedule
     ["initialize"]           -> Api.initialize
     _                        -> putStrLn "please enter a command"
 
@@ -33,6 +34,7 @@ main = do
 printVersion :: IO ()
 printVersion =
   putStrLn $ Api.version
+
 
 
 
@@ -48,6 +50,10 @@ startAccountUpdate :: IO ()
 startAccountUpdate = Worker.start AccountUpdate.queue $ AccountUpdate.handler
 
 
+startAccountUpdateSchedule :: IO ()
+startAccountUpdateSchedule = Worker.runIO AccountUpdate.schedule
+
+
 startAdvanceSend :: IO ()
 startAdvanceSend = Worker.start AdvanceSend.queue AdvanceSend.handler
 
@@ -56,8 +62,9 @@ startAdvanceCollect :: IO ()
 startAdvanceCollect = Worker.start AdvanceCollect.queue AdvanceCollect.handler
 
 
-startScheduler :: IO ()
-startScheduler = Schedule.start
+startAdvanceCollectSchedule :: IO ()
+startAdvanceCollectSchedule = Worker.runIO AdvanceCollect.schedule
+
 
 
 
@@ -75,5 +82,6 @@ startAll = do
     , startAccountUpdate
     , startAdvanceSend
     , startAdvanceCollect
-    , startScheduler
+    , startAccountUpdateSchedule
+    , startAdvanceCollectSchedule
     ]

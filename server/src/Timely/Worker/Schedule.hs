@@ -13,6 +13,7 @@ start :: IO ()
 start = do
   putStrLn "STARTING SCHEDULER"
   -- TODO account update shouldn't be run every minute. Every hour in production, or use the webhook
+  -- we shouldn't do it this way for production
   Async.mapConcurrently_ id
     [ every minute $ Worker.runIO AdvanceCollect.schedule
     , every minute $ Worker.runIO AccountUpdate.schedule

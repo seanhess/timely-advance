@@ -5,6 +5,7 @@ metadata:
     io.kompose.service: api
   name: api
 spec:
+  revisionHistoryLimit: 2
   replicas: 1
   strategy:
     type: Recreate
