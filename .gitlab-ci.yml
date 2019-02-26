@@ -75,9 +75,6 @@ test:
 
 
 
-# I NEED to get docker on this image
-# because otherwise it won't be able to push...
-# hmm... I could also put secrets on it
 deploy:
   stage: deploy
   script:
