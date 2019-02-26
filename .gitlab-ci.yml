@@ -63,7 +63,7 @@ build:
     - cd server
     - stack docker pull
     - stack setup --docker
-    - stack build --docker --fast --test --only-dependencies
+    - stack build --docker --test --only-dependencies
 
 
 
@@ -71,7 +71,7 @@ test:
   stage: test
   script:
     - cd server
-    - stack test --docker --fast
+    - stack test --docker
 
 
 
