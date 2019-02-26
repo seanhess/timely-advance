@@ -71,7 +71,7 @@ test:
   stage: test
   script:
     - cd server
-    - stack test --docker
+    - stack test --docker --fast
 
 
 
