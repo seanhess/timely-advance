@@ -22,6 +22,8 @@ spec:
           value: amqp://guest:guest@amqp:5672
         - name: POSTGRES
           value: postgresql://postgres@postgres:5432
+        - name: APP_ENDPOINT
+          value: http://timelyadvance.com/app/
         image: registry.gitlab.com/timely-advance/timely:0.1.4
         name: work-advance-send
       restartPolicy: Always
