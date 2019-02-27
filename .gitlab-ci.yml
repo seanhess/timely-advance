@@ -51,6 +51,8 @@ build:
     - stack --version
   script:
     - cd server
+    - echo "module Version where version = \"$RELEASE\"" > src/Version.hs
+    - cat src/Version.hs
     - stack docker pull
     - stack setup --docker
     - stack build --docker --test

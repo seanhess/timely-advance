@@ -41,10 +41,11 @@ import           Timely.Api.Sessions                  (SetSession)
 import qualified Timely.Api.Sessions                  as Sessions
 import           Timely.Api.Types
 import           Timely.Auth                          (AuthCode)
-import           Timely.Config                        (port, serveDir, version)
+import           Timely.Config                        (port, serveDir)
 import qualified Timely.Transfers                     as Transfers
 import           Timely.Types.Config
 import           Timely.Types.Session
+import           Version
 
 type Api = ToServant BaseApi AsApi
 
@@ -148,7 +149,7 @@ sessionsApi = genericServerT SessionsApi
 
 baseApi :: FilePath -> ToServant BaseApi (AsServerT AppM)
 baseApi p = genericServerT BaseApi
-    { _info = pure $ "Timely v" <> cs Timely.Config.version
+    { _info = pure $ "Timely v" <> cs Version.version
     , _versioned = versionedApi
     , _files = serveDirectoryFileServer p
     , _debug = AppM.debug
