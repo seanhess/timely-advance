@@ -30,27 +30,18 @@ stages:
   - deploy
 
 
-# TODO - use the docker image to build
+# # TODO - use the docker image to build
+# # you can't use the same version for both... not without doing it in the same deply stage. ok
 # build-elm:
 #   stage: build
-#   image: docker:stable
-#   # cache:
-#   #   paths: []
-#       # - web/elm-stuff
-#   script:
-#     - docker build -t timely/web web
-#   #   - pwd
-#   #   - ls node_modules/.bin
-#   #   - node_modules/.bin/elm --version
-#   #   - node_modules/.bin/elm make src/Main.elm --output=elm.js
 #   before_script:
-#     - docker info
-#   # artifacts:
-#   #   paths:
-#   #   - web/elm.js
+#     - docker --version
+#   cache:
+#     paths:
+#       - web/elm-stuff
+#   script:
+#     - docker build -t registry.gitlab.com/timely-advance/timely:$VERSION.$CI_COMMIT_SHORT_SHA web
 
-
-# image: haskell:8
 
 
 build:
@@ -60,9 +51,11 @@ build:
     - stack --version
   script:
     - cd server
-    - stack docker pull
-    - stack setup --docker
-    - stack build --docker --test --only-dependencies
+    - echo "RELEASE $RELEASE"
+    - echo "VERSION $VERSION"
+    # - stack docker pull
+    # - stack setup --docker
+    # - stack build --docker --test --only-dependencies
 
 
 # test:
@@ -72,14 +65,15 @@ build:
 #     - stack test --docker
 
 
-deploy:
-  stage: deploy
-  script:
-    - cd server
-    - stack image container --docker
-    - VERSION=$(stack exec --docker timely version)
-    - echo "VERSION! $VERSION"
-    # - docker tag timely:latest registry.gitlab.com/timely-advance/timely:0.1.3
+# deploy:
+#   stage: deploy
+#   script:
+#     - cd server
+#     - stack image container --docker
+#     # - VERSION=$(stack exec --docker timely version)
+#     - docker tag timely:latest registry.gitlab.com/timely-advance/timely:$HASH
+#     - docker tag timely/web:latest registry.gitlab.com/timely-advance/timely/web:$VERSION.$HASH
+#     - docker push registry.gitlab.com/timely-advance/timely:$VERSION.$HASH
 
 cache:
   paths:
@@ -88,3 +82,5 @@ cache:
 
 variables:
   STACK_ROOT: "${CI_PROJECT_DIR}/.stack"
+  VERSION: "0.2"
+  RELEASE: "$VERSION.$CI_COMMIT_SHORT_SHA"
