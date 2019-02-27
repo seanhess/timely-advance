@@ -16,11 +16,9 @@ import           Data.Model.Types                     (Phone, Valid)
 import           Data.Proxy                           (Proxy (..))
 import           Data.String.Conversions              (cs)
 import           Data.Text                            (Text)
-import           Data.Version                         (showVersion)
 import           GHC.Generics                         (Generic)
 import qualified Network.Wai.Handler.Warp             as Warp
 import qualified Network.Wai.Middleware.RequestLogger as RequestLogger
-import qualified Paths_timely                         as Paths
 import           Servant                              hiding (Application, Link)
 import qualified Servant
 import           Servant.API.ContentTypes.HTML        (HTML, Link (..))
@@ -43,7 +41,7 @@ import           Timely.Api.Sessions                  (SetSession)
 import qualified Timely.Api.Sessions                  as Sessions
 import           Timely.Api.Types
 import           Timely.Auth                          (AuthCode)
-import           Timely.Config                        (port, serveDir)
+import           Timely.Config                        (port, serveDir, version)
 import qualified Timely.Transfers                     as Transfers
 import           Timely.Types.Config
 import           Timely.Types.Session
@@ -150,7 +148,7 @@ sessionsApi = genericServerT SessionsApi
 
 baseApi :: FilePath -> ToServant BaseApi (AsServerT AppM)
 baseApi p = genericServerT BaseApi
-    { _info = pure $ "Timely v" <> cs version
+    { _info = pure $ "Timely v" <> cs Timely.Config.version
     , _versioned = versionedApi
     , _files = serveDirectoryFileServer p
     , _debug = AppM.debug
@@ -192,9 +190,6 @@ application st =
 
 
 
-
-version :: String
-version = showVersion Paths.version
 
 
 initialize :: IO ()

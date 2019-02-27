@@ -40,8 +40,9 @@ import qualified Timely.Api.Sessions       as Sessions
 import           Timely.App                (retry)
 import           Timely.Auth               (AuthConfig)
 import qualified Timely.Auth               as Auth
-import           Timely.Config             (Env (..), loadEnv)
-import           Timely.Types.Config       (ClientConfig (ClientConfig), PlaidConfig (PlaidConfig))
+import           Timely.Config             (Env (..), loadEnv, version)
+import           Timely.Types.Config       (ClientConfig (ClientConfig),
+                                            PlaidConfig (PlaidConfig))
 import           Timely.Types.Session      (Admin)
 
 
@@ -83,7 +84,9 @@ loadState = do
 clientConfig :: AppM ClientConfig
 clientConfig = do
     e <- asks env
-    pure $ ClientConfig $ PlaidConfig (plaidPublicKey e) (plaidProducts e) (plaidEnv e)
+    pure $ ClientConfig version $ PlaidConfig (plaidPublicKey e) (plaidProducts e) (plaidEnv e)
+
+
 
 
 type AppM = LogT (ReaderT AppState Handler)

@@ -5,6 +5,7 @@ import qualified Control.Concurrent.Async     as Async
 import qualified System.Environment           as Environment
 import qualified System.IO                    as IO
 import qualified Timely.Api                   as Api
+import qualified Timely.Config                as Config
 import qualified Timely.Worker.AccountOnboard as AccountOnboard
 import qualified Timely.Worker.AccountUpdate  as AccountUpdate
 import qualified Timely.Worker.AdvanceCollect as AdvanceCollect
@@ -19,21 +20,21 @@ main = do
 
   a <- Environment.getArgs
   case a of
-    ["version"        ]      -> printVersion
-    ["api"]                  -> startApi
-    ["work-account-onboard"] -> startAccountOnboard
-    ["work-account-update"]  -> startAccountUpdate
-    ["work-advance-send"]    -> startAdvanceSend
-    ["work-advance-collect"] -> startAdvanceCollect
+    ["version"        ]          -> printVersion
+    ["api"]                      -> startApi
+    ["work-account-onboard"]     -> startAccountOnboard
+    ["work-account-update"]      -> startAccountUpdate
+    ["work-advance-send"]        -> startAdvanceSend
+    ["work-advance-collect"]     -> startAdvanceCollect
     ["schedule-advance-collect"] -> startAdvanceCollectSchedule
-    ["schedule-account-update"] -> startAccountUpdateSchedule
-    ["initialize"]           -> Api.initialize
-    _                        -> putStrLn "please enter a command"
+    ["schedule-account-update"]  -> startAccountUpdateSchedule
+    ["initialize"]               -> Api.initialize
+    _                            -> putStrLn "please enter a command"
 
 
 printVersion :: IO ()
 printVersion =
-  putStrLn $ Api.version
+  putStrLn $ Config.version
 
 
 

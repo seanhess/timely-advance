@@ -5,6 +5,7 @@
 module Timely.Config
   ( Env(..)
   , loadEnv
+  , version
   ) where
 
 import           Control.Monad.IO.Class  (MonadIO, liftIO)
@@ -17,6 +18,7 @@ import           Data.String.Conversions (cs)
 import           Data.Text               (Text)
 import qualified Data.Text               as Text
 import           Data.Typeable           (Typeable)
+import           Data.Version            (showVersion)
 import           Database.Selda          (MonadMask)
 import           GHC.Generics            (Generic)
 import           Network.Authy           (AuthyApiKey)
@@ -24,14 +26,19 @@ import           Network.Dwolla          (FundingSource)
 import qualified Network.Dwolla          as Dwolla
 import           Network.Plaid.Types     (Client, Public)
 import qualified Network.Plaid.Types     as Plaid
+import qualified Paths_timely            as Paths
 import           Servant.Client          (BaseUrl (..), Scheme (..))
 import qualified Servant.Client          as Servant
 import           System.Envy             (DefConfig (..), FromEnv, Var (..))
 import qualified System.Envy             as Envy
-import           Text.Show.Pretty        (PrettyVal(..))
+import           Text.Show.Pretty        (PrettyVal (..))
 import           Timely.Types.Config     (PlaidProducts (..))
 import           Timely.Types.Session    (Admin)
 import qualified Twilio                  as Twilio
+
+
+version :: String
+version = showVersion Paths.version
 
 
 data Env = Env

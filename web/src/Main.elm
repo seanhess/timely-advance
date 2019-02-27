@@ -27,6 +27,14 @@ import Url exposing (Url)
 -- MODEL -- sub-views? Nested?
 
 
+port appInitialized : String -> Cmd msg
+
+
+version : String
+version =
+    "0.1.0"
+
+
 type alias Model =
     { key : Nav.Key
     , url : Url
@@ -56,7 +64,10 @@ init _ url key =
       , url = url
       , page = page
       }
-    , cmd
+    , Cmd.batch
+        [ cmd
+        , appInitialized version
+        ]
     )
 
 

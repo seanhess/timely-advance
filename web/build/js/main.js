@@ -17,10 +17,10 @@ var handler = Plaid.create({
   key: CONFIG.plaid.publicKey,
   // webhook: 'https://your-domain.tld/plaid-webhook',
   onLoad: function() {
-    console.log("LOADED")
+    // console.log("LOADED")
   },
   onSuccess: function(public_token) {
-    console.log("GOT PUBLIC TOKEN", public_token)
+    // console.log("GOT PUBLIC TOKEN", public_token)
     app.ports.plaidLinkDone.send(public_token);
     // $.post('/get_access_token', {
     //   public_token: public_token
@@ -34,7 +34,7 @@ var handler = Plaid.create({
     // });
   },
   onExit: function(err, metadata) {
-    console.log("On Exit", err, metadata)
+    // console.log("On Exit", err, metadata)
     app.ports.plaidLinkExit.send();
   }
 });
@@ -45,8 +45,12 @@ var handler = Plaid.create({
 
 
 // PORTS
-console.log("PORTS", app.ports)
+// console.log("PORTS", app.ports)
 app.ports.plaidLinkOpen.subscribe(function(data) {
   console.log("Plaid Link Open")
   handler.open()
+})
+
+app.ports.appInitialized.subscribe(function(version) {
+  console.log("Timely", version)
 })

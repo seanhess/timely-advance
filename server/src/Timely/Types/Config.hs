@@ -9,7 +9,8 @@ import           GHC.Generics        (Generic)
 import           Network.Plaid.Types (Public)
 
 data ClientConfig = ClientConfig
-    { plaid :: PlaidConfig
+    { version :: String
+    , plaid :: PlaidConfig
     } deriving (Generic, Show, Eq)
 
 instance ToJSON ClientConfig
