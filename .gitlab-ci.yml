@@ -30,17 +30,17 @@ stages:
   - deploy
 
 
-# # TODO - use the docker image to build
-# # you can't use the same version for both... not without doing it in the same deply stage. ok
-# build-elm:
-#   stage: build
-#   before_script:
-#     - docker --version
-#   cache:
-#     paths:
-#       - web/elm-stuff
-#   script:
-#     - docker build -t registry.gitlab.com/timely-advance/timely:$VERSION.$CI_COMMIT_SHORT_SHA web
+# TODO - use the docker image to build
+# you can't use the same version for both... not without doing it in the same deply stage. ok
+build-elm:
+  stage: build
+  before_script:
+    - docker --version
+  cache:
+    paths:
+      - web/elm-stuff
+  script:
+    - docker build -t registry.gitlab.com/timely-advance/timely/web:$RELEASE web
 
 
 
@@ -51,29 +51,26 @@ build:
     - stack --version
   script:
     - cd server
-    - echo "RELEASE $RELEASE"
-    - echo "VERSION $VERSION"
-    # - stack docker pull
-    # - stack setup --docker
-    # - stack build --docker --test --only-dependencies
+    - stack docker pull
+    - stack setup --docker
+    - stack build --docker --test
 
 
-# test:
-#   stage: test
-#   script:
-#     - cd server
-#     - stack test --docker
+test:
+  stage: test
+  script:
+    - cd server
+    - stack test --docker
 
 
-# deploy:
-#   stage: deploy
-#   script:
-#     - cd server
-#     - stack image container --docker
-#     # - VERSION=$(stack exec --docker timely version)
-#     - docker tag timely:latest registry.gitlab.com/timely-advance/timely:$HASH
-#     - docker tag timely/web:latest registry.gitlab.com/timely-advance/timely/web:$VERSION.$HASH
-#     - docker push registry.gitlab.com/timely-advance/timely:$VERSION.$HASH
+deploy:
+  stage: deploy
+  script:
+    - cd server
+    - stack image container --docker
+    - docker tag timely:latest registry.gitlab.com/timely-advance/timely:$HASH
+    - docker push registry.gitlab.com/timely-advance/timely:$RELEASE
+    - docker push registry.gitlab.com/timely-advance/timely/web:$RELEASE
 
 cache:
   paths:
