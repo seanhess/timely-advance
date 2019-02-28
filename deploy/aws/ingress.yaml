@@ -1,0 +1,51 @@
+# https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/tasks/ssl_redirect/apiVersion: extensions/v1beta1
+# https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/tasks/ssl_redirect/
+# https://medium.com/devopslinks/aws-eks-and-tls-terminated-load-balancer-18c152536f33
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  namespace: default
+  name: ingress
+  annotations:
+      kubernetes.io/ingress.class: alb
+      alb.ingress.kubernetes.io/scheme: internet-facing
+
+      # directs traffic directly to node
+      alb.ingress.kubernetes.io/target-type: ip
+
+      alb.ingress.kubernetes.io/subnets: subnet-03022082739f3516f,subnet-0008206f56202428a,subnet-0c7851c425e597d03
+      # alb.ingress.kubernetes.io/tags: Environment=dev,Team=test
+      alb.ingress.kubernetes.io/group: timely
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-2:575625783736:certificate/f0dce948-18f5-495b-a4c3-233cf39281b0
+      alb.ingress.kubernetes.io/actions.ssl-redirect: '{"Type": "redirect", "RedirectConfig": { "Protocol": "HTTPS", "Port": "443", "StatusCode": "HTTP_301"}}'
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+spec:
+  rules:
+    - http:
+        paths:
+         - path: /*
+           backend:
+             serviceName: ssl-redirect
+             servicePort: use-annotation
+         - path: /echo/*
+           backend:
+             serviceName: echo1
+             servicePort: 80
+         # - path: /*
+         #   backend:
+         #     serviceName: default-service
+         #     servicePort: 80
+    # - host: echo1.timelyadvance.com
+    #   http:
+    #     paths:
+    #       - path: /
+    #         backend:
+    #           serviceName: echo1
+    #           servicePort: 80
+    # - host: asdf.timelyadvance.com
+    #   http:
+    #     paths:
+    #       - path: /
+    #         backend:
+    #           serviceName: echo1
+    #           servicePort: 80

@@ -2,6 +2,74 @@ Timely Advance
 ==============
 
 
+Ok, if I use an nginx-ingress-controller, the platform neutral version, it'll port across to a different host. It'll create an EBL instance. That should work. I can follow a generic guide, I think
+
+* https://medium.com/devopslinks/learning-kubernetes-on-eks-by-doing-part-4-ingress-on-eks-6c5e5a34920b
+* https://gist.github.com/camilb/69008e4dddeb5d663e2e6699b3a93283 - example
+* https://www.sumologic.com/blog/amazon-web-services/aws-elb-alb/ - but ALBs are better and more flexible. Should I even configure one with k8? Not really, because it's not platform neutral. What if I set it up manually? It's not something I need to change often. And a web interface sounds nice. Let's get an echo server going
+
+    
+
+Nope, I can't find the exposed service when setting it up manually. Time to follow some auto configuration directions. ALB it is!
+
+AWS EKS Setup
+-------------
+https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
+
+You must log in as the IAM user you will use to authenticate before creating it with the console. Create the user, give it permissions, then log in with it by setting a password.
+
+Download iam, aws, etc.
+
+    aws --version
+    aws-iam-authenticator help
+    aws configure
+
+Save configuration
+
+    aws eks update-kubeconfig --name timely
+
+Set up the Dashboard - https://docs.aws.amazon.com/eks/latest/userguide/dashboard-tutorial.html
+
+Set up Ingress - https://github.com/kubernetes-sigs/aws-alb-ingress-controller
+
+ https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/tasks/ssl_redirect/
+
+
+
+
+Kubernetes Cluster from Scratch
+-------------------------------
+
+Create the cluster. Save the config to kube config and test the connection
+
+    kubectl get nodes
+
+Install [Kubernetes Dashboard](https://github.com/kubernetes/dashboard)
+
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
+    kubectl proxy
+
+Now you can [visit the Dashboard](http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/overview)
+
+Create an [admin user](https://github.com/kubernetes/dashboard/wiki/Creating-sample-user)
+
+    kubectl create -f deploy/init/admin.yaml
+
+Get the secret from the admin-user and use it to log in to the dashboard
+
+    kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
+
+
+
+Kubernetes Cheat Sheet
+----------------------
+
+
+Access a service via port forwarding
+
+    kubectl port-forward svc/echo1 8082:80
+
+
 
 
 
