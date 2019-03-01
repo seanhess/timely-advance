@@ -21,15 +21,17 @@ build-web:
   stage: build
   before_script:
     - docker --version
-    - npm --version
+    - elm --version
   cache:
     paths:
       - web/elm-stuff
-      - web/node_modules
   script:
     - cd web
-    - npm install
-    - npm run build
+
+    - echo "module Version exposing (..)\n\nversion = \"$RELEASE\"" > src/Version.elm
+    - cat src/Version.elm
+
+    - elm make src/Main.elm --optimize --output=build/elm.js
     - docker build -t $IMAGE_WEB:$RELEASE .
 
 

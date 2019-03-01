@@ -21,6 +21,7 @@ import Route exposing (Route)
 import Timely.Api exposing (Account)
 import Timely.Style as Style
 import Url exposing (Url)
+import Version
 
 
 
@@ -28,11 +29,6 @@ import Url exposing (Url)
 
 
 port appInitialized : String -> Cmd msg
-
-
-version : String
-version =
-    "0.1.0"
 
 
 type alias Model =
@@ -66,7 +62,7 @@ init _ url key =
       }
     , Cmd.batch
         [ cmd
-        , appInitialized version
+        , appInitialized Version.version
         ]
     )
 

@@ -52,5 +52,5 @@ app.ports.plaidLinkOpen.subscribe(function(data) {
 })
 
 app.ports.appInitialized.subscribe(function(version) {
-  console.log("Timely", version)
+  console.log("Timely", "version:", version)
 })
