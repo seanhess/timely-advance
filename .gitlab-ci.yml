@@ -58,11 +58,11 @@ build:
     - stack build --docker --test
 
 
-test:
-  stage: test
-  script:
-    - cd server
-    - stack test --docker
+# test:
+#   stage: test
+#   script:
+#     - cd server
+#     - stack test --docker
 
 
 deploy:
