@@ -13,18 +13,22 @@ variables:
 
 # these stages should match the pipeline
 stages:
-  - build # we are running tests in the build stage for now. See --test below
+  - build # we are running tests in the build stage for now.
   - deploy
 
 
-build-elm:
+build-web:
   stage: build
   before_script:
     - docker --version
+    - npm --version
   cache:
     paths:
       - web/elm-stuff
+      - web/node_modules
   script:
+    - npm install
+    - npm run build
     - docker build -t $IMAGE_WEB:$RELEASE web
 
 

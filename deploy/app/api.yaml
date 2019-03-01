@@ -41,7 +41,7 @@ spec:
         - name: SERVE_DIR
           value: /var/www/html
         - name: APP_ENDPOINT
-          value: http://test.timelyadvance.com/app/
+          value: https://test.timelyadvance.com
         image: registry.gitlab.com/timely-advance/timely:$VERSION
         name: api
         ports:

@@ -23,7 +23,7 @@ spec:
         - name: POSTGRES
           value: postgresql://postgres@postgres:5432
         - name: APP_ENDPOINT
-          value: http://test.timelyadvance.com/app/
+          value: https://test.timelyadvance.com
         image: registry.gitlab.com/timely-advance/timely:$VERSION
         name: work-account-update
       restartPolicy: Always
