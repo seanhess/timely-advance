@@ -32,7 +32,13 @@ Set up the Dashboard - https://docs.aws.amazon.com/eks/latest/userguide/dashboar
 
 Set up Ingress - https://github.com/kubernetes-sigs/aws-alb-ingress-controller
 
- https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/tasks/ssl_redirect/
+SSL Redirect - https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/tasks/ssl_redirect/
+
+See deploy/aws - modify the access key and secret to create the ingress deployment
+
+Create default storage class - https://docs.aws.amazon.com/eks/latest/userguide/storage-classes.html
+
+    kube apply -f deploy/aws/storage-class.yaml
 
 
 
@@ -60,6 +66,14 @@ Get the secret from the admin-user and use it to log in to the dashboard
     kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
 
 
+Deploy Application
+------------------
+
+Create a gitlab deploy token: https://docs.gitlab.com/ee/user/project/deploy_tokens/. Replace the user and password
+ 
+    kubectl create secret docker-registry gitlab-registry --docker-server=registry.gitlab.com --docker-username=XXXX --docker-password=XXXX --docker-email=sean.hess@timelyadvance.com
+
+
 
 Kubernetes Cheat Sheet
 ----------------------
@@ -68,6 +82,10 @@ Kubernetes Cheat Sheet
 Access a service via port forwarding
 
     kubectl port-forward svc/echo1 8082:80
+
+SSH into a running pod
+
+    kubectl exec -it shell-demo -- /bin/bash
 
 
 

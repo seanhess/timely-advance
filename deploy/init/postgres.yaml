@@ -62,4 +62,4 @@ spec:
   resources:
     requests:
       storage: 50Gi
-  storageClassName: do-block-storage
+  storageClassName: gp2

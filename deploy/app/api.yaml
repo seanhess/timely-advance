@@ -26,7 +26,7 @@ spec:
         io.kompose.service: api
     spec:
       imagePullSecrets:
-        - name: gitlab-docker-registry
+        - name: gitlab-registry
       containers:
       - args:
         - /usr/local/bin/timely
@@ -41,7 +41,7 @@ spec:
         - name: SERVE_DIR
           value: /var/www/html
         - name: APP_ENDPOINT
-          value: http://timelyadvance.com/app/
+          value: http://test.timelyadvance.com/app/
         image: registry.gitlab.com/timely-advance/timely:0.1.4
         name: api
         ports:

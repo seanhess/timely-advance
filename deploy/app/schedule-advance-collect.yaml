@@ -9,7 +9,7 @@ spec:
       template:
         spec:
           imagePullSecrets:
-            - name: gitlab-docker-registry
+            - name: gitlab-registry
           containers:
             - args:
               - /usr/local/bin/timely

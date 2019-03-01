@@ -15,7 +15,7 @@ spec:
         name: work-account-onboard
     spec:
       imagePullSecrets:
-        - name: gitlab-docker-registry
+        - name: gitlab-registry
       containers:
       - args:
         - /usr/local/bin/timely
@@ -26,7 +26,7 @@ spec:
         - name: POSTGRES
           value: postgresql://postgres@postgres:5432
         - name: APP_ENDPOINT
-          value: http://timelyadvance.com/app/
+          value: http://test.timelyadvance.com/app/
         image: registry.gitlab.com/timely-advance/timely:0.1.4
         name: work-account-onboard
         # resources: {}
