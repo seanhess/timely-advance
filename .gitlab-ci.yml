@@ -28,42 +28,43 @@ build-web:
   script:
     - cd web
 
-    - echo "module Version exposing (..)\n\nversion = \"$RELEASE\"" > src/Version.elm
+    - echo "module Version exposing (..)" > src/Version.elm
+    - echo "version = \"$RELEASE\""      >> src/Version.elm
     - cat src/Version.elm
 
     - elm make src/Main.elm --optimize --output=build/elm.js
     - docker build -t $IMAGE_WEB:$RELEASE .
 
 
-# This is the fastest
-build-server:
-  stage: build
-  before_script:
-    - docker --version
-    - stack --version
-  script:
-    - cd server
-    - stack docker pull
-    - stack setup --docker
-    - stack build --docker --test
+# # This is the fastest
+# build-server:
+#   stage: build
+#   before_script:
+#     - docker --version
+#     - stack --version
+#   script:
+#     - cd server
+#     - stack docker pull
+#     - stack setup --docker
+#     - stack build --docker --test
 
 
-deploy:
-  stage: deploy
-  before_script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-  script:
-    - cd server
+# deploy:
+#   stage: deploy
+#   before_script:
+#     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+#   script:
+#     - cd server
 
-    - echo "module Version where version = \"$RELEASE\"" > src/Version.hs
-    - cat src/Version.hs
+#     - echo "module Version where version = \"$RELEASE\"" > src/Version.hs
+#     - cat src/Version.hs
 
-    - stack image container --docker
-    - docker tag timely:latest $IMAGE_SERVER:$RELEASE
+#     - stack image container --docker
+#     - docker tag timely:latest $IMAGE_SERVER:$RELEASE
 
-    - docker push $IMAGE_SERVER:$RELEASE
-    - docker push $IMAGE_WEB:$RELEASE
-    - echo "Published - $RELEASE"
+#     - docker push $IMAGE_SERVER:$RELEASE
+#     - docker push $IMAGE_WEB:$RELEASE
+#     - echo "Published - $RELEASE"
 
 cache:
   paths:
