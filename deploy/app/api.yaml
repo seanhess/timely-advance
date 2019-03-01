@@ -18,8 +18,6 @@ metadata:
 spec:
   revisionHistoryLimit: 2
   replicas: 2
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:
@@ -38,27 +36,9 @@ spec:
           value: "3002"
         - name: POSTGRES
           value: postgresql://postgres@postgres:5432
-        - name: SERVE_DIR
-          value: /var/www/html
         - name: APP_ENDPOINT
           value: https://test.timelyadvance.com
         image: registry.gitlab.com/timely-advance/timely:$VERSION
         name: api
         ports:
         - containerPort: 3002
-        resources: {}
-        volumeMounts:
-        - mountPath: /var/www
-          name: web-html-mount
-      initContainers:
-        - name: install
-          image: registry.gitlab.com/timely-advance/timely/web:$VERSION
-          command: ["mv", "./build", "/var/www/html"]
-          volumeMounts:
-          - name: web-html-mount
-            mountPath: "/var/www"
-      restartPolicy: Always
-      volumes:
-      - name: web-html-mount
-        emptyDir: {}
-# status: {}

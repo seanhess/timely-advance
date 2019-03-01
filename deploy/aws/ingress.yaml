@@ -31,9 +31,21 @@ spec:
            backend:
              serviceName: echo1
              servicePort: 80
-         - path: /*
+         - path: /v1/*
            backend:
              serviceName: api
+             servicePort: 80
+         - path: /health
+           backend:
+             serviceName: api
+             servicePort: 80
+         - path: /debug
+           backend:
+             serviceName: api
+             servicePort: 80
+         - path: /*
+           backend:
+             serviceName: web-static
              servicePort: 80
     # - host: echo1.timelyadvance.com
     #   http:

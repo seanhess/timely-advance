@@ -4,7 +4,7 @@
 # https://angristan.xyz/build-push-docker-images-gitlab-ci/
 
 variables:
-  VERSION: "0.2"
+  VERSION: "0.3"
   STACK_ROOT:   "${CI_PROJECT_DIR}/.stack"
   RELEASE:      "$VERSION.$CI_COMMIT_SHORT_SHA"
   IMAGE_SERVER: "$CI_REGISTRY/timely-advance/timely"
@@ -17,7 +17,7 @@ stages:
   - deploy
 
 
-web:
+build-web:
   stage: build
   before_script:
     - docker --version
@@ -34,7 +34,7 @@ web:
 
 
 # This is the fastest
-server:
+build-server:
   stage: build
   before_script:
     - docker --version
@@ -52,13 +52,15 @@ deploy:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
   script:
     - cd server
+
     - echo "module Version where version = \"$RELEASE\"" > src/Version.hs
     - cat src/Version.hs
+
     - stack image container --docker
     - docker tag timely:latest $IMAGE_SERVER:$RELEASE
+
     - docker push $IMAGE_SERVER:$RELEASE
     - docker push $IMAGE_WEB:$RELEASE
-
     - echo "Published - $RELEASE"
 
 cache:
