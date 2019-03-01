@@ -3,6 +3,13 @@
 # https://docs.gitlab.com/ee/ci/docker/using_docker_build.html
 # https://angristan.xyz/build-push-docker-images-gitlab-ci/
 
+variables:
+  VERSION: "0.2"
+  STACK_ROOT:   "${CI_PROJECT_DIR}/.stack"
+  RELEASE:      "$VERSION.$CI_COMMIT_SHORT_SHA"
+  IMAGE_SERVER: "$CI_REGISTRY/timely-advance/timely"
+  IMAGE_WEB:    "$CI_REGISTRY/timely-advance/timely/web"
+
 
 # these stages should match the pipeline
 stages:
@@ -29,8 +36,6 @@ build:
     - stack --version
   script:
     - cd server
-    - echo "module Version where version = \"$RELEASE\"" > src/Version.hs
-    - cat src/Version.hs
     - stack docker pull
     - stack setup --docker
     - stack build --docker --test
@@ -39,27 +44,20 @@ build:
 deploy:
   stage: deploy
   before_script:
-    # - docker login -u sean.hess -p mbPGDyQUsyC2BG28x1wa $CI_REGISTRY
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
   script:
     - cd server
+    - echo "module Version where version = \"$RELEASE\"" > src/Version.hs
+    - cat src/Version.hs
     - stack image container --docker
     - docker tag timely:latest $IMAGE_SERVER:$RELEASE
-
     - docker push $IMAGE_SERVER:$RELEASE
-    - echo "Published - $IMAGE_SERVER:$RELEASE"
-
     - docker push $IMAGE_WEB:$RELEASE
-    - echo "Published - $IMAGE_WEB:$RELEASE"
+
+    - echo "Published - $RELEASE"
 
 cache:
   paths:
     - .stack
     - server/.stack-work
 
-variables:
-  STACK_ROOT: "${CI_PROJECT_DIR}/.stack"
-  VERSION: "0.2"
-  RELEASE: "$VERSION.$CI_COMMIT_SHORT_SHA"
-  IMAGE_SERVER: "$CI_REGISTRY/timely-advance/timely"
-  IMAGE_WEB:    "$CI_REGISTRY/timely-advance/timely/web"

@@ -1,0 +1,23 @@
+#!/bin/bash
+
+if [[ -z "$@" ]]; then
+    echo >&2 "Usage: deploy/prod VERSION"
+    exit 1
+fi
+
+export VERSION=$@
+echo "Deploy VERSION=$VERSION"
+
+export DIR=deploy/builds/$VERSION
+mkdir -p $DIR
+echo "Build $DIR" 
+
+
+for file in deploy/app/*; do filename=${file##*/}
+  echo " - $filename"
+  # echo "TEST" ${filename##*/}"
+  envsubst < $file > $DIR/$filename
+done
+
+echo "Built $DIR" 
+echo "kubectl apply -f $DIR"

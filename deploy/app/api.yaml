@@ -42,7 +42,7 @@ spec:
           value: /var/www/html
         - name: APP_ENDPOINT
           value: http://test.timelyadvance.com/app/
-        image: registry.gitlab.com/timely-advance/timely:0.1.4
+        image: registry.gitlab.com/timely-advance/timely:$VERSION
         name: api
         ports:
         - containerPort: 3002
@@ -52,7 +52,7 @@ spec:
           name: web-html-mount
       initContainers:
         - name: install
-          image: registry.gitlab.com/timely-advance/timely/web:0.1.4
+          image: registry.gitlab.com/timely-advance/timely/web:$VERSION
           command: ["mv", "./build", "/var/www/html"]
           volumeMounts:
           - name: web-html-mount
