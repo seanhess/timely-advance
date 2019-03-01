@@ -12,7 +12,7 @@
 # TODO: docker (for uploading)
 # TODO: make my own image? with haskell:8, node, etc?
 
-# before_script:
+# before_scripte
 #   - docker info
 
 
@@ -40,7 +40,7 @@ build-elm:
     paths:
       - web/elm-stuff
   script:
-    - docker build -t registry.gitlab.com/timely-advance/timely/web:$RELEASE web
+    - docker build -t $IMAGE_WEB:$RELEASE web
 
 
 
@@ -58,21 +58,24 @@ build:
     - stack build --docker --test
 
 
-# test:
-#   stage: test
-#   script:
-#     - cd server
-#     - stack test --docker
+test:
+  stage: test
+  script:
+    - cd server
+    - stack test --docker
 
 
 deploy:
   stage: deploy
+  before_script:
+    # - docker login -u sean.hess -p mbPGDyQUsyC2BG28x1wa $CI_REGISTRY
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
   script:
     - cd server
     - stack image container --docker
-    - docker tag timely:latest registry.gitlab.com/timely-advance/timely:$RELEASE
-    - docker push registry.gitlab.com/timely-advance/timely:$RELEASE
-    - docker push registry.gitlab.com/timely-advance/timely/web:$RELEASE
+    - docker tag timely:latest $IMAGE_SERVER:$RELEASE
+    - docker push $IMAGE_SERVER:$RELEASE
+    - docker push $IMAGE_WEB:$RELEASE
 
 cache:
   paths:
@@ -83,3 +86,5 @@ variables:
   STACK_ROOT: "${CI_PROJECT_DIR}/.stack"
   VERSION: "0.2"
   RELEASE: "$VERSION.$CI_COMMIT_SHORT_SHA"
+  IMAGE_SERVER: "$CI_REGISTRY/timely-advance/timely"
+  IMAGE_WEB:    "$CI_REGISTRY/timely-advance/timely/web"

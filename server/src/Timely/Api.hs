@@ -149,7 +149,7 @@ sessionsApi = genericServerT SessionsApi
 
 baseApi :: FilePath -> ToServant BaseApi (AsServerT AppM)
 baseApi p = genericServerT BaseApi
-    { _info = pure $ "Timely v" <> cs Version.version
+    { _info = pure $ "Timely " <> cs Version.version
     , _versioned = versionedApi
     , _files = serveDirectoryFileServer p
     , _debug = AppM.debug

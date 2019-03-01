@@ -5,11 +5,11 @@ import qualified Control.Concurrent.Async     as Async
 import qualified System.Environment           as Environment
 import qualified System.IO                    as IO
 import qualified Timely.Api                   as Api
-import qualified Timely.Config                as Config
 import qualified Timely.Worker.AccountOnboard as AccountOnboard
 import qualified Timely.Worker.AccountUpdate  as AccountUpdate
 import qualified Timely.Worker.AdvanceCollect as AdvanceCollect
 import qualified Timely.Worker.AdvanceSend    as AdvanceSend
+import qualified Version
 -- import qualified Timely.Worker.Schedule       as Schedule
 import qualified Timely.Worker.WorkerM        as Worker
 
@@ -34,7 +34,7 @@ main = do
 
 printVersion :: IO ()
 printVersion =
-  putStrLn $ Config.version
+  putStrLn $ Version.version
 
 
 
