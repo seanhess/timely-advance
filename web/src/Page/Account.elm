@@ -1,7 +1,6 @@
 module Page.Account exposing (Model, Msg, init, subscriptions, update, view)
 
 import Browser.Navigation as Nav
-import Debug
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
@@ -309,8 +308,3 @@ accountType t =
 
         Other ->
             "Other"
-
-
-viewError : String -> Http.Error -> Element Msg
-viewError msg e =
-    el [ Style.error ] (text <| msg ++ " " ++ Debug.toString e)

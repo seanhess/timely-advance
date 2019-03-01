@@ -7,7 +7,7 @@ import Json.Decode.Pipeline exposing (..)
 import Json.Encode as Encode
 import String
 import Task
-import Time
+import Time exposing (Month(..))
 
 
 type Bank
@@ -587,7 +587,42 @@ formatDate zone time =
             String.fromInt <| Time.toYear zone time
 
         formatMonth t =
-            Debug.toString <| Time.toMonth zone time
+            case Time.toMonth zone t of
+                Jan ->
+                    "Jan"
+
+                Feb ->
+                    "Feb"
+
+                Mar ->
+                    "Mar"
+
+                Apr ->
+                    "Apr"
+
+                May ->
+                    "May"
+
+                Jun ->
+                    "Jun"
+
+                Jul ->
+                    "Jul"
+
+                Aug ->
+                    "Aug"
+
+                Sep ->
+                    "Sep"
+
+                Oct ->
+                    "Oct"
+
+                Nov ->
+                    "Nov"
+
+                Dec ->
+                    "Dec"
 
         formatDay t =
             String.fromInt <| Time.toDay zone time

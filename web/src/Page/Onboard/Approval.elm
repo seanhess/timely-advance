@@ -86,7 +86,7 @@ update msg model =
 
         OnResult (Err e) ->
             updates
-                |> set { model | status = Error [ Debug.toString e ] }
+                |> set { model | status = Error [ "Loading Error " ] }
 
         OnResult (Ok r) ->
             updates

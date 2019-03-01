@@ -1,7 +1,8 @@
 module Page.Admin.Sudo exposing (Model, Msg(..), init, label, subscriptions, update, view)
 
+-- import Debug
+
 import Browser.Navigation as Nav
-import Debug
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input

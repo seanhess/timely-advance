@@ -1,8 +1,9 @@
 port module Page.Onboard.Signup exposing (Mode(..), Model, Msg, init, subscriptions, update, view)
 
+-- import Debug
+
 import Browser.Navigation as Nav
 import Date exposing (Date)
-import Debug
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
