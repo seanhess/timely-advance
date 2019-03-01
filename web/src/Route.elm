@@ -78,7 +78,7 @@ parserAdmin =
 parserAccount : Parser (Account -> a) a
 parserAccount =
     oneOf
-        [ Parser.map Advance (s "advance" </> Parser.map Id string)
+        [ Parser.map Advance (s "advances" </> Parser.map Id string)
         , Parser.map AccountMain Parser.top
         ]
 
@@ -142,7 +142,7 @@ url page =
                     [ "accounts", s ]
 
                 Account (Id s) (Advance (Id adv)) ->
-                    [ "accounts", s, "advance", adv ]
+                    [ "accounts", s, "advances", adv ]
 
                 Init ->
                     []

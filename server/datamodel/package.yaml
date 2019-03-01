@@ -1,5 +1,5 @@
 name:                datamodel
-version:             0.1.0.0
+version:             0.2.0
 github:              "seanhess/types"
 license:             BSD3
 author:              "Sean Hess"
@@ -24,6 +24,7 @@ dependencies:
 - aeson
 - http-api-data
 - selda
+- random-strings
 - text
 - uuid
 
@@ -40,3 +41,5 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - datamodel
+    - tasty-hunit
+    - tasty

@@ -1,21 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Notify where
 
-import           Servant.Client   (BaseUrl (..), Scheme(..), showBaseUrl, parseBaseUrl)
+import           Data.Model.Guid  (Guid)
+import           Servant.Client   (BaseUrl (..), Scheme (..), parseBaseUrl, showBaseUrl)
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
+import           Timely.Advances  (Advance)
 import           Timely.Notify    as Notify
 
 tests :: Tests ()
 tests = do
     group "url" $ do
-      let advanceId = "34209d46-efd2-4675-aa8e-8564d9ab1111"
-      let accountId = "34209d46-efd2-4675-aa8e-8564d9ab0000"
+      let advanceId = "111" :: Guid Advance
+      let accountId = "000"
       let message = Message advanceId Advance "hello"
       let base = BaseUrl Https "timelyadvance.com" 443 "app"
 
       test "should match expected url" $ do
-        Notify.url base accountId message @?= ("https://timelyadvance.com/app/#/accounts/34209d46-efd2-4675-aa8e-8564d9ab0000/advances/34209d46-efd2-4675-aa8e-8564d9ab1111")
+        Notify.url base accountId message @?= ("https://timelyadvance.com/app/#/accounts/account-000/advances/advance-111")
 
 
       test "baseurl ignores slash" $ do

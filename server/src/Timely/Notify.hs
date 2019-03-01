@@ -6,6 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE UndecidableInstances  #-}
 module Timely.Notify where
 
@@ -13,10 +14,11 @@ import           Control.Monad.Config      (MonadConfig (..))
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
 import           Control.Monad.Service     (Service (..))
 import           Data.Model.Guid           as Guid
-import           Data.Model.Types          (Phone, Valid(..))
+import           Data.Model.Types          (Phone, Valid (..))
 import           Data.String.Conversions   (cs)
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
+import           Data.Typeable             (Typeable)
 import           GHC.Generics              (Generic)
 import           Prelude                   hiding (id)
 import           Servant.Client            (BaseUrl)
@@ -28,7 +30,7 @@ import qualified Twilio.Messages           as Twilio
 
 
 data Notify x where
-  Send :: Account -> Message a -> Notify ()
+  Send :: Typeable a => Account -> Message a -> Notify ()
 
 
 
@@ -38,7 +40,7 @@ instance (MonadIO m, MonadConfig Config m) => Service m Notify where
 
 
 send
-  :: (MonadIO m, MonadConfig Config m)
+  :: (MonadIO m, MonadConfig Config m, Typeable a)
   => Account -> Message a -> m ()
 send account message = do
   Config { fromPhone, accountSid, authToken, appBaseUrl } <- config
@@ -50,12 +52,12 @@ send account message = do
 
 
 
-body :: BaseUrl -> Guid Account -> Message a -> Text
+body :: Typeable a => BaseUrl -> Guid Account -> Message a -> Text
 body b a m = message m <> " " <> url b a m
 
 
 
-url :: BaseUrl -> Guid Account -> Message a -> Text
+url :: forall a. Typeable a => BaseUrl -> Guid Account -> Message a -> Text
 url b a m =
   cs (Servant.showBaseUrl b) <> "/#/" <> Text.intercalate "/"
     [ "accounts"

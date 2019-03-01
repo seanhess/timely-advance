@@ -5,7 +5,6 @@
 {-# LANGUAGE OverloadedStrings     #-}
 module Timely.Api.Applications
     ( newApplication
-    , Timely.Api.Applications.health
     ) where
 
 import           Control.Monad.Config            (MonadConfig (..))
@@ -15,7 +14,6 @@ import           Control.Monad.Service           (Service (..))
 import           Data.Model.Guid                 as Guid
 import           Data.Model.Types                (Phone, Valid)
 import           Data.String.Conversions         (cs)
-import           Data.Text                       (Text)
 import           Network.AMQP.Worker.Monad       as Worker
 import           Servant                         (ServantErr)
 import           Servant.Auth.Server             (CookieSettings, JWTSettings)
@@ -28,16 +26,6 @@ import           Timely.Time                     (UTCTime)
 import qualified Timely.Time                     as Time
 import           Timely.Types.Session            (Session (..))
 
-
-
-health
-  :: ( MonadWorker m
-     , Service m ApplicationStore
-     ) => m Text
-health = do
-    _ <- run $ Application.Check
-    Worker.publish Events.health "OK"
-    pure "OK"
 
 
 newApplication

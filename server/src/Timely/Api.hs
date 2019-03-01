@@ -14,7 +14,6 @@ import           Data.Model.Guid                      as Guid
 import           Data.Model.Id                        (Token)
 import           Data.Model.Types                     (Phone, Valid)
 import           Data.Proxy                           (Proxy (..))
-import           Data.String.Conversions              (cs)
 import           Data.Text                            (Text)
 import           GHC.Generics                         (Generic)
 import qualified Network.Wai.Handler.Warp             as Warp
@@ -33,6 +32,7 @@ import           Timely.AccountStore.Types            (AppResult, Application)
 import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
 import           Timely.Api.Advances                  as Advances
+import qualified Timely.Api.Health as Health
 import qualified Timely.Api.Applications              as Applications
 import           Timely.Api.AppM                      (AppM, AppState (..), clientConfig, loadState, nt, runIO)
 import qualified Timely.Api.AppM                      as AppM
@@ -45,19 +45,16 @@ import           Timely.Config                        (port, serveDir)
 import qualified Timely.Transfers                     as Transfers
 import           Timely.Types.Config
 import           Timely.Types.Session
-import           Version
 
 type Api = ToServant BaseApi AsApi
 
 
 data BaseApi route = BaseApi
-    { _info      :: route :- Get '[JSON] Text
-    , _versioned :: route :- "v1" :> ToServantApi VersionedApi
+    { _versioned :: route :- "v1" :> ToServantApi VersionedApi
     , _health    :: route :- "health" :> Get '[PlainText] Text
     , _debug     :: route :- "debug" :> Get '[PlainText] Text
-    , _files     :: route :- "app" :> Raw
+    , _files     :: route :- Raw
     } deriving (Generic)
-
 
 
 
@@ -149,11 +146,10 @@ sessionsApi = genericServerT SessionsApi
 
 baseApi :: FilePath -> ToServant BaseApi (AsServerT AppM)
 baseApi p = genericServerT BaseApi
-    { _info = pure $ "Timely " <> cs Version.version
-    , _versioned = versionedApi
+    { _versioned = versionedApi
     , _files = serveDirectoryFileServer p
     , _debug = AppM.debug
-    , _health = Applications.health
+    , _health = Health.health
     }
 
 versionedApi :: ToServant VersionedApi (AsServerT AppM)

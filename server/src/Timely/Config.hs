@@ -70,7 +70,7 @@ data Env = Env
 
 instance DefConfig Env where
   defConfig = Env
-    { appEndpoint       = BaseUrl Http "localhost" 80 "app"
+    { appEndpoint       = BaseUrl Http "localhost" 8000 ""
     , postgres          = "postgresql://postgres@localhost:5432"
     , amqp              = "amqp://guest:guest@localhost:5672"
     , serveDir          = "../web/build"

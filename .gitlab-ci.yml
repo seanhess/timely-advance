@@ -3,35 +3,13 @@
 # https://docs.gitlab.com/ee/ci/docker/using_docker_build.html
 # https://angristan.xyz/build-push-docker-images-gitlab-ci/
 
-# this should match stack.yaml
-# image: fpco/stack-build:lts-13.7
-# image: haskell:8
-# image: docker:stable
-
-
-# TODO: docker (for uploading)
-# TODO: make my own image? with haskell:8, node, etc?
-
-# before_scripte
-#   - docker info
-
-
-# before_script:
-#   - apt-get update -y
-
-
-# The goal is produce docker containers
-# don't do it this way
 
 # these stages should match the pipeline
 stages:
-  - build
-  # - test
+  - build # we are running tests in the build stage for now. See --test below
   - deploy
 
 
-# TODO - use the docker image to build
-# you can't use the same version for both... not without doing it in the same deply stage. ok
 build-elm:
   stage: build
   before_script:
@@ -43,7 +21,7 @@ build-elm:
     - docker build -t $IMAGE_WEB:$RELEASE web
 
 
-
+# This is the fastest
 build:
   stage: build
   before_script:
@@ -58,13 +36,6 @@ build:
     - stack build --docker --test
 
 
-# test:
-#   stage: test
-#   script:
-#     - cd server
-#     - stack test --docker
-
-
 deploy:
   stage: deploy
   before_script:
@@ -74,8 +45,12 @@ deploy:
     - cd server
     - stack image container --docker
     - docker tag timely:latest $IMAGE_SERVER:$RELEASE
+
     - docker push $IMAGE_SERVER:$RELEASE
+    - echo "Published - $IMAGE_SERVER:$RELEASE"
+
     - docker push $IMAGE_WEB:$RELEASE
+    - echo "Published - $IMAGE_WEB:$RELEASE"
 
 cache:
   paths:
