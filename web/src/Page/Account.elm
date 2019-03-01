@@ -9,7 +9,7 @@ import Element.Input as Input
 import Http
 import Route
 import Time exposing (Zone)
-import Timely.Api as Api exposing (Account, AccountId, Advance, BankAccount, BankAccountType(..), Customer, Id, advanceIsActive, advanceIsOffer, formatDate, formatDollars, idValue)
+import Timely.Api as Api exposing (Account, AccountId, Advance, BankAccount, BankAccountType(..), Customer, Id, advanceIsActive, advanceIsCollected, advanceIsOffer, formatDate, formatDollars, idValue)
 import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 
@@ -88,6 +88,9 @@ update nav msg model =
 view : Model -> Element Msg
 view model =
     let
+        collected =
+            Resource.map (List.filter advanceIsCollected) model.advances
+
         active =
             Resource.map (List.filter advanceIsActive) model.advances
 
@@ -109,6 +112,7 @@ view model =
             , resource (advancesView model.zone model.accountId) active
             , resource customerView <| Resource.map .customer model.account
             , resource banksTable model.banks
+            , resource (advancesView model.zone model.accountId) collected
 
             -- , el Style.header (text "Advances")
             ]
@@ -198,12 +202,6 @@ banksTable banks =
         }
 
 
-advancesView : Time.Zone -> Id AccountId -> List Advance -> Element Msg
-advancesView zone accountId advances =
-    Element.column [ spacing 10, width fill ]
-        (List.map (advanceView zone accountId) advances)
-
-
 offersView : Time.Zone -> Id AccountId -> List Advance -> Element Msg
 offersView zone accountId advances =
     Element.column [ spacing 10, width fill ]
@@ -245,11 +243,25 @@ advanceLink accountId advance =
     link [ Style.link ] { url = Route.url (Route.Account accountId (Route.Advance advance.advanceId)), label = text "view" }
 
 
+advancesView : Time.Zone -> Id AccountId -> List Advance -> Element Msg
+advancesView zone accountId advances =
+    Element.column [ spacing 10, width fill ]
+        (List.map (advanceView zone accountId) advances)
+
+
 advanceView : Time.Zone -> Id AccountId -> Advance -> Element Msg
 advanceView zone accountId advance =
     let
         advanceUrl =
             Route.url (Route.Account accountId (Route.Advance advance.advanceId))
+
+        status a =
+            case a.collected of
+                Just c ->
+                    "paid " ++ formatDate zone c
+
+                Nothing ->
+                    "due " ++ formatDate zone advance.due
     in
     wrappedRow
         [ padding 15
@@ -261,7 +273,7 @@ advanceView zone accountId advance =
         [ link [ Font.bold, Style.link, width fill ]
             { label = text "Advance", url = advanceUrl }
         , link []
-            { label = text ("$" ++ formatDollars advance.amount ++ " due " ++ formatDate zone advance.due)
+            { label = text ("$" ++ formatDollars advance.amount ++ " " ++ status advance)
             , url = advanceUrl
             }
         ]

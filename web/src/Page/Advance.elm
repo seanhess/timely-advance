@@ -143,11 +143,14 @@ viewStatus model =
             viewProblem "Advances error"
 
         ( Ready account, Ready advance, Ready advances ) ->
-            case advance.activated of
-                Just _ ->
+            case ( advance.activated, advance.collected ) of
+                ( Just _, Nothing ) ->
                     viewAccepted model.zone model.accountId advance
 
-                Nothing ->
+                ( _, Just c ) ->
+                    viewCollected model.zone model.accountId advance c
+
+                _ ->
                     viewForm model account advance advances
 
         _ ->
@@ -220,6 +223,19 @@ viewAccepted zone accountId advance =
         [ Element.el [] (text "Yay! Your money is on its way")
         , Element.el [] (text <| "Amount: $" ++ formatDollars advance.amount)
         , Element.el [] (text <| "Due: " ++ formatDate zone advance.due)
+        , Element.link (Style.button Style.secondary)
+            { url = Route.url <| Route.Account accountId <| Route.AccountMain
+            , label = Element.text "My Account"
+            }
+        ]
+
+
+viewCollected : Time.Zone -> Id AccountId -> Advance -> Time.Posix -> Element Msg
+viewCollected zone accountId advance collected =
+    Element.column [ spacing 15, width fill ]
+        [ Element.el [] (text "All paid off!")
+        , Element.el [] (text <| "Amount: $" ++ formatDollars advance.amount)
+        , Element.el [] (text <| "Paid: " ++ formatDate zone collected)
         , Element.link (Style.button Style.secondary)
             { url = Route.url <| Route.Account accountId <| Route.AccountMain
             , label = Element.text "My Account"
