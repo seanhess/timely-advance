@@ -30,7 +30,7 @@ web:
     - cd web
     - npm install
     - npm run build
-    - docker build -t $IMAGE_WEB:$RELEASE web
+    - docker build -t $IMAGE_WEB:$RELEASE .
 
 
 # This is the fastest
@@ -65,4 +65,5 @@ cache:
   paths:
     - .stack
     - server/.stack-work
+    - server/datamodel/.stack-work
 
