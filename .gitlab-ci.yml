@@ -17,7 +17,7 @@ stages:
   - deploy
 
 
-build-web:
+web:
   stage: build
   before_script:
     - docker --version
@@ -27,13 +27,14 @@ build-web:
       - web/elm-stuff
       - web/node_modules
   script:
+    - cd web
     - npm install
     - npm run build
     - docker build -t $IMAGE_WEB:$RELEASE web
 
 
 # This is the fastest
-build:
+server:
   stage: build
   before_script:
     - docker --version
