@@ -1,5 +1,7 @@
 # server
 
+
+
 ## Setup
 
     stack install brittany
@@ -17,3 +19,8 @@ https://github.com/ndmitchell/ghcid
 
     stack install ghcid
     ghcid - leave it open
+
+
+### Docs
+
+    stack haddock --open text

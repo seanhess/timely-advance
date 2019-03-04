@@ -2,6 +2,7 @@
 # Caching! https://docs.gitlab.com/ee/ci/yaml/README.html#cache
 # https://docs.gitlab.com/ee/ci/docker/using_docker_build.html
 # https://angristan.xyz/build-push-docker-images-gitlab-ci/
+# NOTE: don't comment out the scripts, because it removes the cache
 
 variables:
   VERSION: "0.3"

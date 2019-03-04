@@ -53,6 +53,7 @@ packages:
 # (e.g., acme-missiles-0.3)
 extra-deps:
 - random-strings-0.1.1.0
+- simple-effects-0.13.0.0
 # - containers-0.5.11.0
 # - amqp-worker-0.2.5
 # - git: https://github.com/NoRedInk/servant-elm.git

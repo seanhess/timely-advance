@@ -57,6 +57,7 @@ dependencies:
 - servant-client-core
 - servant-elm
 - servant-server
+- simple-effects
 - stm
 - string-conversions
 - text

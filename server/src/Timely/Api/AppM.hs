@@ -10,6 +10,7 @@ module Timely.Api.AppM
   , AppM
   , clientConfig
   , runIO
+  , woot
   ) where
 
 
@@ -44,6 +45,13 @@ import           Timely.Config             (Env (..), loadEnv, version)
 import           Timely.Types.Config       (ClientConfig (ClientConfig),
                                             PlaidConfig (PlaidConfig))
 import           Timely.Types.Session      (Admin)
+
+import Data.Function ((&))
+import EffectsTutorial
+import Control.Effects
+import Control.Effects.Reader
+import Timely.Effects.Worker (Publish(..))
+import Timely.Effects.Log (Log(..))
 
 
 data AppState = AppState
@@ -89,7 +97,8 @@ clientConfig = do
 
 
 
-type AppM = LogT (ReaderT AppState Handler)
+-- ok, the problem is that we don't have N x K instances for RuntimeImplemented and LogT, etc. 
+type AppM = RuntimeImplemented Publish (ReaderT AppState Handler)
 
 
 
@@ -128,12 +137,37 @@ instance MonadConfig (Token Admin) AppM where
 
 
 nt :: AppState -> AppM a -> Handler a
-nt s x = runReaderT (Log.runLogT x) s
+nt = run
+
+
+run :: AppState -> AppM a -> Handler a
+run s x =
+  let action = implement (PublishMethods undefined) x
+  -- in runReaderT (Log.runLogT action) s
+  in runReaderT action s
+  -- implement (PublishMethods undefined)
+  --   (runReaderT (Log.runLogT x) s)
+
 
 
 runIO :: AppState -> AppM a -> IO a
 runIO s x = do
-  res <- runHandler $ runReaderT (Log.runLogT x) s
+  res <- runHandler $ run s x
   case res of
     Left err -> Prelude.error $ show err
     Right r  -> pure r
+
+
+woot :: AppM ()
+woot = do
+  msg <- EffectsTutorial.getSomeInfo
+    -- & implement (ReadEnvMethods (asks (port . env)))
+    & implementReadEnv (asks (port . env))
+  liftIO $ print msg
+
+
+
+
+
+
+

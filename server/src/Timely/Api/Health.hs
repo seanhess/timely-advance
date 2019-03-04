@@ -6,15 +6,19 @@ module Timely.Api.Health where
 
 import           Control.Monad.Service           (Service (..))
 import           Data.Text                       (Text, pack)
-import           Network.AMQP.Worker.Monad       as Worker
+-- import qualified Network.AMQP.Worker.Monad       as Worker
+-- import Network.AMQP.Worker.Monad       (MonadWorker)
 import           Timely.AccountStore.Application as Application
 import           Timely.Events                   as Events
 import           Version
+import qualified Timely.Effects.Worker as Worker
+import Timely.Effects.Worker (Publish)
+import Control.Effects (MonadEffect)
 
 
 
 health
-  :: ( MonadWorker m
+  :: ( MonadEffect Publish m
      , Service m ApplicationStore
      ) => m Text
 health = do
