@@ -11,6 +11,8 @@ module Timely.Api.Applications
 import           Control.Effects                 (MonadEffects)
 import           Control.Effects.Log             as Log
 import           Control.Effects.Signal          (Throw)
+import           Control.Effects.Time            (Time, UTCTime)
+import qualified Control.Effects.Time            as Time
 import           Control.Monad.Config            (MonadConfig (..))
 import           Control.Monad.Service           (Service (..))
 import           Data.Model.Guid                 as Guid
@@ -24,8 +26,6 @@ import           Timely.AccountStore.Types       (Account, Application (..))
 import           Timely.Api.Sessions             as Sessions
 import           Timely.Api.Types                (AccountInfo (..))
 import           Timely.Events                   as Events
-import           Timely.Time                     (UTCTime)
-import qualified Timely.Time                     as Time
 import           Timely.Types.Session            (Session (..))
 
 
@@ -35,7 +35,7 @@ newApplication
      , Service m ApplicationStore
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
-     , MonadEffects '[Log, Throw ServantErr] m
+     , MonadEffects '[Log, Throw ServantErr, Time] m
      ) => Valid Phone -> AccountInfo -> m (SetSession Application)
 newApplication phone info = do
     -- create an application
@@ -43,7 +43,7 @@ newApplication phone info = do
     Log.context (cs $ show phone)
     Log.context (Guid.toText accountId)
     Log.info "new application"
-    now <- run $ Time.CurrentTime
+    now <- Time.currentTime
     let app = fromAccountInfo accountId now phone info
     Log.debug ("application", app)
 

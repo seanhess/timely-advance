@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MonoLocalBinds        #-}
@@ -7,6 +8,9 @@
 module Timely.Worker.AccountOnboard where
 
 
+import           Control.Effects                 (MonadEffects)
+import           Control.Effects.Time            (Time, UTCTime)
+import qualified Control.Effects.Time            as Time
 import           Control.Exception               (Exception)
 import           Control.Monad.Catch             (MonadCatch, MonadThrow (..), SomeException, try)
 import           Control.Monad.Log               (MonadLog)
@@ -30,7 +34,6 @@ import           Timely.Bank                     (Banks, Dwolla, Identity (..), 
 import qualified Timely.Bank                     as Bank
 import qualified Timely.Evaluate.AccountHealth   as AccountHealth
 import qualified Timely.Events                   as Events
-import           Timely.Time                     as Time
 import           Timely.Transfers                (AccountInfo (..), Transfers)
 import qualified Timely.Transfers                as Transfers
 import           Timely.Underwriting             as Underwriting (Approval (..), Result (..), Underwriting (..))
@@ -50,7 +53,7 @@ handler
      , Service m Underwriting
      , Service m ApplicationStore
      , Service m Transfers
-     , Service m Time
+     , MonadEffects '[Time] m
      , MonadThrow m, MonadCatch m
      , MonadLog m
      )
@@ -66,7 +69,7 @@ handler app = do
     tok <- run $ Bank.Authenticate (publicBankToken app)
     idt <- run $ Bank.LoadIdentity tok
 
-    now <- run $ Time.CurrentTime
+    now <- Time.currentTime
     let cust = toNewCustomer now app idt
 
     res <- run $ Underwriting.New cust
@@ -98,7 +101,7 @@ onboardAccount
      , Service m AccountStore
      , Service m ApplicationStore
      , Service m Transfers
-     , Service m Time
+     , MonadEffects '[Time] m
      , MonadThrow m
      , MonadCatch m
      , MonadLog m
@@ -106,7 +109,7 @@ onboardAccount
   => Guid Account -> Token Bank.Access -> Customer -> Valid Phone -> Approval -> m ()
 onboardAccount aid tok cust phone (Approval amt) = do
     -- get bank accounts
-    now <- run $ Time.CurrentTime
+    now <- Time.currentTime
     banks <- run $ Bank.LoadAccounts tok
     let bankAccounts = List.map (toBankAccount aid now) banks
     checking <- require MissingChecking $ List.find isChecking bankAccounts

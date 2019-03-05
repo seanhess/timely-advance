@@ -1,5 +1,5 @@
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
@@ -11,18 +11,23 @@ module Timely.Api.AppM
   , AppM
   , clientConfig
   , runIO
-  , woot
   ) where
 
 
+import           Control.Effects            (MonadEffect (..), RuntimeImplemented (..))
+import           Control.Effects.Log        (Log (..), implementLogStdout, LogT)
 import           Control.Effects.Signal     (Signal (..))
+import           Control.Effects.Time       (Time, implementTimeIO)
+import           Control.Effects.Worker     (Publish (..), implementAMQP)
 import           Control.Monad.Config       (MonadConfig (..))
 import           Control.Monad.Except       (MonadError (..))
 import           Control.Monad.IO.Class     (MonadIO, liftIO)
-import qualified Control.Monad.Trans.Reader as Reader
 import           Control.Monad.Reader       (ReaderT, ask, asks, runReaderT)
 import           Control.Monad.Selda        (Selda (..))
+import           Control.Monad.Trans        (lift)
 import           Control.Monad.Trans.Except (throwE)
+import qualified Control.Monad.Trans.Reader as Reader
+import           Data.Function              ((&))
 import           Data.Model.Id              (Token (..))
 import           Data.Pool                  (Pool)
 import qualified Data.Pool                  as Pool
@@ -36,7 +41,6 @@ import           Network.AMQP.Worker.Monad  (MonadWorker (..))
 import qualified Network.HTTP.Client        as HTTP
 import qualified Network.HTTP.Client.TLS    as HTTP
 import           Servant                    (Handler (..), ServantErr, runHandler)
-import Control.Monad.Trans (lift)
 import           Servant.Auth.Server        (CookieSettings (..), JWTSettings)
 import qualified Text.Show.Pretty           as Pretty
 
@@ -49,12 +53,6 @@ import           Timely.Config              (Env (..), loadEnv, version)
 import           Timely.Types.Config        (ClientConfig (ClientConfig), PlaidConfig (PlaidConfig))
 import           Timely.Types.Session       (Admin)
 
-import           Control.Effects
-import           Control.Effects.Log        (Log (..), implementLogIgnore)
-import           Control.Effects.Reader
-import           Control.Effects.Worker     (Publish (..), implementAMQP)
-import           Data.Function              ((&))
-import           EffectsTutorial
 
 
 data AppState = AppState
@@ -99,8 +97,6 @@ clientConfig = do
 
 
 
-
-type AppM = RuntimeImplemented Publish (RuntimeImplemented Log (ReaderT AppState Handler))
 
 
 
@@ -157,13 +153,18 @@ nt :: AppState -> AppM a -> Handler a
 nt = run
 
 
+-- Replace AppM in run with _ to get the compiler to suggest the type for you
+
+-- type AppM = RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Log (LogT (ReaderT AppState Handler))))
+
+type AppM = ReaderT AppState (RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Log (LogT Handler))))
+
 run :: AppState -> AppM a -> Handler a
 run s x =
-  let action = x
-       & implementAMQP (amqpConn s)
-       & implementLogIgnore
-
-  in runReaderT action s
+  runReaderT x s
+    & implementTimeIO
+    & implementAMQP (amqpConn s)
+    & implementLogStdout
 
 
 
@@ -173,17 +174,5 @@ runIO s x = do
   case res of
     Left err -> Prelude.error $ show err
     Right r  -> pure r
-
-
-woot :: AppM ()
-woot = do
-  msg <- EffectsTutorial.getSomeInfo
-    -- & implement (ReadEnvMethods (asks (port . env)))
-    & implementReadEnv (asks (port . env))
-  liftIO $ print msg
-
-
-
-
 
 

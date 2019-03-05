@@ -1,9 +1,13 @@
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE MonoLocalBinds    #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Timely.Worker.AccountUpdate where
 
 -- TODO real transaction analysis
+import           Control.Effects               (MonadEffects)
+import           Control.Effects.Time          (Time)
+import qualified Control.Effects.Time          as Time
 import           Control.Exception             (Exception)
 import           Control.Monad                 (when)
 import           Control.Monad.Catch           (MonadThrow (..))
@@ -19,7 +23,8 @@ import qualified Network.AMQP.Worker           as Worker hiding (publish)
 import qualified Network.AMQP.Worker.Monad     as Worker
 import           Timely.AccountStore.Account   (AccountStore)
 import qualified Timely.AccountStore.Account   as AccountStore
-import           Timely.AccountStore.Types     (Account (bankToken), BankAccount (balance), isChecking, toBankAccount, AccountRow(accountId))
+import           Timely.AccountStore.Types     (Account (bankToken), AccountRow (accountId), BankAccount (balance),
+                                                isChecking, toBankAccount)
 import qualified Timely.AccountStore.Types     as Account (Account (..))
 import qualified Timely.AccountStore.Types     as AccountRow (AccountRow (..))
 import           Timely.Advances               (Advance, Advances)
@@ -33,8 +38,6 @@ import           Timely.Evaluate.Types         (Projection (..))
 import           Timely.Events                 as Events
 import           Timely.Notify                 (Notify)
 import qualified Timely.Notify                 as Notify
-import           Timely.Time                   (Time)
-import qualified Timely.Time                   as Time
 import           Timely.Types.Private          (Private (..))
 
 
@@ -68,7 +71,7 @@ handler
   :: ( Service m Banks
      , Service m AccountStore
      , Service m Advances
-     , Service m Time
+     , MonadEffects '[Time] m
      , Service m Notify
      , MonadThrow m
      , MonadLog m
@@ -102,13 +105,13 @@ handler accountId = do
 
 checkAdvance
   :: ( Service m Advances
-     , Service m Time
+     , MonadEffects '[Time] m
      , Service m Notify
      , MonadLog m
      )
   => Account -> Projection -> m ()
 checkAdvance account health = do
-    now    <- run $ Time.CurrentTime
+    now    <- Time.currentTime
     offer  <- run $ Advances.FindOffer  (Account.accountId account)
     active <- run $ Advances.FindActive (Account.accountId account)
     when (Offer.isNeeded offer active health now) $ do
@@ -153,11 +156,11 @@ updateHealth accountId checking = do
 updateBankBalances
     :: ( Service m Banks
        , Service m AccountStore
-       , Service m Time
+       , MonadEffects '[Time] m
        )
     => Guid Account -> Token Access -> m (Maybe BankAccount)
 updateBankBalances accountId token = do
-    now <- run $ Time.CurrentTime
+    now <- Time.currentTime
     banks <- run $ Bank.LoadAccounts token
     let accounts = List.map (toBankAccount accountId now) banks
     run $ AccountStore.SetBankAccounts accountId accounts

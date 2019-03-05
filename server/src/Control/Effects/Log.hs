@@ -48,7 +48,9 @@ implementLogIgnore = implement (LogMethods ignore ignore ignore ignore)
     ignore _ = pure ()
 
 
-implementLogStdout :: MonadIO m => RuntimeImplemented Log (StateT [Text] (LoggingT m)) a -> m a
+type LogT m = StateT [Text] (LoggingT m)
+
+implementLogStdout :: MonadIO m => RuntimeImplemented Log (LogT m) a -> m a
 implementLogStdout f = runLogT $ implement (LogMethods logInfo logDebug logError setContext) f
   where
     setContext :: MonadState [Text] m => Text -> m ()
@@ -78,8 +80,9 @@ implementLogStdout f = runLogT $ implement (LogMethods logInfo logDebug logError
       Logger.runStdoutLoggingT (State.evalStateT x [])
 
 
-implementIO :: MonadIO m => RuntimeImplemented Log m a -> m a
-implementIO f = implement (LogMethods logInfo logDebug logError setContext) f
+
+implementLogIO :: MonadIO m => RuntimeImplemented Log m a -> m a
+implementLogIO f = implement (LogMethods logInfo logDebug logError setContext) f
   where
     setContext t = liftIO $ putStrLn $ "[Context] " <> cs t
     logInfo t = liftIO $ putStrLn $ "[Info] " <> cs t

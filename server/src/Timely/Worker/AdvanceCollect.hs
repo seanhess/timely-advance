@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE MonoLocalBinds    #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -8,6 +9,9 @@ module Timely.Worker.AdvanceCollect where
 -- anything less than or equal to the current time.
 -- yeah, that makes sens. it's "due"
 
+import           Control.Effects           (MonadEffects)
+import           Control.Effects.Time      (Time)
+import qualified Control.Effects.Time      as Time
 import           Control.Monad.Catch       (MonadThrow (..))
 import           Control.Monad.Log         as Log
 import           Control.Monad.Service     (Service (run))
@@ -21,8 +25,6 @@ import           Timely.Advances           (Advance (..), Advances)
 import qualified Timely.Advances           as Advances
 import qualified Timely.Advances.Collect   as Collect
 import           Timely.Events             as Events
-import           Timely.Time               (Time)
-import qualified Timely.Time               as Time
 import           Timely.Transfers          (Transfers)
 import qualified Timely.Transfers          as Transfers
 
@@ -36,7 +38,7 @@ queue = Worker.topic Events.advancesDue "app.advances.collect"
 -- | Scans for due advances and queues them. Run this every hour, or every day at UTC midnight (or just after)
 schedule
   :: ( Service m Advances
-     , Service m Time
+     , MonadEffects '[Time] m
      , MonadThrow m
      , MonadWorker m
      , MonadLog m
@@ -44,7 +46,7 @@ schedule
   => m ()
 schedule = do
     Log.context "Schedule AdvanceCollect"
-    now <- run $ Time.CurrentTime
+    now <- Time.currentTime
     let dueDate = Collect.currentlyDue now
     advances <- run $ Advances.FindDue dueDate
     mapM_ scheduleAdvanceCollect advances
@@ -71,4 +73,3 @@ handler advance = do
 
   run $ Advances.MarkCollected (advanceId advance)
   Log.info "collected"
-

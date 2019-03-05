@@ -7,15 +7,18 @@
 {-# LANGUAGE TypeSynonymInstances  #-}
 module Timely.Worker.WorkerM where
 
+import           Control.Effects           (MonadEffect (..), RuntimeImplemented (..))
+import           Control.Effects.Log       (Log (..), implementLogStdout)
+import qualified Control.Effects.Log       as Log
+import           Control.Effects.Time      (Time, implementTimeIO)
+import           Control.Effects.Worker    (Publish (..), implementAMQP)
 import           Control.Exception         (SomeException)
 import           Control.Monad.Config      (MonadConfig (..))
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
-import           Control.Monad.Log         (LogT, runLogT)
-import qualified Control.Monad.Log         as Log
-import           Control.Monad.Logger      (MonadLogger, logErrorN)
 import           Control.Monad.Reader      (ReaderT, asks, runReaderT)
 import           Control.Monad.Selda       (Selda (..))
 import           Data.Aeson                (FromJSON)
+import           Data.Function             ((&))
 import           Data.Pool                 (Pool)
 import qualified Data.Pool                 as Pool
 import           Data.String.Conversions   (cs)
@@ -45,9 +48,6 @@ data AppState = AppState
   , env      :: Env
   }
 
--- LogT must be on top since I didn't define M^2 instances for it
-type WorkerM = ReaderT AppState IO
-type HandlerM = LogT WorkerM
 
 instance Selda HandlerM where
   withConnection action = do
@@ -112,8 +112,8 @@ connect :: forall a. (FromJSON a) => Queue a -> (a -> HandlerM ()) -> WorkerM ()
 connect queue handler = do
   Worker.bindQueue queue
   Worker.worker def queue
-    (\e -> runLogT $ onError (queueName queue) e)
-    (\m -> runLogT $ onMessage m)
+    (\e -> runHandlerM $ onError (queueName queue) e)
+    (\m -> runHandlerM $ onMessage m)
 
   where onMessage :: Worker.Message a -> HandlerM ()
         onMessage m = do
@@ -127,15 +127,33 @@ start :: (FromJSON a) => Queue a -> (a -> HandlerM ()) -> IO ()
 start queue handler = do
   state <- loadState
   putStrLn $ "Worker: " ++ cs (queueName queue)
-  runReaderT (connect queue handler) state
+  runWorkerM (connect queue handler) state
   where
     queueName queue = let (Queue _ name) = queue in name
+
+
+
+-- Replace HandlerM and WorkerM with _ to have ghc suggest types for WorkerM and HandlerM
+type WorkerM = ReaderT AppState (RuntimeImplemented Time (RuntimeImplemented Publish IO))
+type HandlerM = RuntimeImplemented Log (Log.LogT WorkerM)
+
+
+runWorkerM :: WorkerM a -> AppState -> IO a
+runWorkerM x s =
+  runReaderT x s
+       & implementTimeIO
+       & implementAMQP (amqpConn s)
+
+
+runHandlerM :: HandlerM a -> WorkerM a
+runHandlerM x = x & implementLogStdout
+
 
 
 runIO :: HandlerM a -> IO a
 runIO x = do
   s <- loadState
-  runReaderT (runLogT x) s
+  runWorkerM (runHandlerM x) s
 
 
 
@@ -146,7 +164,7 @@ runIO x = do
 
 -- standardized error handling
 -- FOR NOW: exceptions must include all context
-onError :: (MonadLogger m) => Text -> WorkerException SomeException -> m ()
+onError :: (MonadEffect Log m) => Text -> WorkerException SomeException -> m ()
 onError n e = do
   -- only used for AMQP-worker errors, we will catch everything ourselves!
-  logErrorN $ n <> " " <> (cs $ show e)
+  Log.error $ n <> " " <> (cs $ show e)
