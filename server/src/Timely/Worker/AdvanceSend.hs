@@ -1,13 +1,13 @@
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE MonoLocalBinds    #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Timely.Worker.AdvanceSend where
 
-import           Control.Monad.Catch   (Exception, MonadThrow (..))
-import           Control.Monad.Log     as Log
+import           Control.Effects       (MonadEffects)
+import           Control.Effects.Log   as Log
 import           Control.Monad.Service (Service)
 import           Data.Model.Guid       as Guid
-import           Data.Text             (Text)
 import qualified Network.AMQP.Worker   as Worker hiding (publish)
 
 import           Timely.Advances       (Advance (..), Advances)
@@ -28,8 +28,7 @@ queue = Worker.topic Events.advancesActive "app.advances.send"
 handler
   :: ( Service m Advances
      , Service m Transfers
-     , MonadThrow m
-     , MonadLog m
+     , MonadEffects '[Log] m
      )
   => Advance -> m ()
 handler advance = do
@@ -41,25 +40,25 @@ handler advance = do
 
 
 
-testQueue :: Worker.Queue Text
-testQueue = Worker.topic Events.test "app.test"
+-- testQueue :: Worker.Queue Text
+-- testQueue = Worker.topic Events.test "app.test"
 
 
-data Bad = Bad Text
-  deriving (Show, Eq)
+-- data Bad = Bad Text
+--   deriving (Show, Eq)
 
-instance Exception Bad
+-- instance Exception Bad
 
 
-test
-  :: ( Service m Advances
-     , Service m Transfers
-     , MonadThrow m
-     , MonadLog m
-     )
-  => Text -> m ()
-test asdf = do
-  Log.context asdf
-  Log.info "hello"
-  throwM $ Bad "NOPE"
-  pure ()
+-- test
+--   :: ( Service m Advances
+--      , Service m Transfers
+--      , MonadThrow m
+--      , MonadLog m
+--      )
+--   => Text -> m ()
+-- test asdf = do
+--   Log.context asdf
+--   Log.info "hello"
+--   throwM $ Bad "NOPE"
+--   pure ()

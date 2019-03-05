@@ -13,12 +13,13 @@ import           Control.Effects.Log             as Log
 import           Control.Effects.Signal          (Throw)
 import           Control.Effects.Time            (Time, UTCTime)
 import qualified Control.Effects.Time            as Time
+import           Control.Effects.Worker          (Publish)
+import qualified Control.Effects.Worker          as Worker
 import           Control.Monad.Config            (MonadConfig (..))
-import           Control.Monad.Service           (Service (..))
+import           Control.Monad.IO.Class          (MonadIO)
 import           Data.Model.Guid                 as Guid
 import           Data.Model.Types                (Phone, Valid)
 import           Data.String.Conversions         (cs)
-import           Network.AMQP.Worker.Monad       as Worker
 import           Servant                         (ServantErr)
 import           Servant.Auth.Server             (CookieSettings, JWTSettings)
 import           Timely.AccountStore.Application as Application
@@ -31,31 +32,42 @@ import           Timely.Types.Session            (Session (..))
 
 
 newApplication
-  :: ( MonadWorker m
-     , Service m ApplicationStore
+  :: ( MonadIO m
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
-     , MonadEffects '[Log, Throw ServantErr, Time] m
-     ) => Valid Phone -> AccountInfo -> m (SetSession Application)
+     , MonadEffects '[Log, Throw ServantErr, Time, Publish, Applications] m
+     )
+  => Valid Phone -> AccountInfo -> m (SetSession Application)
 newApplication phone info = do
-    -- create an application
     accountId <- Guid.randomId
+    app <- createNewApplication phone info accountId
+    Sessions.setSession (Session phone (Just accountId) False) app
+
+
+
+createNewApplication
+  :: ( MonadEffects '[Log, Time, Publish, Applications] m
+     )
+  => Valid Phone -> AccountInfo -> Guid Account -> m Application
+createNewApplication phone info accountId = do
     Log.context (cs $ show phone)
     Log.context (Guid.toText accountId)
     Log.info "new application"
+
     now <- Time.currentTime
     let app = fromAccountInfo accountId now phone info
     Log.debug ("application", app)
 
     -- save it
-    run $ Application.Save app
+    Application.save app
 
     -- publish it
     Worker.publish Events.applicationsNew app
     Log.info "published"
+    pure app
 
-    -- set the session
-    Sessions.setSession (Session phone (Just accountId) False) app
+
+
 
 
 

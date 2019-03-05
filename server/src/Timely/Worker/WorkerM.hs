@@ -5,40 +5,44 @@
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
+{-# LANGUAGE UndecidableInstances  #-}
 module Timely.Worker.WorkerM where
 
-import           Control.Effects           (MonadEffect (..), RuntimeImplemented (..))
-import           Control.Effects.Log       (Log (..), implementLogStdout)
-import qualified Control.Effects.Log       as Log
-import           Control.Effects.Time      (Time, implementTimeIO)
-import           Control.Effects.Worker    (Publish (..), implementAMQP)
-import           Control.Exception         (SomeException)
-import           Control.Monad.Config      (MonadConfig (..))
-import           Control.Monad.IO.Class    (MonadIO, liftIO)
-import           Control.Monad.Reader      (ReaderT, asks, runReaderT)
-import           Control.Monad.Selda       (Selda (..))
-import           Data.Aeson                (FromJSON)
-import           Data.Function             ((&))
-import           Data.Pool                 (Pool)
-import qualified Data.Pool                 as Pool
-import           Data.String.Conversions   (cs)
-import           Data.Text                 (Text)
-import           Database.Selda            (MonadMask)
-import           Database.Selda.Backend    (SeldaConnection)
-import qualified Database.Selda.PostgreSQL as Selda
-import           Network.AMQP.Worker       (Queue (Queue), WorkerException, def)
-import qualified Network.AMQP.Worker       as Worker hiding (bindQueue, publish, worker)
-import           Network.AMQP.Worker.Monad (MonadWorker (..))
-import qualified Network.AMQP.Worker.Monad as Worker
-import qualified Network.Dwolla            as Dwolla
-import qualified Network.HTTP.Client       as HTTP
-import qualified Network.HTTP.Client.TLS   as HTTP
-import qualified Network.Plaid             as Plaid
-import           Timely.App                (retry)
-import qualified Timely.Bank               as Bank
-import           Timely.Config             (Env (..), loadEnv)
-import qualified Timely.Notify             as Notify
-import qualified Timely.Transfers          as Transfers
+import           Control.Effects                 (MonadEffect (..), RuntimeImplemented (..))
+import           Control.Effects.Log             (Log (..), implementLogStdout)
+import qualified Control.Effects.Log             as Log
+import           Control.Effects.Time            (Time, implementTimeIO)
+import           Control.Effects.Worker          (Publish (..), implementAMQP)
+import           Control.Exception               (SomeException)
+import           Control.Monad.Config            (MonadConfig (..))
+import           Control.Monad.IO.Class          (MonadIO, liftIO)
+import           Control.Monad.Reader            (MonadReader, ReaderT, asks, runReaderT)
+import           Control.Monad.Selda             (Selda (..))
+import           Control.Monad.Trans.Control     (MonadBaseControl)
+import           Data.Aeson                      (FromJSON)
+import           Data.Function                   ((&))
+import           Data.Pool                       (Pool)
+import qualified Data.Pool                       as Pool
+import           Data.String.Conversions         (cs)
+import           Data.Text                       (Text)
+import           Database.Selda                  (MonadMask)
+import           Database.Selda.Backend          (SeldaConnection)
+import qualified Database.Selda.PostgreSQL       as Selda
+import           Network.AMQP.Worker             (Queue (Queue), WorkerException, def)
+import qualified Network.AMQP.Worker             as Worker hiding (bindQueue, publish, worker)
+import           Network.AMQP.Worker.Monad       (MonadWorker (..))
+import qualified Network.AMQP.Worker.Monad       as Worker
+import qualified Network.Dwolla                  as Dwolla
+import qualified Network.HTTP.Client             as HTTP
+import qualified Network.HTTP.Client.TLS         as HTTP
+import qualified Network.Plaid                   as Plaid
+import           Timely.AccountStore.Account     (Accounts, implementAccountsSelda)
+import           Timely.AccountStore.Application (Applications, implementApplicationsSelda)
+import           Timely.App                      (retry)
+import qualified Timely.Bank                     as Bank
+import           Timely.Config                   (Env (..), loadEnv)
+import qualified Timely.Notify                   as Notify
+import qualified Timely.Transfers                as Transfers
 
 data AppState = AppState
   { dbConn   :: Pool SeldaConnection
@@ -49,15 +53,11 @@ data AppState = AppState
   }
 
 
-instance Selda HandlerM where
-  withConnection action = do
-    pool <- asks dbConn
-    Pool.withResource pool action
 
-instance Selda WorkerM where
-  withConnection action = do
-    pool <- asks dbConn
-    Pool.withResource pool action
+instance (MonadBaseControl IO m, MonadMask m, MonadIO m, MonadReader AppState m) => Selda m where
+    withConnection action = do
+      pool <- asks dbConn
+      Pool.withResource pool action
 
 instance MonadWorker WorkerM where
   amqpConnection = asks amqpConn
@@ -134,15 +134,19 @@ start queue handler = do
 
 
 -- Replace HandlerM and WorkerM with _ to have ghc suggest types for WorkerM and HandlerM
-type WorkerM = ReaderT AppState (RuntimeImplemented Time (RuntimeImplemented Publish IO))
+type WorkerM = RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Applications (RuntimeImplemented Accounts (ReaderT AppState IO))))
 type HandlerM = RuntimeImplemented Log (Log.LogT WorkerM)
+
 
 
 runWorkerM :: WorkerM a -> AppState -> IO a
 runWorkerM x s =
-  runReaderT x s
-       & implementTimeIO
-       & implementAMQP (amqpConn s)
+  let action = x
+        & implementTimeIO
+        & implementAMQP (amqpConn s)
+        & implementApplicationsSelda
+        & implementAccountsSelda
+  in runReaderT action s
 
 
 runHandlerM :: HandlerM a -> WorkerM a

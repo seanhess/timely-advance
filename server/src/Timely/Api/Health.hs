@@ -1,27 +1,24 @@
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE MonoLocalBinds    #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Timely.Api.Health where
 
 
-import           Control.Monad.Service           (Service (..))
-import           Data.Text                       (Text, pack)
--- import qualified Network.AMQP.Worker.Monad       as Worker
--- import Network.AMQP.Worker.Monad       (MonadWorker)
-import           Control.Effects                 (MonadEffect)
+import           Control.Effects                 (MonadEffects)
 import           Control.Effects.Worker          (Publish)
+import qualified Control.Effects.Worker          as Worker
+import           Data.Text                       (Text, pack)
 import           Timely.AccountStore.Application as Application
-import qualified Control.Effects.Worker           as Worker
 import           Timely.Events                   as Events
 import           Version
 
 
 
 health
-  :: ( MonadEffect Publish m
-     , Service m ApplicationStore
-     ) => m Text
+  :: ( MonadEffects [Publish, Applications] m)
+  => m Text
 health = do
-    _ <- run $ Application.Check
+    _ <- Application.check
     Worker.publish Events.health "OK"
     pure $ "Timely " <> pack Version.version

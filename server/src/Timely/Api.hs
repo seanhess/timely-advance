@@ -110,10 +110,10 @@ data SessionsApi route = SessionsApi
 -- Your own account!
 accountApi :: Guid Account -> ToServant AccountApi (AsServerT AppM)
 accountApi i = genericServerT AccountApi
-    { _get     = run (Account.Find i)           >>= notFound
-    , _banks   = run (Account.BankAccounts i)
-    , _app     = run (Application.Find i)       >>= notFound
-    , _result  = run (Application.FindResult i) >>= notFound
+    { _get     = Account.find i           >>= notFound
+    , _banks   = Account.findBanks i
+    , _app     = Application.find i       >>= notFound
+    , _result  = Application.findResult i >>= notFound
     , _advances = advanceApi i
     }
 

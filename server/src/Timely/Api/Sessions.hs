@@ -5,7 +5,7 @@
 module Timely.Api.Sessions where
 
 
-import           Control.Effects             (MonadEffect)
+import           Control.Effects             (MonadEffects)
 import           Control.Effects.Signal      (Throw, throwSignal)
 import           Control.Monad.Config
 import           Control.Monad.IO.Class      (MonadIO, liftIO)
@@ -22,6 +22,7 @@ import           Servant.Auth.Server         (AuthResult (..), CookieSettings (.
 import qualified Servant.Auth.Server         as Servant
 
 import qualified Timely.AccountStore.Account as Account
+import Timely.AccountStore.Account (Accounts)
 import           Timely.AccountStore.Types   (Account)
 import           Timely.Auth                 (AuthCode, AuthConfig)
 import qualified Timely.Auth                 as Auth
@@ -41,11 +42,10 @@ generateCode p = do
 -- TODO check to see if there's an account and set the account id
 authenticate
   :: ( MonadIO m
-     , MonadEffect (Throw ServantErr) m
+     , MonadEffects '[Throw ServantErr, Accounts] m
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
      , MonadConfig AuthConfig m
-     , Service m Account.AccountStore
      ) => Valid Phone -> AuthCode -> m (SetSession Session)
 authenticate p c = do
   res <- run $ Auth.CodeCheck p c
@@ -56,7 +56,7 @@ authenticate p c = do
 
 authAdmin
   :: ( MonadIO m
-     , MonadEffect (Throw ServantErr) m
+     , MonadEffects '[Throw ServantErr] m
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
      , MonadConfig (Token Admin) m
@@ -72,21 +72,20 @@ authAdmin check = do
 
 session
   :: ( MonadIO m
-     , MonadEffect (Throw ServantErr) m
-     , Service m Account.AccountStore
+     , MonadEffects '[Throw ServantErr, Accounts] m
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
      ) => Valid Phone -> m (SetSession Session)
 session p = do
     -- they've already successfully validated the code. They're in!
-    ma <- run $ Account.FindByPhone p
+    ma <- Account.findByPhone p
     let s = Session p ma False
     setSession s s
 
 
 setSession
   :: ( MonadIO m
-     , MonadEffect (Throw ServantErr) m
+     , MonadEffects '[Throw ServantErr] m
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
      ) => Session -> value -> m (SetSession value)
@@ -101,11 +100,7 @@ setSession s value = do
 
 
 checkSession
-  :: ( MonadIO m
-     , MonadEffect (Throw ServantErr) m
-     , Service m Account.AccountStore
-     , MonadConfig CookieSettings m
-     , MonadConfig JWTSettings m
+  :: ( MonadEffects '[Throw ServantErr] m
      ) => AuthResult Session -> m (Session)
 checkSession (Authenticated s) = pure s
 checkSession _ =

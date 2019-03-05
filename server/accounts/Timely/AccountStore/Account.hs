@@ -1,24 +1,25 @@
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE OverloadedLabels      #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-module Timely.AccountStore.Account (AccountStore(..), initialize, account) where
+module Timely.AccountStore.Account where
 
 
+import           Control.Effects           (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
 import           Control.Monad.Selda       (Selda, deleteFrom, insert, query, tryCreateTable)
-import           Control.Monad.Service     (Service (..))
 import           Data.Maybe                (listToMaybe)
 import           Data.Model.Guid
 import           Data.Model.Id             (Id)
-import qualified Data.Time.Clock as Time
 import           Data.Model.Money
 import           Data.Model.Types          (Phone)
 import           Data.Model.Valid          (Valid)
+import qualified Data.Time.Clock           as Time
 import           Database.Selda            hiding (deleteFrom, insert, query, tryCreateTable)
+import           GHC.Generics              (Generic)
 
 import           Timely.AccountStore.Types
 import           Timely.Bank               (Access, Token)
@@ -29,25 +30,45 @@ import           Timely.Types.Private
 
 
 
-data AccountStore a where
-    All            :: AccountStore [AccountRow]
-    Find           :: Guid Account -> AccountStore (Maybe Account)
-    FindByPhone    :: Valid Phone -> AccountStore (Maybe (Guid Account))
-    BankAccounts   :: Guid Account -> AccountStore [BankAccount]
-    SetHealth      :: Guid Account -> Projection -> AccountStore ()
+data Accounts m = AccountsMethods
+    { _all         :: m [AccountRow]
+    , _find        :: Guid Account -> m (Maybe Account)
+    , _findByPhone :: Valid Phone -> m (Maybe (Guid Account))
+    , _create      :: Account -> m ()
+    , _setHealth   :: Guid Account -> Projection -> m ()
+    , _findBanks   :: Guid Account -> m [BankAccount]
+    , _setBanks    :: Guid Account -> [BankAccount] -> m ()
+    } deriving (Generic)
 
-    CreateAccount  :: Account -> AccountStore ()
-    SetBankAccounts :: Guid Account -> [BankAccount] -> AccountStore ()
+instance Effect Accounts
+
+all         :: MonadEffect Accounts m => m [AccountRow]
+find        :: MonadEffect Accounts m => Guid Account -> m (Maybe Account)
+findByPhone :: MonadEffect Accounts m => Valid Phone -> m (Maybe (Guid Account))
+findBanks   :: MonadEffect Accounts m => Guid Account -> m [BankAccount]
+setHealth   :: MonadEffect Accounts m => Guid Account -> Projection -> m ()
+create      :: MonadEffect Accounts m => Account -> m ()
+setBanks    :: MonadEffect Accounts m => Guid Account -> [BankAccount] -> m ()
+all = _all effect
+find = _find effect
+findByPhone = _findByPhone effect
+create  = _create effect
+setHealth = _setHealth effect
+findBanks  = _findBanks effect
+setBanks = _setBanks effect
 
 
-instance (Selda m) => Service m AccountStore where
-    run All                    = allAccounts
-    run (Find i)               = getAccount i
-    run (FindByPhone p)        = getAccountIdByPhone p
-    run (BankAccounts i)       = getBankAccounts i
-    run (CreateAccount a)      = createAccount a
-    run (SetBankAccounts i bs) = setBankAccounts i bs
-    run (SetHealth i p)        = setHealth i p
+
+implementAccountsSelda :: Selda m => RuntimeImplemented Accounts m a -> m a
+implementAccountsSelda = implement $
+  AccountsMethods
+    allAccounts
+    getAccount
+    getAccountIdByPhone
+    createAccount
+    setAccountHealth
+    getBankAccounts
+    setBankAccounts
 
 
 
@@ -122,8 +143,8 @@ getBankAccounts i =
 
 
 
-setHealth :: Selda m => Guid Account -> Projection -> m ()
-setHealth i Projection {expenses, available} = do
+setAccountHealth :: Selda m => Guid Account -> Projection -> m ()
+setAccountHealth i Projection {expenses, available} = do
     now <- liftIO $ Time.getCurrentTime
     deleteFrom healths (\h -> h ! #accountId .== literal i)
     insert healths [Health {accountId = i, expenses, available, created = now }]

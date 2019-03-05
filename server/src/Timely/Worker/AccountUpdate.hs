@@ -6,13 +6,13 @@ module Timely.Worker.AccountUpdate where
 
 -- TODO real transaction analysis
 import           Control.Effects               (MonadEffects)
+import           Control.Effects.Log           (Log)
+import qualified Control.Effects.Log           as Log
 import           Control.Effects.Time          (Time)
 import qualified Control.Effects.Time          as Time
 import           Control.Exception             (Exception)
 import           Control.Monad                 (when)
 import           Control.Monad.Catch           (MonadThrow (..))
-import           Control.Monad.Log             (MonadLog)
-import qualified Control.Monad.Log             as Log
 import           Control.Monad.Service         (Service (run))
 import qualified Data.List                     as List
 import           Data.Model.Guid               as Guid
@@ -21,8 +21,8 @@ import           Data.Time.Calendar            (Day)
 import           Network.AMQP.Worker           (MonadWorker)
 import qualified Network.AMQP.Worker           as Worker hiding (publish)
 import qualified Network.AMQP.Worker.Monad     as Worker
-import           Timely.AccountStore.Account   (AccountStore)
-import qualified Timely.AccountStore.Account   as AccountStore
+import           Timely.AccountStore.Account   (Accounts)
+import qualified Timely.AccountStore.Account   as Accounts
 import           Timely.AccountStore.Types     (Account (bankToken), AccountRow (accountId), BankAccount (balance),
                                                 isChecking, toBankAccount)
 import qualified Timely.AccountStore.Types     as Account (Account (..))
@@ -49,15 +49,14 @@ queue = Worker.topic Events.transactionsNew "app.account.update"
 
 -- | Schedules all accounts for an update
 schedule
-  :: ( Service m AccountStore
+  :: ( MonadEffects '[Accounts, Log] m
      , MonadThrow m
      , MonadWorker m
-     , MonadLog m
      )
   => m ()
 schedule = do
     Log.context "Schedule AccountUpdate"
-    accounts <- run $ AccountStore.All
+    accounts <- Accounts.all
     mapM scheduleAccountUpdate accounts
     pure ()
   where
@@ -69,12 +68,10 @@ schedule = do
 
 handler
   :: ( Service m Banks
-     , Service m AccountStore
      , Service m Advances
-     , MonadEffects '[Time] m
+     , MonadEffects '[Time, Accounts, Log] m
      , Service m Notify
      , MonadThrow m
-     , MonadLog m
      )
   => Guid Account -> m ()
 handler accountId = do
@@ -82,7 +79,7 @@ handler accountId = do
     Log.context (Guid.toText accountId)
     Log.info "AccountUpdate"
 
-    account  <- run (AccountStore.Find accountId)
+    account  <- Accounts.find accountId
                   >>= require MissingAccount
 
     checking <- updateBankBalances accountId (private $ bankToken account)
@@ -105,9 +102,8 @@ handler accountId = do
 
 checkAdvance
   :: ( Service m Advances
-     , MonadEffects '[Time] m
+     , MonadEffects '[Time, Log] m
      , Service m Notify
-     , MonadLog m
      )
   => Account -> Projection -> m ()
 checkAdvance account health = do
@@ -123,7 +119,7 @@ checkAdvance account health = do
 offerAdvance
    :: ( Service m Advances
       , Service m Notify
-      , MonadLog m
+      , MonadEffects '[Log] m
       )
    => Account -> Money -> Day -> m Advance
 offerAdvance account amount today = do
@@ -143,11 +139,11 @@ offerAdvance account amount today = do
 
 
 updateHealth
-  :: ( Service m AccountStore)
+  :: ( MonadEffects '[Accounts] m)
   => Guid Account -> BankAccount -> m Projection
 updateHealth accountId checking = do
     let health = AccountHealth.analyze (balance checking)
-    run $ AccountStore.SetHealth accountId health
+    Accounts.setHealth accountId health
     pure health
 
 
@@ -155,15 +151,14 @@ updateHealth accountId checking = do
 -- | updates the bank accounts and returns the checking account
 updateBankBalances
     :: ( Service m Banks
-       , Service m AccountStore
-       , MonadEffects '[Time] m
+       , MonadEffects '[Time, Accounts] m
        )
     => Guid Account -> Token Access -> m (Maybe BankAccount)
 updateBankBalances accountId token = do
     now <- Time.currentTime
     banks <- run $ Bank.LoadAccounts token
     let accounts = List.map (toBankAccount accountId now) banks
-    run $ AccountStore.SetBankAccounts accountId accounts
+    Accounts.setBanks accountId accounts
     pure $ List.find isChecking accounts
 
 

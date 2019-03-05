@@ -1,44 +1,72 @@
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiParamTypeClasses #-} {-# LANGUAGE OverloadedLabels      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE OverloadedLabels      #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE NamedFieldPuns       #-}
-{-# LANGUAGE DuplicateRecordFields       #-}
-module Timely.AccountStore.Application
-    ( initialize
-    , ApplicationStore(..)
-    ) where
+module Timely.AccountStore.Application where
 
 
+import           Control.Effects           (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
 import           Control.Monad.Selda       (Selda, insert, query, tryCreateTable, update_)
-import           Control.Monad.Service     (Service (..))
 import           Data.Maybe                (listToMaybe)
 import           Data.Model.Guid           (Guid)
+import qualified Data.Time.Clock           as Time
 import           Database.Selda            hiding (Result, insert, query, tryCreateTable, update_)
-import qualified Data.Time.Clock as Time
 
 import           Timely.AccountStore.Types
 import           Timely.Underwriting.Types (Approval (..), Denial (..), Result (..))
 
 
-data ApplicationStore a where
-    Save      :: Application -> ApplicationStore ()
-    Find      :: Guid Account -> ApplicationStore (Maybe Application)
-    All       :: ApplicationStore [Application]
-    Check     :: ApplicationStore [Application]
+data Applications m = ApplicationsMethods
+  { _save                 :: Application -> m ()
+  , _find                 :: Guid Account -> m (Maybe Application)
+  , _all                  :: m [Application]
+  , _check                :: m [Application]
+  , _saveResult           :: Guid Account -> Result -> m ()
+  , _findResult           :: Guid Account -> m (Maybe AppResult)
+  , _markResultOnboarding :: Guid Account -> Onboarding -> m ()
+  } deriving (Generic)
 
-    SaveResult :: Guid Account -> Result -> ApplicationStore ()
-    FindResult :: Guid Account -> ApplicationStore (Maybe AppResult)
-    MarkResultOnboarding :: Guid Account -> Onboarding -> ApplicationStore ()
+instance Effect Applications
 
-instance (Selda m) => Service m ApplicationStore where
-    run (Save a)         = save a
-    run (Find i)         = loadById i
-    run (Check)          = check
-    run All              = loadAll
-    run (SaveResult i r) = saveResult i r
-    run (FindResult i)   = findResult i
-    run (MarkResultOnboarding i o) = markOnboarding i o
+
+save :: MonadEffect Applications m => Application -> m ()
+save = _save effect
+
+find :: MonadEffect Applications m => Guid Account -> m (Maybe Application)
+find = _find effect
+
+all :: MonadEffect Applications m => m [Application]
+all = _all effect
+
+check :: MonadEffect Applications m => m [Application]
+check = _check effect
+
+saveResult :: MonadEffect Applications m => Guid Account -> Result -> m ()
+saveResult = _saveResult effect
+
+findResult :: MonadEffect Applications m => Guid Account -> m (Maybe AppResult)
+findResult = _findResult effect
+
+markResultOnboarding :: MonadEffect Applications m => Guid Account -> Onboarding -> m ()
+markResultOnboarding = _markResultOnboarding effect
+
+
+
+implementApplicationsSelda :: Selda m => RuntimeImplemented Applications m a -> m a
+implementApplicationsSelda = implement $
+  ApplicationsMethods
+    saveApp
+    loadById
+    checkHealth
+    loadAll
+    saveAppResult
+    findAppResult
+    markAppOnboarding
+
 
 
 
@@ -54,8 +82,8 @@ denials :: Table AppDenial
 denials = table "applications_denials" [#accountId :- primary]
 
 
-save :: (Selda m) => Application -> m ()
-save app = do
+saveApp :: (Selda m) => Application -> m ()
+saveApp app = do
     insert applications [app]
     pure ()
 
@@ -74,27 +102,27 @@ loadAll =
     query $ select applications
 
 
-check :: Selda m => m [Application]
-check = query $ limit 0 1 $ select applications
+checkHealth :: Selda m => m [Application]
+checkHealth = query $ limit 0 1 $ select applications
 
 
 
 
 -- Underwriting results ---------------------------------
 
-saveResult :: (Selda m) => Guid Account -> Result -> m ()
-saveResult accountId (Approved (Approval {approvalAmount})) = do
+saveAppResult :: (Selda m) => Guid Account -> Result -> m ()
+saveAppResult accountId (Approved (Approval {approvalAmount})) = do
     now <- liftIO $ Time.getCurrentTime
     insert approvals [ AppApproval {accountId, approvalAmount, onboarding = Pending, created = now} ]
     pure ()
-saveResult accountId (Denied (Denial {denial})) = do
+saveAppResult accountId (Denied (Denial {denial})) = do
     now <- liftIO $ Time.getCurrentTime
     insert denials [AppDenial {accountId, denial, created = now}]
     pure ()
 
 
-markOnboarding :: Selda m => Guid Account -> Onboarding -> m ()
-markOnboarding i o = do
+markAppOnboarding :: Selda m => Guid Account -> Onboarding -> m ()
+markAppOnboarding i o = do
     update_ approvals (\a -> a ! #accountId .== literal i)
                       (\a -> a `with` [#onboarding := literal o])
 
@@ -102,8 +130,8 @@ markOnboarding i o = do
 
 
 -- take the first result you find, favoring denials
-findResult :: Selda m => Guid Account -> m (Maybe AppResult)
-findResult i = do
+findAppResult :: Selda m => Guid Account -> m (Maybe AppResult)
+findAppResult i = do
     ds <- query $ do
       d <- select denials
       restrict (d ! #accountId .== literal i)

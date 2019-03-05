@@ -9,12 +9,12 @@ module Timely.Worker.AccountOnboard where
 
 
 import           Control.Effects                 (MonadEffects)
+import           Control.Effects.Log             (Log)
+import qualified Control.Effects.Log             as Log
 import           Control.Effects.Time            (Time, UTCTime)
 import qualified Control.Effects.Time            as Time
 import           Control.Exception               (Exception)
 import           Control.Monad.Catch             (MonadCatch, MonadThrow (..), SomeException, try)
-import           Control.Monad.Log               (MonadLog)
-import qualified Control.Monad.Log               as Log
 import           Control.Monad.Service           (Service (run))
 import qualified Data.List                       as List
 import           Data.Model.Guid                 as Guid
@@ -24,9 +24,9 @@ import           Data.Text                       as Text
 import qualified Database.Selda                  as Selda
 import           Network.AMQP.Worker             (Queue)
 import qualified Network.AMQP.Worker             as Worker hiding (bindQueue, publish, worker)
-import           Timely.AccountStore.Account     (AccountStore)
+import           Timely.AccountStore.Account     (Accounts)
 import qualified Timely.AccountStore.Account     as Account
-import           Timely.AccountStore.Application (ApplicationStore)
+import           Timely.AccountStore.Application (Applications)
 import qualified Timely.AccountStore.Application as Application
 import           Timely.AccountStore.Types       (Account, Application (..), BankAccount (balance, bankAccountId),
                                                   Customer (..), Onboarding (..), isChecking, toBankAccount)
@@ -49,13 +49,10 @@ queue = Worker.topic Events.applicationsNew "app.account.onboard"
 
 handler
   :: ( Service m Banks
-     , Service m AccountStore
      , Service m Underwriting
-     , Service m ApplicationStore
      , Service m Transfers
-     , MonadEffects '[Time] m
+     , MonadEffects '[Time, Applications, Accounts, Log] m
      , MonadThrow m, MonadCatch m
-     , MonadLog m
      )
   => Application -> m ()
 handler app = do
@@ -75,7 +72,7 @@ handler app = do
     res <- run $ Underwriting.New cust
     Log.debug ("underwriting", res)
 
-    run $ Application.SaveResult aid res
+    Application.saveResult aid res
 
     case res of
       Underwriting.Denied   _ -> do
@@ -88,23 +85,20 @@ handler app = do
 
         case res of
           Left (err :: SomeException) -> do
-            run $ Application.MarkResultOnboarding aid Error
+            Application.markResultOnboarding aid Error
             throwM err
           Right _ -> do
-            run $ Application.MarkResultOnboarding aid Complete
+            Application.markResultOnboarding aid Complete
             Log.info "done"
 
 
 
 onboardAccount
   :: ( Service m Banks
-     , Service m AccountStore
-     , Service m ApplicationStore
      , Service m Transfers
-     , MonadEffects '[Time] m
+     , MonadEffects '[Time, Accounts, Log] m
      , MonadThrow m
      , MonadCatch m
-     , MonadLog m
      )
   => Guid Account -> Token Bank.Access -> Customer -> Valid Phone -> Approval -> m ()
 onboardAccount aid tok cust phone (Approval amt) = do
@@ -121,11 +115,11 @@ onboardAccount aid tok cust phone (Approval amt) = do
 
     -- TODO the transactions might not be available until the webhook triggers - maybe it makes more sense to have the health in a pending state. Or just: We're good!
     let health = AccountHealth.analyze (balance checking)
-    run $ Account.CreateAccount $ Account.account aid now phone cust tok amt health transId
+    Account.create $ Account.account aid now phone cust tok amt health transId
 
     -- save the bank accounts
     -- TODO make it impossible to forget this
-    run $ Account.SetBankAccounts aid bankAccounts
+    Account.setBanks aid bankAccounts
 
 
 

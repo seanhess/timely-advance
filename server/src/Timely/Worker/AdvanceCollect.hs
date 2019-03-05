@@ -10,10 +10,10 @@ module Timely.Worker.AdvanceCollect where
 -- yeah, that makes sens. it's "due"
 
 import           Control.Effects           (MonadEffects)
+import           Control.Effects.Log       as Log
 import           Control.Effects.Time      (Time)
 import qualified Control.Effects.Time      as Time
 import           Control.Monad.Catch       (MonadThrow (..))
-import           Control.Monad.Log         as Log
 import           Control.Monad.Service     (Service (run))
 -- import           Data.String.Conversions   (cs)
 import           Data.Model.Guid           as Guid
@@ -38,10 +38,9 @@ queue = Worker.topic Events.advancesDue "app.advances.collect"
 -- | Scans for due advances and queues them. Run this every hour, or every day at UTC midnight (or just after)
 schedule
   :: ( Service m Advances
-     , MonadEffects '[Time] m
+     , MonadEffects '[Time, Log] m
      , MonadThrow m
      , MonadWorker m
-     , MonadLog m
      )
   => m ()
 schedule = do
@@ -62,7 +61,7 @@ handler
   :: ( Service m Advances
      , Service m Transfers
      , MonadThrow m
-     , MonadLog m
+     , MonadEffects '[Log] m
      )
   => Advance -> m ()
 handler advance = do
