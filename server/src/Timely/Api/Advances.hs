@@ -1,16 +1,18 @@
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE MonoLocalBinds    #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Timely.Api.Advances where
 
+import           Control.Effects             (MonadEffect, MonadEffects)
+import           Control.Effects.Log         as Log
+import           Control.Effects.Signal      (Throw, throwSignal)
+import           Control.Effects.Worker      (Publish)
+import qualified Control.Effects.Worker      as Worker
 import           Control.Monad               (when)
-import           Control.Monad.Except        (MonadError (..))
-import           Control.Monad.Log           as Log
 import           Control.Monad.Service       (Service (..))
 import           Data.Model.Guid             as Guid
 import           Data.Model.Money            (Money)
-import           Network.AMQP.Worker.Monad   (MonadWorker)
-import qualified Network.AMQP.Worker.Monad   as Worker
 import           Servant                     (ServantErr (..), err400)
 import           Timely.AccountStore.Account (AccountStore)
 import qualified Timely.AccountStore.Account as Accounts
@@ -24,11 +26,9 @@ import qualified Timely.Events               as Events
 
 
 acceptAdvance
-  :: ( MonadWorker m
-     , Service m Advances
+  :: ( Service m Advances
      , Service m AccountStore
-     , MonadError ServantErr m
-     , MonadLog m
+     , MonadEffects '[Throw ServantErr, Log, Publish] m
      ) => Guid Account -> Guid Advance -> Amount -> m Advance
 acceptAdvance a adv amt = do
   Log.context "acceptAdvance"
@@ -43,7 +43,7 @@ acceptAdvance a adv amt = do
 
 -- TODO tests
 checkCredit
-  :: ( MonadError ServantErr m
+  :: ( MonadEffect (Throw ServantErr) m
      , Service m AccountStore
      , Service m Advances
      ) => Guid Account -> Money -> m ()
@@ -52,4 +52,4 @@ checkCredit a amount = do
   advances <- run (Advances.FindActive a)
 
   when (not $ Credit.isEnough amount account advances) $ do
-    throwError $ err400 { errBody = "Insufficient Credit" }
+    throwSignal $ err400 { errBody = "Insufficient Credit" }

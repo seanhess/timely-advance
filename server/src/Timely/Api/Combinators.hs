@@ -1,9 +1,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Timely.Api.Combinators where
 
-import           Control.Monad.Except                 (MonadError, throwError)
-import           Servant                              hiding (Application, Link)
+import           Control.Effects        (MonadEffect)
+import           Control.Effects.Signal (throwSignal, Throw)
+import           Servant                hiding (Application, Link)
 
-notFound :: (MonadError ServantErr m) => Maybe a -> m a
+notFound :: (MonadEffect (Throw ServantErr) m) => Maybe a -> m a
 notFound (Just a) = return a
-notFound Nothing  = throwError err404
+notFound Nothing  = throwSignal err404

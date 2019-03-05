@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
@@ -14,44 +15,46 @@ module Timely.Api.AppM
   ) where
 
 
-import           Control.Monad.Config      (MonadConfig (..))
-import           Control.Monad.IO.Class    (MonadIO, liftIO)
-import           Control.Monad.Log         (LogT)
-import qualified Control.Monad.Log         as Log
-import           Control.Monad.Reader      (ReaderT, ask, asks, runReaderT)
-import           Control.Monad.Selda       (Selda (..))
-import           Data.Model.Id             (Token (..))
-import           Data.Pool                 (Pool)
-import qualified Data.Pool                 as Pool
-import           Data.String.Conversions   (cs)
-import           Data.Text                 (Text)
-import           Database.Selda            (MonadMask)
-import           Database.Selda.Backend    (SeldaConnection)
-import qualified Database.Selda.PostgreSQL as Selda
-import qualified Network.AMQP.Worker       as Worker
-import           Network.AMQP.Worker.Monad (MonadWorker (..))
-import qualified Network.HTTP.Client       as HTTP
-import qualified Network.HTTP.Client.TLS   as HTTP
-import           Servant                   (Handler (..), runHandler)
-import           Servant.Auth.Server       (CookieSettings (..), JWTSettings)
-import qualified Text.Show.Pretty          as Pretty
+import           Control.Effects.Signal     (Signal (..))
+import           Control.Monad.Config       (MonadConfig (..))
+import           Control.Monad.Except       (MonadError (..))
+import           Control.Monad.IO.Class     (MonadIO, liftIO)
+import qualified Control.Monad.Trans.Reader as Reader
+import           Control.Monad.Reader       (ReaderT, ask, asks, runReaderT)
+import           Control.Monad.Selda        (Selda (..))
+import           Control.Monad.Trans.Except (throwE)
+import           Data.Model.Id              (Token (..))
+import           Data.Pool                  (Pool)
+import qualified Data.Pool                  as Pool
+import           Data.String.Conversions    (cs)
+import           Data.Text                  (Text)
+import           Database.Selda             (MonadMask)
+import           Database.Selda.Backend     (SeldaConnection)
+import qualified Database.Selda.PostgreSQL  as Selda
+import qualified Network.AMQP.Worker        as Worker
+import           Network.AMQP.Worker.Monad  (MonadWorker (..))
+import qualified Network.HTTP.Client        as HTTP
+import qualified Network.HTTP.Client.TLS    as HTTP
+import           Servant                    (Handler (..), ServantErr, runHandler)
+import Control.Monad.Trans (lift)
+import           Servant.Auth.Server        (CookieSettings (..), JWTSettings)
+import qualified Text.Show.Pretty           as Pretty
 
 -- import qualified Timely.Bank               as Bank
-import qualified Timely.Api.Sessions       as Sessions
-import           Timely.App                (retry)
-import           Timely.Auth               (AuthConfig)
-import qualified Timely.Auth               as Auth
-import           Timely.Config             (Env (..), loadEnv, version)
-import           Timely.Types.Config       (ClientConfig (ClientConfig),
-                                            PlaidConfig (PlaidConfig))
-import           Timely.Types.Session      (Admin)
+import qualified Timely.Api.Sessions        as Sessions
+import           Timely.App                 (retry)
+import           Timely.Auth                (AuthConfig)
+import qualified Timely.Auth                as Auth
+import           Timely.Config              (Env (..), loadEnv, version)
+import           Timely.Types.Config        (ClientConfig (ClientConfig), PlaidConfig (PlaidConfig))
+import           Timely.Types.Session       (Admin)
 
-import Data.Function ((&))
-import EffectsTutorial
-import Control.Effects
-import Control.Effects.Reader
-import Timely.Effects.Worker (Publish(..))
-import Timely.Effects.Log (Log(..))
+import           Control.Effects
+import           Control.Effects.Log        (Log (..), implementLogIgnore)
+import           Control.Effects.Reader
+import           Control.Effects.Worker     (Publish (..), implementAMQP)
+import           Data.Function              ((&))
+import           EffectsTutorial
 
 
 data AppState = AppState
@@ -97,8 +100,7 @@ clientConfig = do
 
 
 
--- ok, the problem is that we don't have N x K instances for RuntimeImplemented and LogT, etc. 
-type AppM = RuntimeImplemented Publish (ReaderT AppState Handler)
+type AppM = RuntimeImplemented Publish (RuntimeImplemented Log (ReaderT AppState Handler))
 
 
 
@@ -136,17 +138,32 @@ instance MonadConfig (Token Admin) AppM where
 
 
 
+-- This instance is missing to get errors to work
+instance MonadError ServantErr m => MonadError ServantErr (RuntimeImplemented eff m) where
+  throwError e = RuntimeImplemented (lift $ throwError e)
+  catchError (RuntimeImplemented m) h =
+    RuntimeImplemented $ Reader.liftCatch catchError m $ (getRuntimeImplemented . h)
+
+
+
+
+
+instance MonadEffect (Signal ServantErr b) Handler where
+    effect = SignalMethods (Handler . throwE)
+
+
+
 nt :: AppState -> AppM a -> Handler a
 nt = run
 
 
 run :: AppState -> AppM a -> Handler a
 run s x =
-  let action = implement (PublishMethods undefined) x
-  -- in runReaderT (Log.runLogT action) s
+  let action = x
+       & implementAMQP (amqpConn s)
+       & implementLogIgnore
+
   in runReaderT action s
-  -- implement (PublishMethods undefined)
-  --   (runReaderT (Log.runLogT x) s)
 
 
 
@@ -164,7 +181,6 @@ woot = do
     -- & implement (ReadEnvMethods (asks (port . env)))
     & implementReadEnv (asks (port . env))
   liftIO $ print msg
-
 
 
 

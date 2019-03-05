@@ -10,7 +10,6 @@ module Timely.Auth where
 
 import           Control.Exception         (Exception, throw)
 import           Control.Monad.Config      (MonadConfig (..), configs)
-import           Control.Monad.Except      (MonadError)
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
 import           Control.Monad.Service     (Service (..))
 import           Data.Aeson                (FromJSON, ToJSON)
@@ -113,12 +112,9 @@ clientEnv = do
 
 
 
-login :: (ToJWT session, MonadIO m, MonadError ServantErr m) => CookieSettings -> JWTSettings -> session -> value -> m (Headers '[ Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie ] value)
-login cke jwt session value = do
-  mApplyCookies <- liftIO $ acceptLogin cke jwt session
-  case mApplyCookies of
-    Nothing           -> throwError err401
-    Just applyCookies -> pure $ applyCookies value
+login :: (ToJWT session, MonadIO m) => CookieSettings -> JWTSettings -> session -> m (Maybe (value -> Headers '[ Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie ] value))
+login cke jwt session = do
+  liftIO $ acceptLogin cke jwt session
 
 
 logout :: Applicative m => CookieSettings -> m (Headers '[ Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] NoContent)

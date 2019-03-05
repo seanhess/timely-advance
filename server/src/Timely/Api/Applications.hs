@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MonoLocalBinds        #-}
@@ -7,9 +8,10 @@ module Timely.Api.Applications
     ( newApplication
     ) where
 
+import           Control.Effects                 (MonadEffects)
+import           Control.Effects.Log             as Log
+import           Control.Effects.Signal          (Throw)
 import           Control.Monad.Config            (MonadConfig (..))
-import           Control.Monad.Except            (MonadError (..))
-import           Control.Monad.Log               as Log
 import           Control.Monad.Service           (Service (..))
 import           Data.Model.Guid                 as Guid
 import           Data.Model.Types                (Phone, Valid)
@@ -31,10 +33,9 @@ import           Timely.Types.Session            (Session (..))
 newApplication
   :: ( MonadWorker m
      , Service m ApplicationStore
-     , MonadError ServantErr m
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
-     , MonadLog m
+     , MonadEffects '[Log, Throw ServantErr] m
      ) => Valid Phone -> AccountInfo -> m (SetSession Application)
 newApplication phone info = do
     -- create an application

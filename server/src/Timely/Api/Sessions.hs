@@ -5,16 +5,17 @@
 module Timely.Api.Sessions where
 
 
+import           Control.Effects             (MonadEffect)
+import           Control.Effects.Signal      (Throw, throwSignal)
 import           Control.Monad.Config
-import           Control.Monad.Except        (MonadError (..))
 import           Control.Monad.IO.Class      (MonadIO, liftIO)
 import           Control.Monad.Service       (Service (..))
 import           Crypto.JOSE.JWK             (JWK)
 import           Data.ByteString             (ByteString)
-import           Data.Model.Valid            as Valid
-import           Data.Model.Types            (Phone)
 import           Data.Model.Guid             as Guid
 import           Data.Model.Id               (Token (..))
+import           Data.Model.Types            (Phone)
+import           Data.Model.Valid            as Valid
 import           Servant                     (Header, Headers, NoContent (..), ServantErr, err401)
 import           Servant.Auth.Server         (AuthResult (..), CookieSettings (..), IsSecure (..), JWTSettings,
                                               SetCookie, ThrowAll (..), defaultCookieSettings, defaultJWTSettings)
@@ -40,7 +41,7 @@ generateCode p = do
 -- TODO check to see if there's an account and set the account id
 authenticate
   :: ( MonadIO m
-     , MonadError ServantErr m
+     , MonadEffect (Throw ServantErr) m
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
      , MonadConfig AuthConfig m
@@ -49,13 +50,13 @@ authenticate
 authenticate p c = do
   res <- run $ Auth.CodeCheck p c
   if not res
-     then throwError err401
+     then throwSignal err401
      else session p
 
 
 authAdmin
   :: ( MonadIO m
-     , MonadError ServantErr m
+     , MonadEffect (Throw ServantErr) m
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
      , MonadConfig (Token Admin) m
@@ -66,12 +67,12 @@ authAdmin check = do
   let session = Session (Valid "8012223333") Nothing True
   if check == good
      then setSession session session
-     else throwError err401
+     else throwSignal err401
 
 
 session
   :: ( MonadIO m
-     , MonadError ServantErr m
+     , MonadEffect (Throw ServantErr) m
      , Service m Account.AccountStore
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
@@ -85,27 +86,30 @@ session p = do
 
 setSession
   :: ( MonadIO m
-     , MonadError ServantErr m
+     , MonadEffect (Throw ServantErr) m
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
      ) => Session -> value -> m (SetSession value)
 setSession s value = do
     cke <- config
     jwt <- config
-    Auth.login cke jwt s value
+    mrespond <- Auth.login cke jwt s
+    case mrespond of
+      Nothing      -> throwSignal err401
+      Just respond -> pure $ respond value
 
 
 
 checkSession
   :: ( MonadIO m
-     , MonadError ServantErr m
+     , MonadEffect (Throw ServantErr) m
      , Service m Account.AccountStore
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
      ) => AuthResult Session -> m (Session)
 checkSession (Authenticated s) = pure s
 checkSession _ =
-  throwError err401
+  throwSignal err401
 
 
 

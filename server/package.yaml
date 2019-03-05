@@ -63,6 +63,7 @@ dependencies:
 - text
 - time
 - transformers-base
+- transformers
 - twilio
 - unix
 - uuid
