@@ -25,21 +25,21 @@ import           Servant.API.ContentTypes.JS          (JS)
 import           Servant.API.Generic                  ((:-), AsApi, ToServant, ToServantApi)
 import           Servant.Auth.Server                  (Auth, Cookie, CookieSettings (..), JWTSettings)
 import           Servant.Server.Generic               (AsServerT, genericServerT)
-import           Servant.Server.StaticFiles           (serveDirectoryFileServer)
+-- import           Servant.Server.StaticFiles           (serveDirectoryFileServer)
 import qualified Timely.AccountStore.Account          as Account
 import qualified Timely.AccountStore.Application      as Application
 import           Timely.AccountStore.Types            (AppResult, Application)
 import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
 import           Timely.Api.Advances                  as Advances
-import qualified Timely.Api.Health as Health
 import qualified Timely.Api.Applications              as Applications
-import           Timely.Api.AppM                      (AppM, AppState (..), clientConfig, loadState, nt, runIO)
-import qualified Timely.Api.AppM                      as AppM
 import           Timely.Api.Combinators               (notFound)
+import qualified Timely.Api.Health                    as Health
 import           Timely.Api.Sessions                  (SetSession)
 import qualified Timely.Api.Sessions                  as Sessions
 import           Timely.Api.Types
+import           Timely.App                           (AppM, AppState (..), clientConfig, loadState, nt, runAppIO)
+import qualified Timely.App                           as App
 import           Timely.Auth                          (AuthCode)
 import           Timely.Config                        (port, serveDir)
 import qualified Timely.Transfers                     as Transfers
@@ -51,9 +51,9 @@ type Api = ToServant BaseApi AsApi
 
 data BaseApi route = BaseApi
     { _versioned :: route :- "v1" :> ToServantApi VersionedApi
-    , _health    :: route :- "health" :> Get '[PlainText] Text
     , _debug     :: route :- "debug" :> Get '[PlainText] Text
-    , _files     :: route :- Raw
+    , _health    :: route :- Get '[PlainText] Text
+    -- , _files     :: route :- Raw
     } deriving (Generic)
 
 
@@ -145,11 +145,11 @@ sessionsApi = genericServerT SessionsApi
 
 
 baseApi :: FilePath -> ToServant BaseApi (AsServerT AppM)
-baseApi p = genericServerT BaseApi
+baseApi _ = genericServerT BaseApi
     { _versioned = versionedApi
-    , _files = serveDirectoryFileServer p
-    , _debug = AppM.debug
     , _health = Health.health
+    , _debug = App.debug
+    -- , _files = serveDirectoryFileServer p
     }
 
 versionedApi :: ToServant VersionedApi (AsServerT AppM)
@@ -174,7 +174,7 @@ server st = hoistServerWithContext apiProxy context (nt st) (baseApi $ filesDir 
     context :: Proxy '[CookieSettings, JWTSettings]
     context = Proxy
 
-    filesDir = serveDir . AppM.env
+    filesDir = serveDir . App.env
 
 -- https://haskell-servant.readthedocs.io/en/stable/cookbook/jwt-and-basic-auth/JWTAndBasicAuth.html
 -- https://github.com/haskell-servant/servant-auth#readme
@@ -192,9 +192,8 @@ application st =
 initialize :: IO ()
 initialize = do
     putStrLn "Initializing"
-    state <- loadState
 
-    runIO state $ do
+    runAppIO $ do
       Account.initialize
       Application.initialize
       Advances.initialize
@@ -209,7 +208,7 @@ start = do
     -- Load state
     putStrLn "API"
     state <- loadState
-    let p = port $ AppM.env state
+    let p = port $ App.env state
 
     putStrLn $ "API | Running on " ++ show p
     Warp.run p (application state)

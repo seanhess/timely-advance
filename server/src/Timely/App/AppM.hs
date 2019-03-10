@@ -1,17 +1,18 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE UndecidableInstances  #-}
-module Timely.Api.AppM
+module Timely.App.AppM
   ( AppState(..)
   , loadState
   , nt
   , debug
-  , AppM
+  , AppM, AppT
   , clientConfig
-  , runIO
+  , runApp
+  , runAppIO
   ) where
 
 
@@ -20,6 +21,7 @@ import           Control.Effects.Log             (Log (..), LogT, implementLogSt
 import           Control.Effects.Signal          (Signal (..))
 import           Control.Effects.Time            (Time, implementTimeIO)
 import           Control.Effects.Worker          (Publish (..), implementAMQP)
+import           Control.Monad.Catch             (MonadCatch)
 import           Control.Monad.Config            (MonadConfig (..))
 import           Control.Monad.Except            (MonadError (..))
 import           Control.Monad.IO.Class          (MonadIO, liftIO)
@@ -40,20 +42,23 @@ import           Database.Selda.Backend          (SeldaConnection)
 import qualified Database.Selda.PostgreSQL       as Selda
 import qualified Network.AMQP.Worker             as Worker
 import           Network.AMQP.Worker.Monad       (MonadWorker (..))
+import qualified Network.Dwolla                  as Dwolla
 import qualified Network.HTTP.Client             as HTTP
 import qualified Network.HTTP.Client.TLS         as HTTP
+import qualified Network.Plaid                   as Plaid
 import           Servant                         (Handler (..), ServantErr, runHandler)
 import           Servant.Auth.Server             (CookieSettings (..), JWTSettings)
 import qualified Text.Show.Pretty                as Pretty
-
--- import qualified Timely.Bank               as Bank
+import           Timely.AccountStore.Account     (Accounts, implementAccountsSelda)
 import           Timely.AccountStore.Application (Applications, implementApplicationsSelda)
-import           Timely.AccountStore.Account (Accounts, implementAccountsSelda)
 import qualified Timely.Api.Sessions             as Sessions
-import           Timely.App                      (retry)
+import           Timely.App.Retry                (retry)
 import           Timely.Auth                     (AuthConfig)
 import qualified Timely.Auth                     as Auth
+import qualified Timely.Bank                     as Bank
 import           Timely.Config                   (Env (..), loadEnv, version)
+import qualified Timely.Notify                   as Notify
+import qualified Timely.Transfers                as Transfers
 import           Timely.Types.Config             (ClientConfig (ClientConfig), PlaidConfig (PlaidConfig))
 import           Timely.Types.Session            (Admin)
 
@@ -87,7 +92,7 @@ loadState = do
     amqpConn <- retry $ Worker.connect (Worker.fromURI $ cs $ amqp env)
     dbConn <- liftIO $ Pool.createPool (createConn $ cs $ postgres env) destroyConn 1 5 3
     manager <- liftIO $ HTTP.newManager HTTP.tlsManagerSettings
-    pure AppState {..}
+    pure AppState {dbConn, amqpConn, manager, env, cookieSettings, jwtSettings}
   where
     createConn = Selda.pgOpen' Nothing
     destroyConn = Selda.seldaClose
@@ -106,16 +111,16 @@ instance (MonadBaseControl IO m, MonadMask m, MonadIO m, MonadReader AppState m)
       pool <- asks dbConn
       Pool.withResource pool action
 
-instance MonadWorker AppM where
+instance (MonadIO m, MonadCatch m) => MonadWorker (AppT m) where
     amqpConnection = asks amqpConn
 
-instance MonadConfig CookieSettings AppM where
+instance Monad m => MonadConfig CookieSettings (AppT m) where
     config = asks cookieSettings
 
-instance MonadConfig JWTSettings AppM where
+instance Monad m => MonadConfig JWTSettings (AppT m) where
     config = asks jwtSettings
 
-instance MonadConfig AuthConfig AppM where
+instance Monad m => MonadConfig AuthConfig (AppT m) where
     config = do
       state <- ask
       let m = manager state
@@ -123,16 +128,35 @@ instance MonadConfig AuthConfig AppM where
           k = authyApiKey $ env state
       pure $ Auth.AuthConfig m u k
 
-instance MonadConfig (Token Admin) AppM where
+instance Monad m => MonadConfig (Token Admin) (AppT m) where
     config = asks (adminPassphrase . env)
 
--- instance MonadConfig Bank.Config AppM where
---   config = do
---     c <- asks plaid
---     m <- asks manager
---     b <- asks (plaidBaseUrl . env)
---     pure $ Bank.Config { Bank.manager = m, Bank.baseUrl = b, Bank.credentials = c }
+instance Monad m => MonadConfig Bank.Config (AppT m) where
+  config = do
+    m <- asks manager
+    c <- asks (plaidClientId . env)
+    s <- asks (plaidClientSecret . env)
+    b <- asks (plaidBaseUrl . env)
+    pure $ Bank.Config { Bank.manager = m, Bank.baseUrl = b, Bank.credentials = Plaid.Credentials c s }
 
+instance Monad m => MonadConfig Dwolla.Credentials (AppT m) where
+  config = do
+    e <- asks env
+    pure $ Dwolla.Credentials (dwollaClientId e) (dwollaSecret e)
+
+instance Monad m => MonadConfig Transfers.Config (AppT m) where
+  config = do
+    dwolla <- config
+    mgr <- asks manager
+    base <- asks (dwollaBaseUrl . env)
+    auth <- asks (dwollaAuthBaseUrl . env)
+    src <- asks (dwollaFundingSource . env)
+    pure $ Transfers.Config src (Dwolla.Config mgr base auth dwolla)
+
+instance Monad m => MonadConfig Notify.Config (AppT m) where
+  config = do
+    e <- asks env
+    pure $ Notify.Config (twilioFromPhone e) (twilioAccountId e) (twilioAuthToken e) (appEndpoint e)
 
 
 -- This instance is missing to get errors to work
@@ -140,9 +164,6 @@ instance MonadError ServantErr m => MonadError ServantErr (RuntimeImplemented ef
   throwError e = RuntimeImplemented (lift $ throwError e)
   catchError (RuntimeImplemented m) h =
     RuntimeImplemented $ Reader.liftCatch catchError m $ (getRuntimeImplemented . h)
-
-
-
 
 
 instance MonadEffect (Signal ServantErr b) Handler where
@@ -156,49 +177,39 @@ instance MonadEffect (Signal ServantErr b) Handler where
 
 -- type AppM = RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Log (LogT (ReaderT AppState Handler))))
 
-type AppT m = RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Applications (RuntimeImplemented Accounts (ReaderT AppState m))))
+type AppT m = RuntimeImplemented Log (LogT (RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Applications (RuntimeImplemented Accounts (ReaderT AppState m))))))
+
+-- type AppLogT m = RuntimeImplemented Log (LogT (AppT m))
+
+type AppM = AppT Handler
 
 
-type AppLogT m = RuntimeImplemented Log (LogT (AppT m))
-
-
-type AppM = AppLogT Handler
-
-
-runAppT
+runApp
   :: ( MonadIO m
      , MonadBaseControl IO m
      , MonadMask m
      )
   => AppState -> AppT m a -> m a
-runAppT s x =
+runApp s x =
   let action = x
+        & implementLogStdout
         & implementTimeIO
         & implementAMQP (amqpConn s)
-        -- & implementLogStdout
         & implementApplicationsSelda
         & implementAccountsSelda
-        -- & implementLogStdout
   in runReaderT action s
 
 
-runAppM
-  :: AppState -> AppM a -> Handler a
-runAppM s x =
-  runAppT s (x & implementLogStdout)
 
-
-
--- this is very different!
--- it can throw servant errors, rather than just arbitrary ones
--- but I'd like to unify this
-runIO :: AppState -> AppM a -> IO a
-runIO s x = do
-  res <- runHandler $ (runAppM s x)
+runAppIO :: AppM a -> IO a
+runAppIO x = do
+  s <- loadState
+  res <- runHandler $ runApp s x
   case res of
     Left err -> Prelude.error $ show err
     Right r  -> pure r
 
 
 nt :: AppState -> AppM a -> Handler a
-nt = runAppM
+nt s x = runApp s x
+

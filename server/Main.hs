@@ -11,7 +11,7 @@ import qualified Timely.Worker.AdvanceCollect as AdvanceCollect
 import qualified Timely.Worker.AdvanceSend    as AdvanceSend
 import qualified Version
 -- import qualified Timely.Worker.Schedule       as Schedule
-import qualified Timely.Worker.WorkerM        as Worker
+import qualified Timely.App                   as App
 
 main :: IO ()
 main = do
@@ -44,27 +44,27 @@ startApi = Api.start
 
 
 startAccountOnboard :: IO ()
-startAccountOnboard = Worker.start AccountOnboard.queue AccountOnboard.handler
+startAccountOnboard = App.start AccountOnboard.queue AccountOnboard.handler
 
 
 startAccountUpdate :: IO ()
-startAccountUpdate = Worker.start AccountUpdate.queue $ AccountUpdate.handler
+startAccountUpdate = App.start AccountUpdate.queue $ AccountUpdate.handler
 
 
 startAccountUpdateSchedule :: IO ()
-startAccountUpdateSchedule = Worker.runIO AccountUpdate.schedule
+startAccountUpdateSchedule = App.runAppIO AccountUpdate.schedule
 
 
 startAdvanceSend :: IO ()
-startAdvanceSend = Worker.start AdvanceSend.queue AdvanceSend.handler
+startAdvanceSend = App.start AdvanceSend.queue AdvanceSend.handler
 
 
 startAdvanceCollect :: IO ()
-startAdvanceCollect = Worker.start AdvanceCollect.queue AdvanceCollect.handler
+startAdvanceCollect = App.start AdvanceCollect.queue AdvanceCollect.handler
 
 
 startAdvanceCollectSchedule :: IO ()
-startAdvanceCollectSchedule = Worker.runIO AdvanceCollect.schedule
+startAdvanceCollectSchedule = App.runAppIO AdvanceCollect.schedule
 
 
 
