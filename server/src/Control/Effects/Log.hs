@@ -43,16 +43,16 @@ context :: MonadEffect Log m => Text -> m ()
 context = _context effect
 
 
-implementLogIgnore :: Applicative m => RuntimeImplemented Log m a -> m a
-implementLogIgnore = implement (LogMethods ignore ignore ignore ignore)
+implementIgnore :: Applicative m => RuntimeImplemented Log m a -> m a
+implementIgnore = implement (LogMethods ignore ignore ignore ignore)
   where
     ignore _ = pure ()
 
 
 type LogT m = StateT [Text] (LoggingT m)
 
-implementLogStdout :: MonadIO m => RuntimeImplemented Log (LogT m) a -> m a
-implementLogStdout f = runLogT $ implement (LogMethods logInfo logDebug logError setContext) f
+implementStdout :: MonadIO m => RuntimeImplemented Log (LogT m) a -> m a
+implementStdout f = runLogT $ implement (LogMethods logInfo logDebug logError setContext) f
   where
     setContext :: MonadState [Text] m => Text -> m ()
     setContext t =

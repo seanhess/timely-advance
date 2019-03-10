@@ -6,7 +6,6 @@ module Timely.Worker.AdvanceSend where
 
 import           Control.Effects       (MonadEffects)
 import           Control.Effects.Log   as Log
-import           Control.Monad.Service (Service)
 import           Data.Model.Guid       as Guid
 import qualified Network.AMQP.Worker   as Worker hiding (publish)
 
@@ -26,8 +25,7 @@ queue = Worker.topic Events.advancesActive "app.advances.send"
 
 
 handler
-  :: ( Service m Transfers
-     , MonadEffects '[Log] m
+  :: (MonadEffects '[Log, Transfers] m
      )
   => Advance -> m ()
 handler advance = do

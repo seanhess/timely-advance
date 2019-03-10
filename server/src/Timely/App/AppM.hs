@@ -17,10 +17,13 @@ module Timely.App.AppM
 
 
 import           Control.Effects                 (MonadEffect (..), RuntimeImplemented (..))
-import           Control.Effects.Log             (Log (..), LogT, implementLogStdout)
+import           Control.Effects.Log             (Log (..), LogT)
+import qualified Control.Effects.Log             as Log
 import           Control.Effects.Signal          (Signal (..))
-import           Control.Effects.Time            (Time, implementTimeIO)
-import           Control.Effects.Worker          (Publish (..), implementAMQP)
+import           Control.Effects.Time            (Time)
+import qualified Control.Effects.Time            as Time
+import           Control.Effects.Worker          (Publish (..))
+import qualified Control.Effects.Worker          as Worker
 import           Control.Monad.Catch             (MonadCatch)
 import           Control.Monad.Config            (MonadConfig (..))
 import           Control.Monad.Except            (MonadError (..))
@@ -49,22 +52,28 @@ import qualified Network.Plaid                   as Plaid
 import           Servant                         (Handler (..), ServantErr, runHandler)
 import           Servant.Auth.Server             (CookieSettings (..), JWTSettings)
 import qualified Text.Show.Pretty                as Pretty
-import           Timely.AccountStore.Account     (Accounts, implementAccountsSelda)
-import           Timely.AccountStore.Application (Applications, implementApplicationsSelda)
+import           Timely.AccountStore.Account     (Accounts)
+import qualified Timely.AccountStore.Account     as Accounts
+import           Timely.AccountStore.Application (Applications)
+import qualified Timely.AccountStore.Application as Applications
 import           Timely.Advances                 (Advances)
 import qualified Timely.Advances                 as Advances
 import qualified Timely.Api.Sessions             as Sessions
 import           Timely.App.Retry                (retry)
 import           Timely.Auth                     (AuthConfig)
+import           Timely.Auth                     (Auth)
 import qualified Timely.Auth                     as Auth
 import           Timely.Bank                     (Banks)
 import qualified Timely.Bank                     as Bank
-import           Timely.Auth                     (Auth, implementAuthIO)
 import           Timely.Config                   (Env (..), loadEnv, version)
+import           Timely.Notify                   (Notify)
 import qualified Timely.Notify                   as Notify
+import           Timely.Transfers                (Transfers)
 import qualified Timely.Transfers                as Transfers
 import           Timely.Types.Config             (ClientConfig (ClientConfig), PlaidConfig (PlaidConfig))
 import           Timely.Types.Session            (Admin)
+import           Timely.Underwriting             (Underwriting)
+import qualified Timely.Underwriting             as Underwriting
 
 
 
@@ -143,12 +152,12 @@ instance (Monad m, MonadReader AppState m) => MonadConfig Bank.Config m where
     b <- asks (plaidBaseUrl . env)
     pure $ Bank.Config { Bank.manager = m, Bank.baseUrl = b, Bank.credentials = Plaid.Credentials c s }
 
-instance Monad m => MonadConfig Dwolla.Credentials (AppT m) where
+instance (Monad m, MonadReader AppState m) => MonadConfig Dwolla.Credentials m where
   config = do
     e <- asks env
     pure $ Dwolla.Credentials (dwollaClientId e) (dwollaSecret e)
 
-instance Monad m => MonadConfig Transfers.Config (AppT m) where
+instance (Monad m, MonadReader AppState m) => MonadConfig Transfers.Config m where
   config = do
     dwolla <- config
     mgr <- asks manager
@@ -157,7 +166,7 @@ instance Monad m => MonadConfig Transfers.Config (AppT m) where
     src <- asks (dwollaFundingSource . env)
     pure $ Transfers.Config src (Dwolla.Config mgr base auth dwolla)
 
-instance Monad m => MonadConfig Notify.Config (AppT m) where
+instance (Monad m, MonadReader AppState m) => MonadConfig Notify.Config m where
   config = do
     e <- asks env
     pure $ Notify.Config (twilioFromPhone e) (twilioAccountId e) (twilioAuthToken e) (appEndpoint e)
@@ -181,7 +190,7 @@ instance MonadEffect (Signal ServantErr b) Handler where
 
 -- type AppM = RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Log (LogT (ReaderT AppState Handler))))
 
-type AppT m = RuntimeImplemented Log (LogT (RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Applications (RuntimeImplemented Accounts (RuntimeImplemented Banks (RuntimeImplemented Advances (RuntimeImplemented Auth (ReaderT AppState m)))))))))
+type AppT m = RuntimeImplemented Log (LogT (RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Applications (RuntimeImplemented Accounts (RuntimeImplemented Banks (RuntimeImplemented Advances (RuntimeImplemented Auth (RuntimeImplemented Transfers (RuntimeImplemented Notify (RuntimeImplemented Underwriting (ReaderT AppState m))))))))))))
 
 -- type AppLogT m = RuntimeImplemented Log (LogT (AppT m))
 
@@ -196,14 +205,17 @@ runApp
   => AppState -> AppT m a -> m a
 runApp s x =
   let action = x
-        & implementLogStdout
-        & implementTimeIO
-        & implementAMQP (amqpConn s)
-        & implementApplicationsSelda
-        & implementAccountsSelda
+        & Log.implementStdout
+        & Time.implementIO
+        & Worker.implementAMQP (amqpConn s)
+        & Applications.implementIO
+        & Accounts.implementIO
         & Bank.implementBankIO
         & Advances.implementAdvancesSelda
-        & implementAuthIO
+        & Auth.implementIO
+        & Transfers.implementIO
+        & Notify.implementIO
+        & Underwriting.implementMock
   in runReaderT action s
 
 

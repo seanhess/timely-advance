@@ -10,17 +10,16 @@ import           Control.Effects.Log           (Log)
 import qualified Control.Effects.Log           as Log
 import           Control.Effects.Time          (Time)
 import qualified Control.Effects.Time          as Time
+import           Control.Effects.Worker        (Publish)
+import qualified Control.Effects.Worker        as Worker
 import           Control.Exception             (Exception)
 import           Control.Monad                 (when)
 import           Control.Monad.Catch           (MonadThrow (..))
-import           Control.Monad.Service         (Service (run))
 import qualified Data.List                     as List
 import           Data.Model.Guid               as Guid
 import           Data.Model.Money              (Money)
 import           Data.Time.Calendar            (Day)
-import           Network.AMQP.Worker           (MonadWorker)
-import qualified Network.AMQP.Worker           as Worker hiding (publish)
-import qualified Network.AMQP.Worker.Monad     as Worker
+import qualified Network.AMQP.Worker           as Worker (Queue, topic)
 import           Timely.AccountStore.Account   (Accounts)
 import qualified Timely.AccountStore.Account   as Accounts
 import           Timely.AccountStore.Types     (Account (bankToken), AccountRow (accountId), BankAccount (balance),
@@ -49,9 +48,8 @@ queue = Worker.topic Events.transactionsNew "app.account.update"
 
 -- | Schedules all accounts for an update
 schedule
-  :: ( MonadEffects '[Accounts, Log] m
+  :: ( MonadEffects '[Accounts, Log, Publish] m
      , MonadThrow m
-     , MonadWorker m
      )
   => m ()
 schedule = do
@@ -67,8 +65,7 @@ schedule = do
 
 
 handler
-  :: ( Service m Notify
-     , MonadEffects '[Time, Accounts, Log, Banks, Advances] m
+  :: ( MonadEffects '[Time, Accounts, Log, Banks, Advances, Notify] m
      , MonadThrow m
      )
   => Guid Account -> m ()
@@ -99,8 +96,7 @@ handler accountId = do
 
 
 checkAdvance
-  :: ( MonadEffects '[Time, Log, Advances] m
-     , Service m Notify
+  :: ( MonadEffects '[Time, Log, Advances, Notify] m
      )
   => Account -> Projection -> m ()
 checkAdvance account health = do
@@ -114,9 +110,7 @@ checkAdvance account health = do
 
 
 offerAdvance
-   :: ( Service m Notify
-      , MonadEffects '[Log, Advances] m
-      )
+   :: ( MonadEffects '[Log, Advances, Notify] m)
    => Account -> Money -> Day -> m Advance
 offerAdvance account amount today = do
     let id = Account.accountId account
@@ -125,7 +119,7 @@ offerAdvance account amount today = do
         nextPayday   = Paydate.next frequency today
         due          = nextPayday
     advance <- Advances.create id (Account.transferId account) amount due
-    run $ Notify.Send account (Notify.Message (Advances.advanceId advance) Notify.Advance message)
+    Notify.send account (Notify.Message (Advances.advanceId advance) Notify.Advance message)
     pure advance
   where
     message = "Your bank balance is getting low. Click here to accept an advance from Timely"

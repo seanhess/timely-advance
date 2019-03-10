@@ -15,7 +15,6 @@ import           Control.Effects.Time            (Time, UTCTime)
 import qualified Control.Effects.Time            as Time
 import           Control.Exception               (Exception)
 import           Control.Monad.Catch             (MonadCatch, MonadThrow (..), SomeException, try)
-import           Control.Monad.Service           (Service (run))
 import qualified Data.List                       as List
 import           Data.Model.Guid                 as Guid
 import           Data.Model.Id                   (Token)
@@ -36,7 +35,7 @@ import qualified Timely.Evaluate.AccountHealth   as AccountHealth
 import qualified Timely.Events                   as Events
 import           Timely.Transfers                (AccountInfo (..), Transfers)
 import qualified Timely.Transfers                as Transfers
-import           Timely.Underwriting             as Underwriting (Approval (..), Result (..), Underwriting (..))
+import           Timely.Underwriting             as Underwriting (Approval (..), Result (..), Underwriting (..), newCustomer)
 
 
 
@@ -48,9 +47,7 @@ queue = Worker.topic Events.applicationsNew "app.account.onboard"
 
 
 handler
-  :: ( Service m Underwriting
-     , Service m Transfers
-     , MonadEffects '[Time, Applications, Accounts, Log, Banks] m
+  :: ( MonadEffects '[Time, Applications, Accounts, Log, Banks, Transfers, Underwriting] m
      , MonadThrow m, MonadCatch m
      )
   => Application -> m ()
@@ -68,7 +65,7 @@ handler app = do
     now <- Time.currentTime
     let cust = toNewCustomer now app idt
 
-    res <- run $ Underwriting.New cust
+    res <- Underwriting.newCustomer cust
     Log.debug ("underwriting", res)
 
     Application.saveResult aid res
@@ -93,8 +90,7 @@ handler app = do
 
 
 onboardAccount
-  :: ( Service m Transfers
-     , MonadEffects '[Time, Accounts, Log, Banks] m
+  :: ( MonadEffects '[Time, Accounts, Log, Banks, Transfers] m
      , MonadThrow m
      )
   => Guid Account -> Token Bank.Access -> Customer -> Valid Phone -> Approval -> m ()
@@ -108,7 +104,7 @@ onboardAccount aid tok cust phone (Approval amt) = do
     -- initialize the transfers account
     -- TODO this is very likely to error atm. Duplicate emails
     achTok <- Bank.getACH tok (bankAccountId checking)
-    transId <- run $ Transfers.CreateAccount $ toTransferAccountInfo achTok cust
+    transId <- Transfers.createAccount $ toTransferAccountInfo achTok cust
 
     -- TODO the transactions might not be available until the webhook triggers - maybe it makes more sense to have the health in a pending state. Or just: We're good!
     let health = AccountHealth.analyze (balance checking)

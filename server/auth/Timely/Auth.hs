@@ -61,8 +61,8 @@ AuthMethods codeGenerate codeCheck = effect
 --     run (CodeCheck p c)  = verifyCheck p c
 
 
-implementAuthIO :: (MonadIO m, MonadConfig AuthConfig m) => RuntimeImplemented Auth m a -> m a
-implementAuthIO =
+implementIO :: (MonadIO m, MonadConfig AuthConfig m) => RuntimeImplemented Auth m a -> m a
+implementIO =
   implement $
     AuthMethods
       verifyStart

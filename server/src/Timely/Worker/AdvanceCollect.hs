@@ -15,8 +15,6 @@ import           Control.Effects.Time      (Time)
 import qualified Control.Effects.Time      as Time
 import           Control.Effects.Worker    (Publish)
 import           Control.Monad.Catch       (MonadThrow (..))
-import           Control.Monad.Service     (Service)
--- import           Data.String.Conversions   (cs)
 import           Data.Model.Guid           as Guid
 import qualified Network.AMQP.Worker       as Worker hiding (publish)
 import           Network.AMQP.Worker.Monad (MonadWorker)
@@ -58,9 +56,8 @@ schedule = do
 
 
 handler
-  :: ( Service m Transfers
-     , MonadThrow m
-     , MonadEffects '[Log, Advances] m
+  :: ( MonadThrow m
+     , MonadEffects '[Log, Advances, Transfers] m
      )
   => Advance -> m ()
 handler advance = do

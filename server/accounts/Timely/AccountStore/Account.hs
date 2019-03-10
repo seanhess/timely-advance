@@ -54,8 +54,8 @@ AccountsMethods all find findByPhone create setHealth findBanks setBanks = effec
 
 
 
-implementAccountsSelda :: Selda m => RuntimeImplemented Accounts m a -> m a
-implementAccountsSelda = implement $
+implementIO :: Selda m => RuntimeImplemented Accounts m a -> m a
+implementIO = implement $
   AccountsMethods
     allAccounts
     getAccount

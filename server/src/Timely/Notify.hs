@@ -1,19 +1,22 @@
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE RankNTypes         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE UndecidableInstances  #-}
 module Timely.Notify where
 
+import           Control.Effects          (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
 import           Control.Monad.Config      (MonadConfig (..))
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
-import           Control.Monad.Service     (Service (..))
 import           Data.Model.Guid           as Guid
+import           Control.Monad.Trans            (lift)
 import           Data.Model.Types          (Phone, Valid (..))
 import           Data.String.Conversions   (cs)
 import           Data.Text                 (Text)
@@ -29,20 +32,39 @@ import qualified Twilio                    as Twilio
 import qualified Twilio.Messages           as Twilio
 
 
-data Notify x where
-  Send :: Typeable a => Account -> Message a -> Notify ()
+data Notify m = NotifyMethods
+  { _send :: forall a. Typeable a => Account -> Message a -> m ()
+  }
+
+instance Effect Notify where
+  liftThrough methods = NotifyMethods
+    (\a m -> lift (_send methods a m))
+
+  mergeContext mm = NotifyMethods
+    (\i t -> do
+        m <- mm
+        _send m i t)
+
+
+send :: (MonadEffect Notify m, Typeable a) => Account -> Message a -> m ()
+send = _send effect
+
+
+implementIO :: (MonadIO m, MonadConfig Config m) => RuntimeImplemented Notify m a -> m a
+implementIO = implement $
+  NotifyMethods
+    sendMessage
+
+
+-- instance (MonadIO m, MonadConfig Config m) => Service m Notify where
+--   run (Send a m) = send a m
 
 
 
-instance (MonadIO m, MonadConfig Config m) => Service m Notify where
-  run (Send a m) = send a m
-
-
-
-send
+sendMessage
   :: (MonadIO m, MonadConfig Config m, Typeable a)
   => Account -> Message a -> m ()
-send account message = do
+sendMessage account message = do
   Config { fromPhone, accountSid, authToken, appBaseUrl } <- config
   let (Valid from) = fromPhone
       (Valid to)   = Account.phone (account :: Account)

@@ -7,7 +7,7 @@ module Control.Effects.Time
   , Time(..)
   , currentTime
   , currentDate
-  , implementTimeIO
+  , implementIO
   ) where
 
 import           Control.Effects        (Effect (..), MonadEffect, RuntimeImplemented, effect, implement)
@@ -31,5 +31,5 @@ currentDate :: MonadEffect Time m => m Day
 currentDate = utctDay <$> _currentTime effect
 
 
-implementTimeIO :: MonadIO m => RuntimeImplemented Time m a -> m a
-implementTimeIO = implement $ TimeMethods (liftIO $ getCurrentTime)
+implementIO :: MonadIO m => RuntimeImplemented Time m a -> m a
+implementIO = implement $ TimeMethods (liftIO $ getCurrentTime)

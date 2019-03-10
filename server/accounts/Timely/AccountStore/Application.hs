@@ -45,8 +45,8 @@ ApplicationsMethods save find all check saveResult findResult markResultOnboardi
 
 
 
-implementApplicationsSelda :: Selda m => RuntimeImplemented Applications m a -> m a
-implementApplicationsSelda = implement $
+implementIO :: Selda m => RuntimeImplemented Applications m a -> m a
+implementIO = implement $
   ApplicationsMethods
     saveApp
     loadById
