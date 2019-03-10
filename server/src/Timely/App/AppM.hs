@@ -59,6 +59,7 @@ import           Timely.Auth                     (AuthConfig)
 import qualified Timely.Auth                     as Auth
 import           Timely.Bank                     (Banks)
 import qualified Timely.Bank                     as Bank
+import           Timely.Auth                     (Auth, implementAuthIO)
 import           Timely.Config                   (Env (..), loadEnv, version)
 import qualified Timely.Notify                   as Notify
 import qualified Timely.Transfers                as Transfers
@@ -123,7 +124,7 @@ instance Monad m => MonadConfig CookieSettings (AppT m) where
 instance Monad m => MonadConfig JWTSettings (AppT m) where
     config = asks jwtSettings
 
-instance Monad m => MonadConfig AuthConfig (AppT m) where
+instance (Monad m, MonadReader AppState m) => MonadConfig AuthConfig m where
     config = do
       state <- ask
       let m = manager state
@@ -180,7 +181,7 @@ instance MonadEffect (Signal ServantErr b) Handler where
 
 -- type AppM = RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Log (LogT (ReaderT AppState Handler))))
 
-type AppT m = RuntimeImplemented Log (LogT (RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Applications (RuntimeImplemented Accounts (RuntimeImplemented Banks (RuntimeImplemented Advances (ReaderT AppState m))))))))
+type AppT m = RuntimeImplemented Log (LogT (RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Applications (RuntimeImplemented Accounts (RuntimeImplemented Banks (RuntimeImplemented Advances (RuntimeImplemented Auth (ReaderT AppState m)))))))))
 
 -- type AppLogT m = RuntimeImplemented Log (LogT (AppT m))
 
@@ -202,6 +203,7 @@ runApp s x =
         & implementAccountsSelda
         & Bank.implementBankIO
         & Advances.implementAdvancesSelda
+        & implementAuthIO
   in runReaderT action s
 
 

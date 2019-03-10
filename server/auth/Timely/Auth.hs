@@ -2,16 +2,16 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE UndecidableInstances       #-}
 module Timely.Auth where
 
+import           Control.Effects        (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
 import           Control.Exception         (Exception, throw)
 import           Control.Monad.Config      (MonadConfig (..), configs)
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
-import           Control.Monad.Service     (Service (..))
 import           Data.Aeson                (FromJSON, ToJSON)
 import           Data.Model.Types          (Phone, Valid(..))
 import           Data.Text                 (Text)
@@ -21,7 +21,7 @@ import qualified Network.Authy             as Authy
 import           Network.HTTP.Client       (Manager)
 import           Network.HTTP.Types        (status401)
 import           Servant
-import           Servant.Auth.Server
+import           Servant.Auth.Server hiding (Auth)
 import           Servant.Client            (BaseUrl, ClientEnv, ClientM, GenResponse (..), ServantError (..),
                                             mkClientEnv, runClientM)
 
@@ -44,14 +44,29 @@ instance MimeUnrender PlainText AuthCode where
 
 
 
-data AuthService a where
-    CodeGenerate :: Valid Phone -> AuthService ()
-    CodeCheck    :: Valid Phone -> AuthCode -> AuthService Bool
+data Auth m = AuthMethods
+  { _codeGenerate :: Valid Phone -> m ()
+  , _codeCheck    :: Valid Phone -> AuthCode -> m Bool
+  } deriving (Generic)
+
+instance Effect Auth
+
+codeGenerate :: MonadEffect Auth m => Valid Phone -> m ()
+codeCheck    :: MonadEffect Auth m => Valid Phone -> AuthCode -> m Bool
+AuthMethods codeGenerate codeCheck = effect
 
 
-instance (MonadIO m, MonadConfig AuthConfig m) => Service m AuthService where
-    run (CodeGenerate p) = verifyStart p
-    run (CodeCheck p c)  = verifyCheck p c
+-- instance (MonadIO m, MonadConfig AuthConfig m) => Service m AuthService where
+--     run (CodeGenerate p) = verifyStart p
+--     run (CodeCheck p c)  = verifyCheck p c
+
+
+implementAuthIO :: (MonadIO m, MonadConfig AuthConfig m) => RuntimeImplemented Auth m a -> m a
+implementAuthIO =
+  implement $
+    AuthMethods
+      verifyStart
+      verifyCheck
 
 
 

@@ -9,7 +9,6 @@ import           Control.Effects             (MonadEffects)
 import           Control.Effects.Signal      (Throw, throwSignal)
 import           Control.Monad.Config
 import           Control.Monad.IO.Class      (MonadIO, liftIO)
-import           Control.Monad.Service       (Service (..))
 import           Crypto.JOSE.JWK             (JWK)
 import           Data.ByteString             (ByteString)
 import           Data.Model.Guid             as Guid
@@ -24,7 +23,7 @@ import qualified Servant.Auth.Server         as Servant
 import qualified Timely.AccountStore.Account as Account
 import Timely.AccountStore.Account (Accounts)
 import           Timely.AccountStore.Types   (Account)
-import           Timely.Auth                 (AuthCode, AuthConfig)
+import           Timely.Auth                 (AuthCode, Auth)
 import qualified Timely.Auth                 as Auth
 import           Timely.Types.Session        (Admin, Session (..))
 
@@ -33,22 +32,21 @@ type SetSession a = Headers '[Header "Set-Cookie" SetCookie, Header "Set-Cookie"
 
 
 
-generateCode :: Service m Auth.AuthService => Valid Phone -> m NoContent
+generateCode :: MonadEffects '[Auth] m => Valid Phone -> m NoContent
 generateCode p = do
-  run $ Auth.CodeGenerate p
+  Auth.codeGenerate p
   pure NoContent
 
 
 -- TODO check to see if there's an account and set the account id
 authenticate
   :: ( MonadIO m
-     , MonadEffects '[Throw ServantErr, Accounts] m
+     , MonadEffects '[Throw ServantErr, Accounts, Auth] m
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
-     , MonadConfig AuthConfig m
      ) => Valid Phone -> AuthCode -> m (SetSession Session)
 authenticate p c = do
-  res <- run $ Auth.CodeCheck p c
+  res <- Auth.codeCheck p c
   if not res
      then throwSignal err401
      else session p
