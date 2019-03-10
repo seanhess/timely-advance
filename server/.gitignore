@@ -2,5 +2,6 @@
 **/*.cabal
 *~
 *.sqlite
+*.pem
 
 client/**/*.elm
