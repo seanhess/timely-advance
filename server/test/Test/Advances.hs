@@ -11,7 +11,7 @@ import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
 import           Timely.AccountStore.Types as Account (Account (..))
 import           Timely.Advances           as Advance (Advance (..))
-import qualified Timely.Advances           as Advances
+import qualified Timely.Advances.Store     as Store
 import qualified Timely.Advances.Collect   as Collect
 import qualified Timely.Advances.Credit    as Credit
 
@@ -53,31 +53,31 @@ testMain = do
       test "should find single offer" $ do
         now <- Time.getCurrentTime
         let a = sample { offered = now, activated = Nothing, collected = Nothing }
-        Advances.findOffer [a] @?= Just a
+        Store.findOffer [a] @?= Just a
 
       test "should find recent offer" $ do
         (t1, t2) <- times
         let a1 = sample { offered = t1, activated = Nothing, collected = Nothing }
         let a2 = sample { offered = t2, activated = Nothing, collected = Nothing }
-        Advances.findOffer [a1, a2] @?= Just a2
+        Store.findOffer [a1, a2] @?= Just a2
 
       test "should expire older offer" $ do
         (t1, t2) <- times
         let a1 = sample { offered = t1, activated = Nothing, collected = Nothing }
         let a2 = sample { offered = t2, activated = Just t2, collected = Nothing }
-        Advances.findOffer [a1, a2] @?= Nothing
+        Store.findOffer [a1, a2] @?= Nothing
 
       test "should not find offer among activated" $ do
         (t1, t2) <- times
         let a1 = sample { offered = t1, activated = Just t1, collected = Nothing }
         let a2 = sample { offered = t2, activated = Just t2, collected = Nothing }
-        Advances.findOffer [a1, a2] @?= Nothing
+        Store.findOffer [a1, a2] @?= Nothing
 
       test "should find newer offer than activated" $ do
         (t1, t2) <- times
         let a1 = sample { offered = t1, activated = Just t1, collected = Nothing }
         let a2 = sample { offered = t2, activated = Nothing, collected = Nothing }
-        Advances.findOffer [a1, a2] @?= Just a2
+        Store.findOffer [a1, a2] @?= Just a2
 
 
 

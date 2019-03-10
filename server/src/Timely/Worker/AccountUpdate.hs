@@ -67,10 +67,8 @@ schedule = do
 
 
 handler
-  :: ( Service m Banks
-     , Service m Advances
-     , MonadEffects '[Time, Accounts, Log] m
-     , Service m Notify
+  :: ( Service m Notify
+     , MonadEffects '[Time, Accounts, Log, Banks, Advances] m
      , MonadThrow m
      )
   => Guid Account -> m ()
@@ -101,15 +99,14 @@ handler accountId = do
 
 
 checkAdvance
-  :: ( Service m Advances
-     , MonadEffects '[Time, Log] m
+  :: ( MonadEffects '[Time, Log, Advances] m
      , Service m Notify
      )
   => Account -> Projection -> m ()
 checkAdvance account health = do
     now    <- Time.currentTime
-    offer  <- run $ Advances.FindOffer  (Account.accountId account)
-    active <- run $ Advances.FindActive (Account.accountId account)
+    offer  <- Advances.findOffer  (Account.accountId account)
+    active <- Advances.findActive (Account.accountId account)
     when (Offer.isNeeded offer active health now) $ do
       a <- offerAdvance account Offer.amount (Time.utctDay now)
       Log.debug ("advance", a)
@@ -117,9 +114,8 @@ checkAdvance account health = do
 
 
 offerAdvance
-   :: ( Service m Advances
-      , Service m Notify
-      , MonadEffects '[Log] m
+   :: ( Service m Notify
+      , MonadEffects '[Log, Advances] m
       )
    => Account -> Money -> Day -> m Advance
 offerAdvance account amount today = do
@@ -128,7 +124,7 @@ offerAdvance account amount today = do
         frequency    = Paydate.frequency transactions
         nextPayday   = Paydate.next frequency today
         due          = nextPayday
-    advance <- run $ Advances.Create id (Account.transferId account) amount due
+    advance <- Advances.create id (Account.transferId account) amount due
     run $ Notify.Send account (Notify.Message (Advances.advanceId advance) Notify.Advance message)
     pure advance
   where
@@ -150,13 +146,11 @@ updateHealth accountId checking = do
 
 -- | updates the bank accounts and returns the checking account
 updateBankBalances
-    :: ( Service m Banks
-       , MonadEffects '[Time, Accounts] m
-       )
+    :: ( MonadEffects '[Time, Accounts, Banks] m)
     => Guid Account -> Token Access -> m (Maybe BankAccount)
 updateBankBalances accountId token = do
     now <- Time.currentTime
-    banks <- run $ Bank.LoadAccounts token
+    banks <- Bank.loadAccounts token
     let accounts = List.map (toBankAccount accountId now) banks
     Accounts.setBanks accountId accounts
     pure $ List.find isChecking accounts

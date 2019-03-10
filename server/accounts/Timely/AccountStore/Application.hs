@@ -1,11 +1,12 @@
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NamedFieldPuns        #-}
-{-# LANGUAGE OverloadedLabels      #-}
-{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE DeriveGeneric             #-}
+{-# LANGUAGE DuplicateRecordFields     #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
+{-# LANGUAGE NamedFieldPuns            #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE OverloadedLabels          #-}
+{-# LANGUAGE OverloadedStrings         #-}
 module Timely.AccountStore.Application where
 
 
@@ -34,25 +35,13 @@ instance Effect Applications
 
 
 save :: MonadEffect Applications m => Application -> m ()
-save = _save effect
-
 find :: MonadEffect Applications m => Guid Account -> m (Maybe Application)
-find = _find effect
-
 all :: MonadEffect Applications m => m [Application]
-all = _all effect
-
 check :: MonadEffect Applications m => m [Application]
-check = _check effect
-
 saveResult :: MonadEffect Applications m => Guid Account -> Result -> m ()
-saveResult = _saveResult effect
-
 findResult :: MonadEffect Applications m => Guid Account -> m (Maybe AppResult)
-findResult = _findResult effect
-
 markResultOnboarding :: MonadEffect Applications m => Guid Account -> Onboarding -> m ()
-markResultOnboarding = _markResultOnboarding effect
+ApplicationsMethods save find all check saveResult findResult markResultOnboarding = effect
 
 
 

@@ -1,11 +1,12 @@
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE NamedFieldPuns        #-}
-{-# LANGUAGE OverloadedLabels      #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE DeriveGeneric             #-}
+{-# LANGUAGE DuplicateRecordFields     #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE NamedFieldPuns            #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE OverloadedLabels          #-}
+{-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 module Timely.AccountStore.Account where
 
 
@@ -49,13 +50,7 @@ findBanks   :: MonadEffect Accounts m => Guid Account -> m [BankAccount]
 setHealth   :: MonadEffect Accounts m => Guid Account -> Projection -> m ()
 create      :: MonadEffect Accounts m => Account -> m ()
 setBanks    :: MonadEffect Accounts m => Guid Account -> [BankAccount] -> m ()
-all = _all effect
-find = _find effect
-findByPhone = _findByPhone effect
-create  = _create effect
-setHealth = _setHealth effect
-findBanks  = _findBanks effect
-setBanks = _setBanks effect
+AccountsMethods all find findByPhone create setHealth findBanks setBanks = effect
 
 
 

@@ -10,7 +10,6 @@ import           Control.Effects.Signal      (Throw, throwSignal)
 import           Control.Effects.Worker      (Publish)
 import qualified Control.Effects.Worker      as Worker
 import           Control.Monad               (when)
-import           Control.Monad.Service       (Service (..))
 import           Data.Model.Guid             as Guid
 import           Data.Model.Money            (Money)
 import           Servant                     (ServantErr (..), err400)
@@ -25,29 +24,29 @@ import           Timely.Api.Types            as Types (Amount (..))
 import qualified Timely.Events               as Events
 
 
+data AdvanceError = InsufficientCredit
+
 acceptAdvance
-  :: ( Service m Advances
-     , MonadEffects '[Throw ServantErr, Log, Publish, Accounts] m
+  :: ( MonadEffects '[Throw ServantErr, Log, Publish, Accounts, Advances] m
      ) => Guid Account -> Guid Advance -> Amount -> m Advance
 acceptAdvance a adv amt = do
   Log.context "acceptAdvance"
   Log.context (Guid.toText adv)
   Log.debug ("amount", amt)
   checkCredit a (Types.amount amt)
-  run $ Advances.Activate a adv (Types.amount amt)
-  advance <- run (Advances.Find a adv) >>= notFound
+  Advances.activate a adv (Types.amount amt)
+  advance <- Advances.find a adv >>= notFound
   Worker.publish Events.advancesActive advance
   pure advance
 
 
 -- TODO tests
 checkCredit
-  :: ( MonadEffects '[Throw ServantErr, Accounts] m
-     , Service m Advances
+  :: ( MonadEffects '[Throw ServantErr, Accounts, Advances] m
      ) => Guid Account -> Money -> m ()
 checkCredit a amount = do
   account <- Accounts.find a >>= notFound
-  advances <- run (Advances.FindActive a)
+  advances <- Advances.findActive a
 
   when (not $ Credit.isEnough amount account advances) $ do
     throwSignal $ err400 { errBody = "Insufficient Credit" }

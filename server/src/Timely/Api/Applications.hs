@@ -46,8 +46,7 @@ newApplication phone info = do
 
 
 createNewApplication
-  :: ( MonadEffects '[Log, Time, Publish, Applications] m
-     )
+  :: ( MonadEffects '[Log, Time, Publish, Applications] m)
   => Valid Phone -> AccountInfo -> Guid Account -> m Application
 createNewApplication phone info accountId = do
     Log.context (cs $ show phone)

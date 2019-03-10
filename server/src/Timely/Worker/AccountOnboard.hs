@@ -48,10 +48,9 @@ queue = Worker.topic Events.applicationsNew "app.account.onboard"
 
 
 handler
-  :: ( Service m Banks
-     , Service m Underwriting
+  :: ( Service m Underwriting
      , Service m Transfers
-     , MonadEffects '[Time, Applications, Accounts, Log] m
+     , MonadEffects '[Time, Applications, Accounts, Log, Banks] m
      , MonadThrow m, MonadCatch m
      )
   => Application -> m ()
@@ -63,8 +62,8 @@ handler app = do
     Log.info "AccountOnboard"
 
 
-    tok <- run $ Bank.Authenticate (publicBankToken app)
-    idt <- run $ Bank.LoadIdentity tok
+    tok <- Bank.authenticate (publicBankToken app)
+    idt <- Bank.loadIdentity tok
 
     now <- Time.currentTime
     let cust = toNewCustomer now app idt
@@ -94,23 +93,21 @@ handler app = do
 
 
 onboardAccount
-  :: ( Service m Banks
-     , Service m Transfers
-     , MonadEffects '[Time, Accounts, Log] m
+  :: ( Service m Transfers
+     , MonadEffects '[Time, Accounts, Log, Banks] m
      , MonadThrow m
-     , MonadCatch m
      )
   => Guid Account -> Token Bank.Access -> Customer -> Valid Phone -> Approval -> m ()
 onboardAccount aid tok cust phone (Approval amt) = do
     -- get bank accounts
     now <- Time.currentTime
-    banks <- run $ Bank.LoadAccounts tok
+    banks <- Bank.loadAccounts tok
     let bankAccounts = List.map (toBankAccount aid now) banks
     checking <- require MissingChecking $ List.find isChecking bankAccounts
 
     -- initialize the transfers account
     -- TODO this is very likely to error atm. Duplicate emails
-    achTok <- run $ Bank.GetACH tok (bankAccountId checking)
+    achTok <- Bank.getACH tok (bankAccountId checking)
     transId <- run $ Transfers.CreateAccount $ toTransferAccountInfo achTok cust
 
     -- TODO the transactions might not be available until the webhook triggers - maybe it makes more sense to have the health in a pending state. Or just: We're good!

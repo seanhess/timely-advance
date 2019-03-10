@@ -13,8 +13,9 @@ import           Control.Effects           (MonadEffects)
 import           Control.Effects.Log       as Log
 import           Control.Effects.Time      (Time)
 import qualified Control.Effects.Time      as Time
+import           Control.Effects.Worker    (Publish)
 import           Control.Monad.Catch       (MonadThrow (..))
-import           Control.Monad.Service     (Service (run))
+import           Control.Monad.Service     (Service)
 -- import           Data.String.Conversions   (cs)
 import           Data.Model.Guid           as Guid
 import qualified Network.AMQP.Worker       as Worker hiding (publish)
@@ -37,8 +38,7 @@ queue = Worker.topic Events.advancesDue "app.advances.collect"
 
 -- | Scans for due advances and queues them. Run this every hour, or every day at UTC midnight (or just after)
 schedule
-  :: ( Service m Advances
-     , MonadEffects '[Time, Log] m
+  :: ( MonadEffects '[Time, Log, Advances, Publish] m
      , MonadThrow m
      , MonadWorker m
      )
@@ -47,7 +47,7 @@ schedule = do
     Log.context "Schedule AdvanceCollect"
     now <- Time.currentTime
     let dueDate = Collect.currentlyDue now
-    advances <- run $ Advances.FindDue dueDate
+    advances <- Advances.findDue dueDate
     mapM_ scheduleAdvanceCollect advances
   where
     scheduleAdvanceCollect a = do
@@ -58,10 +58,9 @@ schedule = do
 
 
 handler
-  :: ( Service m Advances
-     , Service m Transfers
+  :: ( Service m Transfers
      , MonadThrow m
-     , MonadEffects '[Log] m
+     , MonadEffects '[Log, Advances] m
      )
   => Advance -> m ()
 handler advance = do
@@ -70,5 +69,5 @@ handler advance = do
   t <- Transfers.debit advance
   Log.debug ("Transfer Debit", t)
 
-  run $ Advances.MarkCollected (advanceId advance)
+  Advances.markCollected (advanceId advance)
   Log.info "collected"

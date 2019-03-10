@@ -9,7 +9,6 @@
 {-# LANGUAGE TypeOperators         #-}
 module Timely.Api where
 
-import           Control.Monad.Service                (Service (..))
 import           Data.Model.Guid                      as Guid
 import           Data.Model.Id                        (Token)
 import           Data.Model.Types                     (Phone, Valid)
@@ -120,8 +119,8 @@ accountApi i = genericServerT AccountApi
 
 advanceApi :: Guid Account -> ToServant AdvanceApi (AsServerT AppM)
 advanceApi i = genericServerT AdvanceApi
-    { _all    =             run (Advances.FindAll i)
-    , _get    = \adv     -> run (Advances.Find i adv)                  >>= notFound
+    { _all    =             Advances.findAll i
+    , _get    = \adv     -> Advances.find i adv  >>= notFound
     , _accept = acceptAdvance i
     }
 

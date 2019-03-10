@@ -1,6 +1,7 @@
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE RankNTypes       #-}
+{-# LANGUAGE DataKinds                 #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE RankNTypes                #-}
 module Control.Effects.Worker where
 
 import           Control.Effects                (Effect (..), MonadEffect, RuntimeImplemented, effect, implement)
@@ -16,7 +17,8 @@ data Publish m = PublishMethods
     }
 
 publish :: (MonadEffect Publish m, ToJSON a) => Key Routing a -> a -> m ()
-publish = _publish effect
+PublishMethods publish = effect
+
 
 instance Effect Publish where
   liftThrough (PublishMethods pm) =
@@ -31,5 +33,4 @@ instance Effect Publish where
 
 implementAMQP :: MonadIO m => Connection -> RuntimeImplemented Publish m a -> m a
 implementAMQP conn = implement $ PublishMethods (Message.publish conn)
-
 

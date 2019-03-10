@@ -51,10 +51,13 @@ import           Servant.Auth.Server             (CookieSettings (..), JWTSettin
 import qualified Text.Show.Pretty                as Pretty
 import           Timely.AccountStore.Account     (Accounts, implementAccountsSelda)
 import           Timely.AccountStore.Application (Applications, implementApplicationsSelda)
+import           Timely.Advances                 (Advances)
+import qualified Timely.Advances                 as Advances
 import qualified Timely.Api.Sessions             as Sessions
 import           Timely.App.Retry                (retry)
 import           Timely.Auth                     (AuthConfig)
 import qualified Timely.Auth                     as Auth
+import           Timely.Bank                     (Banks)
 import qualified Timely.Bank                     as Bank
 import           Timely.Config                   (Env (..), loadEnv, version)
 import qualified Timely.Notify                   as Notify
@@ -111,7 +114,7 @@ instance (MonadBaseControl IO m, MonadMask m, MonadIO m, MonadReader AppState m)
       pool <- asks dbConn
       Pool.withResource pool action
 
-instance (MonadIO m, MonadCatch m) => MonadWorker (AppT m) where
+instance (MonadIO m, MonadCatch m, MonadReader AppState m) => MonadWorker (AppT m) where
     amqpConnection = asks amqpConn
 
 instance Monad m => MonadConfig CookieSettings (AppT m) where
@@ -131,7 +134,7 @@ instance Monad m => MonadConfig AuthConfig (AppT m) where
 instance Monad m => MonadConfig (Token Admin) (AppT m) where
     config = asks (adminPassphrase . env)
 
-instance Monad m => MonadConfig Bank.Config (AppT m) where
+instance (Monad m, MonadReader AppState m) => MonadConfig Bank.Config m where
   config = do
     m <- asks manager
     c <- asks (plaidClientId . env)
@@ -177,7 +180,7 @@ instance MonadEffect (Signal ServantErr b) Handler where
 
 -- type AppM = RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Log (LogT (ReaderT AppState Handler))))
 
-type AppT m = RuntimeImplemented Log (LogT (RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Applications (RuntimeImplemented Accounts (ReaderT AppState m))))))
+type AppT m = RuntimeImplemented Log (LogT (RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Applications (RuntimeImplemented Accounts (RuntimeImplemented Banks (RuntimeImplemented Advances (ReaderT AppState m))))))))
 
 -- type AppLogT m = RuntimeImplemented Log (LogT (AppT m))
 
@@ -197,6 +200,8 @@ runApp s x =
         & implementAMQP (amqpConn s)
         & implementApplicationsSelda
         & implementAccountsSelda
+        & Bank.implementBankIO
+        & Advances.implementAdvancesSelda
   in runReaderT action s
 
 
@@ -212,4 +217,3 @@ runAppIO x = do
 
 nt :: AppState -> AppM a -> Handler a
 nt s x = runApp s x
-
