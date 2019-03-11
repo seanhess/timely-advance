@@ -21,6 +21,27 @@ metadata:
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
 spec:
   rules:
+    - host: timelyadvance.com
+      http:
+        paths:
+          - path: /*
+            backend:
+              serviceName: homepage
+              servicePort: 80
+    - host: www.timelyadvance.com
+      http:
+        paths:
+          - path: /*
+            backend:
+              serviceName: homepage
+              servicePort: 80
+    - host: echo1.timelyadvance.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: echo1
+              servicePort: 80
     - http:
         paths:
          - path: /*
@@ -47,17 +68,3 @@ spec:
            backend:
              serviceName: web-static
              servicePort: 80
-    # - host: echo1.timelyadvance.com
-    #   http:
-    #     paths:
-    #       - path: /
-    #         backend:
-    #           serviceName: echo1
-    #           servicePort: 80
-    # - host: asdf.timelyadvance.com
-    #   http:
-    #     paths:
-    #       - path: /
-    #         backend:
-    #           serviceName: echo1
-    #           servicePort: 80
