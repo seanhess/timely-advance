@@ -58,7 +58,6 @@ handler app = do
 
     Log.info "AccountOnboard"
 
-
     tok <- Bank.authenticate (publicBankToken app)
     idt <- Bank.loadIdentity tok
 

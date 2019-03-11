@@ -24,7 +24,6 @@ import           Control.Effects.Time            (Time)
 import qualified Control.Effects.Time            as Time
 import           Control.Effects.Worker          (Publish (..))
 import qualified Control.Effects.Worker          as Worker
-import           Control.Monad.Catch             (MonadCatch)
 import           Control.Monad.Config            (MonadConfig (..))
 import           Control.Monad.Except            (MonadError (..))
 import           Control.Monad.IO.Class          (MonadIO, liftIO)
@@ -44,7 +43,6 @@ import           Database.Selda                  (MonadMask)
 import           Database.Selda.Backend          (SeldaConnection)
 import qualified Database.Selda.PostgreSQL       as Selda
 import qualified Network.AMQP.Worker             as Worker
-import           Network.AMQP.Worker.Monad       (MonadWorker (..))
 import qualified Network.Dwolla                  as Dwolla
 import qualified Network.HTTP.Client             as HTTP
 import qualified Network.HTTP.Client.TLS         as HTTP
@@ -124,9 +122,6 @@ instance (MonadBaseControl IO m, MonadMask m, MonadIO m, MonadReader AppState m)
       pool <- asks dbConn
       Pool.withResource pool action
 
-instance (MonadIO m, MonadCatch m, MonadReader AppState m) => MonadWorker (AppT m) where
-    amqpConnection = asks amqpConn
-
 instance Monad m => MonadConfig CookieSettings (AppT m) where
     config = asks cookieSettings
 
@@ -185,14 +180,7 @@ instance MonadEffect (Signal ServantErr b) Handler where
 
 
 
-
--- Replace AppM in run with _ to get the compiler to suggest the type for you
-
--- type AppM = RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Log (LogT (ReaderT AppState Handler))))
-
 type AppT m = RuntimeImplemented Log (LogT (RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Applications (RuntimeImplemented Accounts (RuntimeImplemented Banks (RuntimeImplemented Advances (RuntimeImplemented Auth (RuntimeImplemented Transfers (RuntimeImplemented Notify (RuntimeImplemented Underwriting (ReaderT AppState m))))))))))))
-
--- type AppLogT m = RuntimeImplemented Log (LogT (AppT m))
 
 type AppM = AppT Handler
 
