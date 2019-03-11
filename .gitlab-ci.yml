@@ -50,7 +50,7 @@ build-server:
 
     - stack docker pull
     - stack setup --docker
-    - stack image container --test --docker --ghc-options -Werror # build and run tests
+    - stack image container --test --docker # --ghc-options -Werror # build and run tests
     - docker tag timely:latest $IMAGE_SERVER:$RELEASE
 
 
