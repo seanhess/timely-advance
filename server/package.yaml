@@ -73,6 +73,7 @@ dependencies:
 - warp-tls
 
 
+# I'm not sure this is a good idea
 # default-extensions:
 # - DataKinds
 # - DeriveGeneric
@@ -92,6 +93,7 @@ dependencies:
 
 ghc-options:
 - -W
+- -optP-Wno-nonportable-include-path # https://github.com/commercialhaskell/stack/issues/3918
 
 library:
   source-dirs:

@@ -5,7 +5,7 @@
 # NOTE: don't comment out the scripts, because it removes the cache
 
 variables:
-  VERSION: "0.3"
+  VERSION: "0.4"
   STACK_ROOT:   "${CI_PROJECT_DIR}/.stack"
   RELEASE:      "$VERSION.$CI_COMMIT_SHORT_SHA"
   IMAGE_SERVER: "$CI_REGISTRY/timely-advance/timely"
@@ -44,9 +44,14 @@ build-server:
     - stack --version
   script:
     - cd server
+
+    - echo "module Version where version = \"$RELEASE\"" > src/Version.hs
+    - cat src/Version.hs
+
     - stack docker pull
     - stack setup --docker
-    - stack build --docker --test
+    - stack image container --test --docker --ghc-options -Werror # build and run tests
+    - docker tag timely:latest $IMAGE_SERVER:$RELEASE
 
 
 deploy:
@@ -55,13 +60,6 @@ deploy:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
   script:
     - cd server
-
-    - echo "module Version where version = \"$RELEASE\"" > src/Version.hs
-    - cat src/Version.hs
-
-    - stack image container --docker
-    - docker tag timely:latest $IMAGE_SERVER:$RELEASE
-
     - docker push $IMAGE_SERVER:$RELEASE
     - docker push $IMAGE_WEB:$RELEASE
     - echo "Published - $RELEASE"
