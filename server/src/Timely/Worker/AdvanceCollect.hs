@@ -14,11 +14,10 @@ import           Control.Effects.Log       as Log
 import           Control.Effects.Time      (Time)
 import qualified Control.Effects.Time      as Time
 import           Control.Effects.Worker    (Publish)
+import qualified Control.Effects.Worker    as Worker
 import           Control.Monad.Catch       (MonadThrow (..))
 import           Data.Model.Guid           as Guid
 import qualified Network.AMQP.Worker       as Worker hiding (publish)
-import           Network.AMQP.Worker.Monad (MonadWorker)
-import qualified Network.AMQP.Worker.Monad as Worker
 
 import           Timely.Advances           (Advance (..), Advances)
 import qualified Timely.Advances           as Advances
@@ -38,7 +37,6 @@ queue = Worker.topic Events.advancesDue "app.advances.collect"
 schedule
   :: ( MonadEffects '[Time, Log, Advances, Publish] m
      , MonadThrow m
-     , MonadWorker m
      )
   => m ()
 schedule = do

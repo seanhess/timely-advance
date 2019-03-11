@@ -110,7 +110,8 @@ library:
 executables:
   timely:
     main:                Main.hs
-    source-dirs:         .
+    source-dirs:
+    - .
     ghc-options:
     - -threaded
     - -rtsopts
@@ -118,16 +119,31 @@ executables:
     dependencies:
     - timely
 
-tests:
-  test:
+  timely-test:
     main:                Spec.hs
-    source-dirs:         test
+    source-dirs:
+    - test
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - timely
     - tasty
     - tasty-hunit
     - random-strings
+
+tests:
+  test:
+    main:                Spec.hs
+    source-dirs:
+    - test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
     - timely
+    - tasty
+    - tasty-hunit
+    - random-strings

@@ -50,8 +50,15 @@ build-server:
 
     - stack docker pull
     - stack setup --docker
-    - stack image container --test --docker # --ghc-options -Werror # build and run tests
+    - stack image container --docker # --ghc-options -Werror # build and run tests
     - docker tag timely:latest $IMAGE_SERVER:$RELEASE
+
+
+test:
+  stage: test
+  script:
+    - cd server
+    - docker run -it $IMAGE_SERVER:$RELEASE /usr/local/bin/timely-test
 
 
 deploy:

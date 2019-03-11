@@ -26,7 +26,7 @@ main = do
     ["work-account-update"]      -> startAccountUpdate
     ["work-advance-send"]        -> startAdvanceSend
     ["work-advance-collect"]     -> startAdvanceCollect
-    -- ["schedule-advance-collect"] -> startAdvanceCollectSchedule
+    ["schedule-advance-collect"] -> startAdvanceCollectSchedule
     ["schedule-account-update"]  -> startAccountUpdateSchedule
     ["initialize"]               -> Api.initialize
     _                            -> putStrLn "please enter a command"
@@ -35,7 +35,6 @@ main = do
 printVersion :: IO ()
 printVersion =
   putStrLn $ Version.version
-
 
 
 
@@ -63,14 +62,11 @@ startAdvanceCollect :: IO ()
 startAdvanceCollect = App.start AdvanceCollect.queue AdvanceCollect.handler
 
 
--- startAdvanceCollectSchedule :: IO ()
--- startAdvanceCollectSchedule = App.runAppIO AdvanceCollect.schedule
+startAdvanceCollectSchedule :: IO ()
+startAdvanceCollectSchedule = App.runAppIO AdvanceCollect.schedule
 
 
 
-
--- startTest :: IO ()
--- startTest = Worker.start AdvanceSend.testQueue AdvanceSend.test
 
 
 startAll :: IO ()
@@ -84,5 +80,5 @@ startAll = do
     , startAdvanceSend
     , startAdvanceCollect
     -- , startAccountUpdateSchedule
-    -- , startAdvanceCollectSchedule
+    , startAdvanceCollectSchedule
     ]
