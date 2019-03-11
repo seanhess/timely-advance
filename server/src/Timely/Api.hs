@@ -9,7 +9,6 @@
 {-# LANGUAGE TypeOperators         #-}
 module Timely.Api where
 
-
 import           Data.Model.Guid                      as Guid
 import           Data.Model.Id                        (Token)
 import           Data.Model.Types                     (Phone, Valid)
