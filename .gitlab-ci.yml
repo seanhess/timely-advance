@@ -59,7 +59,7 @@ test:
   stage: test
   script:
     - cd server
-    - docker run -it $IMAGE_SERVER:$RELEASE /usr/local/bin/timely-test
+    - docker run $IMAGE_SERVER:$RELEASE /usr/local/bin/timely-test
 
 
 deploy:
