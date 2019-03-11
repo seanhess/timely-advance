@@ -15,6 +15,7 @@ variables:
 # these stages should match the pipeline
 stages:
   - build # we are running tests in the build stage for now.
+  - test
   - deploy
 
 
