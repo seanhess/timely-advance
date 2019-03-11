@@ -51,7 +51,7 @@ type Api = ToServant BaseApi AsApi
 data BaseApi route = BaseApi
     { _versioned :: route :- "v1" :> ToServantApi VersionedApi
     , _debug     :: route :- "debug" :> Get '[PlainText] Text
-    , _health    :: route :- Get '[PlainText] Text
+    , _health    :: route :- "health" :> Get '[PlainText] Text
     -- , _files     :: route :- Raw
     } deriving (Generic)
 
