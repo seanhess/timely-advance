@@ -11,12 +11,13 @@ import           Timely.Evaluate.Types (Projection (..))
 
 -- If they have any active advances, the trigger amount changes to 250.00
 -- If they have aby recent advances, don't advance
+-- If they have any unclaimed offers at all, don't advance
 
 isNeeded :: Maybe Advance -> [Advance] -> Projection -> UTCTime -> Bool
-isNeeded offer active health today =
-  if isAnyRecent today $ advanceTimes offer active
-     then False
-     else available health < triggerAmount active
+isNeeded offer active health today
+  | isAnyRecent today $ advanceTimes offer active = False
+  | Maybe.isJust offer = False
+  | otherwise = available health < triggerAmount active
 
 
 triggerAmount :: [Advance] -> Money

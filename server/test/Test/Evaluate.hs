@@ -91,11 +91,18 @@ testOffer = do
 
 
     group "isNeeded" $ do
+
       test "should not advance with recent offer" $ do
-        let advance = Advance {advanceId = "34209d46-efd2-4675-aa8e-8564d9ab65b6", accountId = "758547fd-74a8-48c3-8fd6-390b515027a5", amount = Money 20000, offer = Money 20000, due = parseTime "2019-02-04", offered = parseTime "2019-02-01T20:02:46", activated = Nothing, collected = Nothing, transferId = Id ""}
-            health = Projection {expenses = Money 20000, available = Money 11000}
-            now = parseTime "2019-02-01T20:04:10"
-        Offer.isNeeded (Just advance) [] health now @?= False
+        let health = Projection {expenses = Money 20000, available = Money 11000}
+            offer = parseTime "2019-02-01T20:02:46"
+            now   = parseTime "2019-02-01T20:04:10"
+        Offer.isNeeded (Just $ advance offer) [] health now @?= False
+
+      test "should not advance with old offer" $ do
+        let health = Projection {expenses = Money 20000, available = Money 11000}
+            now   = parseTime "2019-02-04T20:04:10"
+            offer = parseTime "2019-02-01T20:04:10"
+        Offer.isNeeded (Just $ advance offer) [] health now @?= False
 
       test "should advance with no offers" $ do
         let health = Projection {expenses = Money 20000, available = Money 11000}
@@ -115,3 +122,5 @@ testOffer = do
     agoIntOver  = Time.addUTCTime (-(Time.nominalDay + 60))
     agoOld      = Time.addUTCTime (-(Time.nominalDay * 2))
     agoRecent   = ago1m
+
+    advance time = Advance {advanceId = "34209d46-efd2-4675-aa8e-8564d9ab65b6", accountId = "758547fd-74a8-48c3-8fd6-390b515027a5", amount = Money 20000, offer = Money 20000, due = parseTime "2019-02-04", offered = time, activated = Nothing, collected = Nothing, transferId = Id ""}
