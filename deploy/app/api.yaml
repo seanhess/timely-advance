@@ -38,6 +38,8 @@ spec:
           value: postgresql://postgres@postgres:5432
         - name: APP_ENDPOINT
           value: https://test.timelyadvance.com
+        - name: PLAID_WEBHOOK
+          value: https://test.timelyadvance.com/v1/webhooks/plaid
         image: registry.gitlab.com/timely-advance/timely:$VERSION
         name: api
         ports:
