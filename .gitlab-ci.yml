@@ -46,7 +46,8 @@ build-server:
     - stack --version
     - echo $STACK_ROOT
     - pwd
-    - ls .stack
+    - ls .
+    # - ls .stack
   script:
     - cd server
 
