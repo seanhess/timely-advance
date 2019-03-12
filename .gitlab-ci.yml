@@ -25,6 +25,10 @@ build-server:
     - docker --version
     - stack --version
     - echo $STACK_ROOT
+  cache:
+    paths:
+      - server/.stack-work
+      - server/datamodel/.stack-work
   script:
     - cd server
 
@@ -77,10 +81,3 @@ deploy:
     - docker push $IMAGE_SERVER:$RELEASE
     - docker push $IMAGE_WEB:$RELEASE
     - echo "Published - $RELEASE"
-
-cache:
-  paths:
-    # - .stack
-    - server/.stack-work
-    - server/datamodel/.stack-work
-
