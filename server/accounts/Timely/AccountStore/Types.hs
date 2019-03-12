@@ -15,7 +15,7 @@ import           Data.Text                 as Text
 import           Data.Typeable             (Typeable)
 import           Database.Selda            as Selda
 import           GHC.Generics              (Generic)
-import           Timely.Bank               (Access, Public)
+import           Timely.Bank               (Access, Public, Item)
 import qualified Timely.Bank               as Bank
 import           Timely.Transfers.Account  (TransferAccount)
 import           Timely.Types.Private
@@ -30,6 +30,7 @@ data Account = Account
     , customer   :: Customer
     , transferId :: Id TransferAccount
     , bankToken  :: Private (Token Access)
+    , bankItemId :: Id Item
     , credit     :: Money
     , health     :: Health
     , created    :: UTCTime
@@ -42,6 +43,7 @@ data AccountRow = AccountRow
     , phone      :: Valid Phone
     , transferId :: Id TransferAccount
     , bankToken  :: Private (Token Access)
+    , bankItemId :: Id Item
     , credit     :: Money
     , created    :: UTCTime
     } deriving (Generic, Eq, Show)

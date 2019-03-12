@@ -27,6 +27,7 @@ module Timely.Bank
     , Banks(..)
     , Config(..)
     , Dwolla
+    , Item
     , authenticate
     , loadIdentity -- remove me when you add it back in
     , loadAccounts
@@ -51,7 +52,7 @@ import           Timely.Bank.Types      (Config (..), Identity (..), Names (..))
 -- Bank Service
 
 data Banks m = BanksMethods
-    { _authenticate     :: Token Public -> m (Token Access)
+    { _authenticate     :: Token Public -> m (Token Access, Id Item)
     , _loadIdentity     :: Token Access -> m Identity
     , _loadAccounts     :: Token Access -> m [Account]
     , _loadTransactions :: Token Access -> Id Account -> m [Transaction]
@@ -60,7 +61,7 @@ data Banks m = BanksMethods
 
 instance Effect Banks
 
-authenticate     :: MonadEffect Banks m => Token Public -> m (Token Access)
+authenticate     :: MonadEffect Banks m => Token Public -> m (Token Access, Id Item)
 loadIdentity     :: MonadEffect Banks m => Token Access -> m Identity
 loadAccounts     :: MonadEffect Banks m => Token Access -> m [Account]
 loadTransactions :: MonadEffect Banks m => Token Access -> Id Account -> m [Transaction]

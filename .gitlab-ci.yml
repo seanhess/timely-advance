@@ -5,7 +5,7 @@
 # NOTE: don't comment out the scripts, because it removes the cache
 
 variables:
-  VERSION: "0.4"
+  VERSION: "0.5"
   STACK_ROOT:   "${CI_PROJECT_DIR}/.stack"
   RELEASE:      "$VERSION.$CI_COMMIT_SHORT_SHA"
   IMAGE_SERVER: "$CI_REGISTRY/timely-advance/timely"

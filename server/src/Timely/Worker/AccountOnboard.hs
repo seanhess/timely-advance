@@ -17,7 +17,7 @@ import           Control.Exception               (Exception)
 import           Control.Monad.Catch             (MonadCatch, MonadThrow (..), SomeException, try)
 import qualified Data.List                       as List
 import           Data.Model.Guid                 as Guid
-import           Data.Model.Id                   (Token)
+import           Data.Model.Id                   (Token, Id)
 import           Data.Model.Types                (Address (..), Phone, Valid)
 import           Data.Text                       as Text
 import qualified Database.Selda                  as Selda
@@ -58,8 +58,8 @@ handler app = do
 
     Log.info "AccountOnboard"
 
-    tok <- Bank.authenticate (publicBankToken app)
-    idt <- Bank.loadIdentity tok
+    (bankToken, bankItemId) <- Bank.authenticate (publicBankToken app)
+    idt <- Bank.loadIdentity bankToken
 
     now <- Time.currentTime
     let cust = toNewCustomer now app idt
@@ -76,7 +76,7 @@ handler app = do
         pure ()
 
       Underwriting.Approved approval -> do
-        res <- try $ onboardAccount aid tok cust phn approval
+        res <- try $ onboardAccount aid bankToken bankItemId cust phn approval
 
         case res of
           Left (err :: SomeException) -> do
@@ -92,22 +92,22 @@ onboardAccount
   :: ( MonadEffects '[Time, Accounts, Log, Banks, Transfers] m
      , MonadThrow m
      )
-  => Guid Account -> Token Bank.Access -> Customer -> Valid Phone -> Approval -> m ()
-onboardAccount aid tok cust phone (Approval amt) = do
+  => Guid Account -> Token Bank.Access -> Id Bank.Item -> Customer -> Valid Phone -> Approval -> m ()
+onboardAccount aid bankToken bankItemId cust phone (Approval amt) = do
     -- get bank accounts
     now <- Time.currentTime
-    banks <- Bank.loadAccounts tok
+    banks <- Bank.loadAccounts bankToken
     let bankAccounts = List.map (toBankAccount aid now) banks
     checking <- require MissingChecking $ List.find isChecking bankAccounts
 
     -- initialize the transfers account
     -- TODO this is very likely to error atm. Duplicate emails
-    achTok <- Bank.getACH tok (bankAccountId checking)
+    achTok <- Bank.getACH bankToken (bankAccountId checking)
     transId <- Transfers.createAccount $ toTransferAccountInfo achTok cust
 
     -- TODO the transactions might not be available until the webhook triggers - maybe it makes more sense to have the health in a pending state. Or just: We're good!
     let health = AccountHealth.analyze (balance checking)
-    Account.create $ Account.account aid now phone cust tok amt health transId
+    Account.create $ Account.account aid now phone cust bankToken bankItemId amt health transId
 
     -- save the bank accounts
     -- TODO make it impossible to forget this

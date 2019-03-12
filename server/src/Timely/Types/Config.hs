@@ -25,6 +25,7 @@ data PlaidConfig = PlaidConfig
     { publicKey :: Id Public
     , products  :: PlaidProducts
     , env       :: Text
+    , webhook   :: Text
     } deriving (Generic, Show, Eq)
 
 instance ToJSON PlaidConfig

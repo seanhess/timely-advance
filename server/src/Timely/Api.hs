@@ -32,6 +32,7 @@ import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
 import           Timely.Api.Advances                  as Advances
 import qualified Timely.Api.Applications              as Applications
+import qualified Timely.Api.Webhooks                  as Webhooks
 import           Timely.Api.Combinators               (notFound)
 import qualified Timely.Api.Health                    as Health
 import           Timely.Api.Sessions                  (SetSession)
@@ -67,6 +68,7 @@ data VersionedApi route = VersionedApi
     , _sessions :: route :- "sessions"     :> ToServantApi SessionsApi
     , _config   :: route :- "config"       :> Get '[JSON] ClientConfig
     , _config'  :: route :- "config.js"    :> Get '[JS "CONFIG"] ClientConfig
+    , _hooks    :: route :- "webhooks"     :> ToServantApi WebhooksApi
     } deriving (Generic)
 
 
@@ -106,6 +108,11 @@ data SessionsApi route = SessionsApi
     } deriving Generic
 
 
+data WebhooksApi route = WebhooksApi
+    { _plaid :: route :- "plaid" :> ReqBody '[JSON] Webhooks.Plaid :> Post '[JSON] NoContent
+    } deriving (Generic)
+
+
 -- Your own account!
 accountApi :: Guid Account -> ToServant AccountApi (AsServerT AppM)
 accountApi i = genericServerT AccountApi
@@ -143,6 +150,12 @@ sessionsApi = genericServerT SessionsApi
     }
 
 
+webhooksApi :: ToServant WebhooksApi (AsServerT AppM)
+webhooksApi = genericServerT WebhooksApi
+    { _plaid = Webhooks.plaid
+    }
+
+
 baseApi :: FilePath -> ToServant BaseApi (AsServerT AppM)
 baseApi _ = genericServerT BaseApi
     { _versioned = versionedApi
@@ -158,6 +171,7 @@ versionedApi = genericServerT VersionedApi
     , _sessions = sessionsApi
     , _config   = clientConfig
     , _config'  = clientConfig
+    , _hooks    = webhooksApi
     , _info     = pure [Link "accounts" [], Link "applications" [], Link "config" []]
     }
 

@@ -15,7 +15,7 @@ var handler = Plaid.create({
   env: CONFIG.plaid.env, // 'development',
   product: CONFIG.plaid.products, // [ 'transactions', 'auth' ],
   key: CONFIG.plaid.publicKey,
-  // webhook: 'https://your-domain.tld/plaid-webhook',
+  webhook: CONFIG.plaid.webhook,
   onLoad: function() {
     // console.log("LOADED")
   },

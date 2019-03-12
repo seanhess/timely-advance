@@ -22,17 +22,17 @@ import qualified Network.Plaid.ExchangeToken as ExchangeToken
 import           Network.Plaid.Identity      (AddressInfo (..))
 import qualified Network.Plaid.Identity      as Identity
 import qualified Network.Plaid.Transactions  as Transactions
-import           Network.Plaid.Types         (Access, Account, Public, Transaction)
+import           Network.Plaid.Types         (Access, Account, Public, Transaction, Item)
 import           Servant.Client              (ClientEnv, ClientM, mkClientEnv, runClientM)
 import           Timely.Bank.Types           (BankError (..), Config (..), Identity (..), Names (..))
 
 
 
-authenticate :: (MonadIO m, MonadConfig Config m) => Token Public -> m (Token Access)
+authenticate :: (MonadIO m, MonadConfig Config m) => Token Public -> m (Token Access, Id Item)
 authenticate pub = do
     creds <- configs credentials
     res <- runPlaid $ Plaid.reqExchangeToken creds pub
-    pure $ ExchangeToken.access_token res
+    pure (ExchangeToken.access_token res, ExchangeToken.item_id res)
 
 
 loadIdentity :: (MonadIO m, MonadConfig Config m, MonadThrow m) => Token Access -> m Identity

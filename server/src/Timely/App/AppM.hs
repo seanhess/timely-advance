@@ -113,7 +113,7 @@ loadState = do
 clientConfig :: AppM ClientConfig
 clientConfig = do
     e <- asks env
-    pure $ ClientConfig version $ PlaidConfig (plaidPublicKey e) (plaidProducts e) (plaidEnv e)
+    pure $ ClientConfig version $ PlaidConfig (plaidPublicKey e) (plaidProducts e) (plaidEnv e) (plaidWebhook e)
 
 
 

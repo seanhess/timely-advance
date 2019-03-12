@@ -21,9 +21,8 @@ import           Data.Model.Valid          (Valid)
 import qualified Data.Time.Clock           as Time
 import           Database.Selda            hiding (deleteFrom, insert, query, tryCreateTable)
 import           GHC.Generics              (Generic)
-
 import           Timely.AccountStore.Types
-import           Timely.Bank               (Access, Token)
+import           Timely.Bank               (Access, Item, Token)
 import           Timely.Evaluate.Types     (Projection (..))
 import           Timely.Transfers.Account  (TransferAccount)
 import           Timely.Types.Private
@@ -32,25 +31,27 @@ import           Timely.Types.Private
 
 
 data Accounts m = AccountsMethods
-    { _all         :: m [AccountRow]
-    , _find        :: Guid Account -> m (Maybe Account)
-    , _findByPhone :: Valid Phone -> m (Maybe (Guid Account))
-    , _create      :: Account -> m ()
-    , _setHealth   :: Guid Account -> Projection -> m ()
-    , _findBanks   :: Guid Account -> m [BankAccount]
-    , _setBanks    :: Guid Account -> [BankAccount] -> m ()
+    { _all          :: m [AccountRow]
+    , _find         :: Guid Account -> m (Maybe Account)
+    , _findByPhone  :: Valid Phone -> m (Maybe (Guid Account))
+    , _findByBankId :: Id Item     -> m (Maybe (Guid Account))
+    , _create       :: Account -> m ()
+    , _setHealth    :: Guid Account -> Projection -> m ()
+    , _findBanks    :: Guid Account -> m [BankAccount]
+    , _setBanks     :: Guid Account -> [BankAccount] -> m ()
     } deriving (Generic)
 
 instance Effect Accounts
 
-all         :: MonadEffect Accounts m => m [AccountRow]
-find        :: MonadEffect Accounts m => Guid Account -> m (Maybe Account)
-findByPhone :: MonadEffect Accounts m => Valid Phone -> m (Maybe (Guid Account))
-findBanks   :: MonadEffect Accounts m => Guid Account -> m [BankAccount]
-setHealth   :: MonadEffect Accounts m => Guid Account -> Projection -> m ()
-create      :: MonadEffect Accounts m => Account -> m ()
-setBanks    :: MonadEffect Accounts m => Guid Account -> [BankAccount] -> m ()
-AccountsMethods all find findByPhone create setHealth findBanks setBanks = effect
+all          :: MonadEffect Accounts m => m [AccountRow]
+find         :: MonadEffect Accounts m => Guid Account -> m (Maybe Account)
+findByPhone  :: MonadEffect Accounts m => Valid Phone -> m (Maybe (Guid Account))
+findByBankId :: MonadEffect Accounts m => Id Item     -> m (Maybe (Guid Account))
+findBanks    :: MonadEffect Accounts m => Guid Account -> m [BankAccount]
+setHealth    :: MonadEffect Accounts m => Guid Account -> Projection -> m ()
+create       :: MonadEffect Accounts m => Account -> m ()
+setBanks     :: MonadEffect Accounts m => Guid Account -> [BankAccount] -> m ()
+AccountsMethods all find findByPhone findByBankId create setHealth findBanks setBanks = effect
 
 
 
@@ -60,6 +61,7 @@ implementIO = implement $
     allAccounts
     getAccount
     getAccountIdByPhone
+    getAccountIdByBankId
     createAccount
     setAccountHealth
     getBankAccounts
@@ -105,13 +107,14 @@ getAccount i = do
       pure (a :*: c :*: h)
     pure $ account <$> listToMaybe as
   where
-    account (AccountRow {accountId, phone, transferId, bankToken, credit, created} :*: customer :*: health) =
+    account (AccountRow {accountId, phone, transferId, bankToken, bankItemId, credit, created} :*: customer :*: health) =
       Account
         { accountId
         , phone
         , customer
         , transferId
         , bankToken
+        , bankItemId
         , credit
         , health
         , created
@@ -123,6 +126,15 @@ getAccountIdByPhone p = do
     as <- query $ do
       a <- select accounts
       restrict (a ! #phone .== literal p)
+      pure $ a ! #accountId
+    pure $ listToMaybe as
+
+
+getAccountIdByBankId :: Selda m => Id Item -> m (Maybe (Guid Account))
+getAccountIdByBankId i = do
+    as <- query $ do
+      a <- select accounts
+      restrict (a ! #bankItemId .== literal i)
       pure $ a ! #accountId
     pure $ listToMaybe as
 
@@ -155,14 +167,15 @@ createAccount acc = do
     pure ()
 
 
-account :: Guid Account -> UTCTime -> Valid Phone -> Customer -> Token Access -> Money -> Projection -> Id TransferAccount -> Account
-account accountId now phone customer tok credit Projection {expenses, available} transferId =
+account :: Guid Account -> UTCTime -> Valid Phone -> Customer -> Token Access -> Id Item -> Money -> Projection -> Id TransferAccount -> Account
+account accountId now phone customer tok itemId credit Projection {expenses, available} transferId =
   Account
     { accountId
     , phone
     , customer
     , transferId
     , bankToken = Private tok
+    , bankItemId = itemId
     , credit
     , created = now
     , health = Health { accountId, expenses, available, created  = now}
@@ -171,8 +184,8 @@ account accountId now phone customer tok credit Projection {expenses, available}
 
 
 accountRow :: Account -> AccountRow
-accountRow Account { accountId, phone, transferId, bankToken, credit, created } =
-  AccountRow { accountId, phone, transferId, bankToken, credit, created }
+accountRow Account { accountId, phone, transferId, bankToken, bankItemId, credit, created } =
+  AccountRow { accountId, phone, transferId, bankToken, bankItemId, credit, created }
 
 
 
