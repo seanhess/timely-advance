@@ -15,7 +15,6 @@ variables:
 # these stages should match the pipeline
 stages:
   - build # we are running tests in the build stage for now.
-  - container
   - test
   - deploy
 
@@ -26,16 +25,17 @@ build-server:
     - docker --version
     - stack --version
     - echo $STACK_ROOT
-    - pwd
-    - ls -ahl .
-    # - ls .stack
   script:
     - cd server
 
-    # it's got to be the docker image, right? But how was it ever working before?
+    - echo "module Version where version = \"$RELEASE\"" > src/Version.hs
+    - cat src/Version.hs
+
     - stack docker pull
     - stack setup --docker
     - stack build --docker --only-dependencies
+    - stack image container --docker # --ghc-options -Werror # build and run tests
+    - docker tag timely:latest $IMAGE_SERVER:$RELEASE
 
 
 build-web:
@@ -59,18 +59,6 @@ build-web:
 
 
 
-container:
-  stage: container
-  before_script:
-    - ls .stack
-  script:
-    - cd server
-
-    - echo "module Version where version = \"$RELEASE\"" > src/Version.hs
-    - cat src/Version.hs
-
-    - stack image container --docker # --ghc-options -Werror # build and run tests
-    - docker tag timely:latest $IMAGE_SERVER:$RELEASE
 
 
 test:
