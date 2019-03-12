@@ -49,6 +49,7 @@ build-server:
     - echo "module Version where version = \"$RELEASE\"" > src/Version.hs
     - cat src/Version.hs
 
+    # it's got to be the docker image, right? But how was it ever working before?
     - stack docker pull
     - stack setup --docker
     - stack build --docker --only-dependencies

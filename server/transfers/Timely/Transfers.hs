@@ -80,15 +80,6 @@ implementIO =
       Store.markSuccess
 
 
--- instance (MonadThrow m, Selda m, MonadConfig Config m) => Service m Transfers where
---   run (SaveCredit a)    = Store.saveCredit a
---   run (SaveDebit a)     = Store.saveDebit a
---   run (MarkSuccess t)   = Store.markSuccess t
-
---   run (ACHSend i t)     = ACH.sendMoney i t
---   run (ACHCollect i t)  = ACH.collectMoney i t
---   run (CreateAccount a) = ACH.initAccount a
-
 
 
 

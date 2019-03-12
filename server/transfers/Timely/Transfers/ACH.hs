@@ -5,15 +5,12 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 module Timely.Transfers.ACH where
 
-import           Control.Monad.Catch    (MonadThrow)
+import           Control.Monad.Catch    (MonadThrow, MonadCatch)
 import           Control.Monad.Config   (MonadConfig (..), configs)
 import           Control.Monad.IO.Class (MonadIO)
 import           Data.Model.Money       as Money
-import           Data.Model.Types       (Address (..), Valid (..))
-import           Network.Dwolla         (Amount (..), Customer (..), FundingSource, Id,
-                                         Static (..))
+import           Network.Dwolla         (Amount (..), Customer (..), FundingSource, Id)
 import qualified Network.Dwolla         as Dwolla
-import qualified Network.Dwolla.Types   as Dwolla
 import           Timely.Transfers.Types
 
 
@@ -25,7 +22,7 @@ data Config = Config
     }
 
 
-initAccount :: (MonadThrow m, MonadIO m, MonadConfig Config m) => AccountInfo -> m (Id FundingSource)
+initAccount :: (MonadThrow m, MonadCatch m, MonadIO m, MonadConfig Config m) => AccountInfo -> m (Id FundingSource)
 initAccount account = do
   cfg <- configs dwolla
   tok <- Dwolla.authenticate cfg
@@ -71,26 +68,12 @@ transferMoney src dest t = do
 
 
 customer :: AccountInfo -> Customer
-customer AccountInfo { firstName, lastName, email, address, dateOfBirth, ssn } =
-  let Address { street1, street2, city, state, postalCode } = address
-  in Customer
-    { firstName, lastName, email
-    , ipAddress = Nothing
-    , type_ = Static
-    , address1    = Dwolla.Address street1
-    , address2    = Dwolla.Address <$> street2
-    , city
-    , state       = valid state
-    , postalCode  = valid postalCode
-    , dateOfBirth
-    , ssn         = Dwolla.last4SSN $ valid ssn
-    , phone       = Nothing
-    }
+customer AccountInfo { firstName, lastName, email } =
+  Customer { firstName, lastName, email }
 
 
 
 toAmount :: forall a. Transfer a -> Amount
 toAmount t = Amount $ Money.toFloat $ amount (t :: Transfer a)
-
 
 

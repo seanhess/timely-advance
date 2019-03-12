@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DuplicateRecordFields      #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -13,15 +14,13 @@ module Network.Dwolla
   , createFundingSource
   , authenticate
   , transfer
+  , searchCustomers
 
   , fundingSource
   , Credentials(..)
   , Customer(..)
   , Resource(..)
   , Static(..)
-  , Address(..)
-  , Last4SSN(..)
-  , PhoneDigits(..)
   , Id(..)
   , CreateFundingSource(..)
   , FundingSource
@@ -31,31 +30,30 @@ module Network.Dwolla
   , DwollaError(..)
   , Config(..)
   , Transfer
+  , SearchOptions(..)
   ) where
 
 
 
 
-import           Control.Monad.Catch     (Exception, MonadThrow, throwM)
-import           Control.Monad.IO.Class  (MonadIO, liftIO)
-import           Data.Aeson              as Aeson
-import qualified Data.ByteString.Base64  as Base64
-import           Data.List               as List
-import           Data.Model.Id           (Id (..), Token (..))
-import           Data.Proxy              as Proxy
-import           Data.String.Conversions (cs)
-import           Data.Text               as Text
-import           Data.Time.Calendar      (Day)
-import           GHC.Generics            (Generic)
-import qualified Network.HTTP.Client     as HTTP
-import           Network.Plaid.Dwolla    (Dwolla)
-import           Servant
-import           Servant.Client          (BaseUrl, ClientM, ServantError, client)
-import qualified Servant.Client          as Servant
-import           Web.FormUrlEncoded      (ToForm (..))
-
-import           Network.Dwolla.HAL      (FromHAL (..), HAL)
+import           Control.Monad.Catch       (MonadThrow, MonadCatch, throwM, catch)
+import           Control.Monad.IO.Class    (MonadIO, liftIO)
+import           Data.Aeson                as Aeson
+import qualified Data.ByteString.Base64    as Base64
+import           Data.Model.Id             (Id (..), Token (..))
+import           Data.Proxy                as Proxy
+import           Data.String.Conversions   (cs)
+import           Data.Text                 as Text
+import           GHC.Generics              (Generic)
+import           Network.Dwolla.Errors     (DwollaError (..), dwollaError)
+import           Network.Dwolla.HAL        (FromHAL (..), HAL)
 import           Network.Dwolla.Types
+import qualified Network.HTTP.Client       as HTTP
+import           Network.Plaid.Dwolla      (Dwolla)
+import           Servant
+import           Servant.Client            (BaseUrl, ClientM, client)
+import qualified Servant.Client            as Servant
+import           Web.FormUrlEncoded        (ToForm (..))
 
 
 
@@ -66,12 +64,15 @@ authenticate :: (MonadIO m, MonadThrow m) => Config -> m AuthToken
 authenticate config = runDwollaAuth config $ reqAuthenticate (credentials config)
 
 
-createCustomer :: (MonadIO m, MonadThrow m) => Config -> AuthToken -> Customer -> m (Id Customer)
-createCustomer config tok cust = runDwolla config $ reqCreateCustomer tok cust
+createCustomer :: (MonadIO m, MonadThrow m, MonadCatch m) => Config -> AuthToken -> Customer -> m (Id Customer)
+createCustomer config tok cust =
+  catch (runDwolla config $ reqCreateCustomer tok cust) onDuplicate
 
 
-createFundingSource :: (MonadIO m, MonadThrow m) => Config -> AuthToken -> Id Customer -> CreateFundingSource -> m (Id FundingSource)
-createFundingSource config tok id cfs = runDwolla config $ reqCreateFundingSource tok id cfs
+
+createFundingSource :: (MonadIO m, MonadCatch m, MonadThrow m) => Config -> AuthToken -> Id Customer -> CreateFundingSource -> m (Id FundingSource)
+createFundingSource config tok id cfs =
+  catch (runDwolla config $ reqCreateFundingSource tok id cfs) onDuplicate
 
 
 transfer :: (MonadIO m, MonadThrow m) => Config -> AuthToken -> Id FundingSource -> Id FundingSource -> Amount -> m (Id Transfer)
@@ -80,6 +81,16 @@ transfer config tok from to amount = do
   runDwolla config $ reqTransfer tok (fundingSource base from) (fundingSource base to) amount
 
 
+searchCustomers :: (MonadIO m, MonadThrow m) => Config -> AuthToken -> Text -> Maybe SearchOptions -> m [CustomerResult]
+searchCustomers config tok search opts =
+  runDwolla config $ reqCustomers tok search opts
+
+
+
+onDuplicate :: (MonadThrow m, MonadIO m) => DwollaError -> m (Id a)
+onDuplicate (Duplicate (Id i)) = pure (Id i)
+onDuplicate err = throwM err
+
 
 
 -- Remote API --------------------------
@@ -87,6 +98,7 @@ transfer config tok from to amount = do
 type DwollaApi
       = Authenticate :> "token" :> ReqBody '[FormUrlEncoded] Auth :> Post '[JSON] Access
    :<|> Authorization   :> "customers" :> ReqBody '[HAL] Customer   :> Post '[HAL] (Location Customer)
+   :<|> Authorization   :> "customers" :> QueryParam "search" Text :> QueryParam "limit" Int :> QueryParam "offset" Int :> Get '[HAL] (Embedded Customers)
    :<|> Authorization   :> "customers" :> Capture "id" (Id Customer) :> "funding-sources" :> ReqBody '[HAL] CreateFundingSource :> Post '[HAL] (Location CreateFundingSource)
    :<|> Authorization   :> "transfers" :> ReqBody '[HAL] Transfer   :> Post '[HAL] (Location Transfer)
 
@@ -105,9 +117,24 @@ type Authenticate = Header "Authorization" Credentials
 
 postToken         :: Maybe Credentials -> Auth -> ClientM Access
 postCustomer      :: Maybe AuthToken -> Customer -> ClientM (Location Customer)
+getCustomers      :: Maybe AuthToken -> Maybe Text -> Maybe Int -> Maybe Int -> ClientM (Embedded Customers)
 postFundingSource :: Maybe AuthToken -> Id Customer -> FundingSource -> ClientM (Location FundingSource)
 postTransfer      :: Maybe AuthToken -> Transfer -> ClientM (Location Transfer)
-postToken :<|> postCustomer :<|> postFundingSource :<|> postTransfer = client (Proxy :: Proxy DwollaApi)
+postToken :<|> postCustomer :<|> getCustomers :<|> postFundingSource :<|> postTransfer = client (Proxy :: Proxy DwollaApi)
+
+
+
+
+data SearchOptions = SearchOptions
+  { limit  :: Int
+  , offset :: Int
+  }
+
+
+reqCustomers :: AuthToken -> Text -> Maybe SearchOptions -> ClientM [CustomerResult]
+reqCustomers tok search mopts = do
+  emb <- getCustomers (Just tok) (Just search) (limit <$> mopts) (offset <$> mopts)
+  pure $ customers $ _embedded emb
 
 
 
@@ -156,19 +183,14 @@ parseId loc =
 
 
 locationToId :: Location a -> Maybe (Id a)
-locationToId (Headers _ (HCons (Header (Resource a)) HNil)) =
-  Just $ Id $ Text.takeWhileEnd ((/=) '/') a
+locationToId (Headers _ (HCons (Header res) HNil)) =
+  resourceToId res
 locationToId _ = Nothing
 
 
 
 
-data DwollaError
-  = BadLocation
-  | DwollaApiError ServantError
-  deriving (Show, Eq, Generic)
 
-instance Exception DwollaError
 
 
 
@@ -178,27 +200,12 @@ instance Exception DwollaError
 
 
 data Customer = Customer
-  { firstName   :: Text
-  , lastName    :: Text
-  , email       :: Text
-  , ipAddress   :: Maybe Text
-  , type_       :: Static "personal"
-  , address1    :: Address
-  , address2    :: Maybe Address
-  , city        :: Text
-  , state       :: Text
-  , postalCode  :: Text
-  , dateOfBirth :: Day
-  , ssn         :: Last4SSN
-  , phone       :: Maybe Text
+  { firstName :: Text
+  , lastName  :: Text
+  , email     :: Text
   } deriving (Show, Eq, Generic)
 
-instance ToJSON Customer where
-  toJSON = Aeson.genericToJSON removeUnderscores
-
-removeUnderscores :: Aeson.Options
-removeUnderscores = Aeson.defaultOptions { fieldLabelModifier = List.dropWhileEnd ((==) '_') }
-
+instance ToJSON Customer
 
 data CreateFundingSource = CreateFundingSource
   { plaidToken :: Token Dwolla
@@ -230,12 +237,32 @@ data TransferAmount = TransferAmount
 
 instance ToJSON TransferAmount
 
-data RelLink a = RelLink
-  { href :: Resource a
-  } deriving (Show, Eq, Generic)
 
 
-instance ToJSON (RelLink a)
+-- _embedded.customers -->
+data Embedded a = Embedded
+  { _embedded :: a
+  } deriving (Generic)
+
+instance FromJSON a => FromJSON (Embedded a)
+instance (FromJSON a) => FromHAL (Embedded a)
+
+data Customers = Customers
+  { customers :: [CustomerResult]
+  } deriving (Generic)
+
+instance FromJSON Customers
+
+-- https://docs.dwolla.com/#list-and-search-customers
+data CustomerResult = CustomerResult
+  { id        :: Id Customer
+  , firstName :: Text
+  , lastName  :: Text
+  , email     :: Text
+  -- type, status, created
+  } deriving (Generic)
+
+instance FromJSON CustomerResult
 
 
 
@@ -313,5 +340,5 @@ runDwollaClient url config req = do
     let env = Servant.mkClientEnv (manager config) (url config)
     res <- liftIO $ Servant.runClientM req env
     case res of
-      Left err -> throwM $ DwollaApiError err
+      Left err -> throwM $ dwollaError err
       Right a  -> pure a

@@ -3,11 +3,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Test.Dwolla where
 
+import           Network.Dwolla            as Dwolla
+import           Network.Dwolla.Errors     as Errors
+import           Network.Dwolla.Types      as Types
+import           Network.HTTP.Types.Status (status400)
+import qualified Servant
+import           Servant.Client            (BaseUrl (..), GenResponse (..), Scheme (..), ServantError (..))
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
-import           Servant.Client          (BaseUrl (..), Scheme (..))
-import qualified Servant
-import           Network.Dwolla          as Dwolla
 
 -- import qualified Network.Plaid.Dwolla    as Plaid
 -- import           Network.Plaid           as Plaid
@@ -31,6 +34,8 @@ tests :: Tests ()
 tests = do
     group "funding-sources" testFundingSources
     group "authorization" testAuthorization
+    group "api errors" testApiErrors
+    group "parse resource" testParseResource
 
 
 
@@ -51,6 +56,38 @@ testAuthorization = do
 
     test "auth token header" $ do
       Servant.toUrlPiece (Dwolla.AuthToken "woot") @?= "Bearer woot"
+
+
+testParseResource :: Tests ()
+testParseResource = do
+  test "should parse id" $ do
+    Types.resourceToId (Resource "https://api-sandbox.dwolla.com/customers/4f600217-82a7-4329-b3d1-883dacfef798") @?= Just (Id "4f600217-82a7-4329-b3d1-883dacfef798")
+
+
+
+testApiErrors :: Tests ()
+testApiErrors = do
+  test "should find duplicate customer" $ do
+    let errorBody = "{\"code\":\"ValidationError\",\"message\":\"Validation error(s) present. See embedded errors list for more details.\",\"_embedded\":{\"errors\":[{\"code\":\"Duplicate\",\"message\":\"A customer with the specified email already exists.\",\"path\":\"/email\",\"_links\":{\"about\":{\"href\":\"https://api-sandbox.dwolla.com/customers/4f600217-82a7-4329-b3d1-883dacfef798\",\"type\":\"application/vnd.dwolla.v1.hal+json\",\"resource-type\":\"customer\"}}}]}}"
+    let emailError = FailureResponse $ Response status400 undefined undefined errorBody
+    case Errors.dwollaError emailError of
+      Duplicate i -> i @?= Id "4f600217-82a7-4329-b3d1-883dacfef798"
+      _           -> assertFailure "Expected duplicate id error"
+
+
+  test "should find duplicate funding source" $ do
+    let errorBody = "{\"code\":\"DuplicateResource\",\"message\":\"Bank already exists: id=b85732f8-e92f-4c4d-87df-59def6ac5026\",\"_links\":{\"about\":{\"href\":\"https://api-sandbox.dwolla.com/funding-sources/b85732f8-e92f-4c4d-87df-59def6ac5026\",\"type\":\"application/vnd.dwolla.v1.hal+json\",\"resource-type\":\"funding-source\"}}}"
+    let servantError = FailureResponse $ Response status400 undefined undefined errorBody
+    case Errors.dwollaError servantError of
+      Duplicate i -> i @?= Id "b85732f8-e92f-4c4d-87df-59def6ac5026"
+      _           -> assertFailure "Expected duplicate id error"
+
+
+
+
+
+
+
 
 
 

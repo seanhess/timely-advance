@@ -29,6 +29,7 @@ dependencies:
 - async
 - base64-bytestring
 - bytestring
+- containers
 - datamodel
 - data-default
 - elm-export
