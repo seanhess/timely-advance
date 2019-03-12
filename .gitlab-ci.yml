@@ -20,6 +20,24 @@ stages:
   - deploy
 
 
+build-server:
+  stage: build
+  before_script:
+    - docker --version
+    - stack --version
+    - echo $STACK_ROOT
+    - pwd
+    - ls -ahl .
+    # - ls .stack
+  script:
+    - cd server
+
+    # it's got to be the docker image, right? But how was it ever working before?
+    - stack docker pull
+    - stack setup --docker
+    - stack build --docker --only-dependencies
+
+
 build-web:
   stage: build
   before_script:
@@ -39,22 +57,6 @@ build-web:
     - docker build -t $IMAGE_WEB:$RELEASE .
 
 
-build-server:
-  stage: build
-  before_script:
-    - docker --version
-    - stack --version
-    - echo $STACK_ROOT
-    - pwd
-    - ls .
-    # - ls .stack
-  script:
-    - cd server
-
-    # it's got to be the docker image, right? But how was it ever working before?
-    - stack docker pull
-    - stack setup --docker
-    - stack build --docker --only-dependencies
 
 
 container:
