@@ -17,7 +17,7 @@ tests = do
       let base = BaseUrl Https "timelyadvance.com" 443 "app"
 
       test "should match expected url" $ do
-        Notify.url base accountId message @?= ("https://timelyadvance.com/app/#/accounts/account-000/advances/advance-111")
+        Notify.url base accountId message @?= ("https://timelyadvance.com/app/#/accounts/acc-000/advances/adv-111")
 
 
       test "baseurl ignores slash" $ do

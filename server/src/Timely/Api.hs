@@ -123,7 +123,7 @@ accountApi i = genericServerT AccountApi
     , _banks   = Account.findBanks i
     , _app     = Application.find i       >>= notFound
     , _result  = Application.findResult i >>= notFound
-    , _trans   = Transactions.all i
+    , _trans   = Transactions.list i 0 100
     , _advances = advanceApi i
     }
 

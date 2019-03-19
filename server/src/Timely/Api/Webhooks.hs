@@ -52,6 +52,7 @@ transactions
   => Plaid.Transactions -> m ()
 transactions info = do
   let itemId = Plaid.item_id info
+  let total  = Plaid.new_transactions info
   Log.context "transactions"
   Log.context $ cs $ show itemId
 
@@ -61,9 +62,9 @@ transactions info = do
 
     Plaid.HISTORICAL_UPDATE -> do
       Log.info "historical_update"
-      Applications.saveTransactions itemId (Plaid.new_transactions info)
+      Applications.saveTransactions itemId total
 
     Plaid.DEFAULT_UPDATE -> do
       Log.info "default_update"
       accounts <- Accounts.findByBankId itemId
-      mapM_ (Worker.publish Events.transactionsUpdate) accounts
+      mapM_ (\a -> Worker.publish Events.transactionsUpdate (a, total)) accounts

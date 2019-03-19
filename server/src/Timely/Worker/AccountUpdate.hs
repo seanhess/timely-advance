@@ -6,43 +6,45 @@
 module Timely.Worker.AccountUpdate where
 
 -- TODO real transaction analysis
-import           Control.Effects               (MonadEffects)
-import           Control.Effects.Log           (Log)
-import qualified Control.Effects.Log           as Log
-import           Control.Effects.Signal        (Throw, throwSignal)
-import qualified Control.Effects.Signal        as Signal
-import           Control.Effects.Time          (Time)
-import qualified Control.Effects.Time          as Time
-import           Control.Exception             (Exception)
-import           Control.Monad                 (when)
-import           Control.Monad.Catch           (MonadThrow (..))
-import           Data.Function                 ((&))
-import qualified Data.List                     as List
-import           Data.Model.Guid               as Guid
-import           Data.Model.Money              (Money)
-import           Data.Time.Calendar            (Day)
-import qualified Network.AMQP.Worker           as Worker (Queue, topic)
-import           Timely.AccountStore.Account   (Accounts)
-import qualified Timely.AccountStore.Account   as Accounts
-import           Timely.AccountStore.Types     (Account, AccountRow (..), BankAccount)
-import qualified Timely.AccountStore.Types     as BankAccount
-import qualified Timely.AccountStore.Types     as Account (AccountRow (..))
-import           Timely.Advances               (Advance, Advances)
-import qualified Timely.Advances               as Advances
-import qualified Timely.App                    as App
-import           Timely.Bank                   (Access, Banks, Token)
-import qualified Timely.Bank                   as Bank
-import qualified Timely.Evaluate.AccountHealth as AccountHealth
-import qualified Timely.Evaluate.Offer         as Offer
-import qualified Timely.Evaluate.Paydate       as Paydate
-import           Timely.Evaluate.Types         (Projection (..))
-import           Timely.Events                 as Events
-import           Timely.Notify                 (Notify)
-import qualified Timely.Notify                 as Notify
+import           Control.Effects                  (MonadEffects)
+import           Control.Effects.Log              (Log)
+import qualified Control.Effects.Log              as Log
+import           Control.Effects.Signal           (Throw, throwSignal)
+import qualified Control.Effects.Signal           as Signal
+import           Control.Effects.Time             (Time, UTCTime)
+import qualified Control.Effects.Time             as Time
+import           Control.Exception                (Exception)
+import           Control.Monad                    (when)
+import           Control.Monad.Catch              (MonadThrow (..))
+import           Data.Function                    ((&))
+import qualified Data.List                        as List
+import           Data.Model.Guid                  as Guid
+import           Data.Model.Money                 (Money)
+import           Data.Time.Calendar               (Day)
+import qualified Network.AMQP.Worker              as Worker (Queue, topic)
+import           Timely.AccountStore.Account      (Accounts)
+import qualified Timely.AccountStore.Account      as Accounts
+import           Timely.AccountStore.Transactions (Transactions, Transaction(transactionId))
+import qualified Timely.AccountStore.Transactions as Transactions
+import           Timely.AccountStore.Types        (Account, AccountRow (..), BankAccount(bankAccountId))
+import qualified Timely.AccountStore.Types        as BankAccount
+import qualified Timely.AccountStore.Types        as Account (AccountRow (..))
+import           Timely.Advances                  (Advance, Advances)
+import qualified Timely.Advances                  as Advances
+import qualified Timely.App                       as App
+import           Timely.Bank                      (Access, Banks, Token)
+import qualified Timely.Bank                      as Bank
+import qualified Timely.Evaluate.AccountHealth    as AccountHealth
+import qualified Timely.Evaluate.Offer            as Offer
+import qualified Timely.Evaluate.Paydate          as Paydate
+import           Timely.Evaluate.Types            (Projection (..))
+import           Timely.Events                    as Events
+import           Timely.Notify                    (Notify)
+import qualified Timely.Notify                    as Notify
 
 
 
-queue :: Worker.Queue AccountRow
+queue :: Worker.Queue (AccountRow, Int)
 queue = Worker.topic Events.transactionsUpdate "app.account.update"
 
 
@@ -51,14 +53,14 @@ start = App.start queue handler
 
 
 handler
-  :: ( MonadEffects '[Time, Accounts, Log, Banks, Advances, Notify] m
+  :: ( MonadEffects '[Time, Accounts, Log, Banks, Advances, Notify, Transactions] m
      , MonadThrow m
      )
-  => AccountRow -> m ()
-handler account = do
+  => (AccountRow, Int) -> m ()
+handler (account, numTransactions) = do
     Log.context $ Guid.toText (accountId account)
     Log.info "AccountUpdate"
-    accountUpdate account
+    accountUpdate account numTransactions
       & Signal.handleException onError
 
   where
@@ -71,40 +73,36 @@ handler account = do
 
 
 accountUpdate
-  :: ( MonadEffects '[Time, Accounts, Log, Banks, Advances, Notify, Throw UpdateError] m
+  :: ( MonadEffects '[Time, Accounts, Log, Banks, Advances, Notify, Throw UpdateError, Transactions] m
      )
-  => AccountRow -> m ()
-accountUpdate account@(AccountRow{ accountId, bankToken }) = do
+  => AccountRow -> Int -> m ()
+accountUpdate account@(AccountRow{ accountId, bankToken }) numTransactions = do
+    now      <- Time.currentTime
+    let today = Time.utctDay now
 
-    checking <- updateBankBalances accountId bankToken
-                  >>= require MissingChecking
+    checking <- bankBalances accountId bankToken now
+    health   <- updateHealth accountId checking
+    _        <- updateTransactions accountId bankToken checking numTransactions today
 
-    health <- updateHealth accountId checking
+    isOffer  <- checkAdvance account health now
+    when isOffer $ do
+      offerAdvance account Offer.amount (Time.utctDay now)
+      pure ()
 
-    Log.debug ("Health", health)
-    checkAdvance account health
 
-    pure ()
 
-  where
-
-    require err Nothing = throwSignal (err accountId)
-    require _ (Just a)  = pure a
 
 
 
 checkAdvance
-  :: ( MonadEffects '[Time, Log, Advances, Notify] m
+  :: ( MonadEffects '[Log, Advances, Notify] m
      )
-  => AccountRow -> Projection -> m ()
-checkAdvance account health = do
-    now    <- Time.currentTime
+  => AccountRow -> Projection -> UTCTime -> m Bool
+checkAdvance account health now = do
     offer  <- Advances.findOffer  (accountId account)
     active <- Advances.findActive (accountId account)
-    when (Offer.isNeeded offer active health now) $ do
-      a <- offerAdvance account Offer.amount (Time.utctDay now)
-      Log.debug ("advance", a)
-      pure ()
+    pure $ (Offer.isNeeded offer active health now)
+
 
 
 offerAdvance
@@ -118,6 +116,7 @@ offerAdvance account amount today = do
         due          = nextPayday
     advance <- Advances.create id (Account.transferId account) amount due
     Notify.send account (Notify.Message (Advances.advanceId advance) Notify.Advance message)
+    Log.debug ("advance", advance)
     pure advance
   where
     message = "Your bank balance is getting low. Click here to accept an advance from Timely"
@@ -127,25 +126,49 @@ offerAdvance account amount today = do
 
 
 updateHealth
-  :: ( MonadEffects '[Accounts] m)
+  :: ( MonadEffects '[Accounts, Log] m)
   => Guid Account -> BankAccount -> m Projection
 updateHealth accountId checking = do
     let health = AccountHealth.analyze (BankAccount.balance checking)
     Accounts.setHealth accountId health
+    Log.debug ("Health", health)
     pure health
 
 
 
 -- | updates the bank accounts and returns the checking account
-updateBankBalances
-    :: ( MonadEffects '[Time, Accounts, Banks] m)
-    => Guid Account -> Token Access -> m (Maybe BankAccount)
-updateBankBalances accountId token = do
-    now <- Time.currentTime
+bankBalances
+    :: ( MonadEffects '[Accounts, Banks, Throw UpdateError] m)
+    => Guid Account -> Token Access -> UTCTime -> m BankAccount
+bankBalances accountId token now = do
     banks <- Bank.loadAccounts token
     let accounts = List.map (BankAccount.toBankAccount accountId now) banks
     Accounts.setBanks accountId accounts
-    pure $ List.find BankAccount.isChecking accounts
+
+    List.find BankAccount.isChecking accounts
+      & require (MissingChecking accountId)
+
+
+
+
+-- | Load the last n transactions from the bank. Check to see if any are already saved, and save the rest
+updateTransactions
+  :: ( MonadEffects '[Banks, Log, Transactions] m )
+  => Guid Account -> Token Bank.Access -> BankAccount -> Int -> Day -> m ()
+updateTransactions accountId bankToken checking numTransactions today = do
+    Log.info "update transactions"
+    ts <- Bank.loadTransactions bankToken (bankAccountId checking) $
+            Bank.limitLast today numTransactions
+
+    let tsNew = List.map (Transactions.fromBank accountId) ts
+    tsOld <- Transactions.list accountId 0 numTransactions
+    let tsSave = List.deleteFirstsBy eqTransId tsNew tsOld
+    Log.debug ("new transactions", List.length tsSave)
+    Transactions.save accountId tsSave
+
+  where
+    eqTransId t1 t2 = transactionId t1 == transactionId t2
+
 
 
 
@@ -178,3 +201,8 @@ data UpdateError
     deriving (Show, Eq)
 
 instance Exception UpdateError
+
+
+
+require err Nothing = throwSignal err
+require _ (Just a)  = pure a

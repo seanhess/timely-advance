@@ -27,7 +27,6 @@ import           Data.Model.Guid                  as Guid
 import           Data.Model.Id                    (Id, Token)
 import           Data.Model.Types                 (Address (..), Phone, Valid)
 import           Data.Text                        as Text
-import qualified Data.Time.Calendar               as Day
 import qualified Database.Selda                   as Selda
 import           Network.AMQP.Worker              (Queue)
 import qualified Network.AMQP.Worker              as Worker hiding (bindQueue, publish, worker)
@@ -162,11 +161,8 @@ loadBankAccounts
 loadBankAccounts accountId bankToken now = do
     Log.info "load bank accounts"
     banks <- Bank.loadAccounts bankToken
-    Log.debug ("banks", banks)
     let bankAccounts = List.map (toBankAccount accountId now) banks
-    Log.debug ("bankAccounts", List.length bankAccounts)
     checking <- require MissingChecking $ List.find isChecking bankAccounts
-    Log.debug "found checking"
     pure (checking, bankAccounts)
 
 
@@ -185,15 +181,12 @@ initTransfers cust bankToken checking = do
 loadTransactions
   :: ( MonadEffects '[Banks, Applications, Log, Async] m )
   => Guid Account -> Token Bank.Access -> Id AppBank -> BankAccount -> UTCTime -> m [ Transaction ]
-loadTransactions accountId bankToken appBankId checking now = do
+loadTransactions accountId bankToken appBankId checking (UTCTime today _) = do
     -- Waits for the webhook to update the transactions
     Log.info "load transactions"
     _ <- Async.poll (1000*1000) $ Applications.findTransactions appBankId
 
-    -- load all the transactions
-    let UTCTime today _ = now
-    let monthsAgo = Day.addDays (-100) today
-    ts <- Bank.loadTransactionsRange bankToken (bankAccountId checking) monthsAgo today
+    ts <- Bank.loadTransactionsDays bankToken (bankAccountId checking) today 365
     Log.debug ("transactions", List.length ts)
     pure $ List.map (Transactions.fromBank accountId) ts
 

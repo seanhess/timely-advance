@@ -17,11 +17,11 @@ testTransactions :: Tests ()
 testTransactions = do
     group "looping range" $ do
       test "should return short list" $ do
-        ts <- Bank.loadTransactionsRange undefined undefined undefined undefined & implement (emptyMethods {_loadTransactions = mockLoad 10})
+        ts <- Bank.loadTransactionsDays undefined undefined undefined undefined & implement (emptyMethods {_loadTransactions = mockLoad 10})
         length ts @?= 10
 
       test "should return long list" $ do
-        ts <- Bank.loadTransactionsRange undefined undefined undefined undefined & implement (emptyMethods {_loadTransactions = mockLoad 750})
+        ts <- Bank.loadTransactionsDays undefined undefined undefined undefined & implement (emptyMethods {_loadTransactions = mockLoad 750})
         length ts @?= 750
 
       test "should only call once if empty" $ do
@@ -29,7 +29,7 @@ testTransactions = do
               offset options @?= 0
               pure []
 
-        ts <- Bank.loadTransactionsRange undefined undefined undefined undefined & implement (emptyMethods {_loadTransactions = mockLoad'})
+        ts <- Bank.loadTransactionsDays undefined undefined undefined undefined & implement (emptyMethods {_loadTransactions = mockLoad'})
         ts @?= []
 
   where

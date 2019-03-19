@@ -35,7 +35,8 @@ module Timely.Bank
     , loadIdentity -- remove me when you add it back in
     , loadAccounts
     , loadTransactions
-    , loadTransactionsRange
+    , loadTransactionsDays
+    , limitLast
     , getACH
     , implementBankIO
     -- , runPlaid
@@ -47,9 +48,10 @@ import           Control.Monad.Catch        (MonadThrow)
 import           Control.Monad.Config       (MonadConfig)
 import           Control.Monad.IO.Class     (MonadIO)
 import qualified Control.Monad.Loops        as Loops
-import qualified Data.List as List
+import qualified Data.List                  as List
 import           Data.Model.Id              (Id (..), Token (..))
 import           Data.Time.Calendar         (Day)
+import qualified Data.Time.Calendar         as Day
 import           GHC.Generics               (Generic)
 import           Network.Plaid.Dwolla       (Dwolla)
 import qualified Network.Plaid.Identity     as Identity
@@ -78,16 +80,33 @@ getACH           :: MonadEffect Banks m => Token Access -> Id Account -> m (Toke
 BanksMethods authenticate loadIdentity loadAccounts loadTransactions getACH = effect
 
 
--- | loads all the transactions in the range, following offsets, etc 
-loadTransactionsRange :: MonadEffects '[Banks] m => Token Access -> Id Account -> Day -> Day -> m [Transaction]
-loadTransactionsRange tok aid start end = do
+
+
+-- | Loads the most recent N transactions (N < 500)
+limitLast :: Day -> Int -> Options
+limitLast today num = Options
+    { start_date = Day.addDays (-365) today
+    , end_date   = Day.addDays (1) today
+    , count      = num
+    , offset     = 0
+    }
+
+
+
+-- | loads all the transactions in the range, and continues to load them until it gets the full range
+loadTransactionsDays :: MonadEffects '[Banks] m => Token Access -> Id Account -> Day -> Integer -> m [Transaction]
+loadTransactionsDays tok aid today days = do
   tss <- Loops.unfoldrM loadNext 0
   pure $ List.concat tss
 
   where
     loadNext offset = do
-      let options = Options { start_date = start, end_date = end, count = 500, offset = offset }
-      res <- loadTransactions tok aid options
+      res <- loadTransactions tok aid $ Options
+               { start_date = Day.addDays (-days) today
+               , end_date   = Day.addDays (1) today
+               , count = 500
+               , offset = offset
+               }
 
       case res of
         [] -> pure Nothing

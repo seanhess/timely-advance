@@ -28,20 +28,23 @@ import qualified Timely.Bank                 as Bank (Category (..), Currency (.
 
 
 
+type Count = Int
+type Offset = Int
 
 
 data Transactions m = TransactionsMethods
   { _save :: Guid Account -> [Transaction] -> m ()
 
   -- TODO pagination, etc
-  , _all  :: Guid Account -> m [Transaction]
+  , _list :: Guid Account -> Offset -> Count -> m [Transaction]
   } deriving (Generic)
 
 instance Effect Transactions
 
 
 save     :: MonadEffect Transactions m => Guid Account -> [Transaction] -> m ()
-TransactionsMethods save all = effect
+list     :: MonadEffect Transactions m => Guid Account -> Offset -> Count -> m [Transaction]
+TransactionsMethods save list = effect
 
 
 
@@ -50,7 +53,7 @@ implementIO :: Selda m => RuntimeImplemented Transactions m a -> m a
 implementIO = implement $
   TransactionsMethods
     saveTransactions
-    allTransactions
+    listTransactions
 
 
 
@@ -93,11 +96,12 @@ saveTransactions _ ts = do
     pure ()
 
 
-allTransactions :: Selda m => Guid Account -> m [Transaction]
-allTransactions i = do
-  query $ do
+listTransactions :: Selda m => Guid Account -> Offset -> Count -> m [Transaction]
+listTransactions i offset count =
+  query $ limit offset count $ do
     t <- select transactions
-    restrict $ t ! #accountId .== literal i
+    restrict (t ! #accountId .== literal i)
+    order    (t ! #date) descending
     pure t
 
 
