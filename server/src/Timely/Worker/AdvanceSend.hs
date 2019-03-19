@@ -12,6 +12,7 @@ import qualified Network.AMQP.Worker   as Worker hiding (publish)
 import           Timely.Advances       (Advance (..))
 import           Timely.Events         as Events
 import           Timely.Transfers      (Transfers)
+import qualified Timely.App                    as App
 import qualified Timely.Transfers      as Transfers
 
 
@@ -20,6 +21,8 @@ queue :: Worker.Queue Advance
 queue = Worker.topic Events.advancesActive "app.advances.send"
 
 
+start :: IO ()
+start = App.start queue handler
 
 
 

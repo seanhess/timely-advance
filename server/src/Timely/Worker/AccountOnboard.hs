@@ -37,10 +37,11 @@ import           Timely.AccountStore.Application  (Applications)
 import qualified Timely.AccountStore.Application  as Applications
 import           Timely.AccountStore.Transactions (Transaction, Transactions)
 import qualified Timely.AccountStore.Transactions as Transactions
-import           Timely.AccountStore.Types        (Account, Application (..),
+import           Timely.AccountStore.Types        (Account, AppBank, Application (..),
                                                    BankAccount (balance, bankAccountId), Customer (..), Onboarding (..),
-                                                   isChecking, toBankAccount, AppBank)
+                                                   isChecking, toBankAccount)
 
+import qualified Timely.App                       as App
 import           Timely.Bank                      (Banks, Dwolla, Identity (..), Names (..))
 import qualified Timely.Bank                      as Bank
 import qualified Timely.Evaluate.AccountHealth    as AccountHealth
@@ -56,19 +57,9 @@ queue :: Queue Application
 queue = Worker.topic Events.applicationsNew "app.account.onboard"
 
 
+start :: IO ()
+start = App.start queue handler
 
--- well, obviously I need to ALSO subscribe to a queue of transaction updates here
--- transactions.initial --> itemId
--- transactions.update  --> itemId
-
--- we make our own queue? (remember this can be run more than once)
--- and then we pick up the event
--- and then we
--- this would need to be a fanout exchange, no?
--- no, a topic exchange serves the same purpose
--- you need a UNIQUE queue name per-process (pffft)
--- this is stupid
--- the other polling method is better, I think
 
 
 handler

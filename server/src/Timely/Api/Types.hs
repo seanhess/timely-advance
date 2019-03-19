@@ -41,8 +41,6 @@ instance ToJSON Account
 instance ToJSON Customer
 instance ToJSON BankAccountType
 instance ToJSON BankAccount
-instance ToJSON Application
-instance FromJSON Application
 
 
 data Amount = Amount

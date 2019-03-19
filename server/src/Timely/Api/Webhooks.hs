@@ -19,6 +19,8 @@ import qualified Network.Plaid.Webhooks          as Plaid
 import           Servant                         (NoContent (..))
 import           Timely.AccountStore.Application (Applications)
 import qualified Timely.AccountStore.Application as Applications
+import           Timely.AccountStore.Account (Accounts)
+import qualified Timely.AccountStore.Account as Accounts
 import qualified Timely.Events                   as Events
 
 type Plaid = Plaid.Webhook
@@ -31,7 +33,7 @@ type Plaid = Plaid.Webhook
 
 
 -- handle signals here?
-plaid :: MonadEffects '[Log, Applications, Publish] m => Plaid.Webhook -> m NoContent
+plaid :: MonadEffects '[Log, Applications, Accounts, Publish] m => Plaid.Webhook -> m NoContent
 plaid hook = do
   Log.context "webhooks.plaid"
   -- handleException onError (handle hook)
@@ -46,7 +48,7 @@ plaid hook = do
 
 
 transactions
-  :: MonadEffects '[Log, Applications, Publish] m
+  :: MonadEffects '[Log, Applications, Accounts, Publish] m
   => Plaid.Transactions -> m ()
 transactions info = do
   let itemId = Plaid.item_id info
@@ -63,4 +65,5 @@ transactions info = do
 
     Plaid.DEFAULT_UPDATE -> do
       Log.info "default_update"
-      Worker.publish Events.transactionsUpdate itemId
+      accounts <- Accounts.findByBankId itemId
+      mapM_ (Worker.publish Events.transactionsUpdate) accounts

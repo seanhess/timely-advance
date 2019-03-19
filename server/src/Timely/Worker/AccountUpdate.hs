@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE MonoLocalBinds    #-}
+{-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Timely.Worker.AccountUpdate where
 
@@ -8,28 +9,28 @@ module Timely.Worker.AccountUpdate where
 import           Control.Effects               (MonadEffects)
 import           Control.Effects.Log           (Log)
 import qualified Control.Effects.Log           as Log
+import           Control.Effects.Signal        (Throw, throwSignal)
+import qualified Control.Effects.Signal        as Signal
 import           Control.Effects.Time          (Time)
 import qualified Control.Effects.Time          as Time
--- import           Control.Effects.Worker        (Publish)
--- import qualified Control.Effects.Worker        as Worker
 import           Control.Exception             (Exception)
 import           Control.Monad                 (when)
 import           Control.Monad.Catch           (MonadThrow (..))
+import           Data.Function                 ((&))
 import qualified Data.List                     as List
 import           Data.Model.Guid               as Guid
-import           Data.Model.Id                 (Id)
 import           Data.Model.Money              (Money)
-import           Data.String.Conversions       (cs)
 import           Data.Time.Calendar            (Day)
 import qualified Network.AMQP.Worker           as Worker (Queue, topic)
 import           Timely.AccountStore.Account   (Accounts)
 import qualified Timely.AccountStore.Account   as Accounts
-import           Timely.AccountStore.Types     (AccountRow(accountId), BankAccount, Account)
-import qualified Timely.AccountStore.Types as BankAccount
-import qualified Timely.AccountStore.Types as Account (AccountRow(..))
+import           Timely.AccountStore.Types     (Account, AccountRow (..), BankAccount)
+import qualified Timely.AccountStore.Types     as BankAccount
+import qualified Timely.AccountStore.Types     as Account (AccountRow (..))
 import           Timely.Advances               (Advance, Advances)
 import qualified Timely.Advances               as Advances
-import           Timely.Bank                   (Access, Banks, Item, Token)
+import qualified Timely.App                    as App
+import           Timely.Bank                   (Access, Banks, Token)
 import qualified Timely.Bank                   as Bank
 import qualified Timely.Evaluate.AccountHealth as AccountHealth
 import qualified Timely.Evaluate.Offer         as Offer
@@ -38,53 +39,47 @@ import           Timely.Evaluate.Types         (Projection (..))
 import           Timely.Events                 as Events
 import           Timely.Notify                 (Notify)
 import qualified Timely.Notify                 as Notify
-import           Timely.Types.Private          (Private (..))
 
 
 
-queue :: Worker.Queue (Id Item)
+queue :: Worker.Queue AccountRow
 queue = Worker.topic Events.transactionsUpdate "app.account.update"
 
 
-
--- | Schedules all accounts for an update
--- schedule
---   :: ( MonadEffects '[Accounts, Log, Publish] m
---      , MonadThrow m
---      )
---   => m ()
--- schedule = do
---     Log.context "Schedule AccountUpdate"
---     accounts <- Accounts.all
---     mapM scheduleAccountUpdate accounts
---     pure ()
---   where
---     scheduleAccountUpdate account = do
---       Log.info $ Guid.toText $ accountId account
---       Worker.publish Events.transactionsNew (AccountRow.accountId account)
-
+start :: IO ()
+start = App.start queue handler
 
 
 handler
   :: ( MonadEffects '[Time, Accounts, Log, Banks, Advances, Notify] m
      , MonadThrow m
      )
-  => Id Item -> m ()
-handler itemId = do
-
-    Log.context $ cs $ show itemId
+  => AccountRow -> m ()
+handler account = do
+    Log.context $ Guid.toText (accountId account)
     Log.info "AccountUpdate"
+    accountUpdate account
+      & Signal.handleException onError
 
-    account  <- Accounts.findByBankId itemId
-                  >>= require MissingAccount
+  where
+    onError :: (MonadThrow m) => UpdateError -> m ()
+    onError err =
+      -- TODO mark the account as having an error?
+      -- Applications.markResultOnboarding accountId Error
+      throwM err
 
-    let aid = accountId account
-    Log.context $ Guid.toText aid
 
-    checking <- updateBankBalances aid (private $ Account.bankToken account)
+
+accountUpdate
+  :: ( MonadEffects '[Time, Accounts, Log, Banks, Advances, Notify, Throw UpdateError] m
+     )
+  => AccountRow -> m ()
+accountUpdate account@(AccountRow{ accountId, bankToken }) = do
+
+    checking <- updateBankBalances accountId bankToken
                   >>= require MissingChecking
 
-    health <- updateHealth aid checking
+    health <- updateHealth accountId checking
 
     Log.debug ("Health", health)
     checkAdvance account health
@@ -93,8 +88,7 @@ handler itemId = do
 
   where
 
-    require :: (MonadThrow m, Exception err) => (Id Item -> err) -> (Maybe a) -> m a
-    require err Nothing = throwM (err itemId)
+    require err Nothing = throwSignal (err accountId)
     require _ (Just a)  = pure a
 
 
@@ -179,9 +173,8 @@ updateBankBalances accountId token = do
 --     Nothing  -> throwSignal $ MissingBankId i
 
 
-data EvaluateError
-    = MissingAccount  (Id Item)
-    | MissingChecking (Id Item)
+data UpdateError
+    = MissingChecking (Guid Account)
     deriving (Show, Eq)
 
-instance Exception EvaluateError
+instance Exception UpdateError

@@ -3,12 +3,10 @@ module Timely.Events where
 
 
 import           Data.Function             ((&))
-import           Data.Model.Id             (Id)
 import           Data.Text                 (Text)
 import           Network.AMQP.Worker       (Key, Routing, key, word)
-import           Timely.AccountStore.Types (Application)
+import           Timely.AccountStore.Types (Application, AccountRow)
 import           Timely.Advances           (Advance)
-import           Timely.Bank               (Item)
 
 
 health :: Key Routing Text
@@ -19,7 +17,7 @@ applicationsNew :: Key Routing Application
 applicationsNew = key "applications" & word "new"
 
 
-transactionsUpdate :: Key Routing (Id Item)
+transactionsUpdate :: Key Routing AccountRow
 transactionsUpdate = key "transactions" & word "update"
 
 

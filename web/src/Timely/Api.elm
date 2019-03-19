@@ -1,8 +1,8 @@
-module Timely.Api exposing (Account, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money, Onboarding(..), Phone, SSN, Session, Token, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeAmount, encodeId, expectId, formatDate, formatDollars, formatMoney, fromDollars, getAccount, getAccountBanks, getAdvance, getAdvances, getApplication, getApplicationResult, idValue, postAdvanceAccept, postApplications, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, timezone, usedCredit)
+module Timely.Api exposing (Account, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money, Onboarding(..), Phone, SSN, Session, Token, Transaction, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeAmount, encodeId, expectId, formatDate, formatDollars, formatMoney, fromDollars, getAccount, getAccountBanks, getAdvance, getAdvances, getApplication, getApplicationResult, getTransactions, idValue, postAdvanceAccept, postApplications, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, timezone, usedCredit)
 
 import Http exposing (Error, Expect)
 import Iso8601
-import Json.Decode as Decode exposing (Decoder, int, list, nullable, string)
+import Json.Decode as Decode exposing (Decoder, bool, int, list, nullable, string)
 import Json.Decode.Pipeline exposing (..)
 import Json.Encode as Encode
 import String
@@ -66,6 +66,16 @@ type BankAccountType
     | Savings
     | Credit
     | Other
+
+
+type alias Transaction =
+    { transactionId : String
+    , date : Time.Posix
+    , category : String
+    , pending : Bool
+    , amount : Money
+    , name : String
+    }
 
 
 type alias Customer =
@@ -190,6 +200,28 @@ decodeHealth =
     Decode.succeed AccountHealth
         |> required "expenses" decodeMoney
         |> required "available" decodeMoney
+
+
+
+-- type alias Transaction =
+--     { transactionId : String
+--     , date : Time.Posix
+--     , category : String
+--     , pending : Bool
+--     , amount : Money
+--     , name : String
+--     }
+
+
+decodeTransaction : Decoder Transaction
+decodeTransaction =
+    Decode.succeed Transaction
+        |> required "transactionId" string
+        |> required "date" Iso8601.decoder
+        |> required "category" string
+        |> required "pending" bool
+        |> required "amount" decodeMoney
+        |> required "name" string
 
 
 decodeBankAccount : Decoder BankAccount
@@ -389,6 +421,19 @@ getAdvances toMsg (Id a) =
         , url = String.join "/" [ "", "v1", "accounts", a, "advances" ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg (list decodeAdvance)
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+getTransactions : (Result Error (List Transaction) -> msg) -> Id AccountId -> Cmd msg
+getTransactions toMsg (Id a) =
+    Http.request
+        { method = "GET"
+        , headers = []
+        , url = String.join "/" [ "", "v1", "accounts", a, "transactions" ]
+        , body = Http.emptyBody
+        , expect = Http.expectJson toMsg (list decodeTransaction)
         , timeout = Nothing
         , tracker = Nothing
         }

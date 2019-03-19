@@ -10,8 +10,6 @@ import qualified Timely.Worker.AccountUpdate  as AccountUpdate
 import qualified Timely.Worker.AdvanceCollect as AdvanceCollect
 import qualified Timely.Worker.AdvanceSend    as AdvanceSend
 import qualified Version
--- import qualified Timely.Worker.Schedule       as Schedule
-import qualified Timely.App                   as App
 
 main :: IO ()
 main = do
@@ -21,13 +19,12 @@ main = do
   a <- Environment.getArgs
   case a of
     ["version"        ]          -> printVersion
-    ["api"]                      -> startApi
-    ["work-account-onboard"]     -> startAccountOnboard
-    ["work-account-update"]      -> startAccountUpdate
-    ["work-advance-send"]        -> startAdvanceSend
-    ["work-advance-collect"]     -> startAdvanceCollect
-    ["schedule-advance-collect"] -> startAdvanceCollectSchedule
-    -- ["schedule-account-update"]  -> startAccountUpdateSchedule
+    ["api"]                      -> Api.start
+    ["work-account-onboard"]     -> AccountOnboard.start
+    ["work-account-update"]      -> AccountUpdate.start
+    ["work-advance-send"]        -> AdvanceSend.start
+    ["work-advance-collect"]     -> AdvanceCollect.start
+    ["schedule-advance-collect"] -> AdvanceCollect.startSchedule
     ["initialize"]               -> Api.initialize
     _                            -> putStrLn "please enter a command"
 
@@ -38,32 +35,6 @@ printVersion =
 
 
 
-startApi :: IO ()
-startApi = Api.start
-
-
-startAccountOnboard :: IO ()
-startAccountOnboard = App.start AccountOnboard.queue AccountOnboard.handler
-
-
-startAccountUpdate :: IO ()
-startAccountUpdate = App.start AccountUpdate.queue $ AccountUpdate.handler
-
-
--- startAccountUpdateSchedule :: IO ()
--- startAccountUpdateSchedule = App.runAppIO AccountUpdate.schedule
-
-
-startAdvanceSend :: IO ()
-startAdvanceSend = App.start AdvanceSend.queue AdvanceSend.handler
-
-
-startAdvanceCollect :: IO ()
-startAdvanceCollect = App.start AdvanceCollect.queue AdvanceCollect.handler
-
-
-startAdvanceCollectSchedule :: IO ()
-startAdvanceCollectSchedule = App.runAppIO AdvanceCollect.schedule
 
 
 
@@ -74,11 +45,10 @@ startAll = do
   IO.hSetBuffering IO.stdout IO.LineBuffering
   IO.hSetBuffering IO.stderr IO.LineBuffering
   Async.mapConcurrently_ id
-    [ startApi
-    , startAccountOnboard
-    , startAccountUpdate
-    , startAdvanceSend
-    , startAdvanceCollect
-    -- , startAccountUpdateSchedule
-    , startAdvanceCollectSchedule
+    [ Api.start
+    , AccountOnboard.start
+    , AccountUpdate.start
+    , AdvanceSend.start
+    , AdvanceCollect.start
+    , AdvanceCollect.startSchedule
     ]

@@ -9,28 +9,33 @@ module Timely.Worker.AdvanceCollect where
 -- anything less than or equal to the current time.
 -- yeah, that makes sens. it's "due"
 
-import           Control.Effects           (MonadEffects)
-import           Control.Effects.Log       as Log
-import           Control.Effects.Time      (Time)
-import qualified Control.Effects.Time      as Time
-import           Control.Effects.Worker    (Publish)
-import qualified Control.Effects.Worker    as Worker
-import           Control.Monad.Catch       (MonadThrow (..))
-import           Data.Model.Guid           as Guid
-import qualified Network.AMQP.Worker       as Worker hiding (publish)
-
-import           Timely.Advances           (Advance (..), Advances)
-import qualified Timely.Advances           as Advances
-import qualified Timely.Advances.Collect   as Collect
-import           Timely.Events             as Events
-import           Timely.Transfers          (Transfers)
-import qualified Timely.Transfers          as Transfers
+import           Control.Effects         (MonadEffects)
+import           Control.Effects.Log     as Log
+import           Control.Effects.Time    (Time)
+import qualified Control.Effects.Time    as Time
+import           Control.Effects.Worker  (Publish)
+import qualified Control.Effects.Worker  as Worker
+import           Control.Monad.Catch     (MonadThrow (..))
+import           Data.Model.Guid         as Guid
+import qualified Network.AMQP.Worker     as Worker hiding (publish)
+import           Timely.Advances         (Advance (..), Advances)
+import qualified Timely.Advances         as Advances
+import qualified Timely.Advances.Collect as Collect
+import qualified Timely.App              as App
+import           Timely.Events           as Events
+import           Timely.Transfers        (Transfers)
+import qualified Timely.Transfers        as Transfers
 
 
 
 queue :: Worker.Queue Advance
 queue = Worker.topic Events.advancesDue "app.advances.collect"
 
+start :: IO ()
+start = App.start queue handler
+
+startSchedule :: IO ()
+startSchedule = App.runAppIO schedule
 
 
 -- | Scans for due advances and queues them. Run this every hour, or every day at UTC midnight (or just after)

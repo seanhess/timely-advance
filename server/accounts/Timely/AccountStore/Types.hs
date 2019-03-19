@@ -6,7 +6,7 @@ module Timely.AccountStore.Types where
 
 
 import           Data.Aeson                (FromJSON (..), ToJSON (..))
-import           Data.Model.Guid           (Guid)
+import           Data.Model.Guid           (Guid, GuidPrefix)
 import           Data.Model.Id             (Id (..), Token (..))
 import           Data.Model.Money          as Money
 import           Data.Model.Types          (Phone, PostalCode, SSN, State)
@@ -36,6 +36,7 @@ data Account = Account
     , health     :: Health
     , created    :: UTCTime
     } deriving (Show, Eq, Generic)
+instance GuidPrefix Account
 
 
 
@@ -43,13 +44,15 @@ data AccountRow = AccountRow
     { accountId  :: Guid Account
     , phone      :: Valid Phone
     , transferId :: Id TransferAccount
-    , bankToken  :: Private (Token Access)
+    , bankToken  :: Token Access
     , bankItemId :: Id Item
     , credit     :: Money
     , created    :: UTCTime
     } deriving (Generic, Eq, Show)
 
 instance SqlRow AccountRow
+instance ToJSON AccountRow
+instance FromJSON AccountRow
 
 
 data Customer = Customer
@@ -115,6 +118,8 @@ data Application = Application
     } deriving (Generic, Show)
 
 instance SqlRow Application
+instance ToJSON Application
+instance FromJSON Application
 
 
 -- I need to associate a bank id with the account

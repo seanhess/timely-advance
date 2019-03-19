@@ -8,7 +8,7 @@ import Element.Input as Input
 import Http
 import Route
 import Time exposing (Zone)
-import Timely.Api as Api exposing (Account, AccountId, Advance, BankAccount, BankAccountType(..), Customer, Id, advanceIsActive, advanceIsCollected, advanceIsOffer, formatDate, formatDollars, idValue)
+import Timely.Api as Api exposing (Account, AccountId, Advance, BankAccount, BankAccountType(..), Customer, Id, Transaction, advanceIsActive, advanceIsCollected, advanceIsOffer, formatDate, formatDollars, idValue)
 import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 
@@ -16,6 +16,7 @@ import Timely.Style as Style
 type alias Model =
     { accountId : Id AccountId
     , account : Resource Account
+    , transactions : Resource (List Transaction)
     , banks : Resource (List BankAccount)
     , advances : Resource (List Advance)
     , zone : Zone
@@ -25,6 +26,7 @@ type alias Model =
 type Msg
     = OnAccount (Result Http.Error Account)
     | OnBanks (Result Http.Error (List BankAccount))
+    | OnTransactions (Result Http.Error (List Transaction))
     | OnAdvances (Result Http.Error (List Advance))
     | OnTimeZone Time.Zone
     | Logout
@@ -37,12 +39,14 @@ init id =
       , account = Loading
       , banks = Loading
       , advances = Loading
+      , transactions = Loading
       , zone = Time.utc
       }
     , Cmd.batch
         [ Api.getAccount OnAccount id
         , Api.getAccountBanks OnBanks id
         , Api.getAdvances OnAdvances id
+        , Api.getTransactions OnTransactions id
         , Api.timezone OnTimeZone
         ]
     )
@@ -61,6 +65,12 @@ update nav msg model =
 
         OnAccount (Ok acc) ->
             ( { model | account = Ready acc }, Cmd.none )
+
+        OnTransactions (Err e) ->
+            ( { model | transactions = Failed e }, Cmd.none )
+
+        OnTransactions (Ok ts) ->
+            ( { model | transactions = Ready ts }, Cmd.none )
 
         OnBanks (Err e) ->
             ( { model | banks = Failed e }, Cmd.none )
@@ -111,6 +121,7 @@ view model =
             , resource (advancesView model.zone model.accountId) active
             , resource customerView <| Resource.map .customer model.account
             , resource banksTable model.banks
+            , resource (transTable model.zone) model.transactions
             , resource (advancesView model.zone model.accountId) collected
 
             -- , el Style.header (text "Advances")
@@ -189,9 +200,22 @@ customerView customer =
         ]
 
 
+transTable : Time.Zone -> List Transaction -> Element Msg
+transTable zone ts =
+    Element.table [ spacing 8 ]
+        { data = ts
+        , columns =
+            [ tableColumn "Amount" (\t -> text <| "$" ++ formatDollars t.amount)
+            , tableColumn "Source" (\t -> text t.name)
+            , tableColumn "Date" (\t -> text <| formatDate zone t.date)
+            , tableColumn "Category" (\t -> text t.category)
+            ]
+        }
+
+
 banksTable : List BankAccount -> Element Msg
 banksTable banks =
-    Element.table []
+    Element.table [ spacing 8 ]
         { data = banks
         , columns =
             [ tableColumn "Account" (\b -> text b.name)

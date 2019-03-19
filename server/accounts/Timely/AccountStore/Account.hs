@@ -34,7 +34,7 @@ data Accounts m = AccountsMethods
     { _all          :: m [AccountRow]
     , _find         :: Guid Account -> m (Maybe Account)
     , _findByPhone  :: Valid Phone -> m (Maybe AccountRow)
-    , _findByBankId :: Id Item -> m (Maybe AccountRow)
+    , _findByBankId :: Id Item -> m [AccountRow]
     , _create       :: Account -> m ()
     , _setHealth    :: Guid Account -> Projection -> m ()
     , _findBanks    :: Guid Account -> m [BankAccount]
@@ -46,7 +46,7 @@ instance Effect Accounts
 all          :: MonadEffect Accounts m => m [AccountRow]
 find         :: MonadEffect Accounts m => Guid Account -> m (Maybe Account)
 findByPhone  :: MonadEffect Accounts m => Valid Phone -> m (Maybe AccountRow)
-findByBankId :: MonadEffect Accounts m => Id Item     -> m (Maybe AccountRow)
+findByBankId :: MonadEffect Accounts m => Id Item     -> m [AccountRow]
 findBanks    :: MonadEffect Accounts m => Guid Account -> m [BankAccount]
 setHealth    :: MonadEffect Accounts m => Guid Account -> Projection -> m ()
 create       :: MonadEffect Accounts m => Account -> m ()
@@ -113,7 +113,7 @@ getAccount i = do
         , phone
         , customer
         , transferId
-        , bankToken
+        , bankToken = Private bankToken
         , bankItemId
         , credit
         , health
@@ -130,13 +130,12 @@ getAccountIdByPhone p = do
     pure $ listToMaybe as
 
 
-getAccountRowByBankId :: Selda m => Id Item -> m (Maybe AccountRow)
+getAccountRowByBankId :: Selda m => Id Item -> m [AccountRow]
 getAccountRowByBankId i = do
-    as <- query $ do
+    query $ do
       a <- select accounts
       restrict (a ! #bankItemId .== literal i)
       pure a
-    pure $ listToMaybe as
 
 
 
@@ -185,7 +184,10 @@ account accountId now phone customer tok itemId credit Projection {expenses, ava
 
 accountRow :: Account -> AccountRow
 accountRow Account { accountId, phone, transferId, bankToken, bankItemId, credit, created } =
-  AccountRow { accountId, phone, transferId, bankToken, bankItemId, credit, created }
+  AccountRow
+      { credit, created, accountId, phone, transferId, bankItemId
+      , bankToken = private bankToken
+      }
 
 
 
