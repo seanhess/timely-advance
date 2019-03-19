@@ -1,12 +1,13 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DuplicateRecordFields      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
 module Timely.AccountStore.Types where
 
 
 import           Data.Aeson                (FromJSON (..), ToJSON (..))
-import           Data.Model.Guid           (Guid, GuidPrefix)
+import           Data.Model.Guid           (Guid, GuidPrefix (..))
 import           Data.Model.Id             (Id (..), Token (..))
 import           Data.Model.Money          as Money
 import           Data.Model.Types          (Phone, PostalCode, SSN, State)
@@ -16,8 +17,8 @@ import           Data.Typeable             (Typeable)
 import           Database.Selda            as Selda
 import           GHC.Generics              (Generic)
 import           Timely.Bank               (Access, Item, Public)
-import qualified Timely.Bank               as Bank (Account(..), AccountSubType(..), AccountType(..), Balances(..))
-import qualified Timely.Bank               as Bank (Currency(..))
+import qualified Timely.Bank               as Bank (Account (..), AccountSubType (..), AccountType (..), Balances (..))
+import qualified Timely.Bank               as Bank (Currency (..))
 import           Timely.Transfers.Account  (TransferAccount)
 import           Timely.Types.Private
 import           Timely.Underwriting.Types (DenialReason)
@@ -36,7 +37,9 @@ data Account = Account
     , health     :: Health
     , created    :: UTCTime
     } deriving (Show, Eq, Generic)
-instance GuidPrefix Account
+
+instance GuidPrefix Account where
+  guidPrefix _ = "acc"
 
 
 

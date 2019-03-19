@@ -41,7 +41,8 @@ data Advance = Advance
 instance SqlRow Advance
 instance ToJSON Advance
 instance FromJSON Advance
-instance GuidPrefix Advance
+instance GuidPrefix Advance where
+  guidPrefix _ = "adv"
 
 
 advances :: Table Advance
