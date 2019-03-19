@@ -27,7 +27,7 @@ main = do
     ["work-advance-send"]        -> startAdvanceSend
     ["work-advance-collect"]     -> startAdvanceCollect
     ["schedule-advance-collect"] -> startAdvanceCollectSchedule
-    ["schedule-account-update"]  -> startAccountUpdateSchedule
+    -- ["schedule-account-update"]  -> startAccountUpdateSchedule
     ["initialize"]               -> Api.initialize
     _                            -> putStrLn "please enter a command"
 
@@ -50,8 +50,8 @@ startAccountUpdate :: IO ()
 startAccountUpdate = App.start AccountUpdate.queue $ AccountUpdate.handler
 
 
-startAccountUpdateSchedule :: IO ()
-startAccountUpdateSchedule = App.runAppIO AccountUpdate.schedule
+-- startAccountUpdateSchedule :: IO ()
+-- startAccountUpdateSchedule = App.runAppIO AccountUpdate.schedule
 
 
 startAdvanceSend :: IO ()

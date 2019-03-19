@@ -173,6 +173,8 @@ instance FromJSON TransactionType where
     parseJSON = genericParseJSON enumOptions
 
 
+-- TODO replace with actual categories?
+-- TODO model as a hierarchy or tree or something?
 newtype Category = Category Text
     deriving (Show, Eq, Generic, ToJSON, FromJSON)
 

@@ -43,6 +43,7 @@ dependencies:
 - jose
 - monad-control
 - monad-logger
+- monad-loops
 - mtl
 - pretty-show
 - random

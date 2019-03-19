@@ -5,7 +5,7 @@
 module Timely.AccountStore.Types where
 
 
-import           Data.Aeson                (ToJSON(..))
+import           Data.Aeson                (FromJSON (..), ToJSON (..))
 import           Data.Model.Guid           (Guid)
 import           Data.Model.Id             (Id (..), Token (..))
 import           Data.Model.Money          as Money
@@ -15,8 +15,9 @@ import           Data.Text                 as Text
 import           Data.Typeable             (Typeable)
 import           Database.Selda            as Selda
 import           GHC.Generics              (Generic)
-import           Timely.Bank               (Access, Public, Item)
-import qualified Timely.Bank               as Bank
+import           Timely.Bank               (Access, Item, Public)
+import qualified Timely.Bank               as Bank (Account(..), AccountSubType(..), AccountType(..), Balances(..))
+import qualified Timely.Bank               as Bank (Currency(..))
 import           Timely.Transfers.Account  (TransferAccount)
 import           Timely.Types.Private
 import           Timely.Underwriting.Types (DenialReason)
@@ -65,7 +66,7 @@ data Customer = Customer
     , city        :: Text
     , state       :: Valid State
     , postalCode  :: Valid PostalCode
-    , created    :: UTCTime
+    , created     :: UTCTime
     } deriving (Generic, Eq, Show)
 
 instance SqlRow Customer
@@ -92,7 +93,7 @@ data BankAccount = BankAccount
     , bankAccountId :: Id Bank.Account
     , name          :: Text
     , balance       :: Money
-    , created    :: UTCTime
+    , created       :: UTCTime
     } deriving (Generic, Eq, Show)
 
 
@@ -109,11 +110,15 @@ data Application = Application
     , ssn             :: Valid SSN
     , dateOfBirth     :: Day
     , publicBankToken :: Token Public
-    , created    :: UTCTime
+    , created         :: UTCTime
+    , onboarding      :: Onboarding
     } deriving (Generic, Show)
 
 instance SqlRow Application
 
+
+-- I need to associate a bank id with the account
+-- just update it in place?
 
 data Onboarding
     = Pending
@@ -123,6 +128,7 @@ data Onboarding
 
 instance SqlType Onboarding
 instance ToJSON Onboarding
+instance FromJSON Onboarding
 instance ToJSON DenialReason
 
 
@@ -132,15 +138,14 @@ data AppResult
     | AppResultApproval AppApproval
 
 instance ToJSON AppResult where
-  toJSON (AppResultDenial d) = toJSON d
+  toJSON (AppResultDenial d)   = toJSON d
   toJSON (AppResultApproval a) = toJSON a
 
 
 data AppApproval = AppApproval
     { accountId      :: Guid Account
     , approvalAmount :: Money
-    , onboarding     :: Onboarding
-    , created    :: UTCTime
+    , created        :: UTCTime
     } deriving (Generic, Show)
 
 instance SqlRow AppApproval
@@ -150,13 +155,23 @@ instance ToJSON AppApproval
 data AppDenial = AppDenial
     { accountId :: Guid Account
     , denial    :: DenialReason
-    , created    :: UTCTime
+    , created   :: UTCTime
     } deriving (Generic, Show)
 
 instance SqlType DenialReason
 instance SqlRow AppDenial
 instance ToJSON AppDenial
 
+
+
+-- save this as soon as we have the bank id
+data AppBank = AppBank
+    { accountId    :: Guid Account
+    , bankItemId   :: Id Item
+    , transactions :: Maybe Int
+    } deriving (Generic, Show)
+
+instance SqlRow AppBank
 
 
 
@@ -191,7 +206,7 @@ data Health = Health
     { accountId :: Guid Account
     , expenses  :: Money
     , available :: Money
-    , created    :: UTCTime
+    , created   :: UTCTime
     } deriving (Show, Eq, Generic)
 
 instance SqlRow Health

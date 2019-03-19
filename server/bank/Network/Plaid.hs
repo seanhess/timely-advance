@@ -1,7 +1,7 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE RecordWildCards       #-}
-{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE DuplicateRecordFields       #-}
+{-# LANGUAGE NamedFieldPuns  #-}
+{-# LANGUAGE TypeOperators   #-}
 module Network.Plaid
   ( PlaidApi
   , Credentials(..)
@@ -63,30 +63,39 @@ callExchangeToken :<|> callAuth :<|> callTransactions :<|> callAccounts :<|> cal
 
 
 reqExchangeToken :: Credentials -> Token Public -> ClientM ExchangeToken.Response
-reqExchangeToken Credentials {..} public_token = callExchangeToken $ ExchangeToken.Request {..}
+reqExchangeToken Credentials {client_id, secret} public_token =
+  callExchangeToken $ ExchangeToken.Request
+    { client_id, secret, public_token }
 
 
 reqAuth :: Credentials -> Token Access -> ClientM Auth.Response
-reqAuth Credentials {..} access_token = callAuth $ Auth.Request {..}
+reqAuth Credentials {client_id, secret} access_token =
+  callAuth $ Auth.Request
+    { client_id, secret, access_token }
 
 
-reqTransactions :: Credentials -> Token Access -> Transactions.Options -> ClientM Transactions.Response
-reqTransactions Credentials {..} access_token Transactions.Options {..} =
-    callTransactions $ Transactions.Request {..}
+reqTransactions :: Credentials -> Token Access -> Id Account -> Transactions.Options -> ClientM Transactions.Response
+reqTransactions Credentials { client_id, secret} access_token accountId Transactions.Options { start_date, end_date, count, offset } =
+    callTransactions $ Transactions.Request
+      {  client_id, secret, access_token, start_date, end_date, options }
   where
-    options = Transactions.ListRequestOptions {..}
+    options = Transactions.ListRequestOptions
+      { count, offset, account_ids = [ accountId ] }
 
 
 reqAccounts :: Credentials -> Token Access -> ClientM Accounts.Response
-reqAccounts Credentials {..} access_token =
-    callAccounts $ Accounts.Request {..}
+reqAccounts Credentials { client_id, secret } access_token =
+    callAccounts $ Accounts.Request
+      { client_id, secret, access_token }
 
 
 reqIdentity :: Credentials -> Token Access -> ClientM Identity.Response
-reqIdentity Credentials {..} access_token =
-    callIdentity $ Identity.Request {..}
+reqIdentity Credentials { client_id, secret } access_token =
+    callIdentity $ Identity.Request
+      { client_id, secret, access_token}
 
 
 reqDwolla :: Credentials -> Token Access -> Id Account -> ClientM Dwolla.Response
-reqDwolla Credentials {..} access_token account_id =
-    callDwolla $ Dwolla.Request {..}
+reqDwolla Credentials { client_id, secret } access_token account_id =
+    callDwolla $ Dwolla.Request
+      { client_id, secret, access_token, account_id }

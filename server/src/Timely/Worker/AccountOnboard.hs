@@ -8,34 +8,46 @@
 module Timely.Worker.AccountOnboard where
 
 
-import           Control.Effects                 (MonadEffects)
-import           Control.Effects.Log             (Log)
-import qualified Control.Effects.Log             as Log
-import           Control.Effects.Time            (Time, UTCTime)
-import qualified Control.Effects.Time            as Time
-import           Control.Exception               (Exception)
-import           Control.Monad.Catch             (MonadCatch, MonadThrow (..), SomeException, try)
-import qualified Data.List                       as List
-import           Data.Model.Guid                 as Guid
-import           Data.Model.Id                   (Token, Id)
-import           Data.Model.Types                (Address (..), Phone, Valid)
-import           Data.Text                       as Text
-import qualified Database.Selda                  as Selda
-import           Network.AMQP.Worker             (Queue)
-import qualified Network.AMQP.Worker             as Worker hiding (bindQueue, publish, worker)
-import           Timely.AccountStore.Account     (Accounts)
-import qualified Timely.AccountStore.Account     as Account
-import           Timely.AccountStore.Application (Applications)
-import qualified Timely.AccountStore.Application as Application
-import           Timely.AccountStore.Types       (Account, Application (..), BankAccount (balance, bankAccountId),
-                                                  Customer (..), Onboarding (..), isChecking, toBankAccount)
-import           Timely.Bank                     (Banks, Dwolla, Identity (..), Names (..))
-import qualified Timely.Bank                     as Bank
-import qualified Timely.Evaluate.AccountHealth   as AccountHealth
-import qualified Timely.Events                   as Events
-import           Timely.Transfers                (AccountInfo (..), Transfers)
-import qualified Timely.Transfers                as Transfers
-import           Timely.Underwriting             as Underwriting (Approval (..), Result (..), Underwriting (..), newCustomer)
+import           Control.Effects                  (MonadEffects)
+import           Control.Effects.Async            (Async)
+import qualified Control.Effects.Async            as Async
+import           Control.Effects.Early            (Early)
+import qualified Control.Effects.Early            as Early
+import           Control.Effects.Log              (Log)
+import qualified Control.Effects.Log              as Log
+import           Control.Effects.Signal           (Throw, throwSignal)
+import qualified Control.Effects.Signal           as Signal
+import           Control.Effects.Time             (Time, UTCTime (..))
+import qualified Control.Effects.Time             as Time
+import           Control.Exception                (Exception)
+import           Control.Monad.Catch              (MonadCatch, MonadThrow (..), SomeException (..), catch)
+import           Data.Function                    ((&))
+import qualified Data.List                        as List
+import           Data.Model.Guid                  as Guid
+import           Data.Model.Id                    (Id, Token)
+import           Data.Model.Types                 (Address (..), Phone, Valid)
+import           Data.Text                        as Text
+import qualified Data.Time.Calendar               as Day
+import qualified Database.Selda                   as Selda
+import           Network.AMQP.Worker              (Queue)
+import qualified Network.AMQP.Worker              as Worker hiding (bindQueue, publish, worker)
+import           Timely.AccountStore.Account      (Accounts)
+import qualified Timely.AccountStore.Account      as Account
+import           Timely.AccountStore.Application  (Applications)
+import qualified Timely.AccountStore.Application  as Applications
+import           Timely.AccountStore.Transactions (Transaction, Transactions)
+import qualified Timely.AccountStore.Transactions as Transactions
+import           Timely.AccountStore.Types        (Account, AppBank, Application (..),
+                                                   BankAccount (balance, bankAccountId), Customer (..), Onboarding (..),
+                                                   isChecking, toBankAccount)
+import           Timely.Bank                      (Banks, Dwolla, Identity (..), Names (..))
+import qualified Timely.Bank                      as Bank
+import qualified Timely.Evaluate.AccountHealth    as AccountHealth
+import qualified Timely.Events                    as Events
+import           Timely.Transfers                 (AccountInfo (..), TransferAccount, Transfers)
+import qualified Timely.Transfers                 as Transfers
+import           Timely.Underwriting              (Approval (..), Underwriting (..))
+import qualified Timely.Underwriting              as Underwriting
 
 
 
@@ -44,94 +56,149 @@ queue = Worker.topic Events.applicationsNew "app.account.onboard"
 
 
 
+-- well, obviously I need to ALSO subscribe to a queue of transaction updates here
+-- transactions.initial --> itemId
+-- transactions.update  --> itemId
+
+-- we make our own queue? (remember this can be run more than once)
+-- and then we pick up the event
+-- and then we
+-- this would need to be a fanout exchange, no?
+-- no, a topic exchange serves the same purpose
+-- you need a UNIQUE queue name per-process (pffft)
+-- this is stupid
+-- the other polling method is better, I think
 
 
 handler
-  :: ( MonadEffects '[Time, Applications, Accounts, Log, Banks, Transfers, Underwriting] m
+  :: ( MonadEffects '[Time, Applications, Transactions, Accounts, Log, Banks, Transfers, Underwriting, Async] m
      , MonadThrow m, MonadCatch m
      )
   => Application -> m ()
-handler app = do
-    let aid = accountId (app :: Application)
-    Log.context (Guid.toText aid)
-    let phn = phone (app :: Application)
-
+handler app@(Application { accountId, phone }) = do
+    Log.context (Guid.toText accountId)
     Log.info "AccountOnboard"
 
-    (bankToken, bankItemId) <- Bank.authenticate (publicBankToken app)
-    idt <- Bank.loadIdentity bankToken
-
-    now <- Time.currentTime
-    let cust = toNewCustomer now app idt
-
-    res <- Underwriting.newCustomer cust
-    Log.debug ("underwriting", res)
-
-    Application.saveResult aid res
-
-    case res of
-      Underwriting.Denied   _ -> do
-        -- we're done. The user can see their status by polling
-        -- liftIO $ putStrLn "DENIED"
-        pure ()
-
-      Underwriting.Approved approval -> do
-        res <- try $ onboardAccount aid bankToken bankItemId cust phn approval
-
-        case res of
-          Left (err :: SomeException) -> do
-            Application.markResultOnboarding aid Error
-            throwM err
-          Right _ -> do
-            Application.markResultOnboarding aid Complete
-            Log.info "done"
-
-
-
-onboardAccount
-  :: ( MonadEffects '[Time, Accounts, Log, Banks, Transfers] m
-     , MonadThrow m
-     )
-  => Guid Account -> Token Bank.Access -> Id Bank.Item -> Customer -> Valid Phone -> Approval -> m ()
-onboardAccount aid bankToken bankItemId cust phone (Approval amt) = do
-    -- get bank accounts
-    now <- Time.currentTime
-    banks <- Bank.loadAccounts bankToken
-    let bankAccounts = List.map (toBankAccount aid now) banks
-    checking <- require MissingChecking $ List.find isChecking bankAccounts
-
-    -- initialize the transfers account
-    -- TODO this is very likely to error atm. Duplicate emails
-    achTok <- Bank.getACH bankToken (bankAccountId checking)
-    transId <- Transfers.createAccount $ toTransferAccountInfo achTok cust
-
-    -- TODO the transactions might not be available until the webhook triggers - maybe it makes more sense to have the health in a pending state. Or just: We're good!
-    let health = AccountHealth.analyze (balance checking)
-    Account.create $ Account.account aid now phone cust bankToken bankItemId amt health transId
-
-    -- save the bank accounts
-    -- TODO make it impossible to forget this
-    Account.setBanks aid bankAccounts
-
-
-
+    accountOnboard app accountId phone
+      & Early.handleEarly
+      & Signal.handleException onError
+      & flip catch onException
 
   where
-    require :: (MonadThrow m, Exception err) => err -> (Maybe a) -> m a
-    require err Nothing = throwM err
-    require _ (Just a)  = pure a
 
-toNewCustomer :: UTCTime -> Application -> Identity -> Customer
-toNewCustomer now Application {accountId, email, dateOfBirth, ssn} Identity {names, address} =
-  let Address {street1, street2, city, state, postalCode } = address
-      Names {firstName, middleName, lastName} = names
-  in Customer
-      { accountId, email, id = Selda.def
-      , firstName, middleName, lastName
-      , ssn, dateOfBirth
-      , street1, street2, city, state, postalCode
-      , created = now
-      }
+    onError :: (MonadEffects '[Applications] m, MonadThrow m) => OnboardError -> m ()
+    onError err = onException (SomeException err)
+
+    onException :: (MonadEffects '[Applications] m, MonadThrow m) => SomeException -> m ()
+    onException err = do
+      Applications.markResultOnboarding accountId Error
+      throwM err
+
+
+
+-- | accountOnboard
+--
+accountOnboard
+  :: ( MonadEffects '[Applications, Accounts, Transactions, Log, Banks, Transfers, Underwriting, Throw OnboardError, Time, Early (), Async] m)
+  => Application -> Guid Account -> Valid Phone -> m ()
+accountOnboard app accountId phone = do
+    now                      <- Time.currentTime
+    (bankToken, bankItemId)  <- Bank.authenticate (publicBankToken app)
+    appBankId                <- Applications.saveBank accountId bankItemId
+    customer                 <- newCustomer app now bankToken
+    (Approval amount)        <- underwriting accountId customer
+    (checking, bankAccounts) <- loadBankAccounts accountId bankToken now
+    transId                  <- initTransfers customer bankToken checking
+
+    trans                    <- loadTransactions accountId bankToken appBankId checking now
+
+    -- TODO perform initial account analysis. do all the fancy magic
+    -- for now, just save the transactions to their account
+
+    -- TODO create initial account health
+    let health = AccountHealth.analyze (balance checking)
+
+    -- save the account, should I reduce this to a single step somehow?
+    Account.create $ Account.account accountId now phone customer bankToken bankItemId amount health transId
+    Account.setBanks accountId bankAccounts
+    Transactions.save accountId trans
+
+    Applications.markResultOnboarding accountId Complete
+    Log.info "complete"
+
+
+
+newCustomer
+  :: ( MonadEffects '[Banks] m )
+  => Application -> UTCTime -> Token Bank.Access -> m Customer
+newCustomer app now bankToken = do
+    idt <- Bank.loadIdentity bankToken
+    pure $ toNewCustomer now app idt
+
+  where
+    toNewCustomer :: UTCTime -> Application -> Identity -> Customer
+    toNewCustomer now Application {accountId, email, dateOfBirth, ssn} Identity {names, address} =
+      let Address {street1, street2, city, state, postalCode } = address
+          Names {firstName, middleName, lastName} = names
+      in Customer
+          { accountId, email, id = Selda.def
+          , firstName, middleName, lastName
+          , ssn, dateOfBirth
+          , street1, street2, city, state, postalCode
+          , created = now
+          }
+
+
+underwriting
+  :: ( MonadEffects '[Underwriting, Log, Applications, Early ()] m )
+  => Guid Account -> Customer -> m Approval
+underwriting accountId cust = do
+    res <- Underwriting.newCustomer cust
+    Log.debug ("underwriting", res)
+    Applications.saveResult accountId res
+    case res of
+      Underwriting.Denied  _ ->
+        Early.earlyReturn ()
+      Underwriting.Approved approval ->
+        pure approval
+
+
+
+loadBankAccounts
+  :: ( MonadEffects '[Banks, Throw OnboardError] m )
+  => Guid Account -> Token Bank.Access -> UTCTime -> m (BankAccount, [BankAccount])
+loadBankAccounts accountId bankToken now = do
+    banks <- Bank.loadAccounts bankToken
+    let bankAccounts = List.map (toBankAccount accountId now) banks
+    checking <- require MissingChecking $ List.find isChecking bankAccounts
+    pure (checking, bankAccounts)
+
+
+initTransfers
+  :: ( MonadEffects '[Banks, Transfers] m )
+  => Customer -> Token Bank.Access -> BankAccount -> m (Id TransferAccount)
+initTransfers cust bankToken checking = do
+  achTok <- Bank.getACH bankToken (bankAccountId checking)
+  transId <- Transfers.createAccount $ toTransferAccountInfo achTok cust
+  pure transId
+
+
+
+loadTransactions
+  :: ( MonadEffects '[Banks, Applications, Async] m )
+  => Guid Account -> Token Bank.Access -> Id AppBank -> BankAccount -> UTCTime -> m [ Transaction ]
+loadTransactions accountId bankToken appBankId checking now = do
+    -- Waits for the webhook to update the transactions
+    _ <- Async.poll (1000*1000) $ Applications.findTransactions appBankId
+
+    -- load all the transactions
+    let UTCTime today _ = now
+    let monthsAgo = Day.addDays (-100) today
+    ts <- Bank.loadTransactionsRange bankToken (bankAccountId checking) monthsAgo today
+    pure $ List.map (Transactions.fromBank accountId) ts
+
+
+
 
 
 toTransferAccountInfo :: Token Dwolla -> Customer -> Transfers.AccountInfo
@@ -162,3 +229,10 @@ data OnboardError
     deriving (Eq, Show)
 
 instance Exception OnboardError
+
+
+
+
+require :: MonadEffects '[Throw OnboardError] m => OnboardError -> (Maybe a) -> m a
+require err Nothing = throwSignal err
+require _ (Just a)  = pure a

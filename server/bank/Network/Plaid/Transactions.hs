@@ -102,7 +102,6 @@ data Options = Options
     , end_date    :: Day
     , count       :: Int
     , offset      :: Int
-    , account_ids :: [ Id Account ]
     }
 
 

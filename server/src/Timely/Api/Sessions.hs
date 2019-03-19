@@ -20,10 +20,11 @@ import           Servant.Auth.Server         (AuthResult (..), CookieSettings (.
                                               SetCookie, ThrowAll (..), defaultCookieSettings, defaultJWTSettings)
 import qualified Servant.Auth.Server         as Servant
 
+import           Timely.AccountStore.Account (Accounts)
 import qualified Timely.AccountStore.Account as Account
-import Timely.AccountStore.Account (Accounts)
 import           Timely.AccountStore.Types   (Account)
-import           Timely.Auth                 (AuthCode, Auth)
+import qualified Timely.AccountStore.Types   as Account (AccountRow(..))
+import           Timely.Auth                 (Auth, AuthCode)
 import qualified Timely.Auth                 as Auth
 import           Timely.Types.Session        (Admin, Session (..))
 
@@ -77,7 +78,7 @@ session
 session p = do
     -- they've already successfully validated the code. They're in!
     ma <- Account.findByPhone p
-    let s = Session p ma False
+    let s = Session p (Account.accountId <$> ma) False
     setSession s s
 
 

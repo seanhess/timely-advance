@@ -10,25 +10,26 @@ import           Control.Effects.Log           (Log)
 import qualified Control.Effects.Log           as Log
 import           Control.Effects.Time          (Time)
 import qualified Control.Effects.Time          as Time
-import           Control.Effects.Worker        (Publish)
-import qualified Control.Effects.Worker        as Worker
+-- import           Control.Effects.Worker        (Publish)
+-- import qualified Control.Effects.Worker        as Worker
 import           Control.Exception             (Exception)
 import           Control.Monad                 (when)
 import           Control.Monad.Catch           (MonadThrow (..))
 import qualified Data.List                     as List
 import           Data.Model.Guid               as Guid
+import           Data.Model.Id                 (Id)
 import           Data.Model.Money              (Money)
+import           Data.String.Conversions       (cs)
 import           Data.Time.Calendar            (Day)
 import qualified Network.AMQP.Worker           as Worker (Queue, topic)
 import           Timely.AccountStore.Account   (Accounts)
 import qualified Timely.AccountStore.Account   as Accounts
-import           Timely.AccountStore.Types     (Account (bankToken), AccountRow (accountId), BankAccount (balance),
-                                                isChecking, toBankAccount)
-import qualified Timely.AccountStore.Types     as Account (Account (..))
-import qualified Timely.AccountStore.Types     as AccountRow (AccountRow (..))
+import           Timely.AccountStore.Types     (AccountRow(accountId), BankAccount, Account)
+import qualified Timely.AccountStore.Types as BankAccount
+import qualified Timely.AccountStore.Types as Account (AccountRow(..))
 import           Timely.Advances               (Advance, Advances)
 import qualified Timely.Advances               as Advances
-import           Timely.Bank                   (Access, Banks, Token)
+import           Timely.Bank                   (Access, Banks, Item, Token)
 import qualified Timely.Bank                   as Bank
 import qualified Timely.Evaluate.AccountHealth as AccountHealth
 import qualified Timely.Evaluate.Offer         as Offer
@@ -41,26 +42,26 @@ import           Timely.Types.Private          (Private (..))
 
 
 
-queue :: Worker.Queue (Guid Account)
-queue = Worker.topic Events.transactionsNew "app.account.update"
+queue :: Worker.Queue (Id Item)
+queue = Worker.topic Events.transactionsUpdate "app.account.update"
 
 
 
 -- | Schedules all accounts for an update
-schedule
-  :: ( MonadEffects '[Accounts, Log, Publish] m
-     , MonadThrow m
-     )
-  => m ()
-schedule = do
-    Log.context "Schedule AccountUpdate"
-    accounts <- Accounts.all
-    mapM scheduleAccountUpdate accounts
-    pure ()
-  where
-    scheduleAccountUpdate account = do
-      Log.info $ Guid.toText $ accountId account
-      Worker.publish Events.transactionsNew (AccountRow.accountId account)
+-- schedule
+--   :: ( MonadEffects '[Accounts, Log, Publish] m
+--      , MonadThrow m
+--      )
+--   => m ()
+-- schedule = do
+--     Log.context "Schedule AccountUpdate"
+--     accounts <- Accounts.all
+--     mapM scheduleAccountUpdate accounts
+--     pure ()
+--   where
+--     scheduleAccountUpdate account = do
+--       Log.info $ Guid.toText $ accountId account
+--       Worker.publish Events.transactionsNew (AccountRow.accountId account)
 
 
 
@@ -68,19 +69,22 @@ handler
   :: ( MonadEffects '[Time, Accounts, Log, Banks, Advances, Notify] m
      , MonadThrow m
      )
-  => Guid Account -> m ()
-handler accountId = do
+  => Id Item -> m ()
+handler itemId = do
 
-    Log.context (Guid.toText accountId)
+    Log.context $ cs $ show itemId
     Log.info "AccountUpdate"
 
-    account  <- Accounts.find accountId
+    account  <- Accounts.findByBankId itemId
                   >>= require MissingAccount
 
-    checking <- updateBankBalances accountId (private $ bankToken account)
+    let aid = accountId account
+    Log.context $ Guid.toText aid
+
+    checking <- updateBankBalances aid (private $ Account.bankToken account)
                   >>= require MissingChecking
 
-    health <- updateHealth accountId checking
+    health <- updateHealth aid checking
 
     Log.debug ("Health", health)
     checkAdvance account health
@@ -89,8 +93,8 @@ handler accountId = do
 
   where
 
-    require :: (MonadThrow m, Exception err) => (Guid Account -> err) -> (Maybe a) -> m a
-    require err Nothing = throwM (err accountId)
+    require :: (MonadThrow m, Exception err) => (Id Item -> err) -> (Maybe a) -> m a
+    require err Nothing = throwM (err itemId)
     require _ (Just a)  = pure a
 
 
@@ -98,11 +102,11 @@ handler accountId = do
 checkAdvance
   :: ( MonadEffects '[Time, Log, Advances, Notify] m
      )
-  => Account -> Projection -> m ()
+  => AccountRow -> Projection -> m ()
 checkAdvance account health = do
     now    <- Time.currentTime
-    offer  <- Advances.findOffer  (Account.accountId account)
-    active <- Advances.findActive (Account.accountId account)
+    offer  <- Advances.findOffer  (accountId account)
+    active <- Advances.findActive (accountId account)
     when (Offer.isNeeded offer active health now) $ do
       a <- offerAdvance account Offer.amount (Time.utctDay now)
       Log.debug ("advance", a)
@@ -111,9 +115,9 @@ checkAdvance account health = do
 
 offerAdvance
    :: ( MonadEffects '[Log, Advances, Notify] m)
-   => Account -> Money -> Day -> m Advance
+   => AccountRow -> Money -> Day -> m Advance
 offerAdvance account amount today = do
-    let id = Account.accountId account
+    let id = accountId account
         transactions = []
         frequency    = Paydate.frequency transactions
         nextPayday   = Paydate.next frequency today
@@ -132,7 +136,7 @@ updateHealth
   :: ( MonadEffects '[Accounts] m)
   => Guid Account -> BankAccount -> m Projection
 updateHealth accountId checking = do
-    let health = AccountHealth.analyze (balance checking)
+    let health = AccountHealth.analyze (BankAccount.balance checking)
     Accounts.setHealth accountId health
     pure health
 
@@ -145,9 +149,9 @@ updateBankBalances
 updateBankBalances accountId token = do
     now <- Time.currentTime
     banks <- Bank.loadAccounts token
-    let accounts = List.map (toBankAccount accountId now) banks
+    let accounts = List.map (BankAccount.toBankAccount accountId now) banks
     Accounts.setBanks accountId accounts
-    pure $ List.find isChecking accounts
+    pure $ List.find BankAccount.isChecking accounts
 
 
 
@@ -164,9 +168,20 @@ updateBankBalances accountId token = do
 -- DAY 3: Advance arrives, they're healthy
 
 
+
+-- findAccountByBankId
+--   :: (MonadEffects '[Accounts, Throw Error] m)
+--   => Id Plaid.Item -> m (Guid Account)
+-- findAccountByBankId i = do
+--   ma <- Accounts.findByBankId i
+--   case ma of
+--     (Just a) -> pure a
+--     Nothing  -> throwSignal $ MissingBankId i
+
+
 data EvaluateError
-    = MissingAccount  (Guid Account)
-    | MissingChecking (Guid Account)
+    = MissingAccount  (Id Item)
+    | MissingChecking (Id Item)
     deriving (Show, Eq)
 
 instance Exception EvaluateError

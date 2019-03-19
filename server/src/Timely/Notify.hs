@@ -26,14 +26,14 @@ import           GHC.Generics              (Generic)
 import           Prelude                   hiding (id)
 import           Servant.Client            (BaseUrl)
 import qualified Servant.Client            as Servant
-import           Timely.AccountStore.Types (Account (..))
+import           Timely.AccountStore.Types (AccountRow (..), Account)
 import qualified Timely.AccountStore.Types as Account
 import qualified Twilio                    as Twilio
 import qualified Twilio.Messages           as Twilio
 
 
 data Notify m = NotifyMethods
-  { _send :: forall a. Typeable a => Account -> Message a -> m ()
+  { _send :: forall a. Typeable a => AccountRow -> Message a -> m ()
   }
 
 instance Effect Notify where
@@ -46,7 +46,7 @@ instance Effect Notify where
         _send m i t)
 
 
-send :: (MonadEffect Notify m, Typeable a) => Account -> Message a -> m ()
+send :: (MonadEffect Notify m, Typeable a) => AccountRow -> Message a -> m ()
 send = _send effect
 
 
@@ -63,11 +63,11 @@ implementIO = implement $
 
 sendMessage
   :: (MonadIO m, MonadConfig Config m, Typeable a)
-  => Account -> Message a -> m ()
+  => AccountRow -> Message a -> m ()
 sendMessage account message = do
   Config { fromPhone, accountSid, authToken, appBaseUrl } <- config
   let (Valid from) = fromPhone
-      (Valid to)   = Account.phone (account :: Account)
+      (Valid to)   = Account.phone (account :: AccountRow)
   liftIO $ Twilio.runTwilio (accountSid, authToken) $ do
     Twilio.post $ Twilio.PostMessage ("+1" <> to) ("+1" <> from) (body appBaseUrl (accountId account) message) Nothing
   pure ()

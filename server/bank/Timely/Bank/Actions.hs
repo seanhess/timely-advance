@@ -13,7 +13,6 @@ import qualified Data.Maybe                  as Maybe
 import           Data.Model.Id               (Id (..), Token (..))
 import           Data.Model.Types            (Address (..), Validate (..))
 import           Data.Text                   as Text
-import           Data.Time.Calendar          (fromGregorian)
 import qualified Network.Plaid               as Plaid
 import qualified Network.Plaid.Accounts      as Accounts
 import           Network.Plaid.Dwolla        (Dwolla)
@@ -21,8 +20,9 @@ import qualified Network.Plaid.Dwolla        as Dwolla
 import qualified Network.Plaid.ExchangeToken as ExchangeToken
 import           Network.Plaid.Identity      (AddressInfo (..))
 import qualified Network.Plaid.Identity      as Identity
+import           Network.Plaid.Transactions  (Options)
 import qualified Network.Plaid.Transactions  as Transactions
-import           Network.Plaid.Types         (Access, Account, Public, Transaction, Item)
+import           Network.Plaid.Types         (Access, Account, Item, Public, Transaction)
 import           Servant.Client              (ClientEnv, ClientM, mkClientEnv, runClientM)
 import           Timely.Bank.Types           (BankError (..), Config (..), Identity (..), Names (..))
 
@@ -52,17 +52,22 @@ loadAccounts tok = do
     pure $ Accounts.accounts res
 
 
--- which transactions should I load? How far back? 3 months?
--- this only works for specific accounts
--- so we don't really care about the account information, do we?
-loadTransactions :: (MonadIO m, MonadConfig Config m) => Token Access -> Id Account -> m [Transaction]
-loadTransactions tok aid = do
+
+
+
+loadTransactions :: (MonadIO m, MonadConfig Config m) => Token Access -> Id Account -> Options -> m [Transaction]
+loadTransactions tok aid options = do
     creds <- configs credentials
-    -- TODO how many transactions should we pull?
-    -- TODO how far back should we go?
-    let options = Transactions.Options (fromGregorian 2018 09 01) (fromGregorian 2018 12 31) 500 0 [aid]
-    res <- runPlaid $ Plaid.reqTransactions creds tok options
+    res <- runPlaid $ Plaid.reqTransactions creds tok aid options
     pure $ Transactions.transactions res
+
+
+    -- -- TODO how many transactions should we pull?
+    -- -- TODO how far back should we go?
+    -- UTCTime now _ <- liftIO $ Time.getCurrentTime
+
+    -- -- TODO: move all logic into Bank, so this is a thin proxy to the API
+    -- let options = Transactions.Options since now 500 0
 
 
 getACH :: (MonadIO m, MonadConfig Config m) => Token Access -> Id Account -> m (Token Dwolla)

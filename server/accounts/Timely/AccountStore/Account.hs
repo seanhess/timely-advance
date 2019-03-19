@@ -33,8 +33,8 @@ import           Timely.Types.Private
 data Accounts m = AccountsMethods
     { _all          :: m [AccountRow]
     , _find         :: Guid Account -> m (Maybe Account)
-    , _findByPhone  :: Valid Phone -> m (Maybe (Guid Account))
-    , _findByBankId :: Id Item     -> m (Maybe (Guid Account))
+    , _findByPhone  :: Valid Phone -> m (Maybe AccountRow)
+    , _findByBankId :: Id Item -> m (Maybe AccountRow)
     , _create       :: Account -> m ()
     , _setHealth    :: Guid Account -> Projection -> m ()
     , _findBanks    :: Guid Account -> m [BankAccount]
@@ -45,8 +45,8 @@ instance Effect Accounts
 
 all          :: MonadEffect Accounts m => m [AccountRow]
 find         :: MonadEffect Accounts m => Guid Account -> m (Maybe Account)
-findByPhone  :: MonadEffect Accounts m => Valid Phone -> m (Maybe (Guid Account))
-findByBankId :: MonadEffect Accounts m => Id Item     -> m (Maybe (Guid Account))
+findByPhone  :: MonadEffect Accounts m => Valid Phone -> m (Maybe AccountRow)
+findByBankId :: MonadEffect Accounts m => Id Item     -> m (Maybe AccountRow)
 findBanks    :: MonadEffect Accounts m => Guid Account -> m [BankAccount]
 setHealth    :: MonadEffect Accounts m => Guid Account -> Projection -> m ()
 create       :: MonadEffect Accounts m => Account -> m ()
@@ -61,7 +61,7 @@ implementIO = implement $
     allAccounts
     getAccount
     getAccountIdByPhone
-    getAccountIdByBankId
+    getAccountRowByBankId
     createAccount
     setAccountHealth
     getBankAccounts
@@ -121,21 +121,21 @@ getAccount i = do
         }
 
 
-getAccountIdByPhone :: Selda m => Valid Phone -> m (Maybe (Guid Account))
+getAccountIdByPhone :: Selda m => Valid Phone -> m (Maybe AccountRow)
 getAccountIdByPhone p = do
     as <- query $ do
       a <- select accounts
       restrict (a ! #phone .== literal p)
-      pure $ a ! #accountId
+      pure a
     pure $ listToMaybe as
 
 
-getAccountIdByBankId :: Selda m => Id Item -> m (Maybe (Guid Account))
-getAccountIdByBankId i = do
+getAccountRowByBankId :: Selda m => Id Item -> m (Maybe AccountRow)
+getAccountRowByBankId i = do
     as <- query $ do
       a <- select accounts
       restrict (a ! #bankItemId .== literal i)
-      pure $ a ! #accountId
+      pure a
     pure $ listToMaybe as
 
 
