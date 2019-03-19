@@ -12,9 +12,10 @@ module Timely.AccountStore.Application where
 
 import           Control.Effects           (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
 import           Control.Monad.Selda       (Selda, insert, query, tryCreateTable, update_)
-import           Data.Maybe                (listToMaybe, catMaybes)
+import           Data.Maybe                (catMaybes, listToMaybe)
 import           Data.Model.Guid           (Guid)
-import           Data.Model.Id             (Id(..))
+import qualified Data.Model.Guid           as Guid
+import           Data.Model.Id             (Id (..))
 import qualified Data.Time.Clock           as Time
 import           Database.Selda            hiding (Result, insert, query, tryCreateTable, update_)
 
@@ -33,7 +34,7 @@ data Applications m = ApplicationsMethods
   , _markResultOnboarding :: Guid Account -> Onboarding -> m ()
   , _saveBank             :: Guid Account -> Id Bank.Item -> m (Id AppBank)
   , _saveTransactions     :: Id Bank.Item -> Int -> m ()
-  , _findTransactions     :: Id AppBank -> m (Maybe Int)
+  , _findTransactions     :: Id AppBank   -> m (Maybe Int)
   } deriving (Generic)
 
 instance Effect Applications
@@ -83,7 +84,10 @@ denials :: Table AppDenial
 denials = table "applications_denials" [#accountId :- primary]
 
 banks :: Table AppBank
-banks = table "applications_banks" [#bankItemId :- primary]
+banks = table "applications_banks"
+    [ #accountId :- primary
+    , #bankItemId :- index
+    ]
 
 
 saveApp :: (Selda m) => Application -> m ()
@@ -92,25 +96,27 @@ saveApp app = do
     pure ()
 
 
+-- | Id AppBank is actually the guid account, but we want to ensure you create the app bank before you try to find it!
 saveAppBank :: Selda m => Guid Account -> Id Bank.Item -> m (Id AppBank)
 saveAppBank accountId bankItemId = do
     insert banks [AppBank accountId bankItemId Nothing]
-    let Id i = bankItemId
-    pure $ Id i
+    pure $ Id $ Guid.toText accountId
+
 
 saveAppTransactions :: Selda m => Id Bank.Item -> Int -> m ()
 saveAppTransactions i n = do
+    -- this will update ALL of them
     update_ banks
       (\a -> a ! #bankItemId .== literal i)
       (\a -> a `with` [#transactions := literal (Just n)])
 
 
 findAppTransactions :: (Selda m) => Id AppBank -> m (Maybe Int)
-findAppTransactions (Id i) = do
-    -- bs [Maybe Int]
+findAppTransactions (Id aid) = do
+    let accountId = Guid.fromText aid
     bs <- query $ do
       b <- select banks
-      restrict (b ! #bankItemId .== literal (Id i))
+      restrict (b ! #accountId .== literal accountId)
       return $ b ! #transactions
     pure $ listToMaybe $ catMaybes $ bs
 

@@ -36,8 +36,8 @@ info = _logInfo effect
 debug :: (MonadEffect Log m, Show a) => a -> m ()
 debug a = _logDebug effect (cs $ show a)
 
-error :: (MonadEffect Log m, Show a) => a -> m ()
-error a = _logError effect (cs $ show a)
+error :: MonadEffect Log m => Text -> m ()
+error = _logError effect
 
 context :: MonadEffect Log m => Text -> m ()
 context = _context effect

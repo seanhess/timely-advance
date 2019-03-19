@@ -37,9 +37,10 @@ import           Timely.AccountStore.Application  (Applications)
 import qualified Timely.AccountStore.Application  as Applications
 import           Timely.AccountStore.Transactions (Transaction, Transactions)
 import qualified Timely.AccountStore.Transactions as Transactions
-import           Timely.AccountStore.Types        (Account, AppBank, Application (..),
+import           Timely.AccountStore.Types        (Account, Application (..),
                                                    BankAccount (balance, bankAccountId), Customer (..), Onboarding (..),
-                                                   isChecking, toBankAccount)
+                                                   isChecking, toBankAccount, AppBank)
+
 import           Timely.Bank                      (Banks, Dwolla, Identity (..), Names (..))
 import qualified Timely.Bank                      as Bank
 import qualified Timely.Evaluate.AccountHealth    as AccountHealth
@@ -165,36 +166,44 @@ underwriting accountId cust = do
 
 
 loadBankAccounts
-  :: ( MonadEffects '[Banks, Throw OnboardError] m )
+  :: ( MonadEffects '[Banks, Log, Throw OnboardError] m )
   => Guid Account -> Token Bank.Access -> UTCTime -> m (BankAccount, [BankAccount])
 loadBankAccounts accountId bankToken now = do
+    Log.info "load bank accounts"
     banks <- Bank.loadAccounts bankToken
+    Log.debug ("banks", banks)
     let bankAccounts = List.map (toBankAccount accountId now) banks
+    Log.debug ("bankAccounts", List.length bankAccounts)
     checking <- require MissingChecking $ List.find isChecking bankAccounts
+    Log.debug "found checking"
     pure (checking, bankAccounts)
 
 
 initTransfers
-  :: ( MonadEffects '[Banks, Transfers] m )
+  :: ( MonadEffects '[Banks, Log, Transfers] m )
   => Customer -> Token Bank.Access -> BankAccount -> m (Id TransferAccount)
 initTransfers cust bankToken checking = do
-  achTok <- Bank.getACH bankToken (bankAccountId checking)
-  transId <- Transfers.createAccount $ toTransferAccountInfo achTok cust
-  pure transId
+    Log.info "init transfers"
+    achTok <- Bank.getACH bankToken (bankAccountId checking)
+    transId <- Transfers.createAccount $ toTransferAccountInfo achTok cust
+    Log.debug ("transfers", transId)
+    pure transId
 
 
 
 loadTransactions
-  :: ( MonadEffects '[Banks, Applications, Async] m )
+  :: ( MonadEffects '[Banks, Applications, Log, Async] m )
   => Guid Account -> Token Bank.Access -> Id AppBank -> BankAccount -> UTCTime -> m [ Transaction ]
 loadTransactions accountId bankToken appBankId checking now = do
     -- Waits for the webhook to update the transactions
+    Log.info "load transactions"
     _ <- Async.poll (1000*1000) $ Applications.findTransactions appBankId
 
     -- load all the transactions
     let UTCTime today _ = now
     let monthsAgo = Day.addDays (-100) today
     ts <- Bank.loadTransactionsRange bankToken (bankAccountId checking) monthsAgo today
+    Log.debug ("transactions", List.length ts)
     pure $ List.map (Transactions.fromBank accountId) ts
 
 

@@ -1,6 +1,7 @@
 module Page.Onboard.Approval exposing (Model, Msg, init, subscriptions, update, view)
 
 import Browser.Navigation as Nav
+import Debug
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
@@ -10,15 +11,17 @@ import Platform.Updates exposing (Updates, base, command, set)
 import Process
 import Route
 import Task
-import Timely.Api as Api exposing (Account, AccountId, Application, ApprovalResult(..), Id(..))
+import Timely.Api as Api exposing (Account, AccountId, Application, ApprovalResult(..), Id(..), Onboarding(..))
 import Timely.Components as Components exposing (spinnerRipple)
+import Timely.Resource as Resource exposing (Resource(..))
 import Timely.Style as Style
 
 
 type alias Model =
     { key : Nav.Key
     , accountId : Id AccountId
-    , status : Status
+    , application : Resource Application
+    , result : Resource ApprovalResult
     }
 
 
@@ -26,29 +29,25 @@ type alias PublicToken =
     String
 
 
-type Status
-    = Loading
-    | Error (List String)
-    | Complete ApprovalResult
-
-
 type alias Problem =
     String
 
 
 type Msg
-    = OnResult (Result Http.Error ApprovalResult)
+    = OnApplication (Result Http.Error Application)
     | OnWaited ()
+    | OnResult (Result Http.Error ApprovalResult)
     | Close
 
 
 init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
 init key accountId =
     ( { accountId = accountId
-      , status = Loading
+      , application = Loading
+      , result = Loading
       , key = key
       }
-    , Api.getApplicationResult OnResult accountId
+    , Api.getApplication OnApplication accountId
     )
 
 
@@ -63,45 +62,49 @@ update msg model =
         updates =
             base model
 
-        isComplete result =
-            case result of
-                Approved app ->
-                    case app.onboarding of
-                        Api.Complete ->
-                            True
+        pollApplication app =
+            if isComplete app.onboarding then
+                Api.getApplicationResult OnResult model.accountId
 
-                        Api.Error ->
-                            True
+            else
+                Process.sleep 1000 |> Task.perform OnWaited
 
-                        _ ->
-                            False
+        isComplete onboarding =
+            case onboarding of
+                Api.Complete ->
+                    True
+
+                Api.Error ->
+                    True
 
                 _ ->
                     False
     in
+    -- Debug.log (Debug.toString msg) <|
     case msg of
-        OnResult (Err (Http.BadStatus 404)) ->
+        -- OnApplication (Err (Http.BadStatus 404)) ->
+        --     updates
+        --         |> command (Process.sleep 1000 |> Task.perform OnWaited)
+        OnApplication (Err e) ->
             updates
-                |> command (Process.sleep 1000 |> Task.perform OnWaited)
+                |> set { model | application = Failed e }
+
+        OnApplication (Ok app) ->
+            updates
+                |> set { model | application = Ready app }
+                |> command (pollApplication app)
 
         OnResult (Err e) ->
             updates
-                |> set { model | status = Error [ "Loading Error " ] }
+                |> set { model | result = Failed e }
 
         OnResult (Ok r) ->
             updates
-                |> set { model | status = Complete r }
-                |> command
-                    (if isComplete r then
-                        Cmd.none
-
-                     else
-                        Process.sleep 1000 |> Task.perform OnWaited
-                    )
+                |> set { model | result = Ready r }
 
         OnWaited () ->
             updates
-                |> command (Api.getApplicationResult OnResult model.accountId)
+                |> command (Api.getApplication OnApplication model.accountId)
 
         Close ->
             updates
@@ -118,29 +121,42 @@ view model =
                 ]
             ]
         , column Style.section
-            [ viewStatus model.accountId model.status
+            [ viewStatus model.accountId model.application model.result
             ]
         ]
 
 
-viewStatus : Id AccountId -> Status -> Element Msg
-viewStatus accountId status =
-    case status of
-        Loading ->
+viewStatus : Id AccountId -> Resource Application -> Resource ApprovalResult -> Element Msg
+viewStatus accountId rapp rres =
+    case ( rapp, rres ) of
+        ( Failed e, _ ) ->
+            viewProblem e
+
+        ( _, Failed e ) ->
+            viewProblem e
+
+        ( Loading, _ ) ->
             spinnerRipple
 
-        Error ps ->
-            Element.column [] (List.map viewProblem ps)
+        ( _, Loading ) ->
+            spinnerRipple
 
-        Complete (Denied d) ->
+        ( Ready app, Ready res ) ->
+            viewApplication accountId app.onboarding res
+
+
+viewApplication : Id AccountId -> Onboarding -> ApprovalResult -> Element Msg
+viewApplication accountId onboarding res =
+    case res of
+        Denied _ ->
             Element.el [] (text "Denied")
 
-        Complete (Approved a) ->
+        Approved a ->
             Element.column [ spacing 10, width fill ]
                 [ Element.el [] (text "Approved!")
                 , Element.el [] (text <| String.fromInt a.approvalAmount)
                 , Element.column [ width fill ]
-                    [ case a.onboarding of
+                    [ case onboarding of
                         Api.Pending ->
                             Element.el [] (text "Creating your account...")
 
@@ -156,6 +172,6 @@ viewStatus accountId status =
                 ]
 
 
-viewProblem : Problem -> Element Msg
-viewProblem p =
-    el [] (text p)
+viewProblem : Http.Error -> Element Msg
+viewProblem _ =
+    el [] (text "Loading Error")

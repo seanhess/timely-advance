@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money, Onboarding(..), Phone, SSN, Session, Token, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeAmount, encodeId, expectId, formatDate, formatDollars, formatMoney, fromDollars, getAccount, getAccountBanks, getAdvance, getAdvances, getApplicationResult, idValue, postAdvanceAccept, postApplications, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, timezone, usedCredit)
+module Timely.Api exposing (Account, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money, Onboarding(..), Phone, SSN, Session, Token, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeAmount, encodeId, expectId, formatDate, formatDollars, formatMoney, fromDollars, getAccount, getAccountBanks, getAdvance, getAdvances, getApplication, getApplicationResult, idValue, postAdvanceAccept, postApplications, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, timezone, usedCredit)
 
 import Http exposing (Error, Expect)
 import Iso8601
@@ -43,6 +43,7 @@ type alias AccountInfo =
 
 type alias Application =
     { accountId : Id AccountId
+    , onboarding : Onboarding
     }
 
 
@@ -99,7 +100,6 @@ type Onboarding
 
 type alias Approval =
     { approvalAmount : Int
-    , onboarding : Onboarding
     }
 
 
@@ -164,7 +164,6 @@ decodeApproval : Decoder Approval
 decodeApproval =
     Decode.succeed Approval
         |> required "approvalAmount" int
-        |> required "onboarding" decodeOnboarding
 
 
 decodeAccountInfo : Decoder AccountInfo
@@ -218,6 +217,7 @@ decodeApplication : Decoder Application
 decodeApplication =
     Decode.succeed Application
         |> required "accountId" decodeId
+        |> required "onboarding" decodeOnboarding
 
 
 decodeSession : Decoder Session
@@ -337,6 +337,19 @@ getAccountBanks toMsg (Id a) =
         , url = String.join "/" [ "", "v1", "accounts", a, "bank-accounts" ]
         , body = Http.emptyBody
         , expect = Http.expectJson toMsg (list decodeBankAccount)
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+getApplication : (Result Error Application -> msg) -> Id AccountId -> Cmd msg
+getApplication toMsg (Id a) =
+    Http.request
+        { method = "GET"
+        , headers = []
+        , url = String.join "/" [ "", "v1", "accounts", a, "application" ]
+        , body = Http.emptyBody
+        , expect = Http.expectJson toMsg decodeApplication
         , timeout = Nothing
         , tracker = Nothing
         }

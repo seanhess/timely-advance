@@ -28,6 +28,8 @@ import           Servant.Server.Generic               (AsServerT, genericServerT
 import qualified Timely.AccountStore.Account          as Account
 import qualified Timely.AccountStore.Application      as Application
 import           Timely.AccountStore.Types            (AppResult, Application)
+import           Timely.AccountStore.Transactions     (Transaction)
+import qualified Timely.AccountStore.Transactions     as Transactions
 import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
 import           Timely.Api.Advances                  as Advances
@@ -78,6 +80,7 @@ data VersionedApi route = VersionedApi
 data AccountApi route = AccountApi
     { _get      :: route :- Get '[JSON, HTML] Account
     , _banks    :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
+    , _trans    :: route :- "transactions" :> Get '[JSON] [Transaction]
     , _app      :: route :- "application" :> Get '[JSON] Application
     , _result   :: route :- "application" :> "result" :> Get '[JSON] AppResult
     , _advances :: route :- "advances" :> ToServantApi AdvanceApi
@@ -120,6 +123,7 @@ accountApi i = genericServerT AccountApi
     , _banks   = Account.findBanks i
     , _app     = Application.find i       >>= notFound
     , _result  = Application.findResult i >>= notFound
+    , _trans   = Transactions.all i
     , _advances = advanceApi i
     }
 
@@ -209,6 +213,7 @@ initialize = do
     runAppIO $ do
       Account.initialize
       Application.initialize
+      Transactions.initialize
       Advances.initialize
       Transfers.initialize
 

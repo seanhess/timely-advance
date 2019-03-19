@@ -3,26 +3,27 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoMonomorphismRestriction  #-}
+{-# LANGUAGE OverloadedLabels           #-}
 {-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE OverloadedLabels          #-}
 module Timely.AccountStore.Transactions where
 
 
 
-import           Control.Effects           (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
-import           Control.Monad.Selda       (Selda, insert, tryCreateTable)
-import           Data.Model.Guid           (Guid)
-import           Data.Model.Id             (Id (..))
-import           Data.Model.Money          (Money)
-import qualified Data.Model.Money          as Money
-import qualified Data.Text as Text
+import           Control.Effects             (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
+import           Control.Monad.Selda         (Selda, insert, query, tryCreateTable)
+import           Data.Aeson                  (ToJSON)
+import           Data.Model.Guid             (Guid)
+import           Data.Model.Id               (Id (..))
+import           Data.Model.Money            (Money)
+import qualified Data.Model.Money            as Money
 import           Data.Proxy
-import           Database.Selda            hiding (deleteFrom, insert, query, tryCreateTable)
-import           Database.Selda.SqlType    (Lit (..), SqlType (..))
-import           GHC.Generics              (Generic)
-import           Timely.AccountStore.Types (Account)
-import Timely.AccountStore.Account (accounts)
-import qualified Timely.Bank               as Bank (Transaction(..), Currency(..), Category(..))
+import qualified Data.Text                   as Text
+import           Database.Selda              hiding (deleteFrom, insert, query, tryCreateTable)
+import           Database.Selda.SqlType      (Lit (..), SqlType (..))
+import           GHC.Generics                (Generic)
+import           Timely.AccountStore.Account (accounts)
+import           Timely.AccountStore.Types   (Account)
+import qualified Timely.Bank                 as Bank (Category (..), Currency (..), Transaction (..))
 
 
 
@@ -30,14 +31,17 @@ import qualified Timely.Bank               as Bank (Transaction(..), Currency(..
 
 
 data Transactions m = TransactionsMethods
-  { _save         :: Guid Account -> [Transaction] -> m ()
+  { _save :: Guid Account -> [Transaction] -> m ()
+
+  -- TODO pagination, etc
+  , _all  :: Guid Account -> m [Transaction]
   } deriving (Generic)
 
 instance Effect Transactions
 
 
 save     :: MonadEffect Transactions m => Guid Account -> [Transaction] -> m ()
-TransactionsMethods save = effect
+TransactionsMethods save all = effect
 
 
 
@@ -46,6 +50,7 @@ implementIO :: Selda m => RuntimeImplemented Transactions m a -> m a
 implementIO = implement $
   TransactionsMethods
     saveTransactions
+    allTransactions
 
 
 
@@ -62,6 +67,7 @@ data Transaction = Transaction
   } deriving (Show, Eq, Generic)
 
 instance SqlRow Transaction
+instance ToJSON Transaction
 
 
 
@@ -85,6 +91,14 @@ saveTransactions :: Selda m => Guid Account -> [Transaction] -> m ()
 saveTransactions _ ts = do
     insert transactions ts
     pure ()
+
+
+allTransactions :: Selda m => Guid Account -> m [Transaction]
+allTransactions i = do
+  query $ do
+    t <- select transactions
+    restrict $ t ! #accountId .== literal i
+    pure t
 
 
 
@@ -117,7 +131,7 @@ fromBank accountId t =
   where
    -- TODO handle unknown categories. How do we select between them?
    cats (Just cs) = Text.intercalate " | " $ map cat cs
-   cats _ = ""
+   cats _         = ""
    cat (Bank.Category c) = c
 
 
@@ -132,7 +146,7 @@ fromBank accountId t =
 
 
 newtype Category = Category Text
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Generic, ToJSON)
 
 instance SqlType Category where
     mkLit (Category b) =  LCustom $ mkLit b

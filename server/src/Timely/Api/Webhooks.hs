@@ -12,6 +12,7 @@ import           Control.Effects                 (MonadEffects)
 import           Control.Effects.Log             (Log)
 import qualified Control.Effects.Log             as Log
 import           Control.Effects.Worker          (Publish)
+import qualified Data.Aeson as Aeson
 import qualified Control.Effects.Worker          as Worker
 import           Data.String.Conversions         (cs)
 import qualified Network.Plaid.Webhooks          as Plaid
@@ -38,7 +39,7 @@ plaid hook = do
   pure NoContent
   where
     handle (Plaid.WebhookTransactions info) = transactions info
-    handle (Plaid.WebhookUnknown val)       = Log.error ("Unknown", val)
+    handle (Plaid.WebhookUnknown val)       = Log.error $ "Unknown: " <> cs (Aeson.encode val)
 
     -- onError :: MonadEffects '[Log] m => Error -> m ()
     -- onError err = Log.error err
