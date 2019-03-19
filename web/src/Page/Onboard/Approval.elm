@@ -1,7 +1,6 @@
 module Page.Onboard.Approval exposing (Model, Msg, init, subscriptions, update, view)
 
 import Browser.Navigation as Nav
-import Debug
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
@@ -80,7 +79,6 @@ update msg model =
                 _ ->
                     False
     in
-    -- Debug.log (Debug.toString msg) <|
     case msg of
         -- OnApplication (Err (Http.BadStatus 404)) ->
         --     updates
