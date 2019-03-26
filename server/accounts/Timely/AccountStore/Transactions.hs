@@ -97,12 +97,14 @@ saveTransactions _ ts = do
 
 
 listTransactions :: Selda m => Guid Account -> Offset -> Count -> m [Transaction]
-listTransactions i offset count =
-  query $ limit offset count $ do
+listTransactions i offset count = do
+  ts <- query $ limit offset count $ do
     t <- select transactions
     restrict (t ! #accountId .== literal i)
     order    (t ! #date) descending
     pure t
+  liftIO $ mapM print ts
+  pure ts
 
 
 

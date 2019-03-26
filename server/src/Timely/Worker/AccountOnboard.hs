@@ -88,7 +88,6 @@ handler app@(Application { accountId, phone }) = do
 
 
 -- | accountOnboard
---
 accountOnboard
   :: ( MonadEffects '[Applications, Accounts, Transactions, Log, Banks, Transfers, Underwriting, Throw OnboardError, Time, Early (), Async] m)
   => Application -> Guid Account -> Valid Phone -> m ()
@@ -182,13 +181,20 @@ loadTransactions
   :: ( MonadEffects '[Banks, Applications, Log, Async] m )
   => Guid Account -> Token Bank.Access -> Id AppBank -> BankAccount -> UTCTime -> m [ Transaction ]
 loadTransactions accountId bankToken appBankId checking (UTCTime today _) = do
-    -- Waits for the webhook to update the transactions
     Log.info "load transactions"
-    _ <- Async.poll (1000*1000) $ Applications.findTransactions appBankId
+    -- Waits for the webhook to update the transactions before continuing
+    Async.poll second $ Applications.findTransactions appBankId
 
-    ts <- Bank.loadTransactionsDays bankToken (bankAccountId checking) today 365
-    Log.debug ("transactions", List.length ts)
+    ts <- Bank.loadTransactionsDays bankToken (bankAccountId checking) today year
+    -- Log.debug ("transactions", List.length ts)
+    Log.debug ("transactions", ts)
     pure $ List.map (Transactions.fromBank accountId) ts
+  where
+    days = 1
+    year = 365 * days
+    us   = 1
+    ms   = 1000*us
+    second = 1000*ms
 
 
 

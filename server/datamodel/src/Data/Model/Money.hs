@@ -17,6 +17,12 @@ fromFloat f = Money $ round (f * 100)
 toFloat :: Money -> Float
 toFloat (Money i) = fromIntegral i / 100
 
+toCents :: Money -> Int
+toCents (Money i) = i
+
+fromCents :: Int -> Money
+fromCents i = Money i
+
 instance SqlType Money where
     mkLit (Money b) =  LCustom $ mkLit b
     sqlType _ = sqlType (Proxy :: Proxy Int)

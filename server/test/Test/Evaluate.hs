@@ -1,23 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Evaluate where
 
-import           Data.Model.Id           (Id (..))
-import           Data.Model.Money        (Money (..))
-import           Data.Time.Calendar      (Day)
-import qualified Data.Time.Calendar      as Day
-import qualified Data.Time.Clock         as Time
-import           Test.Dates              (parseDay, parseTime)
+import           Data.Model.Id            (Id (..))
+import           Data.Model.Money         (Money (..))
+import           Data.Time.Calendar       (Day)
+import qualified Data.Time.Calendar       as Day
+import qualified Data.Time.Clock          as Time
+import           Test.Dates               (parseDay, parseTime)
+import qualified Test.Evaluate.History    as History
+import qualified Test.Evaluate.Schedule    as Schedule
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
-import           Timely.Advances         (Advance (..))
-import qualified Timely.Evaluate.Offer   as Offer
-import qualified Timely.Evaluate.Paydate as Paydate
-import           Timely.Evaluate.Types   (Projection (..))
+import           Timely.Advances          (Advance (..))
+import qualified Timely.Evaluate.Offer    as Offer
+import qualified Timely.Evaluate.Schedule as Schedule
+import           Timely.Evaluate.Types    (Projection (..))
 
 tests :: Tests ()
 tests = do
     group "offer" testOffer
-    group "paydate" testPaydate
+    group "paydate" testSchedule
+    group "history" History.tests
+    group "schedule" Schedule.tests
 
 
 
@@ -25,25 +29,25 @@ tests = do
 
 
 
-testPaydate :: Tests ()
-testPaydate = do
+testSchedule :: Tests ()
+testSchedule = do
     let monday = parseDay "2019-02-04" :: Day
-    group "toDayOfWeek" $ do
+    group "dayOfWeek" $ do
       test "should be monday" $ do
-        Paydate.toDayOfWeek monday @?= Paydate.mon
+        Schedule.dayOfWeek monday @?= Schedule.Monday
 
       test "should be tuesday" $ do
-        Paydate.toDayOfWeek (Day.addDays 1 monday) @?= Paydate.tue
+        Schedule.dayOfWeek (Day.addDays 1 monday) @?= Schedule.Tuesday
 
     group "nextWeekday" $ do
       test "next monday is 7 days away" $ do
-        Paydate.nextWeekday Paydate.mon monday @?= parseDay "2019-02-11"
+        Schedule.nextWeekday Schedule.Monday monday @?= parseDay "2019-02-11"
 
       test "next tuesday is 1 day away" $ do
-        Paydate.nextWeekday Paydate.tue monday @?= parseDay "2019-02-05"
+        Schedule.nextWeekday Schedule.Tuesday monday @?= parseDay "2019-02-05"
 
       test "next sunday is 6 days away" $ do
-        Paydate.nextWeekday Paydate.sun monday @?= parseDay "2019-02-10"
+        Schedule.nextWeekday Schedule.Sunday monday @?= parseDay "2019-02-10"
 
 
 

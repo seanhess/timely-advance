@@ -24,9 +24,9 @@ import           Data.Time.Calendar               (Day)
 import qualified Network.AMQP.Worker              as Worker (Queue, topic)
 import           Timely.AccountStore.Account      (Accounts)
 import qualified Timely.AccountStore.Account      as Accounts
-import           Timely.AccountStore.Transactions (Transactions, Transaction(transactionId))
+import           Timely.AccountStore.Transactions (Transaction (transactionId), Transactions)
 import qualified Timely.AccountStore.Transactions as Transactions
-import           Timely.AccountStore.Types        (Account, AccountRow (..), BankAccount(bankAccountId))
+import           Timely.AccountStore.Types        (Account, AccountRow (..), BankAccount (bankAccountId))
 import qualified Timely.AccountStore.Types        as BankAccount
 import qualified Timely.AccountStore.Types        as Account (AccountRow (..))
 import           Timely.Advances                  (Advance, Advances)
@@ -36,7 +36,7 @@ import           Timely.Bank                      (Access, Banks, Token)
 import qualified Timely.Bank                      as Bank
 import qualified Timely.Evaluate.AccountHealth    as AccountHealth
 import qualified Timely.Evaluate.Offer            as Offer
-import qualified Timely.Evaluate.Paydate          as Paydate
+import qualified Timely.Evaluate.Schedule         as Schedule
 import           Timely.Evaluate.Types            (Projection (..))
 import           Timely.Events                    as Events
 import           Timely.Notify                    (Notify)
@@ -111,8 +111,8 @@ offerAdvance
 offerAdvance account amount today = do
     let id = accountId account
         transactions = []
-        frequency    = Paydate.frequency transactions
-        nextPayday   = Paydate.next frequency today
+        schedule     = Schedule.schedule transactions
+        nextPayday   = Schedule.next schedule today
         due          = nextPayday
     advance <- Advances.create id (Account.transferId account) amount due
     Notify.send account (Notify.Message (Advances.advanceId advance) Notify.Advance message)

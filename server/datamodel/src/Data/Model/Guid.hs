@@ -42,7 +42,7 @@ class GuidPrefix s where
   guidPrefix _ = Text.toLower $ Text.pack $ show $ typeOf (undefined :: s)
 
 instance GuidPrefix s => Show (Guid s) where
-  show = Text.unpack . toText
+  show = show . toText
 
 instance GuidPrefix s => ToJSON (Guid s) where
   toJSON = Aeson.String . toText
