@@ -11,6 +11,11 @@ import           GHC.Generics           (Generic)
 newtype Money = Money Int
     deriving (Generic, Eq, Show, Typeable, Num, Ord, ToJSON, FromJSON)
 
+-- instance Fractional Money where
+--   fromRational = fromFloat . fromRational
+--   a / b = fromFloat (toFloat a / toFloat b)
+
+
 fromFloat :: Float -> Money
 fromFloat f = Money $ round (f * 100)
 

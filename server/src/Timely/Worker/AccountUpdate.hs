@@ -18,6 +18,7 @@ import           Control.Monad                    (when)
 import           Control.Monad.Catch              (MonadThrow (..))
 import           Data.Function                    ((&))
 import qualified Data.List                        as List
+import           Data.Maybe                       (fromMaybe)
 import           Data.Model.Guid                  as Guid
 import           Data.Model.Money                 (Money)
 import           Data.Time.Calendar               (Day)
@@ -36,6 +37,7 @@ import           Timely.Bank                      (Access, Banks, Token)
 import qualified Timely.Bank                      as Bank
 import qualified Timely.Evaluate.AccountHealth    as AccountHealth
 import qualified Timely.Evaluate.Offer            as Offer
+import           Timely.Evaluate.Schedule         (DayOfMonth (..), Schedule (..))
 import qualified Timely.Evaluate.Schedule         as Schedule
 import           Timely.Evaluate.Types            (Projection (..))
 import           Timely.Events                    as Events
@@ -111,7 +113,7 @@ offerAdvance
 offerAdvance account amount today = do
     let id = accountId account
         transactions = []
-        schedule     = Schedule.schedule transactions
+        schedule     = fromMaybe (Monthly (DayOfMonth 1)) $ Schedule.schedule transactions
         nextPayday   = Schedule.next schedule today
         due          = nextPayday
     advance <- Advances.create id (Account.transferId account) amount due

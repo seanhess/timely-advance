@@ -1,19 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Advances where
 
-import qualified Data.Maybe                as Maybe
 import           Data.Model.Id             (Id (..))
 import           Data.Model.Money          as Money
 import           Data.Model.Valid          as Valid
 import qualified Data.Time.Clock           as Time
-import qualified Data.Time.Format          as Time
+import           Test.Dates                (parseDay, parseTime)
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
 import           Timely.AccountStore.Types as Account (Account (..))
 import           Timely.Advances           as Advance (Advance (..))
-import qualified Timely.Advances.Store     as Store
 import qualified Timely.Advances.Collect   as Collect
 import qualified Timely.Advances.Credit    as Credit
+import qualified Timely.Advances.Store     as Store
 
 tests :: Tests ()
 tests = do
@@ -108,8 +107,8 @@ sample = Advance {advanceId = "34209d46-efd2-4675-aa8e-8564d9ab65b6", Advance.ac
 
 sampleAccount = Account { Account.accountId = "acc09d46-efd2-4675-aa8e-8564d9ab65b6", phone = Valid "8012223333", customer = undefined, bankToken = undefined, bankItemId = undefined, credit = undefined, health = undefined, Account.transferId = Id "transfer", created = parseTime "2019-02-01T20:02:46"}
 
-parseTime :: Time.ParseTime a => String -> a
-parseTime a = Maybe.fromMaybe (error a) $ Time.parseTimeM True Time.defaultTimeLocale (Time.iso8601DateFormat (Just "%H:%M:%S")) a
+-- parseTime :: Time.ParseTime a => String -> a
+-- parseTime a = Maybe.fromMaybe (error a) $ Time.parseTimeM True Time.defaultTimeLocale (Time.iso8601DateFormat (Just "%H:%M:%S")) a
 
-parseDay :: Time.ParseTime a => String -> a
-parseDay a = Maybe.fromMaybe (error a) $ Time.parseTimeM True Time.defaultTimeLocale (Time.iso8601DateFormat Nothing) a
+-- parseDay :: Time.ParseTime a => String -> a
+-- parseDay a = Maybe.fromMaybe (error a) $ Time.parseTimeM True Time.defaultTimeLocale (Time.iso8601DateFormat Nothing) a

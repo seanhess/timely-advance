@@ -1,17 +1,30 @@
-module Timely.Evaluate.Schedule where
+module Timely.Evaluate.Schedule
+  ( Schedule(..)
+  , DayOfMonth(..)
+  , DayOfWeek(..)
+  , Biweek(..)
+  , biweek
+  , schedule
+  , last
+  , next
+  , until
+  , dayOfWeek
+  , dayOfMonth
+  , nextWeekday
+  ) where
 
-import           Data.Time.Calendar               (Day (..), toGregorian)
-import qualified Data.Time.Calendar               as Day
-import           Timely.AccountStore.Transactions (Transaction (..))
-import Control.Monad (guard)
-import qualified Timely.Evaluate.Frequency        as Frequency
-import           Data.Ord                  (Down (..), comparing)
-import Data.List (sortOn, group, sortBy)
-import Data.Function ((&))
-import qualified Data.List as List
-import Data.Maybe (listToMaybe)
-import Control.Applicative ((<|>))
--- import qualified Data.Time.Calendar.WeekDate as Week
+-- import Debug.Trace (traceShow)
+import           Control.Applicative                 ((<|>))
+import           Control.Monad                       (guard)
+import           Data.List                           (group, sortBy, sortOn)
+import qualified Data.List                           as List
+import           Data.Maybe                          (listToMaybe)
+import           Data.Ord                            (Down (..), comparing)
+import           Data.Time.Calendar                  (Day (..), addGregorianMonthsClip, fromGregorian, toGregorian)
+import qualified Data.Time.Calendar                  as Day
+import           Prelude                             hiding (last, until)
+import           Timely.Evaluate.Schedule.DayOfMonth (DayOfMonth (..))
+import           Timely.Evaluate.Schedule.DayOfWeek  (DayOfWeek (..))
 
 
 
@@ -20,10 +33,29 @@ import Control.Applicative ((<|>))
 
 data Schedule
     = Weekly      DayOfWeek
-    | Biweekly    DayOfWeek
+    | Biweekly    DayOfWeek Biweek
     | Monthly     DayOfMonth
     | Semimonthly DayOfMonth DayOfMonth
     deriving (Eq, Show)
+
+
+-- | There are forever only "A" and "B" weeks. No matter the leap year, etc. It's helpful to put a repeating event in your calendar when testing.
+-- | weeks start on Monday
+data Biweek
+    = A -- starts Monday, Jan 1, 2018
+    | B -- starts Monday, Jan 8, 2018
+    deriving (Eq, Show)
+
+
+
+biweek :: Day -> Biweek
+biweek d =
+  let a    = fromGregorian 2018 01 01
+      diff = abs (Day.diffDays d a)
+  in if diff `mod` 14 < 7
+    then A
+    else B
+
 
 
 
@@ -31,12 +63,11 @@ schedule :: [Day] -> Maybe Schedule
 schedule ds = do
   let mgs = monthdayGroups ds
       wgs = weekdayGroups ds
-  mg  <- listToMaybe mgs
   wg  <- listToMaybe wgs
   let int = average $ intervals ds
 
   semimonthly mgs
-    <|> biweekly int wg
+    <|> biweekly int wg ds
     <|> monthly mgs
     <|> weekly int wg
     <|> monthlyDrift ds
@@ -44,9 +75,7 @@ schedule ds = do
   where
     atLeastTwo :: [a] -> Maybe a
     atLeastTwo (a:_:_) = Just a
-    atLeastTwo _ = Nothing
-
-    isStrong l = length l > 1
+    atLeastTwo _       = Nothing
 
     -- Note: Maybe calls fail if a pattern match fails (=Nothing)
     semimonthly mgs = do
@@ -55,10 +84,11 @@ schedule ds = do
       m2 <- atLeastTwo mg2
       pure $ Semimonthly m1 m2
 
-    biweekly int wg = do
+    biweekly int wg ds = do
+      let d = maximum ds
       w <- atLeastTwo wg
       guard $ 13 < int && int < 15
-      pure $ Biweekly w
+      pure $ Biweekly w (biweek d)
 
     weekly int wg = do
       w <- atLeastTwo wg
@@ -124,11 +154,44 @@ average xs = sum (map fromIntegral xs) / fromIntegral (length xs)
 
 type DiffDays = Integer
 
--- TODO
--- mocked: pay frequency is always weekly
+
+-- Last -------------------------------------
+last :: Schedule -> Day -> Day
+last schedule today =
+  -- go back more than a month (the longest interval) and find the last one
+  let dates = until today schedule (Day.addDays (-50) today)
+  in List.last dates
+
+
+-- Next -------------------------------------
+
+
 next :: Schedule -> Day -> Day
 next (Weekly dow) today = nextWeekday dow today
-next _            today = nextWeekday Monday today
+next (Biweekly d b) today =
+  let first = nextWeekday d today
+  in if biweek first == b
+    then first
+    else nextWeekday d (Day.addDays 7 today)
+next (Monthly d) today  = nextMonthday d today
+next (Semimonthly d1 d2) today = min
+  (nextMonthday d1 today)
+  (nextMonthday d2 today)
+
+
+until :: Day -> Schedule -> Day -> [Day]
+until end schedule today =
+  List.takeWhile (< end) $ drop 1 $ List.iterate (next schedule) today
+
+
+
+nextMonthday :: DayOfMonth -> Day -> Day
+nextMonthday (DayOfMonth next) today =
+  let (y,m,d) = toGregorian today
+      months  = if next <= d then 1 else 0
+  in addGregorianMonthsClip months $ fromGregorian y m next
+
+
 
 
 nextWeekday :: DayOfWeek -> Day -> Day
@@ -143,9 +206,6 @@ diffWeekdays curr next =
     fromIntegral (fromEnum next - fromEnum curr)
 
 
-
-
-
 nextWeek :: DiffDays -> DiffDays
 nextWeek d
     | d <= 0 = d + 7
@@ -157,47 +217,9 @@ nextWeek d
 
 
 
-newtype DayOfMonth = DayOfMonth { day :: Int }
-  deriving (Show, Eq)
 
 
 
--- Copied from latest Data.Time.Calendar (which isn't on stackage yet)
-data DayOfWeek
-    = Monday
-    | Tuesday
-    | Wednesday
-    | Thursday
-    | Friday
-    | Saturday
-    | Sunday
-    deriving (Eq, Show, Read)
-
--- | \"Circular\", so for example @[Tuesday ..]@ gives an endless sequence.
--- Also: 'fromEnum' gives [1 .. 7] for [Monday .. Sunday], and 'toEnum' performs mod 7 to give a cycle of days.
-instance Enum DayOfWeek where
-    toEnum i =
-        case mod i 7 of
-            0 -> Sunday
-            1 -> Monday
-            2 -> Tuesday
-            3 -> Wednesday
-            4 -> Thursday
-            5 -> Friday
-            _ -> Saturday
-    fromEnum Monday    = 1
-    fromEnum Tuesday   = 2
-    fromEnum Wednesday = 3
-    fromEnum Thursday  = 4
-    fromEnum Friday    = 5
-    fromEnum Saturday  = 6
-    fromEnum Sunday    = 7
-    enumFromTo wd1 wd2
-        | wd1 == wd2 = [wd1]
-    enumFromTo wd1 wd2 = wd1 : enumFromTo (succ wd1) wd2
-    enumFromThenTo wd1 wd2 wd3
-        | wd2 == wd3 = [wd1, wd2]
-    enumFromThenTo wd1 wd2 wd3 = wd1 : enumFromThenTo wd2 (toEnum $ (2 * fromEnum wd2) - (fromEnum wd1)) wd3
 
 dayOfWeek :: Day -> DayOfWeek
 dayOfWeek (ModifiedJulianDay d) = toEnum $ fromInteger $ d + 3
