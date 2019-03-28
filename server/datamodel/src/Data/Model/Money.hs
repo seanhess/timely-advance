@@ -11,6 +11,7 @@ import           GHC.Generics           (Generic)
 newtype Money = Money Int
     deriving (Generic, Eq, Show, Typeable, Num, Ord, ToJSON, FromJSON)
 
+-- This does NOT work. Calculating percentages is all wonkey. It comes in as 50 cents, which doesn't make any sense.
 -- instance Fractional Money where
 --   fromRational = fromFloat . fromRational
 --   a / b = fromFloat (toFloat a / toFloat b)

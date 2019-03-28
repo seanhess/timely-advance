@@ -104,6 +104,9 @@ accountOnboard app accountId phone = do
 
     -- TODO perform initial account analysis. do all the fancy magic
     -- for now, just save the transactions to their account
+    -- But, we can't. We need more information. We need them to mark their income and bills
+    -- 1. we could guess, and just run the analysis already. 
+    -- 2. Or change the system so the account can be created without a health
 
     -- TODO create initial account health
     let health = AccountHealth.analyze (balance checking)

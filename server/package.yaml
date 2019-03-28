@@ -105,8 +105,6 @@ library:
     - accounts
     - advances
     - auth
-    - evaluate
-    # - client
     - transfers
 
 executables:

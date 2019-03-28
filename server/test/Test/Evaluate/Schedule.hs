@@ -100,17 +100,17 @@ testUntil :: Tests ()
 testUntil = do
   let today = parseDay "2019-01-01" -- Tuesday
   test "4 weeks in january" $ do
-    let dates = Schedule.until (parseDay "2019-02-01") (Weekly Monday) today
+    let dates = Schedule.untilL (parseDay "2019-02-01") (Weekly Monday) today
     length dates @?= 4
     head dates @?= Schedule.next (Weekly Monday) today
     head (drop 1 dates) @?= Schedule.next (Weekly Monday) (head dates)
 
   test "monthly" $ do
-    let dates = Schedule.until (parseDay "2019-03-01") (Monthly (DayOfMonth 5)) today
+    let dates = Schedule.untilL (parseDay "2019-03-01") (Monthly (DayOfMonth 5)) today
     dates @?= [parseDay "2019-01-05", parseDay "2019-02-05"]
 
   test "should not include end date" $ do
-    let dates = Schedule.until (parseDay "2019-02-01") (Monthly (DayOfMonth 1)) today
+    let dates = Schedule.untilL (parseDay "2019-02-01") (Monthly (DayOfMonth 1)) today
     dates @?= []
 
 

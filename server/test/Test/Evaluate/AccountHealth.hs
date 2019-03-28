@@ -3,24 +3,27 @@ module Test.Evaluate.AccountHealth where
 
 import           Data.Model.Money                   (Money)
 import qualified Data.Model.Money                   as Money
+import           Data.Number.Abs                    (absolute)
 import           Data.Time.Calendar                 (Day)
 import           Test.Dates                         (parseDay)
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
 import           Timely.Evaluate.AccountHealth      as Health
-import           Timely.Evaluate.Health.Abs         (absolute)
 import           Timely.Evaluate.Health.Transaction (Transaction (Transaction))
 import           Timely.Evaluate.Schedule           (DayOfMonth (..), DayOfWeek (..), Schedule (..))
 import qualified Timely.Evaluate.Schedule           as Schedule
 
 
-specHealth = defaultMain $ testGroup "tests" $ runTests tests
+specHealth = defaultMain $ testGroup "tests" $ runTests testNeededForBill
+-- specHealth = defaultMain $ testGroup "tests" $ runTests testDueDates
+
 
 tests :: Tests ()
 tests = do
   group "incomeSince" testIncomeSince
   group "incomeUntil" testIncomeUntil
+  group "dueDates" testDueDates
   group "neededForBill" testNeededForBill
 
 
@@ -59,10 +62,36 @@ testIncomeUntil = do
 
 
 
+testDueDates :: Tests ()
+testDueDates = do
+  group "monthly rent, monthly paychecks" $ do
+    let payAmount = Money.fromFloat 2000.00
+    let income = Scheduled (Monthly (DayOfMonth 1)) (absolute payAmount)
+    let bill = Scheduled (Monthly (DayOfMonth 5)) (absolute $ Money.fromFloat 1000.00)
+    test "just paid, due soon" $ do
+      dueDates (parseDay "2019-03-02") income bill @?= [parseDay "2019-03-05"]
+    test "payday, due soon" $ do
+      dueDates (parseDay "2019-03-01") income bill @?= [parseDay "2019-03-05"]
+    test "just before payday" $ do
+      dueDates (parseDay "2019-02-28") income bill @?= [parseDay "2019-03-05"]
+
+
+  group "weekly bill, monthly paycheck" $ do
+    let payAmount = Money.fromFloat 2000.00
+    let schedule = Monthly (DayOfMonth 1)
+    let income = Scheduled schedule (absolute payAmount)
+    let bill = Scheduled (Weekly Monday) (absolute $ Money.fromFloat 100.00)
+    test "just paid" $ do
+      dueDates (parseDay "2019-03-02") income bill @?= [parseDay "2019-03-04", parseDay "2019-03-11", parseDay "2019-03-18", parseDay "2019-03-25", parseDay "2019-04-01"]
+
+    test "week later" $ do
+      dueDates (parseDay "2019-03-09") income bill @?= [parseDay "2019-03-11", parseDay "2019-03-18", parseDay "2019-03-25", parseDay "2019-04-01"]
+
+
+
 
 testNeededForBill :: Tests ()
 testNeededForBill = do
-
   group "monthly rent, monthly paychecks" $ do
     let payAmount = Money.fromFloat 2000.00
     let schedule = Monthly (DayOfMonth 1)
@@ -84,6 +113,8 @@ testNeededForBill = do
       let checks = [parseDay "2019-02-01"]
       neededForBill today (paychecks payAmount checks) income bill @?= (Money.fromFloat 0)
 
+    -- but we can't get it there in time...
+    -- so maybe it would be better if we didn't do it like this
     test "day of bill" $ do
       let today = parseDay "2019-03-05"
       let checks = [parseDay "2019-02-01", parseDay "2019-03-01"]
@@ -106,29 +137,46 @@ testNeededForBill = do
 
     test "one more paycheck" $ do
       let today = parseDay "2019-03-01" -- Friday
-      let checks = Schedule.until today schedule year
+      let checks = Schedule.until (< today) schedule year
       neededForBill today (paychecks payAmount checks) income bill @?= (Money.fromFloat 750.00)
 
     test "no more paychecks" $ do
       let today = parseDay "2019-03-04" -- Monday
-      let checks = Schedule.until today schedule year
+      let checks = Schedule.until (< today) schedule year
       neededForBill today (paychecks payAmount checks) income bill @?= (Money.fromFloat 1000.00)
 
     test "mid month" $ do
       let today = parseDay "2019-02-15"
-      let checks = Schedule.until today schedule year
+      let checks = Schedule.until (< today) schedule year
       neededForBill today (paychecks payAmount checks) income bill @?= (Money.fromFloat 250.00)
 
     test "just paid it" $ do
       let today = parseDay "2019-02-06"
-      let checks = Schedule.until today schedule year
+      let checks = Schedule.until (< today) schedule year
       neededForBill today (paychecks payAmount checks) income bill @?= (Money.fromFloat 0)
 
     test "due today" $ do
       -- be conservative! We need the money today
       let today = parseDay "2019-03-05"
-      let checks = Schedule.until today schedule year
+      let checks = Schedule.until (< today) schedule year
       neededForBill today (paychecks payAmount checks) income bill @?= (Money.fromFloat 1000)
+
+
+  group "weekly bill, monthly paycheck" $ do
+    let payAmount = Money.fromFloat 2000.00
+    let schedule = Monthly (DayOfMonth 1)
+    let income = Scheduled schedule (absolute payAmount)
+    let bill = Scheduled (Weekly Monday) (absolute $ Money.fromFloat 100.00)
+    test "just paid" $ do
+      let today = parseDay "2019-03-02"
+      let checks = [parseDay "2019-02-01", parseDay "2019-03-01"]
+      neededForBill today (paychecks payAmount checks) income bill @?= (Money.fromFloat 500.00)
+
+    test "week later" $ do
+      let today = parseDay "2019-03-09"
+      let checks = [parseDay "2019-02-01", parseDay "2019-03-01"]
+      neededForBill today (paychecks payAmount checks) income bill @?= (Money.fromFloat 400.00)
+
 
 
 

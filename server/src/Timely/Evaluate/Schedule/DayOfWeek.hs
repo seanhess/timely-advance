@@ -1,5 +1,9 @@
+{-# LANGUAGE DeriveGeneric #-}
 module Timely.Evaluate.Schedule.DayOfWeek where
 
+
+import Data.Aeson (ToJSON, FromJSON)
+import GHC.Generics (Generic)
 
 -- Copied from latest Data.Time.Calendar (which isn't on stackage yet)
 data DayOfWeek
@@ -10,7 +14,10 @@ data DayOfWeek
     | Friday
     | Saturday
     | Sunday
-    deriving (Eq, Show, Read)
+    deriving (Eq, Show, Read, Generic)
+
+instance ToJSON DayOfWeek
+instance FromJSON DayOfWeek
 
 -- | \"Circular\", so for example @[Tuesday ..]@ gives an endless sequence.
 -- Also: 'fromEnum' gives [1 .. 7] for [Monday .. Sunday], and 'toEnum' performs mod 7 to give a cycle of days.

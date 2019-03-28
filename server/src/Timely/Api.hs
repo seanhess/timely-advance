@@ -27,19 +27,21 @@ import           Servant.Server.Generic               (AsServerT, genericServerT
 -- import           Servant.Server.StaticFiles           (serveDirectoryFileServer)
 import qualified Timely.AccountStore.Account          as Account
 import qualified Timely.AccountStore.Application      as Application
-import           Timely.AccountStore.Types            (AppResult, Application)
+import           Timely.AccountStore.Budget           (Item, ItemType (Expense, Income))
+import qualified Timely.AccountStore.Budget           as Budget
 import           Timely.AccountStore.Transactions     (Transaction)
 import qualified Timely.AccountStore.Transactions     as Transactions
+import           Timely.AccountStore.Types            (AppResult, Application)
 import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
 import           Timely.Api.Advances                  as Advances
 import qualified Timely.Api.Applications              as Applications
-import qualified Timely.Api.Webhooks                  as Webhooks
 import           Timely.Api.Combinators               (notFound)
 import qualified Timely.Api.Health                    as Health
 import           Timely.Api.Sessions                  (SetSession)
 import qualified Timely.Api.Sessions                  as Sessions
 import           Timely.Api.Types
+import qualified Timely.Api.Webhooks                  as Webhooks
 import           Timely.App                           (AppM, AppState (..), clientConfig, loadState, nt, runAppIO)
 import qualified Timely.App                           as App
 import           Timely.Auth                          (AuthCode)
@@ -78,12 +80,18 @@ data VersionedApi route = VersionedApi
 
 -- Personal Information : Account and Application ---------------------
 data AccountApi route = AccountApi
-    { _get      :: route :- Get '[JSON, HTML] Account
-    , _banks    :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
-    , _trans    :: route :- "transactions" :> Get '[JSON] [Transaction]
-    , _app      :: route :- "application" :> Get '[JSON] Application
-    , _result   :: route :- "application" :> "result" :> Get '[JSON] AppResult
-    , _advances :: route :- "advances" :> ToServantApi AdvanceApi
+    { _get         :: route :- Get '[JSON, HTML] Account
+    , _banks       :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
+    , _trans       :: route :- "transactions" :> Get '[JSON] [Transaction]
+    , _app         :: route :- "application" :> Get '[JSON] Application
+    , _result      :: route :- "application" :> "result" :> Get '[JSON] AppResult
+    , _advances    :: route :- "advances" :> ToServantApi AdvanceApi
+
+    , _setIncome   :: route :- "income" :> ReqBody '[JSON] (Item 'Income) :> Put '[JSON] NoContent
+    , _getIncome   :: route :- "income" :> Get '[JSON] (Item 'Income)
+
+    , _setExpenses :: route :- "expenses" :> ReqBody '[JSON] [Item 'Expense] :> Put '[JSON] NoContent
+    , _getExpenses :: route :- "expenses" :> Get '[JSON] [Item 'Expense]
     } deriving (Generic)
 
 
@@ -125,6 +133,10 @@ accountApi i = genericServerT AccountApi
     , _result  = Application.findResult i >>= notFound
     , _trans   = Transactions.list i 0 100
     , _advances = advanceApi i
+    , _setIncome = (\inc -> Budget.setIncome i inc >> pure NoContent)
+    , _getIncome = Budget.income i        >>= notFound
+    , _setExpenses = (\incs -> Budget.setExpenses i incs >> pure NoContent)
+    , _getExpenses = Budget.expenses i
     }
 
 

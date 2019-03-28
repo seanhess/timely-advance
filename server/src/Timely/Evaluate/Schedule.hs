@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 module Timely.Evaluate.Schedule
   ( Schedule(..)
   , DayOfMonth(..)
@@ -8,6 +9,8 @@ module Timely.Evaluate.Schedule
   , last
   , next
   , until
+  , untilL
+  , untilLE
   , dayOfWeek
   , dayOfMonth
   , nextWeekday
@@ -16,12 +19,15 @@ module Timely.Evaluate.Schedule
 -- import Debug.Trace (traceShow)
 import           Control.Applicative                 ((<|>))
 import           Control.Monad                       (guard)
+import           Data.Aeson                          (FromJSON(..), ToJSON(..), genericToJSON, genericParseJSON, defaultOptions, Options(..), SumEncoding(..))
 import           Data.List                           (group, sortBy, sortOn)
 import qualified Data.List                           as List
 import           Data.Maybe                          (listToMaybe)
+import qualified Data.Char as Char
 import           Data.Ord                            (Down (..), comparing)
 import           Data.Time.Calendar                  (Day (..), addGregorianMonthsClip, fromGregorian, toGregorian)
 import qualified Data.Time.Calendar                  as Day
+import           GHC.Generics                        (Generic)
 import           Prelude                             hiding (last, until)
 import           Timely.Evaluate.Schedule.DayOfMonth (DayOfMonth (..))
 import           Timely.Evaluate.Schedule.DayOfWeek  (DayOfWeek (..))
@@ -32,11 +38,22 @@ import           Timely.Evaluate.Schedule.DayOfWeek  (DayOfWeek (..))
 
 
 data Schedule
-    = Weekly      DayOfWeek
-    | Biweekly    DayOfWeek Biweek
-    | Monthly     DayOfMonth
-    | Semimonthly DayOfMonth DayOfMonth
-    deriving (Eq, Show)
+    = Weekly      { weekday :: DayOfWeek }
+    | Biweekly    { weekday :: DayOfWeek, bi :: Biweek }
+    | Monthly     { date :: DayOfMonth }
+    | Semimonthly { date1 :: DayOfMonth, date2 :: DayOfMonth }
+    deriving (Eq, Show, Generic)
+
+instance ToJSON Schedule where
+  toJSON = genericToJSON options
+
+instance FromJSON Schedule where
+  parseJSON = genericParseJSON options
+
+options = defaultOptions
+  { sumEncoding = ObjectWithSingleField
+  , constructorTagModifier = map Char.toLower
+  }
 
 
 -- | There are forever only "A" and "B" weeks. No matter the leap year, etc. It's helpful to put a repeating event in your calendar when testing.
@@ -44,7 +61,10 @@ data Schedule
 data Biweek
     = A -- starts Monday, Jan 1, 2018
     | B -- starts Monday, Jan 8, 2018
-    deriving (Eq, Show)
+    deriving (Eq, Show, Generic)
+
+instance ToJSON Biweek
+instance FromJSON Biweek
 
 
 
@@ -159,7 +179,7 @@ type DiffDays = Integer
 last :: Schedule -> Day -> Day
 last schedule today =
   -- go back more than a month (the longest interval) and find the last one
-  let dates = until today schedule (Day.addDays (-50) today)
+  let dates = until (< today) schedule (Day.addDays (-50) today)
   in List.last dates
 
 
@@ -179,9 +199,17 @@ next (Semimonthly d1 d2) today = min
   (nextMonthday d2 today)
 
 
-until :: Day -> Schedule -> Day -> [Day]
-until end schedule today =
-  List.takeWhile (< end) $ drop 1 $ List.iterate (next schedule) today
+untilL :: Day -> Schedule -> Day -> [Day]
+untilL end = until (< end)
+
+
+untilLE :: Day -> Schedule -> Day -> [Day]
+untilLE end = until (<= end)
+
+
+until :: (Day -> Bool) -> Schedule -> Day -> [Day]
+until p schedule today =
+  List.takeWhile p $ drop 1 $ List.iterate (next schedule) today
 
 
 
