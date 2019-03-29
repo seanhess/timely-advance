@@ -4,24 +4,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Timely.Api.Advances where
 
-import           Control.Effects             (MonadEffects)
-import           Control.Effects.Log         as Log
-import           Control.Effects.Signal      (Throw, throwSignal)
-import           Control.Effects.Worker      (Publish)
-import qualified Control.Effects.Worker      as Worker
-import           Control.Monad               (when)
-import           Data.Model.Guid             as Guid
-import           Data.Model.Money            (Money)
-import           Servant                     (ServantErr (..), err400)
-import           Timely.AccountStore.Account (Accounts)
-import qualified Timely.AccountStore.Account as Accounts
-import           Timely.AccountStore.Types   (Account)
-import           Timely.Advances             (Advance (..), Advances (..))
-import qualified Timely.Advances             as Advances
-import qualified Timely.Advances.Credit      as Credit
-import           Timely.Api.Combinators      (notFound)
-import           Timely.Api.Types            as Types (Amount (..))
-import qualified Timely.Events               as Events
+import           Control.Effects        (MonadEffects)
+import           Control.Effects.Log    as Log
+import           Control.Effects.Signal (Throw, throwSignal)
+import           Control.Effects.Worker (Publish)
+import qualified Control.Effects.Worker as Worker
+import           Control.Monad          (when)
+import           Data.Model.Guid        as Guid
+import           Data.Model.Money       (Money)
+import           Servant                (ServantErr (..), err400)
+import           Timely.Accounts        (Accounts, Account)
+import qualified Timely.Accounts        as Accounts
+import           Timely.Advances        (Advance (..), Advances (..))
+import qualified Timely.Advances        as Advances
+import qualified Timely.Advances.Credit as Credit
+import           Timely.Api.Combinators (notFound)
+import           Timely.Api.Types       as Types (Amount (..))
+import qualified Timely.Events          as Events
 
 
 data AdvanceError = InsufficientCredit

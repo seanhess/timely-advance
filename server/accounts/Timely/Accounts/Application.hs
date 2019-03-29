@@ -7,7 +7,7 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedLabels          #-}
 {-# LANGUAGE OverloadedStrings         #-}
-module Timely.AccountStore.Application where
+module Timely.Accounts.Application where
 
 
 import           Control.Effects           (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
@@ -19,7 +19,7 @@ import           Data.Model.Id             (Id (..))
 import qualified Data.Time.Clock           as Time
 import           Database.Selda            hiding (Result, insert, query, tryCreateTable, update_)
 
-import           Timely.AccountStore.Types
+import           Timely.Accounts.Types
 import qualified Timely.Bank               as Bank
 import           Timely.Underwriting.Types (Approval (..), Denial (..), Result (..))
 

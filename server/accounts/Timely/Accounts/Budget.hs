@@ -8,21 +8,21 @@
 {-# LANGUAGE NoMonomorphismRestriction  #-}
 {-# LANGUAGE OverloadedLabels           #-}
 {-# LANGUAGE OverloadedStrings          #-}
-module Timely.AccountStore.Budget where
+module Timely.Accounts.Budget where
 
-import           Control.Effects             (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
-import           Control.Monad.Selda         (Selda, deleteFrom, insert, query, tryCreateTable)
-import           Data.Aeson                  (FromJSON, ToJSON)
-import           Data.Model.Guid             (Guid)
-import Data.Maybe (listToMaybe)
-import           Data.Model.Money            (Money)
-import           Data.Number.Abs             (Abs (value), absolute)
-import           Database.Selda              hiding (deleteFrom, insert, query, tryCreateTable)
-import           Database.Selda.Field        (Field (..))
-import           GHC.Generics                (Generic)
-import           Timely.AccountStore.Account (accounts)
-import           Timely.AccountStore.Types   (Account)
-import           Timely.Evaluate.Schedule    (Schedule)
+import           Control.Effects          (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
+import           Control.Monad.Selda      (Selda, deleteFrom, insert, query, tryCreateTable)
+import           Data.Aeson               (FromJSON, ToJSON)
+import           Data.Maybe               (listToMaybe)
+import           Data.Model.Guid          (Guid)
+import           Data.Model.Money         (Money)
+import           Data.Number.Abs          (Abs (value), absolute)
+import           Database.Selda           hiding (deleteFrom, insert, query, tryCreateTable)
+import           Database.Selda.Field     (Field (..))
+import           GHC.Generics             (Generic)
+import           Timely.Accounts.Account  (accounts)
+import           Timely.Accounts.Types    (Account)
+import           Timely.Evaluate.Schedule (Schedule)
 
 
 

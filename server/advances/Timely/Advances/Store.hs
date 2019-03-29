@@ -8,21 +8,21 @@
 module Timely.Advances.Store where
 
 
-import           Control.Monad.IO.Class    (MonadIO, liftIO)
-import           Control.Monad.Selda       (Selda, insert, query, tryCreateTable, update_)
-import           Data.Aeson                (FromJSON, ToJSON)
-import qualified Data.List                 as List
-import qualified Data.Maybe                as Maybe
-import           Data.Model.Guid           as Guid
-import           Data.Model.Id             (Id)
-import           Data.Model.Money          as Money
-import           Data.Ord                  (Down (..), comparing)
-import           Data.Time.Calendar        (Day)
-import qualified Data.Time.Clock           as Time
-import           Database.Selda            hiding (insert, query, tryCreateTable, update_)
-import           GHC.Generics              (Generic)
-import           Timely.AccountStore.Types (Account)
-import           Timely.Transfers.Account  (TransferAccount)
+import           Control.Monad.IO.Class   (MonadIO, liftIO)
+import           Control.Monad.Selda      (Selda, insert, query, tryCreateTable, update_)
+import           Data.Aeson               (FromJSON, ToJSON)
+import qualified Data.List                as List
+import qualified Data.Maybe               as Maybe
+import           Data.Model.Guid          as Guid
+import           Data.Model.Id            (Id)
+import           Data.Model.Money         as Money
+import           Data.Ord                 (Down (..), comparing)
+import           Data.Time.Calendar       (Day)
+import qualified Data.Time.Clock          as Time
+import           Database.Selda           hiding (insert, query, tryCreateTable, update_)
+import           GHC.Generics             (Generic)
+import           Timely.Accounts.Types    (Account)
+import           Timely.Transfers.Account (TransferAccount)
 
 
 

@@ -8,26 +8,26 @@ module Timely.Api.Applications
     ( newApplication
     ) where
 
-import           Control.Effects                 (MonadEffects)
-import           Control.Effects.Log             as Log
-import           Control.Effects.Signal          (Throw)
-import           Control.Effects.Time            (Time, UTCTime)
-import qualified Control.Effects.Time            as Time
-import           Control.Effects.Worker          (Publish)
-import qualified Control.Effects.Worker          as Worker
-import           Control.Monad.Config            (MonadConfig (..))
-import           Control.Monad.IO.Class          (MonadIO)
-import           Data.Model.Guid                 as Guid
-import           Data.Model.Types                (Phone, Valid)
-import           Data.String.Conversions         (cs)
-import           Servant                         (ServantErr)
-import           Servant.Auth.Server             (CookieSettings, JWTSettings)
-import           Timely.AccountStore.Application as Application
-import           Timely.AccountStore.Types       (Account, Application (..), Onboarding(..))
-import           Timely.Api.Sessions             as Sessions
-import           Timely.Api.Types                (AccountInfo (..))
-import           Timely.Events                   as Events
-import           Timely.Types.Session            (Session (..))
+import           Control.Effects             (MonadEffects)
+import           Control.Effects.Log         as Log
+import           Control.Effects.Signal      (Throw)
+import           Control.Effects.Time        (Time, UTCTime)
+import qualified Control.Effects.Time        as Time
+import           Control.Effects.Worker      (Publish)
+import qualified Control.Effects.Worker      as Worker
+import           Control.Monad.Config        (MonadConfig (..))
+import           Control.Monad.IO.Class      (MonadIO)
+import           Data.Model.Guid             as Guid
+import           Data.Model.Types            (Phone, Valid)
+import           Data.String.Conversions     (cs)
+import           Servant                     (ServantErr)
+import           Servant.Auth.Server         (CookieSettings, JWTSettings)
+import           Timely.Accounts.Application as Application
+import           Timely.Accounts.Types       (Account, Application (..), Onboarding (..))
+import           Timely.Api.Sessions         as Sessions
+import           Timely.Api.Types            (AccountInfo (..))
+import           Timely.Events               as Events
+import           Timely.Types.Session        (Session (..))
 
 
 

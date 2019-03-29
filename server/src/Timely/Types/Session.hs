@@ -1,13 +1,13 @@
 {-# LANGUAGE DeriveGeneric #-}
 module Timely.Types.Session where
 
-import           Data.Aeson                (FromJSON, ToJSON)
-import           Data.Model.Guid           (Guid)
-import           Data.Model.Types          (Phone)
-import           Data.Model.Valid          (Valid)
-import           GHC.Generics              (Generic)
-import           Servant.Auth.Server       (FromJWT, ToJWT)
-import           Timely.AccountStore.Types (Account)
+import           Data.Aeson            (FromJSON, ToJSON)
+import           Data.Model.Guid       (Guid)
+import           Data.Model.Types      (Phone)
+import           Data.Model.Valid      (Valid)
+import           GHC.Generics          (Generic)
+import           Servant.Auth.Server   (FromJWT, ToJWT)
+import           Timely.Accounts.Types (Account)
 
 
 

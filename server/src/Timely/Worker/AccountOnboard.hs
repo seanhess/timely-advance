@@ -8,47 +8,45 @@
 module Timely.Worker.AccountOnboard where
 
 
-import           Control.Effects                  (MonadEffects)
-import           Control.Effects.Async            (Async)
-import qualified Control.Effects.Async            as Async
-import           Control.Effects.Early            (Early)
-import qualified Control.Effects.Early            as Early
-import           Control.Effects.Log              (Log)
-import qualified Control.Effects.Log              as Log
-import           Control.Effects.Signal           (Throw, throwSignal)
-import qualified Control.Effects.Signal           as Signal
-import           Control.Effects.Time             (Time, UTCTime (..))
-import qualified Control.Effects.Time             as Time
-import           Control.Exception                (Exception)
-import           Control.Monad.Catch              (MonadCatch, MonadThrow (..), SomeException (..), catch)
-import           Data.Function                    ((&))
-import qualified Data.List                        as List
-import           Data.Model.Guid                  as Guid
-import           Data.Model.Id                    (Id, Token)
-import           Data.Model.Types                 (Address (..), Phone, Valid)
-import           Data.Text                        as Text
-import qualified Database.Selda                   as Selda
-import           Network.AMQP.Worker              (Queue)
-import qualified Network.AMQP.Worker              as Worker hiding (bindQueue, publish, worker)
-import           Timely.AccountStore.Account      (Accounts)
-import qualified Timely.AccountStore.Account      as Account
-import           Timely.AccountStore.Application  (Applications)
-import qualified Timely.AccountStore.Application  as Applications
-import           Timely.AccountStore.Transactions (Transaction, Transactions)
-import qualified Timely.AccountStore.Transactions as Transactions
-import           Timely.AccountStore.Types        (Account, AppBank, Application (..),
-                                                   BankAccount (balance, bankAccountId), Customer (..), Onboarding (..),
-                                                   isChecking, toBankAccount)
+import           Control.Effects                   (MonadEffects)
+import           Control.Effects.Async             (Async)
+import qualified Control.Effects.Async             as Async
+import           Control.Effects.Early             (Early)
+import qualified Control.Effects.Early             as Early
+import           Control.Effects.Log               (Log)
+import qualified Control.Effects.Log               as Log
+import           Control.Effects.Signal            (Throw, throwSignal)
+import qualified Control.Effects.Signal            as Signal
+import           Control.Effects.Time              (Time, UTCTime (..))
+import qualified Control.Effects.Time              as Time
+import           Control.Exception                 (Exception)
+import           Control.Monad.Catch               (MonadCatch, MonadThrow (..), SomeException (..), catch)
+import           Data.Function                     ((&))
+import qualified Data.List                         as List
+import           Data.Model.Guid                   as Guid
+import           Data.Model.Id                     (Id, Token)
+import           Data.Model.Types                  (Address (..), Phone, Valid)
+import           Data.Text                         as Text
+import qualified Database.Selda                    as Selda
+import           Network.AMQP.Worker               (Queue)
+import qualified Network.AMQP.Worker               as Worker hiding (bindQueue, publish, worker)
+import           Timely.Accounts                   (Accounts, Transaction)
+import qualified Timely.Accounts                   as Accounts
+import           Timely.Accounts.Application       (Applications)
+import qualified Timely.Accounts.Application       as Applications
+import           Timely.Accounts.Types             (Account (..), AppBank, Application (..),
+                                                    BankAccount (bankAccountId), Customer (..), Onboarding (..),
+                                                    isChecking, toBankAccount)
 
-import qualified Timely.App                       as App
-import           Timely.Bank                      (Banks, Dwolla, Identity (..), Names (..))
-import qualified Timely.Bank                      as Bank
-import qualified Timely.Evaluate.AccountHealth    as AccountHealth
-import qualified Timely.Events                    as Events
-import           Timely.Transfers                 (AccountInfo (..), TransferAccount, Transfers)
-import qualified Timely.Transfers                 as Transfers
-import           Timely.Underwriting              (Approval (..), Underwriting (..))
-import qualified Timely.Underwriting              as Underwriting
+import qualified Timely.Accounts.Types.Transaction as Transaction
+import qualified Timely.App                        as App
+import           Timely.Bank                       (Banks, Dwolla, Identity (..), Names (..))
+import qualified Timely.Bank                       as Bank
+import qualified Timely.Events                     as Events
+import           Timely.Transfers                  (AccountInfo (..), TransferAccount, Transfers)
+import qualified Timely.Transfers                  as Transfers
+import           Timely.Underwriting               (Approval (..), Underwriting (..))
+import qualified Timely.Underwriting               as Underwriting
 
 
 
@@ -62,7 +60,7 @@ start = App.start queue handler
 
 
 handler
-  :: ( MonadEffects '[Time, Applications, Transactions, Accounts, Log, Banks, Transfers, Underwriting, Async] m
+  :: ( MonadEffects '[Time, Applications, Accounts, Log, Banks, Transfers, Underwriting, Async] m
      , MonadThrow m, MonadCatch m
      )
   => Application -> m ()
@@ -89,7 +87,7 @@ handler app@(Application { accountId, phone }) = do
 
 -- | accountOnboard
 accountOnboard
-  :: ( MonadEffects '[Applications, Accounts, Transactions, Log, Banks, Transfers, Underwriting, Throw OnboardError, Time, Early (), Async] m)
+  :: ( MonadEffects '[Applications, Accounts, Log, Banks, Transfers, Underwriting, Throw OnboardError, Time, Early (), Async] m)
   => Application -> Guid Account -> Valid Phone -> m ()
 accountOnboard app accountId phone = do
     now                      <- Time.currentTime
@@ -102,28 +100,15 @@ accountOnboard app accountId phone = do
 
     trans                    <- loadTransactions accountId bankToken appBankId checking now
 
-    -- TODO perform initial account analysis. do all the fancy magic
-    -- for now, just save the transactions to their account
-    -- But, we can't. We need more information. We need them to mark their income and bills
-    -- 1. we could guess, and just run the analysis already. 
-    -- 2. Or change the system so the account can be created without a health
-
-    -- OK, they haven't selected their budget yet
-    -- so we can't run account health
-    -- but we can do everything else
-
-    -- we will run account health later
-
-    -- TODO create initial account health
-    -- let health = AccountHealth.analyze (balance checking)
-
-    -- save the account, should I reduce this to a single step somehow?
-    Account.create $ Account.account accountId now phone customer bankToken bankItemId amount health transId
-    Account.setBanks accountId bankAccounts
-    Transactions.save accountId trans
+    let account = Account accountId phone transId bankToken bankItemId amount now
+    Accounts.create account customer bankAccounts trans
 
     Applications.markResultOnboarding accountId Complete
     Log.info "complete"
+
+
+
+
 
 
 
@@ -197,7 +182,7 @@ loadTransactions accountId bankToken appBankId checking (UTCTime today _) = do
     ts <- Bank.loadTransactionsDays bankToken (bankAccountId checking) today year
     -- Log.debug ("transactions", List.length ts)
     Log.debug ("transactions", ts)
-    pure $ List.map (Transactions.fromBank accountId) ts
+    pure $ List.map (Transaction.fromBank accountId) ts
   where
     days = 1
     year = 365 * days

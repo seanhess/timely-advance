@@ -1,10 +1,10 @@
-{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DeriveGeneric             #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedLabels      #-}
-{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE OverloadedLabels          #-}
+{-# LANGUAGE OverloadedStrings         #-}
 module Timely.Advances
   ( Advances(..)
   , Advance(..)
@@ -20,17 +20,17 @@ module Timely.Advances
   , Store.initialize
   ) where
 
-import           Control.Effects        (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
-import           Control.Monad.Selda       (Selda)
-import           Data.Model.Guid           as Guid
-import           Data.Model.Id             (Id)
-import           Data.Model.Money          as Money
-import           Data.Time.Calendar        (Day)
-import           GHC.Generics           (Generic)
-import           Timely.AccountStore.Types (Account)
-import           Timely.Advances.Store      (Advance (..))
-import qualified Timely.Advances.Store     as Store
-import           Timely.Transfers.Account  (TransferAccount)
+import           Control.Effects          (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
+import           Control.Monad.Selda      (Selda)
+import           Data.Model.Guid          as Guid
+import           Data.Model.Id            (Id)
+import           Data.Model.Money         as Money
+import           Data.Time.Calendar       (Day)
+import           GHC.Generics             (Generic)
+import           Timely.Accounts.Types    (Account)
+import           Timely.Advances.Store    (Advance (..))
+import qualified Timely.Advances.Store    as Store
+import           Timely.Transfers.Account (TransferAccount)
 
 
 
@@ -83,4 +83,3 @@ implementAdvancesSelda =
       Store.findDue
       Store.activate
       Store.markCollected
-

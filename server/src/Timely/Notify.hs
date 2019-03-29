@@ -12,27 +12,27 @@
 {-# LANGUAGE UndecidableInstances      #-}
 module Timely.Notify where
 
-import           Control.Effects           (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
-import           Control.Monad.Config      (MonadConfig (..))
-import           Control.Monad.IO.Class    (MonadIO, liftIO)
-import           Control.Monad.Trans       (lift)
-import           Data.Model.Guid           as Guid
-import           Data.Model.Types          (Phone, Valid (..))
-import           Data.String.Conversions   (cs)
-import           Data.Text                 (Text)
-import qualified Data.Text                 as Text
-import           GHC.Generics              (Generic)
-import           Prelude                   hiding (id)
-import           Servant.Client            (BaseUrl)
-import qualified Servant.Client            as Servant
-import           Timely.AccountStore.Types (Account, AccountRow (..))
-import qualified Timely.AccountStore.Types as Account
-import qualified Twilio                    as Twilio
-import qualified Twilio.Messages           as Twilio
+import           Control.Effects         (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
+import           Control.Monad.Config    (MonadConfig (..))
+import           Control.Monad.IO.Class  (MonadIO, liftIO)
+import           Control.Monad.Trans     (lift)
+import           Data.Model.Guid         as Guid
+import           Data.Model.Types        (Phone, Valid (..))
+import           Data.String.Conversions (cs)
+import           Data.Text               (Text)
+import qualified Data.Text               as Text
+import           GHC.Generics            (Generic)
+import           Prelude                 hiding (id)
+import           Servant.Client          (BaseUrl)
+import qualified Servant.Client          as Servant
+import           Timely.Accounts.Types   (Account (..))
+import qualified Timely.Accounts.Types   as Account
+import qualified Twilio                  as Twilio
+import qualified Twilio.Messages         as Twilio
 
 
 data Notify m = NotifyMethods
-  { _send :: forall a. GuidPrefix a => AccountRow -> Message a -> m ()
+  { _send :: forall a. GuidPrefix a => Account -> Message a -> m ()
   }
 
 instance Effect Notify where
@@ -45,7 +45,7 @@ instance Effect Notify where
         _send m i t)
 
 
-send :: (MonadEffect Notify m, GuidPrefix a) => AccountRow -> Message a -> m ()
+send :: (MonadEffect Notify m, GuidPrefix a) => Account -> Message a -> m ()
 send = _send effect
 
 
@@ -62,11 +62,11 @@ implementIO = implement $
 
 sendMessage
   :: (MonadIO m, MonadConfig Config m, GuidPrefix a)
-  => AccountRow -> Message a -> m ()
+  => Account -> Message a -> m ()
 sendMessage account message = do
   Config { fromPhone, accountSid, authToken, appBaseUrl } <- config
   let (Valid from) = fromPhone
-      (Valid to)   = Account.phone (account :: AccountRow)
+      (Valid to)   = Account.phone (account :: Account)
   liftIO $ Twilio.runTwilio (accountSid, authToken) $ do
     Twilio.post $ Twilio.PostMessage ("+1" <> to) ("+1" <> from) (body appBaseUrl (accountId account) message) Nothing
   pure ()

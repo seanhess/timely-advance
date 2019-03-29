@@ -6,8 +6,8 @@ import Test.Tasty.HUnit
 import Test.Tasty.Monad
 
 import           Timely.Bank as Bank
-import           Timely.AccountStore.Types (BankAccount(..))
-import qualified Timely.AccountStore.Types as Account
+import           Timely.Accounts.Types (BankAccount(..))
+import qualified Timely.Accounts.Types as Account
 import qualified Data.Model.Money as Money
 import Data.Time.Clock (getCurrentTime)
 

@@ -5,28 +5,27 @@
 module Timely.Api.Sessions where
 
 
-import           Control.Effects             (MonadEffects)
-import           Control.Effects.Signal      (Throw, throwSignal)
+import           Control.Effects               (MonadEffects)
+import           Control.Effects.Signal        (Throw, throwSignal)
 import           Control.Monad.Config
-import           Control.Monad.IO.Class      (MonadIO, liftIO)
-import           Crypto.JOSE.JWK             (JWK)
-import           Data.ByteString             (ByteString)
-import           Data.Model.Guid             as Guid
-import           Data.Model.Id               (Token (..))
-import           Data.Model.Types            (Phone)
-import           Data.Model.Valid            as Valid
-import           Servant                     (Header, Headers, NoContent (..), ServantErr, err401)
-import           Servant.Auth.Server         (AuthResult (..), CookieSettings (..), IsSecure (..), JWTSettings,
-                                              SetCookie, ThrowAll (..), defaultCookieSettings, defaultJWTSettings)
-import qualified Servant.Auth.Server         as Servant
+import           Control.Monad.IO.Class        (MonadIO, liftIO)
+import           Crypto.JOSE.JWK               (JWK)
+import           Data.ByteString               (ByteString)
+import           Data.Model.Guid               as Guid
+import           Data.Model.Id                 (Token (..))
+import           Data.Model.Types              (Phone)
+import           Data.Model.Valid              as Valid
+import           Servant                       (Header, Headers, NoContent (..), ServantErr, err401)
+import           Servant.Auth.Server           (AuthResult (..), CookieSettings (..), IsSecure (..), JWTSettings,
+                                                SetCookie, ThrowAll (..), defaultCookieSettings, defaultJWTSettings)
+import qualified Servant.Auth.Server           as Servant
 
-import           Timely.AccountStore.Account (Accounts)
-import qualified Timely.AccountStore.Account as Account
-import           Timely.AccountStore.Types   (Account)
-import qualified Timely.AccountStore.Types   as Account (AccountRow(..))
-import           Timely.Auth                 (Auth, AuthCode)
-import qualified Timely.Auth                 as Auth
-import           Timely.Types.Session        (Admin, Session (..))
+import           Timely.Accounts               (Account, Accounts)
+import qualified Timely.Accounts               as Accounts
+import qualified Timely.Accounts.Types.Account as Account
+import           Timely.Auth                   (Auth, AuthCode)
+import qualified Timely.Auth                   as Auth
+import           Timely.Types.Session          (Admin, Session (..))
 
 
 type SetSession a = Headers '[Header "Set-Cookie" SetCookie, Header "Set-Cookie" SetCookie] a
@@ -77,7 +76,7 @@ session
      ) => Valid Phone -> m (SetSession Session)
 session p = do
     -- they've already successfully validated the code. They're in!
-    ma <- Account.findByPhone p
+    ma <- Accounts.findByPhone p
     let s = Session p (Account.accountId <$> ma) False
     setSession s s
 

@@ -18,10 +18,9 @@ import           Data.Model.Valid              (Valid)
 import           Data.String.Conversions       (cs)
 import           Data.Text                     (Text)
 import           Data.Time.Calendar            (Day)
-import           Database.Selda                (ID, fromId)
 import           GHC.Generics                  (Generic)
 import           Servant.API.ContentTypes.HTML (Linkable (..))
-import           Timely.AccountStore.Types
+import           Timely.Accounts.Types
 import           Timely.Bank                   (Public, Token)
 import           Timely.Underwriting           (Approval, Denial, Result (..))
 
@@ -32,15 +31,6 @@ instance ToJSON Result where
 
 instance ToJSON Approval
 instance ToJSON Denial
-
-
-instance ToJSON (ID a) where
-    toJSON i = toJSON $ fromId i
-instance ToJSON Health
-instance ToJSON Account
-instance ToJSON Customer
-instance ToJSON BankAccountType
-instance ToJSON BankAccount
 
 
 data Amount = Amount

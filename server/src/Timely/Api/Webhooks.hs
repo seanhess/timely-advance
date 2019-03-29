@@ -8,20 +8,20 @@ module Timely.Api.Webhooks
   ,) where
 
 
-import           Control.Effects                 (MonadEffects)
-import           Control.Effects.Log             (Log)
-import qualified Control.Effects.Log             as Log
-import           Control.Effects.Worker          (Publish)
-import qualified Data.Aeson as Aeson
-import qualified Control.Effects.Worker          as Worker
-import           Data.String.Conversions         (cs)
-import qualified Network.Plaid.Webhooks          as Plaid
-import           Servant                         (NoContent (..))
-import           Timely.AccountStore.Application (Applications)
-import qualified Timely.AccountStore.Application as Applications
-import           Timely.AccountStore.Account (Accounts)
-import qualified Timely.AccountStore.Account as Accounts
-import qualified Timely.Events                   as Events
+import           Control.Effects             (MonadEffects)
+import           Control.Effects.Log         (Log)
+import qualified Control.Effects.Log         as Log
+import           Control.Effects.Worker      (Publish)
+import qualified Control.Effects.Worker      as Worker
+import qualified Data.Aeson                  as Aeson
+import           Data.String.Conversions     (cs)
+import qualified Network.Plaid.Webhooks      as Plaid
+import           Servant                     (NoContent (..))
+import           Timely.Accounts             (Accounts)
+import qualified Timely.Accounts             as Accounts
+import           Timely.Accounts.Application (Applications)
+import qualified Timely.Accounts.Application as Applications
+import qualified Timely.Events               as Events
 
 type Plaid = Plaid.Webhook
 

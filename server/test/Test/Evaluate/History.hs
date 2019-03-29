@@ -1,17 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Evaluate.History where
 
-import qualified Data.List                        as List
-import           Data.Model.Id                    (Id (..))
-import           Data.Model.Money                 (Money (..))
-import qualified Data.Model.Money                 as Money
-import           Data.Number.Abs                  (absolute)
-import           Test.Dates                       (parseDay)
+import qualified Data.List                         as List
+import           Data.Model.Id                     (Id (..))
+import           Data.Model.Money                  (Money (..))
+import qualified Data.Model.Money                  as Money
+import           Data.Number.Abs                   (absolute)
+import           Test.Dates                        (parseDay)
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
-import           Timely.AccountStore.Transactions (Category (..), Transaction (..))
-import qualified Timely.AccountStore.Transactions as Trans
-import           Timely.Evaluate.History          as History hiding (expenses, income)
+import           Timely.Accounts                   (Category (..), Transaction (..))
+import qualified Timely.Accounts.Types.Transaction as Trans
+import           Timely.Evaluate.History           as History hiding (expenses, income)
 
 tests :: Tests ()
 tests = do

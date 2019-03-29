@@ -5,12 +5,12 @@
 module Timely.Api.Health where
 
 
-import           Control.Effects                 (MonadEffects)
-import           Control.Effects.Worker          (Publish)
-import qualified Control.Effects.Worker          as Worker
-import           Data.Text                       (Text, pack)
-import           Timely.AccountStore.Application as Application
-import           Timely.Events                   as Events
+import           Control.Effects             (MonadEffects)
+import           Control.Effects.Worker      (Publish)
+import qualified Control.Effects.Worker      as Worker
+import           Data.Text                   (Text, pack)
+import           Timely.Accounts.Application as Application
+import           Timely.Events               as Events
 import           Version
 
 

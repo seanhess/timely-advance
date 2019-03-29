@@ -25,13 +25,12 @@ import           Servant.API.Generic                  ((:-), AsApi, ToServant, T
 import           Servant.Auth.Server                  (Auth, Cookie, CookieSettings (..), JWTSettings)
 import           Servant.Server.Generic               (AsServerT, genericServerT)
 -- import           Servant.Server.StaticFiles           (serveDirectoryFileServer)
-import qualified Timely.AccountStore.Account          as Account
-import qualified Timely.AccountStore.Application      as Application
-import           Timely.AccountStore.Budget           (Item, ItemType (Expense, Income))
-import qualified Timely.AccountStore.Budget           as Budget
-import           Timely.AccountStore.Transactions     (Transaction)
-import qualified Timely.AccountStore.Transactions     as Transactions
-import           Timely.AccountStore.Types            (AppResult, Application)
+import           Timely.Accounts                      as Accounts
+import qualified Timely.Accounts.Application          as Application
+import           Timely.Accounts.Budget               (Item, ItemType (Expense, Income))
+import qualified Timely.Accounts.Budget               as Budget
+import qualified Timely.Accounts.Transactions         as Transactions
+import           Timely.Accounts.Types                (AppResult, Application, Transaction)
 import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
 import           Timely.Api.Advances                  as Advances
@@ -132,8 +131,8 @@ data WebhooksApi route = WebhooksApi
 -- Your own account!
 accountApi :: Guid Account -> ToServant AccountApi (AsServerT AppM)
 accountApi i = genericServerT AccountApi
-    { _get     = Account.find i           >>= notFound
-    , _banks   = Account.findBanks i
+    { _get     = Accounts.find i           >>= notFound
+    , _banks   = Accounts.findBanks i
     , _app     = Application.find i       >>= notFound
     , _result  = Application.findResult i >>= notFound
     , _trans   = Transactions.list i 0 100
@@ -229,9 +228,8 @@ initialize = do
     putStrLn "Initializing"
 
     runAppIO $ do
-      Account.initialize
+      Accounts.initialize
       Application.initialize
-      Transactions.initialize
       Advances.initialize
       Transfers.initialize
 

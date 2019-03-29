@@ -16,68 +16,66 @@ module Timely.App.AppM
   ) where
 
 
-import           Control.Effects                  (MonadEffect (..), RuntimeImplemented (..))
-import           Control.Effects.Async            (Async)
-import qualified Control.Effects.Async            as Async
-import           Control.Effects.Log              (Log (..), LogT)
-import qualified Control.Effects.Log              as Log
-import           Control.Effects.Signal           (Signal (..))
-import           Control.Effects.Time             (Time)
-import qualified Control.Effects.Time             as Time
-import           Control.Effects.Worker           (Publish (..))
-import qualified Control.Effects.Worker           as Worker
-import           Control.Monad.Config             (MonadConfig (..))
-import           Control.Monad.Except             (MonadError (..))
-import           Control.Monad.IO.Class           (MonadIO, liftIO)
-import           Control.Monad.Reader             (MonadReader, ReaderT, ask, asks, runReaderT)
-import           Control.Monad.Selda              (Selda (..))
-import           Control.Monad.Trans              (lift)
-import           Control.Monad.Trans.Control      (MonadBaseControl)
-import           Control.Monad.Trans.Except       (throwE)
-import qualified Control.Monad.Trans.Reader       as Reader
-import           Data.Function                    ((&))
-import           Data.Model.Id                    (Token (..))
-import           Data.Pool                        (Pool)
-import qualified Data.Pool                        as Pool
-import           Data.String.Conversions          (cs)
-import           Data.Text                        (Text)
-import           Database.Selda                   (MonadMask)
-import           Database.Selda.Backend           (SeldaConnection)
-import qualified Database.Selda.PostgreSQL        as Selda
-import qualified Network.AMQP.Worker              as Worker
-import qualified Network.Dwolla                   as Dwolla
-import qualified Network.HTTP.Client              as HTTP
-import qualified Network.HTTP.Client.TLS          as HTTP
-import qualified Network.Plaid                    as Plaid
-import           Servant                          (Handler (..), ServantErr, runHandler)
-import           Servant.Auth.Server              (CookieSettings (..), JWTSettings)
-import qualified Text.Show.Pretty                 as Pretty
-import           Timely.AccountStore.Account      (Accounts)
-import qualified Timely.AccountStore.Account      as Accounts
-import           Timely.AccountStore.Application  (Applications)
-import qualified Timely.AccountStore.Application  as Applications
-import           Timely.AccountStore.Budget       (Budget)
-import qualified Timely.AccountStore.Budget       as Budget
-import           Timely.AccountStore.Transactions (Transactions)
-import qualified Timely.AccountStore.Transactions as Transactions
-import           Timely.Advances                  (Advances)
-import qualified Timely.Advances                  as Advances
-import qualified Timely.Api.Sessions              as Sessions
-import           Timely.App.Retry                 (retry)
-import           Timely.Auth                      (AuthConfig)
-import           Timely.Auth                      (Auth)
-import qualified Timely.Auth                      as Auth
-import           Timely.Bank                      (Banks)
-import qualified Timely.Bank                      as Bank
-import           Timely.Config                    (Env (..), loadEnv, version)
-import           Timely.Notify                    (Notify)
-import qualified Timely.Notify                    as Notify
-import           Timely.Transfers                 (Transfers)
-import qualified Timely.Transfers                 as Transfers
-import           Timely.Types.Config              (ClientConfig (ClientConfig), PlaidConfig (PlaidConfig))
-import           Timely.Types.Session             (Admin)
-import           Timely.Underwriting              (Underwriting)
-import qualified Timely.Underwriting              as Underwriting
+import           Control.Effects              (MonadEffect (..), RuntimeImplemented (..))
+import           Control.Effects.Async        (Async)
+import qualified Control.Effects.Async        as Async
+import           Control.Effects.Log          (Log (..), LogT)
+import qualified Control.Effects.Log          as Log
+import           Control.Effects.Signal       (Signal (..))
+import           Control.Effects.Time         (Time)
+import qualified Control.Effects.Time         as Time
+import           Control.Effects.Worker       (Publish (..))
+import qualified Control.Effects.Worker       as Worker
+import           Control.Monad.Config         (MonadConfig (..))
+import           Control.Monad.Except         (MonadError (..))
+import           Control.Monad.IO.Class       (MonadIO, liftIO)
+import           Control.Monad.Reader         (MonadReader, ReaderT, ask, asks, runReaderT)
+import           Control.Monad.Selda          (Selda (..))
+import           Control.Monad.Trans          (lift)
+import           Control.Monad.Trans.Control  (MonadBaseControl)
+import           Control.Monad.Trans.Except   (throwE)
+import qualified Control.Monad.Trans.Reader   as Reader
+import           Data.Function                ((&))
+import           Data.Model.Id                (Token (..))
+import           Data.Pool                    (Pool)
+import qualified Data.Pool                    as Pool
+import           Data.String.Conversions      (cs)
+import           Data.Text                    (Text)
+import           Database.Selda               (MonadMask)
+import           Database.Selda.Backend       (SeldaConnection)
+import qualified Database.Selda.PostgreSQL    as Selda
+import qualified Network.AMQP.Worker          as Worker
+import qualified Network.Dwolla               as Dwolla
+import qualified Network.HTTP.Client          as HTTP
+import qualified Network.HTTP.Client.TLS      as HTTP
+import qualified Network.Plaid                as Plaid
+import           Servant                      (Handler (..), ServantErr, runHandler)
+import           Servant.Auth.Server          (CookieSettings (..), JWTSettings)
+import qualified Text.Show.Pretty             as Pretty
+import           Timely.Accounts              (Accounts)
+import qualified Timely.Accounts              as Accounts
+import           Timely.Accounts.Application  (Applications)
+import qualified Timely.Accounts.Application  as Applications
+import           Timely.Accounts.Budget       (Budget)
+import qualified Timely.Accounts.Budget       as Budget
+import           Timely.Advances              (Advances)
+import qualified Timely.Advances              as Advances
+import qualified Timely.Api.Sessions          as Sessions
+import           Timely.App.Retry             (retry)
+import           Timely.Auth                  (AuthConfig)
+import           Timely.Auth                  (Auth)
+import qualified Timely.Auth                  as Auth
+import           Timely.Bank                  (Banks)
+import qualified Timely.Bank                  as Bank
+import           Timely.Config                (Env (..), loadEnv, version)
+import           Timely.Notify                (Notify)
+import qualified Timely.Notify                as Notify
+import           Timely.Transfers             (Transfers)
+import qualified Timely.Transfers             as Transfers
+import           Timely.Types.Config          (ClientConfig (ClientConfig), PlaidConfig (PlaidConfig))
+import           Timely.Types.Session         (Admin)
+import           Timely.Underwriting          (Underwriting)
+import qualified Timely.Underwriting          as Underwriting
 
 
 
@@ -186,7 +184,7 @@ instance MonadEffect (Signal ServantErr b) Handler where
 
 
 
-type AppT m = RuntimeImplemented Log (LogT (RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Applications (RuntimeImplemented Accounts (RuntimeImplemented Banks (RuntimeImplemented Advances (RuntimeImplemented Auth (RuntimeImplemented Transfers (RuntimeImplemented Notify (RuntimeImplemented Underwriting (RuntimeImplemented Async (RuntimeImplemented Transactions (RuntimeImplemented Budget (ReaderT AppState m)))))))))))))))
+type AppT m = RuntimeImplemented Log (LogT (RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Applications (RuntimeImplemented Accounts (RuntimeImplemented Banks (RuntimeImplemented Advances (RuntimeImplemented Auth (RuntimeImplemented Transfers (RuntimeImplemented Notify (RuntimeImplemented Underwriting (RuntimeImplemented Async (RuntimeImplemented Budget (ReaderT AppState m))))))))))))))
 
 type AppM = AppT Handler
 
@@ -211,7 +209,6 @@ runApp s x =
         & Notify.implementIO
         & Underwriting.implementMock
         & Async.implementIO
-        & Transactions.implementIO
         & Budget.implementIO
   in runReaderT action s
 

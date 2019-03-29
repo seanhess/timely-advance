@@ -2,18 +2,18 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 module Timely.Transfers.Types where
 
-import           Control.Exception         (Exception)
-import           Data.Model.Guid           (Guid)
-import           Data.Model.Id             (Token)
-import           Data.Model.Money          as Money
-import           Data.Model.Types          (Address (..), SSN, Valid (..))
-import           Data.Typeable             (Typeable)
-import           Database.Selda            hiding (insert, query, tryCreateTable, update_)
-import           GHC.Generics              (Generic)
-import           Network.Plaid.Dwolla      (Dwolla)
-import           Timely.AccountStore.Types (Account)
+import           Control.Exception     (Exception)
+import           Data.Model.Guid       (Guid)
+import           Data.Model.Id         (Token)
+import           Data.Model.Money      as Money
+import           Data.Model.Types      (Address (..), SSN, Valid (..))
+import           Data.Typeable         (Typeable)
+import           Database.Selda        hiding (insert, query, tryCreateTable, update_)
+import           GHC.Generics          (Generic)
+import           Network.Plaid.Dwolla  (Dwolla)
+import           Timely.Accounts.Types (Account)
 
-import           Timely.Advances           (Advance (..))
+import           Timely.Advances       (Advance (..))
 
 
 
@@ -33,13 +33,13 @@ data Debit
 
 
 data AccountInfo = AccountInfo
-  { accountId   :: Guid Account
-  , firstName   :: Text
-  , lastName    :: Text
-  , email       :: Text
-  , address     :: Address
-  , dateOfBirth :: Day
-  , ssn         :: Valid SSN
+  { accountId      :: Guid Account
+  , firstName      :: Text
+  , lastName       :: Text
+  , email          :: Text
+  , address        :: Address
+  , dateOfBirth    :: Day
+  , ssn            :: Valid SSN
   , processorToken :: Token Dwolla
   } deriving (Show, Eq, Generic)
 

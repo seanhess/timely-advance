@@ -4,15 +4,15 @@
 module Timely.Evaluate.History where
 
 
-import           Data.Aeson                       (ToJSON)
-import           Data.Function                    ((&))
-import qualified Data.List                        as List
-import           Data.Model.Money                 (Money, fromCents, toCents)
-import           Data.Number.Abs                  (Abs(value), absolute)
-import           Data.Text                        (Text)
-import           GHC.Generics                     (Generic)
-import           Timely.AccountStore.Transactions (Transaction)
-import qualified Timely.AccountStore.Transactions as Transaction
+import           Data.Aeson                        (ToJSON)
+import           Data.Function                     ((&))
+import qualified Data.List                         as List
+import           Data.Model.Money                  (Money, fromCents, toCents)
+import           Data.Number.Abs                   (Abs (value), absolute)
+import           Data.Text                         (Text)
+import           GHC.Generics                      (Generic)
+import           Timely.Accounts.Types.Transaction (Transaction)
+import qualified Timely.Accounts.Types.Transaction as Transaction
 
 
 
@@ -78,5 +78,3 @@ history :: [Transaction] -> History
 history ts = History
   (groups $ List.filter isIncome ts)
   (groups $ List.filter isExpense ts)
-
-

@@ -17,7 +17,7 @@ import           Database.Selda            (ID, fromId)
 import           Network.Plaid.Types       (Id (..), Token (..))
 -- import           Text.Megaparsec           (Parsec, parse)
 
-import           Timely.AccountStore.Types
+import           Timely.Accounts.Types
 import           Timely.Advances           (Advance)
 import           Timely.Api.Types          (AccountInfo)
 import           Timely.Auth               (Phone)
