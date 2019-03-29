@@ -5,6 +5,7 @@ import qualified Data.List                        as List
 import           Data.Model.Id                    (Id (..))
 import           Data.Model.Money                 (Money (..))
 import qualified Data.Model.Money                 as Money
+import           Data.Number.Abs                  (absolute)
 import           Test.Dates                       (parseDay)
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
@@ -16,7 +17,7 @@ tests :: Tests ()
 tests = do
   group "separate" $ do
     test "should be either expenses or income" $ do
-      length expenses + length incomes @?= length history
+      length expenses + length incomes @?= length allTransactions
 
     test "should find some expenses" $ do
       length expenses > 0 @? "0"
@@ -58,7 +59,7 @@ tests = do
 
   group "average" $ do
     test "should have income of 500" $ do
-      average (head $ groups incomes) @?= Money.fromFloat (-500.00)
+      average (head $ groups incomes) @?= (absolute (Money.fromFloat (-500.00)))
 
 
   group "expense groups" $ do
@@ -70,12 +71,12 @@ tests = do
     test "should find mcdonalds" $ do
       let mcDonalds = List.find (isName "McDonald's") expenseGroups
       (History.name <$> mcDonalds) @?= Just "McDonald's"
-      (History.average <$> mcDonalds) @?= Just (Money.fromFloat 12.00)
+      (History.average <$> mcDonalds) @?= Just (absolute $ Money.fromFloat 12.00)
 
     test "most" $ do
       let first = head expenseGroups
       History.name first @?= "SparkFun"
-      History.average first @?= Money.fromFloat 89.40
+      History.average first @?= (absolute $ Money.fromFloat 89.40)
 
     test "biggest total should be before large single" $ do
       let ts = [ transaction { Trans.name = "regular", amount = Money.fromFloat (100.00) }
@@ -89,8 +90,8 @@ tests = do
 
 
 
-expenses = List.filter History.isExpense history
-incomes  = List.filter History.isIncome history
+expenses = List.filter History.isExpense allTransactions
+incomes  = List.filter History.isIncome allTransactions
 isName x g = History.name g == x
 
 
@@ -104,7 +105,7 @@ transaction =
 
 
 
-history =
+allTransactions =
   [ Transaction {transactionId = Id "5gDKvpZmyWFEaVJMVqaXIqrWQKAkKdhZv719B", accountId = "acc-DgKodQpnuLMOgkRgoR4d", date = parseDay "2019-03-19", category = Category "Food and Drink | Restaurants | Coffee Shop", pending = False, amount = Money 433, Trans.name = "Starbucks"}
   , Transaction {transactionId = Id "J5ZgMLPDB3S5V68N6GV1sARqLZ54ZjSdAgD9R", accountId = "acc-DgKodQpnuLMOgkRgoR4d", date = parseDay "2019-03-18", category = Category "Food and Drink | Restaurants", pending = False, amount = Money 8940, Trans.name = "SparkFun"}
   , Transaction {transactionId = Id "kqdZ7E1WzVi1rmGkmyrLhQkLAw95wGhW9dlXN", accountId = "acc-DgKodQpnuLMOgkRgoR4d", date = parseDay "2019-03-05", category = Category "Travel | Car Service | Ride Share", pending = False, amount = Money 633, Trans.name = "Uber 072515 SF**POOL**"}

@@ -108,8 +108,14 @@ accountOnboard app accountId phone = do
     -- 1. we could guess, and just run the analysis already. 
     -- 2. Or change the system so the account can be created without a health
 
+    -- OK, they haven't selected their budget yet
+    -- so we can't run account health
+    -- but we can do everything else
+
+    -- we will run account health later
+
     -- TODO create initial account health
-    let health = AccountHealth.analyze (balance checking)
+    -- let health = AccountHealth.analyze (balance checking)
 
     -- save the account, should I reduce this to a single step somehow?
     Account.create $ Account.account accountId now phone customer bankToken bankItemId amount health transId

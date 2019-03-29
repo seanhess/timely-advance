@@ -36,7 +36,7 @@ instance SqlType ItemType
 
 data Item (a :: ItemType) = Item
   { name     :: Text
-  , amounts  :: [Abs Money]
+  , amount   :: Abs Money
   , schedule :: Schedule
   } deriving (Show, Eq, Generic)
 
@@ -49,7 +49,7 @@ data ItemRow = ItemRow
   , itemType  :: ItemType
   , name      :: Text
   , schedule  :: Field Schedule
-  , amounts   :: Field [Money]
+  , amount    :: Money
   } deriving (Show, Eq, Generic)
 
 instance SqlRow ItemRow
@@ -137,19 +137,19 @@ initialize = do
 
 
 itemRow :: Guid Account -> ItemType -> Item a -> ItemRow
-itemRow accountId itemType Item {name, amounts, schedule} =
+itemRow accountId itemType Item {name, amount, schedule} =
   ItemRow
     { accountId
     , itemType
     , name
-    , amounts = Field (map value amounts)
+    , amount = value amount
     , schedule = Field schedule
     }
 
 fromItemRow :: ItemRow -> Item a
-fromItemRow ItemRow {name, amounts, schedule} =
+fromItemRow ItemRow {name, amount, schedule} =
   Item
     { name
-    , amounts = map absolute (field amounts)
+    , amount = absolute amount
     , schedule = field schedule
     }

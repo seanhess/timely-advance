@@ -1,35 +1,47 @@
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings     #-}
 module Timely.Evaluate.History where
 
 
+import           Data.Aeson                       (ToJSON)
 import           Data.Function                    ((&))
 import qualified Data.List                        as List
 import           Data.Model.Money                 (Money, fromCents, toCents)
+import           Data.Number.Abs                  (Abs(value), absolute)
 import           Data.Text                        (Text)
+import           GHC.Generics                     (Generic)
 import           Timely.AccountStore.Transactions (Transaction)
 import qualified Timely.AccountStore.Transactions as Transaction
 
 
 
+
+data History = History
+  { income   :: [Group]
+  , expenses :: [Group]
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON History
+
 data Group = Group
   { name         :: Text
+  , average      :: Abs Money
+  , total        :: Abs Money
   , transactions :: [Transaction]
-  } deriving (Eq)
+  } deriving (Show, Eq, Generic)
 
-instance Show Group where
-  show (Group n ts) =
-    "Group " ++ show n ++ " " ++ show (length ts) ++ " " ++ show (average (Group n ts))
+instance ToJSON Group
 
 
-average :: Group -> Money
-average g =
-  fromCents $ (toCents $ total g) `div` length (transactions g)
+transAverage :: [Transaction] -> Abs Money
+transAverage ts =
+  absolute $ fromCents $ (toCents $ value $ transTotal ts) `div` length ts
 
 
-total :: Group -> Money
-total =
-  sum . map Transaction.amount . transactions
+transTotal :: [Transaction] -> Abs Money
+transTotal =
+  absolute . sum . map (abs . Transaction.amount)
 
 
 
@@ -47,7 +59,7 @@ groups ts =
   ts & List.sortOn Transaction.name
      & List.groupBy nameEq
      & List.map toGroup
-     & List.sortOn (abs.total)
+     & List.sortOn (value . total)
      & List.reverse
 
   where
@@ -56,13 +68,15 @@ groups ts =
 
 
     toGroup :: [Transaction] -> Group
-    toGroup (t:ts) = Group (Transaction.name t) (t:ts)
+    toGroup ts@(t:_) = Group (Transaction.name t) (transAverage ts) (transTotal ts) ts
     -- this shouldn't happen
-    toGroup []     = Group "" []
+    toGroup []       = Group "" (absolute $ fromCents 0) (absolute $ fromCents 0) []
 
 
 
-expenses = groups . List.filter isExpense
-income   = groups . List.filter isIncome
+history :: [Transaction] -> History
+history ts = History
+  (groups $ List.filter isIncome ts)
+  (groups $ List.filter isExpense ts)
 
 

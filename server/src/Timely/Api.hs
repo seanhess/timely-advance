@@ -46,6 +46,8 @@ import           Timely.App                           (AppM, AppState (..), clie
 import qualified Timely.App                           as App
 import           Timely.Auth                          (AuthCode)
 import           Timely.Config                        (port, serveDir)
+import           Timely.Evaluate.History              (History)
+import qualified Timely.Evaluate.History              as History
 import qualified Timely.Transfers                     as Transfers
 import           Timely.Types.Config
 import           Timely.Types.Session
@@ -82,7 +84,10 @@ data VersionedApi route = VersionedApi
 data AccountApi route = AccountApi
     { _get         :: route :- Get '[JSON, HTML] Account
     , _banks       :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
+
     , _trans       :: route :- "transactions" :> Get '[JSON] [Transaction]
+    , _history     :: route :- "transactions" :> "history" :> Get '[JSON] History
+
     , _app         :: route :- "application" :> Get '[JSON] Application
     , _result      :: route :- "application" :> "result" :> Get '[JSON] AppResult
     , _advances    :: route :- "advances" :> ToServantApi AdvanceApi
@@ -132,6 +137,7 @@ accountApi i = genericServerT AccountApi
     , _app     = Application.find i       >>= notFound
     , _result  = Application.findResult i >>= notFound
     , _trans   = Transactions.list i 0 100
+    , _history  = History.history <$> Transactions.list i 0 100
     , _advances = advanceApi i
     , _setIncome = (\inc -> Budget.setIncome i inc >> pure NoContent)
     , _getIncome = Budget.income i        >>= notFound
