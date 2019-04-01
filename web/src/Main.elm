@@ -10,11 +10,11 @@ import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Page.Account as Account
-import Page.Accounts as Accounts
 import Page.Admin.Sudo as Sudo
 import Page.Advance as Advance
 import Page.Init as Init
 import Page.Onboard.Approval as Approval
+import Page.Onboard.Budget as Budget
 import Page.Onboard.Landing as Landing
 import Page.Onboard.Signup as Signup
 import Route exposing (Route)
@@ -44,7 +44,7 @@ type PageModel
     | Landing Landing.Model
     | Signup Signup.Model
     | Approval Approval.Model
-    | Accounts Accounts.Model
+    | Budget Budget.Model
     | Account Account.Model
     | Advance Advance.Model
     | Sudo Sudo.Model
@@ -80,8 +80,8 @@ type Msg
     | OnLanding Landing.Msg
     | OnSignup Signup.Msg
     | OnApproval Approval.Msg
+    | OnBudget Budget.Msg
     | OnAdvance Advance.Msg
-    | OnAccounts Accounts.Msg
     | OnAccount Account.Msg
     | OnSudo Sudo.Msg
 
@@ -113,6 +113,10 @@ update msg model =
             Landing.update mg m
                 |> updateWith Landing OnLanding model
 
+        ( OnBudget mg, Budget m ) ->
+            Budget.update mg m
+                |> updateWith Budget OnBudget model
+
         ( OnSignup sub, Signup m ) ->
             Signup.update sub m
                 |> runUpdates (always Cmd.none) Signup OnSignup model
@@ -120,11 +124,6 @@ update msg model =
         ( OnApproval app, Approval m ) ->
             Approval.update app m
                 |> runUpdates (always Cmd.none) Approval OnApproval model
-
-        -- |> updateWith Signup GotSignupMsg model
-        ( OnAccounts acc, Accounts m ) ->
-            Accounts.update acc m
-                |> updateWith Accounts OnAccounts model
 
         ( OnAccount acc, Account m ) ->
             Account.update model.key acc m
@@ -214,19 +213,19 @@ changeRouteTo key maybeRoute =
             in
             ( Approval mod, Cmd.map OnApproval cmd )
 
+        Just (Route.Onboard (Route.Budget i)) ->
+            let
+                ( mod, cmd ) =
+                    Budget.init i
+            in
+            ( Budget mod, Cmd.map OnBudget cmd )
+
         Just (Route.Admin Route.Sudo) ->
             let
                 ( mod, cmd ) =
                     Sudo.init key
             in
             ( Sudo mod, Cmd.map OnSudo cmd )
-
-        Just Route.Accounts ->
-            let
-                ( mod, cmd ) =
-                    Accounts.init
-            in
-            ( Accounts mod, Cmd.map OnAccounts cmd )
 
         Just (Route.Account i Route.AccountMain) ->
             let
@@ -272,8 +271,8 @@ view model =
                 Approval a ->
                     Element.map OnApproval <| Approval.view a
 
-                Accounts s ->
-                    Element.map OnAccounts <| Accounts.view s
+                Budget a ->
+                    Element.map OnBudget <| Budget.view a
 
                 Account a ->
                     Element.map OnAccount <| Account.view a

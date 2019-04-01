@@ -13,6 +13,8 @@ import           Data.Text                         (Text)
 import           GHC.Generics                      (Generic)
 import           Timely.Accounts.Types.Transaction (Transaction)
 import qualified Timely.Accounts.Types.Transaction as Transaction
+import           Timely.Evaluate.Schedule          (Schedule)
+import qualified Timely.Evaluate.Schedule as Schedule
 
 
 
@@ -28,6 +30,7 @@ data Group = Group
   { name         :: Text
   , average      :: Abs Money
   , total        :: Abs Money
+  , schedule     :: Maybe Schedule
   , transactions :: [Transaction]
   } deriving (Show, Eq, Generic)
 
@@ -68,9 +71,15 @@ groups ts =
 
 
     toGroup :: [Transaction] -> Group
-    toGroup ts@(t:_) = Group (Transaction.name t) (transAverage ts) (transTotal ts) ts
+    toGroup ts@(t:_) =
+      Group
+        (Transaction.name t)
+        (transAverage ts)
+        (transTotal ts)
+        (Schedule.schedule $ map Transaction.date ts)
+        ts
     -- this shouldn't happen
-    toGroup []       = Group "" (absolute $ fromCents 0) (absolute $ fromCents 0) []
+    toGroup []       = Group "" (absolute $ fromCents 0) (absolute $ fromCents 0) Nothing []
 
 
 

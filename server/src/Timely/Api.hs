@@ -85,17 +85,13 @@ data AccountApi route = AccountApi
     , _banks       :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
     , _customer    :: route :- "customer" :> Get '[JSON] Customer
     , _health      :: route :- "health"   :> Get '[JSON] Health
-
     , _trans       :: route :- "transactions" :> Get '[JSON] [Transaction]
     , _history     :: route :- "transactions" :> "history" :> Get '[JSON] History
-
     , _app         :: route :- "application" :> Get '[JSON] Application
     , _result      :: route :- "application" :> "result" :> Get '[JSON] AppResult
     , _advances    :: route :- "advances" :> ToServantApi AdvanceApi
-
     , _setIncome   :: route :- "income" :> ReqBody '[JSON] (Item 'Income) :> Put '[JSON] NoContent
     , _getIncome   :: route :- "income" :> Get '[JSON] (Item 'Income)
-
     , _setExpenses :: route :- "expenses" :> ReqBody '[JSON] [Item 'Expense] :> Put '[JSON] NoContent
     , _getExpenses :: route :- "expenses" :> Get '[JSON] [Item 'Expense]
     } deriving (Generic)

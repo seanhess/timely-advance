@@ -37,15 +37,7 @@ resource goodHtml res =
 
 map : (a -> b) -> Resource a -> Resource b
 map f res =
-    case res of
-        Loading ->
-            Loading
-
-        Failed e ->
-            Failed e
-
-        Ready a ->
-            Ready (f a)
+    andThen (Ready << f) res
 
 
 map2 : (a -> b -> c) -> Resource a -> Resource b -> Resource c
@@ -67,3 +59,16 @@ map2 f ra rb =
 map3 : (a -> b -> c -> d) -> Resource a -> Resource b -> Resource c -> Resource d
 map3 f ra rb rc =
     map2 (\( a, b ) c -> f a b c) (map2 (\a b -> ( a, b )) ra rb) rc
+
+
+andThen : (a -> Resource b) -> Resource a -> Resource b
+andThen f ra =
+    case ra of
+        Loading ->
+            Loading
+
+        Failed e ->
+            Failed e
+
+        Ready a ->
+            f a

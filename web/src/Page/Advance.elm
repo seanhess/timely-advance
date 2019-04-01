@@ -12,10 +12,12 @@ import Process
 import Route
 import Task
 import Time
-import Timely.Api as Api exposing (Account, AccountId, Advance, AdvanceId, Application, ApprovalResult(..), Id(..), Money, advanceIsActive, formatDate, formatDollars, fromDollars, idValue)
+import Timely.Api as Api exposing (Account, AccountId, Advance, AdvanceId, Application, ApprovalResult(..), Id(..), advanceIsActive, idValue)
 import Timely.Components as Components
 import Timely.Resource exposing (Resource(..), resource)
 import Timely.Style as Style
+import Timely.Types.Date as Date exposing (formatDate)
+import Timely.Types.Money exposing (Money, formatDollars, fromCents, fromDollars, toCents)
 import Validate exposing (Validator)
 
 
@@ -57,7 +59,7 @@ init key accountId advanceId =
         [ Api.getAdvance OnAdvance accountId advanceId
         , Api.getAccount OnAccount accountId
         , Api.getAdvances OnAdvances accountId
-        , Api.timezone OnTimezone
+        , Date.timezone OnTimezone
         ]
     )
 
@@ -283,11 +285,11 @@ isEnoughCredit : Advance -> Account -> List Advance -> String -> Bool
 isEnoughCredit advance account advances value =
     let
         remaining =
-            account.credit - Api.usedCredit advances
+            toCents account.credit - toCents (Api.usedCredit advances)
     in
-    advanceAmount advance.offer value <= remaining
+    toCents (advanceAmount advance.offer value) <= remaining
 
 
 advanceAmount : Money -> String -> Money
 advanceAmount offer value =
-    Maybe.withDefault offer <| Maybe.map fromDollars (String.toInt value)
+    Maybe.withDefault offer <| Maybe.map fromCents (String.toInt value)

@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountHealth, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Onboarding(..), Phone, SSN, Session, Token, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeAmount, encodeId, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getTransactions, idValue, postAdvanceAccept, postApplications, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
+module Timely.Api exposing (Account, AccountHealth, AccountId(..), AccountInfo, Advance, AdvanceId(..), Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Onboarding(..), Phone, SSN(..), Session, Token, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeHealth, decodeId, decodeOnboarding, decodeSession, decodeValid, encodeAccountInfo, encodeAmount, encodeId, encodeValid, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getTransactionHistory, getTransactions, idValue, postAdvanceAccept, postApplications, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
 
 import Http exposing (Error, Expect)
 import Iso8601
@@ -9,7 +9,7 @@ import String
 import Task
 import Time exposing (Month(..))
 import Timely.Types.Money exposing (Money, decodeMoney, encodeMoney, fromCents, toCents)
-import Timely.Types.Transactions exposing (Transaction, decodeTransaction)
+import Timely.Types.Transactions exposing (History, Transaction, decodeHistory, decodeTransaction)
 
 
 type Bank
@@ -373,6 +373,11 @@ getAdvances toMsg (Id a) =
 getTransactions : (Result Error (List Transaction) -> msg) -> Id AccountId -> Cmd msg
 getTransactions toMsg (Id a) =
     requestGET toMsg [ "", "v1", "accounts", a, "transactions" ] (list decodeTransaction)
+
+
+getTransactionHistory : (Result Error History -> msg) -> Id AccountId -> Cmd msg
+getTransactionHistory toMsg (Id a) =
+    requestGET toMsg [ "", "v1", "accounts", a, "transactions", "history" ] decodeHistory
 
 
 postAdvanceAccept : (Result Error Advance -> msg) -> Id AccountId -> Id AdvanceId -> Money -> Cmd msg

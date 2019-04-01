@@ -20,6 +20,7 @@ type Onboard
     | Signup
     | Login
     | Approval (Id AccountId)
+    | Budget (Id AccountId)
 
 
 type Admin
@@ -29,7 +30,6 @@ type Admin
 type Route
     = Init
     | Onboard Onboard
-    | Accounts
     | Account (Id AccountId) Account
     | Admin Admin
 
@@ -39,20 +39,12 @@ type Account
     | Advance (Id AdvanceId)
 
 
-
--- | Article Slug
--- | Profile Username
--- | NewArticle
--- | EditArticle Slug
-
-
 parser : Parser (Route -> a) a
 parser =
     oneOf
         [ Parser.map Init Parser.top
         , Parser.map Onboard (s "onboard" </> parserOnboard)
         , Parser.map Admin (s "admin" </> parserAdmin)
-        , Parser.map Accounts (s "accounts")
         , Parser.map Account (s "accounts" </> Parser.map Id string </> parserAccount)
         ]
 
@@ -64,6 +56,7 @@ parserOnboard =
         , Parser.map Signup (s "signup")
         , Parser.map Login (s "login")
         , Parser.map Approval (s "approval" </> Parser.map Id string)
+        , Parser.map Budget (s "budget" </> Parser.map Id string)
         ]
 
 
@@ -132,11 +125,11 @@ url page =
                 Onboard (Approval (Id s)) ->
                     [ "onboard", "approval", s ]
 
+                Onboard (Budget (Id s)) ->
+                    [ "onboard", "budget", s ]
+
                 Admin Sudo ->
                     [ "admin", "sudo" ]
-
-                Accounts ->
-                    [ "accounts" ]
 
                 Account (Id s) AccountMain ->
                     [ "accounts", s ]
