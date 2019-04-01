@@ -5,17 +5,22 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
-import Http
+import Http exposing (Error)
 import Route
 import Time exposing (Zone)
-import Timely.Api as Api exposing (Account, AccountId, Advance, BankAccount, BankAccountType(..), Customer, Id, Transaction, advanceIsActive, advanceIsCollected, advanceIsOffer, formatDate, formatDollars, idValue)
+import Timely.Api as Api exposing (Account, AccountHealth, AccountId, Advance, BankAccount, BankAccountType(..), Customer, Id, advanceIsActive, advanceIsCollected, advanceIsOffer, idValue)
 import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
+import Timely.Types.Date as Date exposing (Date, formatDate)
+import Timely.Types.Money as Money exposing (formatMoney, fromCents, toCents)
+import Timely.Types.Transactions exposing (Transaction)
 
 
 type alias Model =
     { accountId : Id AccountId
     , account : Resource Account
+    , customer : Resource Customer
+    , health : Resource AccountHealth
     , transactions : Resource (List Transaction)
     , banks : Resource (List BankAccount)
     , advances : Resource (List Advance)
@@ -24,19 +29,23 @@ type alias Model =
 
 
 type Msg
-    = OnAccount (Result Http.Error Account)
-    | OnBanks (Result Http.Error (List BankAccount))
-    | OnTransactions (Result Http.Error (List Transaction))
-    | OnAdvances (Result Http.Error (List Advance))
+    = OnAccount (Result Error Account)
+    | OnCustomer (Result Error Customer)
+    | OnHealth (Result Error AccountHealth)
+    | OnBanks (Result Error (List BankAccount))
+    | OnTransactions (Result Error (List Transaction))
+    | OnAdvances (Result Error (List Advance))
     | OnTimeZone Time.Zone
     | Logout
-    | LogoutDone (Result Http.Error ())
+    | LogoutDone (Result Error ())
 
 
 init : Id AccountId -> ( Model, Cmd Msg )
 init id =
     ( { accountId = id
+      , customer = Loading
       , account = Loading
+      , health = Loading
       , banks = Loading
       , advances = Loading
       , transactions = Loading
@@ -44,10 +53,12 @@ init id =
       }
     , Cmd.batch
         [ Api.getAccount OnAccount id
+        , Api.getAccountHealth OnHealth id
+        , Api.getCustomer OnCustomer id
         , Api.getAccountBanks OnBanks id
         , Api.getAdvances OnAdvances id
         , Api.getTransactions OnTransactions id
-        , Api.timezone OnTimeZone
+        , Date.timezone OnTimeZone
         ]
     )
 
@@ -65,6 +76,18 @@ update nav msg model =
 
         OnAccount (Ok acc) ->
             ( { model | account = Ready acc }, Cmd.none )
+
+        OnHealth (Err e) ->
+            ( { model | health = Failed e }, Cmd.none )
+
+        OnHealth (Ok h) ->
+            ( { model | health = Ready h }, Cmd.none )
+
+        OnCustomer (Err e) ->
+            ( { model | customer = Failed e }, Cmd.none )
+
+        OnCustomer (Ok c) ->
+            ( { model | customer = Ready c }, Cmd.none )
 
         OnTransactions (Err e) ->
             ( { model | transactions = Failed e }, Cmd.none )
@@ -116,10 +139,10 @@ view model =
             , resource (offersView model.zone model.accountId) offers
             ]
         , column Style.section
-            [ resource accountHealth model.account
-            , resource (\( a, advs ) -> accountInfo a advs) <| Resource.map2 (\a b -> ( a, b )) model.account active
+            [ resource accountHealth model.health
+            , resource (\( a, health, advs ) -> accountInfo a health advs) <| Resource.map3 (\a b c -> ( a, b, c )) model.account model.health active
             , resource (advancesView model.zone model.accountId) active
-            , resource customerView <| Resource.map .customer model.account
+            , resource customerView <| model.customer
             , resource banksTable model.banks
             , resource (transTable model.zone) model.transactions
             , resource (advancesView model.zone model.accountId) collected
@@ -129,14 +152,14 @@ view model =
         ]
 
 
-accountHealth : Account -> Element Msg
-accountHealth account =
+accountHealth : AccountHealth -> Element Msg
+accountHealth health =
     let
         projectedBalance =
-            account.health.available - account.health.expenses
+            fromCents (toCents health.available - toCents health.expenses)
 
         isHealthy =
-            projectedBalance > 0
+            toCents projectedBalance > 0
 
         healthyColor =
             if isHealthy then
@@ -154,28 +177,28 @@ accountHealth account =
         , Style.box
         ]
         [ el [ Font.bold, centerX ] (text "Safe to Spend")
-        , el [ Font.bold, Font.size 40, centerX ] (text <| "$" ++ formatDollars projectedBalance)
+        , el [ Font.bold, Font.size 40, centerX ] (text <| formatMoney projectedBalance)
         ]
 
 
-accountInfo : Account -> List Advance -> Element Msg
-accountInfo account advances =
+accountInfo : Account -> AccountHealth -> List Advance -> Element Msg
+accountInfo account health advances =
     wrappedRow [ spacing 20 ]
         [ column [ spacing 4 ]
             [ el [ Font.bold ] (text "Balance")
-            , el [ Font.color Style.darkGreen ] (text <| "$" ++ formatDollars account.health.available)
+            , el [ Font.color Style.darkGreen ] (text <| formatMoney health.available)
             ]
         , column [ spacing 4 ]
             [ el [ Font.bold ] (text "Future Expenses")
-            , el [ Font.color Style.red ] (text <| "$" ++ formatDollars account.health.expenses)
+            , el [ Font.color Style.red ] (text <| formatMoney health.expenses)
             ]
         , column [ spacing 4 ]
             [ el [ Font.bold ] (text "Owed")
-            , el [] (text <| "$" ++ (formatDollars <| List.sum <| List.map .amount advances))
+            , el [] (text <| (formatMoney <| Money.total <| List.map .amount advances))
             ]
         , column [ spacing 4 ]
             [ el [ Font.bold ] (text "Max Credit")
-            , el [] (text <| "$" ++ formatDollars account.credit)
+            , el [] (text <| formatMoney account.credit)
             ]
         ]
 
@@ -205,7 +228,7 @@ transTable zone ts =
     Element.table [ spacing 8 ]
         { data = ts
         , columns =
-            [ tableColumn "Amount" (\t -> text <| "$" ++ formatDollars t.amount)
+            [ tableColumn "Amount" (\t -> text <| formatMoney t.amount)
             , tableColumn "Source" (\t -> text t.name)
             , tableColumn "Date" (\t -> text <| formatDate zone t.date)
             , tableColumn "Category" (\t -> text t.category)
@@ -220,7 +243,7 @@ banksTable banks =
         , columns =
             [ tableColumn "Account" (\b -> text b.name)
             , tableColumn "Type" (\b -> text (accountType b.accountType))
-            , tableColumn "Balance" (\b -> text <| "$" ++ formatDollars b.balance)
+            , tableColumn "Balance" (\b -> text <| formatMoney b.balance)
             ]
         }
 
@@ -248,7 +271,7 @@ offerView zone accountId advance =
         , label =
             Element.column [ width fill, spacing 8 ]
                 [ el [ Font.bold, centerX, Style.link ] (text "Advance Offer")
-                , el [ Font.bold, Font.size 40, centerX ] (text <| "$" ++ formatDollars advance.offer)
+                , el [ Font.bold, Font.size 40, centerX ] (text <| formatMoney advance.offer)
                 ]
         }
 
@@ -296,7 +319,7 @@ advanceView zone accountId advance =
         [ link [ Font.bold, Style.link, width fill ]
             { label = text "Advance", url = advanceUrl }
         , link []
-            { label = text ("$" ++ formatDollars advance.amount ++ " " ++ status advance)
+            { label = text (formatMoney advance.amount ++ " " ++ status advance)
             , url = advanceUrl
             }
         ]

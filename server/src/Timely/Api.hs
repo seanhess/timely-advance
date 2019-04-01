@@ -83,6 +83,8 @@ data VersionedApi route = VersionedApi
 data AccountApi route = AccountApi
     { _get         :: route :- Get '[JSON, HTML] Account
     , _banks       :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
+    , _customer    :: route :- "customer" :> Get '[JSON] Customer
+    , _health      :: route :- "health"   :> Get '[JSON] Health
 
     , _trans       :: route :- "transactions" :> Get '[JSON] [Transaction]
     , _history     :: route :- "transactions" :> "history" :> Get '[JSON] History
@@ -133,8 +135,10 @@ accountApi :: Guid Account -> ToServant AccountApi (AsServerT AppM)
 accountApi i = genericServerT AccountApi
     { _get     = Accounts.find i           >>= notFound
     , _banks   = Accounts.findBanks i
-    , _app     = Application.find i       >>= notFound
-    , _result  = Application.findResult i >>= notFound
+    , _customer = Accounts.findCustomer i  >>= notFound
+    , _app     = Application.find i        >>= notFound
+    , _result  = Application.findResult i  >>= notFound
+    , _health  = Accounts.findHealth i     >>= notFound
     , _trans   = Transactions.list i 0 100
     , _history  = History.history <$> Transactions.list i 0 100
     , _advances = advanceApi i

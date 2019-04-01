@@ -14,10 +14,12 @@ module Timely.Accounts
 
   , all
   , find
+  , findCustomer
   , findByPhone
   , findByBankId
   , findBanks
   , setHealth
+  , findHealth
   , create
   , setBanks
   , saveTransactions
@@ -49,10 +51,12 @@ import           Timely.Evaluate.Types        (Projection (..))
 data Accounts m = AccountsMethods
     { _all              :: m [Account]
     , _find             :: Guid Account -> m (Maybe Account)
+    , _findCustomer     :: Guid Account -> m (Maybe Customer)
     , _findByPhone      :: Valid Phone -> m (Maybe Account)
     , _findByBankId     :: Id Item -> m [Account]
     , _create           :: Account -> Customer -> [BankAccount] -> [Transaction] -> m ()
     , _setHealth        :: Guid Account -> Projection -> m ()
+    , _findHealth       :: Guid Account -> m (Maybe Health)
     , _findBanks        :: Guid Account -> m [BankAccount]
     , _setBanks         :: Guid Account -> [BankAccount] -> m ()
 
@@ -73,15 +77,17 @@ instance Effect Accounts
 
 all          :: MonadEffect Accounts m => m [Account]
 find         :: MonadEffect Accounts m => Guid Account -> m (Maybe Account)
+findCustomer :: MonadEffect Accounts m => Guid Account -> m (Maybe Customer)
 findByPhone  :: MonadEffect Accounts m => Valid Phone -> m (Maybe Account)
 findByBankId :: MonadEffect Accounts m => Id Item     -> m [Account]
 findBanks    :: MonadEffect Accounts m => Guid Account -> m [BankAccount]
 setHealth    :: MonadEffect Accounts m => Guid Account -> Projection -> m ()
+findHealth   :: MonadEffect Accounts m => Guid Account -> m (Maybe Health)
 create       :: MonadEffect Accounts m => Account -> Customer -> [BankAccount] -> [Transaction] -> m ()
 setBanks     :: MonadEffect Accounts m => Guid Account -> [BankAccount] -> m ()
 saveTransactions :: MonadEffect Accounts m => Guid Account -> [Transaction] -> m ()
 listTransactions :: MonadEffect Accounts m => Guid Account -> Offset -> Count -> m [Transaction]
-AccountsMethods all find findByPhone findByBankId create setHealth findBanks setBanks saveTransactions listTransactions = effect
+AccountsMethods all find findCustomer findByPhone findByBankId create setHealth findHealth findBanks setBanks saveTransactions listTransactions = effect
 
 
 
@@ -90,10 +96,12 @@ implementIO = implement $
   AccountsMethods
     Account.allAccounts
     Account.getAccount
+    Account.getCustomer
     Account.getAccountIdByPhone
     Account.getAccountByBankId
     createAccount
     Account.setAccountHealth
+    Account.getAccountHealth
     Account.getBankAccounts
     Account.setBankAccounts
     Transactions.save

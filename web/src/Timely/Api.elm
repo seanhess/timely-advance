@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Money, Onboarding(..), Phone, SSN, Session, Token, Transaction, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeAmount, encodeId, expectId, formatDate, formatDollars, formatMoney, fromDollars, getAccount, getAccountBanks, getAdvance, getAdvances, getApplication, getApplicationResult, getTransactions, idValue, postAdvanceAccept, postApplications, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, timezone, usedCredit)
+module Timely.Api exposing (Account, AccountHealth, AccountId, AccountInfo, Advance, AdvanceId, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Onboarding(..), Phone, SSN, Session, Token, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeId, decodeSession, encodeAccountInfo, encodeAmount, encodeId, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getTransactions, idValue, postAdvanceAccept, postApplications, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
 
 import Http exposing (Error, Expect)
 import Iso8601
@@ -8,6 +8,8 @@ import Json.Encode as Encode
 import String
 import Task
 import Time exposing (Month(..))
+import Timely.Types.Money exposing (Money, decodeMoney, encodeMoney, fromCents, toCents)
+import Timely.Types.Transactions exposing (Transaction, decodeTransaction)
 
 
 type Bank
@@ -21,9 +23,7 @@ type AccountId
 type alias Account =
     { accountId : Id AccountId
     , phone : String
-    , customer : Customer
     , credit : Money
-    , health : AccountHealth
     }
 
 
@@ -66,16 +66,6 @@ type BankAccountType
     | Savings
     | Credit
     | Other
-
-
-type alias Transaction =
-    { transactionId : String
-    , date : Time.Posix
-    , category : String
-    , pending : Bool
-    , amount : Money
-    , name : String
-    }
 
 
 type alias Customer =
@@ -190,9 +180,7 @@ decodeAccount =
     Decode.succeed Account
         |> required "accountId" decodeId
         |> required "phone" string
-        |> required "customer" decodeCustomer
         |> required "credit" decodeMoney
-        |> required "health" decodeHealth
 
 
 decodeHealth : Decoder AccountHealth
@@ -211,17 +199,6 @@ decodeHealth =
 --     , amount : Money
 --     , name : String
 --     }
-
-
-decodeTransaction : Decoder Transaction
-decodeTransaction =
-    Decode.succeed Transaction
-        |> required "transactionId" string
-        |> required "date" Iso8601.decoder
-        |> required "category" string
-        |> required "pending" bool
-        |> required "amount" decodeMoney
-        |> required "name" string
 
 
 decodeBankAccount : Decoder BankAccount
@@ -302,16 +279,6 @@ decodeOnboarding =
             )
 
 
-decodeMoney : Decoder Money
-decodeMoney =
-    int
-
-
-encodeMoney : Money -> Encode.Value
-encodeMoney =
-    Encode.int
-
-
 decodeValid : Decoder (Valid a)
 decodeValid =
     Decode.map Valid string
@@ -335,121 +302,82 @@ decodeAdvance =
         |> required "collected" (nullable Iso8601.decoder)
 
 
-postApplications : (Result Error Application -> msg) -> AccountInfo -> Cmd msg
-postApplications toMsg body =
+request : String -> Http.Body -> (Result Error a -> msg) -> List String -> Decoder a -> Cmd msg
+request method body toMsg path decode =
     Http.request
-        { method = "POST"
+        { method = method
         , headers = []
-        , url = String.join "/" [ "", "v1", "applications" ]
-        , body = Http.jsonBody (encodeAccountInfo body)
-        , expect = Http.expectJson toMsg decodeApplication
+        , url = String.join "/" path
+        , body = Http.emptyBody
+        , expect = Http.expectJson toMsg decode
         , timeout = Nothing
         , tracker = Nothing
         }
+
+
+requestGET : (Result Error a -> msg) -> List String -> Decoder a -> Cmd msg
+requestGET =
+    request "GET" Http.emptyBody
+
+
+requestPOST : (Result Error a -> msg) -> List String -> Encode.Value -> Decoder a -> Cmd msg
+requestPOST onMsg path body decode =
+    request "POST" (Http.jsonBody body) onMsg path decode
+
+
+postApplications : (Result Error Application -> msg) -> AccountInfo -> Cmd msg
+postApplications toMsg body =
+    requestPOST toMsg [ "", "v1", "applications" ] (encodeAccountInfo body) decodeApplication
 
 
 getAccount : (Result Error Account -> msg) -> Id AccountId -> Cmd msg
 getAccount toMsg (Id a) =
-    Http.request
-        { method = "GET"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "accounts", a ]
-        , body = Http.emptyBody
-        , expect = Http.expectJson toMsg decodeAccount
-        , timeout = Nothing
-        , tracker = Nothing
-        }
+    requestGET toMsg [ "", "v1", "accounts", a ] decodeAccount
 
 
 getAccountBanks : (Result Error (List BankAccount) -> msg) -> Id AccountId -> Cmd msg
 getAccountBanks toMsg (Id a) =
-    Http.request
-        { method = "GET"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "accounts", a, "bank-accounts" ]
-        , body = Http.emptyBody
-        , expect = Http.expectJson toMsg (list decodeBankAccount)
-        , timeout = Nothing
-        , tracker = Nothing
-        }
+    requestGET toMsg [ "", "v1", "accounts", a, "bank-accounts" ] (list decodeBankAccount)
+
+
+getCustomer : (Result Error Customer -> msg) -> Id AccountId -> Cmd msg
+getCustomer toMsg (Id a) =
+    requestGET toMsg [ "", "v1", "accounts", a, "customer" ] decodeCustomer
+
+
+getAccountHealth : (Result Error AccountHealth -> msg) -> Id AccountId -> Cmd msg
+getAccountHealth toMsg (Id a) =
+    requestGET toMsg [ "", "v1", "accounts", a, "health" ] decodeHealth
 
 
 getApplication : (Result Error Application -> msg) -> Id AccountId -> Cmd msg
 getApplication toMsg (Id a) =
-    Http.request
-        { method = "GET"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "accounts", a, "application" ]
-        , body = Http.emptyBody
-        , expect = Http.expectJson toMsg decodeApplication
-        , timeout = Nothing
-        , tracker = Nothing
-        }
+    requestGET toMsg [ "", "v1", "accounts", a, "application" ] decodeApplication
 
 
 getApplicationResult : (Result Error ApprovalResult -> msg) -> Id AccountId -> Cmd msg
 getApplicationResult toMsg (Id a) =
-    Http.request
-        { method = "GET"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "accounts", a, "application", "result" ]
-        , body = Http.emptyBody
-        , expect = Http.expectJson toMsg decodeApprovalResult
-        , timeout = Nothing
-        , tracker = Nothing
-        }
+    requestGET toMsg [ "", "v1", "accounts", a, "application", "result" ] decodeApprovalResult
 
 
 getAdvance : (Result Error Advance -> msg) -> Id AccountId -> Id AdvanceId -> Cmd msg
 getAdvance toMsg (Id a) (Id adv) =
-    Http.request
-        { method = "GET"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "accounts", a, "advances", adv ]
-        , body = Http.emptyBody
-        , expect = Http.expectJson toMsg decodeAdvance
-        , timeout = Nothing
-        , tracker = Nothing
-        }
+    requestGET toMsg [ "", "v1", "accounts", a, "advances", adv ] decodeAdvance
 
 
 getAdvances : (Result Error (List Advance) -> msg) -> Id AccountId -> Cmd msg
 getAdvances toMsg (Id a) =
-    Http.request
-        { method = "GET"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "accounts", a, "advances" ]
-        , body = Http.emptyBody
-        , expect = Http.expectJson toMsg (list decodeAdvance)
-        , timeout = Nothing
-        , tracker = Nothing
-        }
+    requestGET toMsg [ "", "v1", "accounts", a, "advances" ] (list decodeAdvance)
 
 
 getTransactions : (Result Error (List Transaction) -> msg) -> Id AccountId -> Cmd msg
 getTransactions toMsg (Id a) =
-    Http.request
-        { method = "GET"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "accounts", a, "transactions" ]
-        , body = Http.emptyBody
-        , expect = Http.expectJson toMsg (list decodeTransaction)
-        , timeout = Nothing
-        , tracker = Nothing
-        }
+    requestGET toMsg [ "", "v1", "accounts", a, "transactions" ] (list decodeTransaction)
 
 
 postAdvanceAccept : (Result Error Advance -> msg) -> Id AccountId -> Id AdvanceId -> Money -> Cmd msg
 postAdvanceAccept toMsg (Id a) (Id adv) amt =
-    Http.request
-        { method = "POST"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "accounts", a, "advances", adv, "accept" ]
-        , body = Http.jsonBody (encodeAmount { amount = amt })
-        , expect = Http.expectJson toMsg decodeAdvance
-        , timeout = Nothing
-        , tracker = Nothing
-        }
+    requestPOST toMsg [ "", "v1", "accounts", a, "advances", adv, "accept" ] (encodeAmount { amount = amt }) decodeAdvance
 
 
 
@@ -491,10 +419,6 @@ decodeId =
     Decode.map Id Decode.string
 
 
-type alias Money =
-    Int
-
-
 
 --- Authentication -------------------------------------------
 
@@ -514,41 +438,17 @@ sessionsCreateCode toMsg p =
 
 sessionsCheckCode : (Result Error Session -> msg) -> Phone -> Token AuthCode -> Cmd msg
 sessionsCheckCode toMsg (Id p) c =
-    Http.request
-        { method = "POST"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "sessions", p ]
-        , body = Http.jsonBody (encodeId c)
-        , expect = Http.expectJson toMsg decodeSession
-        , timeout = Nothing
-        , tracker = Nothing
-        }
+    requestPOST toMsg [ "", "v1", "sessions", p ] (encodeId c) decodeSession
 
 
 sessionsAuthAdmin : (Result Error Session -> msg) -> String -> Cmd msg
 sessionsAuthAdmin toMsg s =
-    Http.request
-        { method = "POST"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "sessions", "admin" ]
-        , body = Http.jsonBody (Encode.string s)
-        , expect = Http.expectJson toMsg decodeSession
-        , timeout = Nothing
-        , tracker = Nothing
-        }
+    requestPOST toMsg [ "", "v1", "sessions", "admin" ] (Encode.string s) decodeSession
 
 
 sessionsGet : (Result Error Session -> msg) -> Cmd msg
 sessionsGet toMsg =
-    Http.request
-        { method = "GET"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "sessions" ]
-        , body = Http.emptyBody
-        , expect = Http.expectJson toMsg decodeSession
-        , timeout = Nothing
-        , tracker = Nothing
-        }
+    requestGET toMsg [ "", "v1", "sessions" ] decodeSession
 
 
 sessionsLogout : (Result Error () -> msg) -> Cmd msg
@@ -576,25 +476,6 @@ expectId toMsg =
                     toMsg <| Err e
     in
     Http.expectString onResult
-
-
-formatMoney : Money -> String
-formatMoney i =
-    let
-        cents =
-            String.padLeft 2 '0' <| String.fromInt (modBy 100 i)
-    in
-    formatDollars i ++ "." ++ cents
-
-
-formatDollars : Money -> String
-formatDollars i =
-    String.fromInt (i // 100)
-
-
-fromDollars : Int -> Money
-fromDollars i =
-    i * 100
 
 
 advanceIsOffer : Advance -> Bool
@@ -630,64 +511,6 @@ advanceIsCollected advance =
 usedCredit : List Advance -> Money
 usedCredit advances =
     advances
-        |> List.map .amount
+        |> List.map (toCents << .amount)
         |> List.sum
-
-
-
--- Dates ----------------------------
-
-
-formatDate : Time.Zone -> Time.Posix -> String
-formatDate zone time =
-    let
-        formatYear t =
-            String.fromInt <| Time.toYear zone time
-
-        formatMonth t =
-            case Time.toMonth zone t of
-                Jan ->
-                    "Jan"
-
-                Feb ->
-                    "Feb"
-
-                Mar ->
-                    "Mar"
-
-                Apr ->
-                    "Apr"
-
-                May ->
-                    "May"
-
-                Jun ->
-                    "Jun"
-
-                Jul ->
-                    "Jul"
-
-                Aug ->
-                    "Aug"
-
-                Sep ->
-                    "Sep"
-
-                Oct ->
-                    "Oct"
-
-                Nov ->
-                    "Nov"
-
-                Dec ->
-                    "Dec"
-
-        formatDay t =
-            String.fromInt <| Time.toDay zone time
-    in
-    formatMonth time ++ " " ++ formatDay time ++ ", " ++ formatYear time ++ " "
-
-
-timezone : (Time.Zone -> msg) -> Cmd msg
-timezone toMsg =
-    Task.perform toMsg Time.here
+        |> fromCents

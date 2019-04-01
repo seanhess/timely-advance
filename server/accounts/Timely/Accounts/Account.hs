@@ -64,6 +64,15 @@ getAccount i = do
     pure $ listToMaybe as
 
 
+getCustomer :: Selda m => Guid Account -> m (Maybe Customer)
+getCustomer i = do
+    cs <- query $ do
+      c <- select customers
+      restrict (c ! #accountId .== literal i)
+      pure c
+    pure $ listToMaybe cs
+
+
 getAccountIdByPhone :: Selda m => Valid Phone -> m (Maybe Account)
 getAccountIdByPhone p = do
     as <- query $ do
@@ -98,6 +107,15 @@ setAccountHealth i Projection {expenses, available} = do
     deleteFrom healths (\h -> h ! #accountId .== literal i)
     insert healths [Health {accountId = i, expenses, available, created = now }]
     pure ()
+
+
+getAccountHealth :: Selda m => Guid Account -> m (Maybe Health)
+getAccountHealth i = do
+  hs <- query $ do
+    b <- select healths
+    restrict (b ! #accountId .== literal i)
+    pure b
+  pure $ listToMaybe hs
 
 
 createAccount :: Selda m => Account -> Customer -> m ()

@@ -1,4 +1,4 @@
-module Timely.Resource exposing (Resource(..), error, map, map2, resource, resource_)
+module Timely.Resource exposing (Resource(..), error, map, map2, map3, resource, resource_)
 
 import Element exposing (Element, el, text)
 import Http exposing (Error)
@@ -62,3 +62,8 @@ map2 f ra rb =
 
         _ ->
             Loading
+
+
+map3 : (a -> b -> c -> d) -> Resource a -> Resource b -> Resource c -> Resource d
+map3 f ra rb rc =
+    map2 (\( a, b ) c -> f a b c) (map2 (\a b -> ( a, b )) ra rb) rc
