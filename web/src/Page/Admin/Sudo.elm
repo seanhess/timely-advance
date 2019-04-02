@@ -89,7 +89,11 @@ view model =
     column Style.formPage <|
         case model.session of
             Ready s ->
-                [ viewSuperuser model s ]
+                if s.isAdmin then
+                    [ viewSuperuser model s ]
+
+                else
+                    [ viewLogin model ]
 
             Loading ->
                 [ Components.spinner ]
@@ -97,7 +101,7 @@ view model =
             Failed e ->
                 [ viewLogin model, viewProblems e ]
 
-            None ->
+            _ ->
                 [ viewLogin model ]
 
 

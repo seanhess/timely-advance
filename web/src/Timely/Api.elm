@@ -50,6 +50,7 @@ type alias Application =
 type alias Session =
     { phone : Phone
     , accountId : Maybe (Id AccountId)
+    , isAdmin : Bool
     }
 
 
@@ -234,6 +235,7 @@ decodeSession =
     Decode.succeed Session
         |> required "phone" decodeId
         |> required "accountId" (nullable decodeId)
+        |> required "isAdmin" bool
 
 
 decodeBankAccountType : Decoder BankAccountType
@@ -308,7 +310,7 @@ request method body toMsg path decode =
         { method = method
         , headers = []
         , url = String.join "/" path
-        , body = Http.emptyBody
+        , body = body
         , expect = Http.expectJson toMsg decode
         , timeout = Nothing
         , tracker = Nothing
