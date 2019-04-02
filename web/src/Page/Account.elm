@@ -140,7 +140,12 @@ view model =
             ]
         , column Style.section
             [ resource accountHealth model.health
-            , resource (\( a, health, advs ) -> accountInfo a health advs) <| Resource.map3 (\a b c -> ( a, b, c )) model.account model.health active
+            , resource identity
+                (Resource.pure accountInfo
+                    |> Resource.apply model.account
+                    |> Resource.apply model.health
+                    |> Resource.apply active
+                )
             , resource (advancesView model.zone model.accountId) active
             , resource customerView <| model.customer
             , resource banksTable model.banks

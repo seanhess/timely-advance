@@ -1,4 +1,4 @@
-module Timely.Resource exposing (Resource(..), error, map, map2, map3, resource, resource_)
+module Timely.Resource exposing (Resource(..), apply, error, map, map2, map3, pure, resource, resource_)
 
 import Element exposing (Element, el, text)
 import Http exposing (Error)
@@ -72,3 +72,57 @@ andThen f ra =
 
         Ready a ->
             f a
+
+
+apply : Resource b -> Resource (b -> c) -> Resource c
+apply rb rf =
+    -- ap                :: (Monad m) => m (a -> b) -> m a -> m b
+    -- ap m1 m2          = do { x1 <- m1; x2 <- m2; return (x1 x2) }
+    -- =======
+    -- andThen (\b -> andThen (\f -> Ready (f b)) rf) rb
+    map2 (\f b -> f b) rf rb
+
+
+pure : a -> Resource a
+pure a =
+    Ready a
+
+
+type A
+    = A
+
+
+type B
+    = B
+
+
+type C
+    = C
+
+
+test : Resource ( A, B, C )
+test =
+    let
+        ra =
+            Ready A
+
+        rb =
+            Ready B
+
+        rc =
+            Ready C
+    in
+    pure check
+        |> apply ra
+        |> apply rb
+        |> apply rc
+
+
+
+-- equivalent to
+-- Oh, I want a Resource Element Msg
+
+
+check : A -> B -> C -> ( A, B, C )
+check a b c =
+    ( a, b, c )

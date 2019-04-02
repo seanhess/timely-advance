@@ -39,13 +39,6 @@ type alias Model =
     }
 
 
-
--- page model
--- can it be some kind of type variable?
--- right now I switch based on it!
--- I COULD store all of them, but that's not really better
-
-
 type PageModel
     = NotFound
     | Init Init.Model
