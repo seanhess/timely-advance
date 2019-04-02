@@ -17,6 +17,7 @@ import Page.Onboard.Approval as Approval
 import Page.Onboard.Budget as Budget
 import Page.Onboard.Landing as Landing
 import Page.Onboard.Signup as Signup
+import Platform.Updates exposing (Updates)
 import Route exposing (Route)
 import Timely.Api exposing (Account)
 import Timely.Style as Style
@@ -36,6 +37,13 @@ type alias Model =
     , url : Url
     , page : PageModel
     }
+
+
+
+-- page model
+-- can it be some kind of type variable?
+-- right now I switch based on it!
+-- I COULD store all of them, but that's not really better
 
 
 type PageModel
@@ -65,10 +73,6 @@ init _ url key =
         , appInitialized Version.version
         ]
     )
-
-
-
--- UPDATE
 
 
 type Msg
@@ -146,39 +150,6 @@ update msg model =
             ( model, Cmd.none )
 
 
-
--- when we have Updates in this format:
-
-
-type alias Event a =
-    Maybe a
-
-
-type alias Updates model msg event =
-    ( model, Cmd msg, Event event )
-
-
-runUpdates : (event -> Cmd Msg) -> (model -> PageModel) -> (msg -> Msg) -> Model -> ( model, Cmd msg, Event event ) -> ( Model, Cmd Msg )
-runUpdates eventToMessage toModel toMsg model ( subModel, subCmd, subEvent ) =
-    ( { model | page = toModel subModel }
-    , Cmd.batch
-        [ Cmd.map toMsg subCmd
-        , Maybe.withDefault Cmd.none (Maybe.map eventToMessage subEvent)
-        ]
-    )
-
-
-
--- TODO change everything to use this and just apply it
-
-
-updateWith : (subModel -> PageModel) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
-updateWith toModel toMsg model ( subModel, subCmd ) =
-    ( { model | page = toModel subModel }
-    , Cmd.map toMsg subCmd
-    )
-
-
 changeRouteTo : Nav.Key -> Maybe Route -> ( PageModel, Cmd Msg )
 changeRouteTo key maybeRoute =
     case maybeRoute of
@@ -186,69 +157,41 @@ changeRouteTo key maybeRoute =
             ( NotFound, Cmd.none )
 
         Just (Route.Onboard Route.Landing) ->
-            let
-                ( mod, cmd ) =
-                    Landing.init
-            in
-            ( Landing mod, Cmd.map OnLanding cmd )
+            Landing.init
+                |> initWith Landing OnLanding
 
         Just (Route.Onboard Route.Signup) ->
-            let
-                ( mod, cmd ) =
-                    Signup.init key Signup.Signup
-            in
-            ( Signup mod, Cmd.map OnSignup cmd )
+            Signup.init key Signup.Signup
+                |> initWith Signup OnSignup
 
         Just (Route.Onboard Route.Login) ->
-            let
-                ( mod, cmd ) =
-                    Signup.init key Signup.Login
-            in
-            ( Signup mod, Cmd.map OnSignup cmd )
+            Signup.init key Signup.Login
+                |> initWith Signup OnSignup
 
         Just (Route.Onboard (Route.Approval i)) ->
-            let
-                ( mod, cmd ) =
-                    Approval.init key i
-            in
-            ( Approval mod, Cmd.map OnApproval cmd )
+            Approval.init key i
+                |> initWith Approval OnApproval
 
         Just (Route.Onboard (Route.Budget i)) ->
-            let
-                ( mod, cmd ) =
-                    Budget.init i
-            in
-            ( Budget mod, Cmd.map OnBudget cmd )
+            Budget.init i
+                |> initWith Budget OnBudget
 
         Just (Route.Admin Route.Sudo) ->
-            let
-                ( mod, cmd ) =
-                    Sudo.init key
-            in
-            ( Sudo mod, Cmd.map OnSudo cmd )
+            Sudo.init key
+                |> initWith Sudo OnSudo
 
         Just (Route.Account i Route.AccountMain) ->
-            let
-                ( mod, cmd ) =
-                    Account.init i
-            in
-            ( Account mod, Cmd.map OnAccount cmd )
+            Account.init i
+                |> initWith Account OnAccount
 
         Just (Route.Account a (Route.Advance adv)) ->
             -- Check session!
-            let
-                ( m, cmd ) =
-                    Advance.init key a adv
-            in
-            ( Advance m, Cmd.map OnAdvance cmd )
+            Advance.init key a adv
+                |> initWith Advance OnAdvance
 
         Just Route.Init ->
-            -- Check session!
-            let
-                ( m, cmd ) =
-                    Init.init key
-            in
-            ( Init m, Cmd.map OnInit cmd )
+            Init.init key
+                |> initWith Init OnInit
 
 
 view : Model -> Browser.Document Msg
@@ -317,3 +260,31 @@ main =
         , update = update
         , view = view
         }
+
+
+
+-- when we have Updates in this format:
+
+
+runUpdates : (event -> Cmd Msg) -> (model -> PageModel) -> (msg -> Msg) -> Model -> Updates model msg event -> ( Model, Cmd Msg )
+runUpdates eventToMessage toModel toMsg model ( subModel, subCmd, subEvent ) =
+    ( { model | page = toModel subModel }
+    , Cmd.batch
+        [ Cmd.map toMsg subCmd
+        , Maybe.withDefault Cmd.none (Maybe.map eventToMessage subEvent)
+        ]
+    )
+
+
+updateWith : (subModel -> PageModel) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
+updateWith toModel toMsg model ( subModel, subCmd ) =
+    ( { model | page = toModel subModel }
+    , Cmd.map toMsg subCmd
+    )
+
+
+initWith : (subModel -> PageModel) -> (subMsg -> Msg) -> ( subModel, Cmd subMsg ) -> ( PageModel, Cmd Msg )
+initWith toModel toMsg ( subModel, subCmd ) =
+    ( toModel subModel
+    , Cmd.map toMsg subCmd
+    )
