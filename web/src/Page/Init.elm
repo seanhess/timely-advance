@@ -36,17 +36,23 @@ update msg model =
 
         account i =
             Route.url <| Route.Account i <| Route.AccountMain
+
+        sudo =
+            Route.url <| Route.Admin <| Route.Sudo
     in
     case msg of
         LoadedSession (Err e) ->
             ( model, Nav.pushUrl model.key onboard )
 
         LoadedSession (Ok s) ->
-            case s.accountId of
-                Nothing ->
+            case ( s.accountId, s.isAdmin ) of
+                ( Nothing, False ) ->
                     ( model, Nav.pushUrl model.key onboard )
 
-                Just i ->
+                ( Nothing, True ) ->
+                    ( model, Nav.pushUrl model.key sudo )
+
+                ( Just i, _ ) ->
                     ( model, Nav.pushUrl model.key (account i) )
 
 

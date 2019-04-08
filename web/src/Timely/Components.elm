@@ -1,4 +1,4 @@
-module Timely.Components exposing (Spinner(..), back, loadingButton, spinner, spinnerDots, spinnerRing, spinnerRipple)
+module Timely.Components exposing (Spinner(..), back, close, loadingButton, spinner, spinnerDots, spinnerRing, spinnerRipple)
 
 import Element exposing (..)
 import Element.Font as Font
@@ -70,4 +70,15 @@ back onBack =
             Element.el
                 [ rotate pi, Font.size 32 ]
                 (text "➜")
+        }
+
+
+close : msg -> Element msg
+close onBack =
+    Input.button []
+        { onPress = Just onBack
+        , label =
+            Element.el
+                [ rotate pi, Font.size 32 ]
+                (text "x")
         }

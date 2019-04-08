@@ -38,6 +38,7 @@ type Msg
     = EditSecret String
     | Submit
     | Logout
+    | OnBack
     | OnSession (Result Http.Error Session)
     | OnLogin (Result Http.Error Session)
     | OnLogout (Result Http.Error ())
@@ -73,6 +74,10 @@ update msg model =
         Submit ->
             updates model
                 |> command (Api.sessionsAuthAdmin OnLogin model.secret)
+
+        OnBack ->
+            updates model
+                |> command (Route.pushUrl model.key <| Route.Onboard Route.Landing)
 
         OnLogin (Err e) ->
             updates { model | session = Failed e }
@@ -135,7 +140,10 @@ view model =
 viewLogin : Model -> Element Msg
 viewLogin model =
     column Style.section
-        [ el Style.header (text "Sudo")
+        [ row [ spacing 15, width fill ]
+            [ el Style.header (text "Sudo")
+            , row [ alignRight ] [ Components.close OnBack ]
+            ]
         , Input.text []
             { text = model.secret
             , placeholder = Nothing
@@ -189,7 +197,7 @@ viewCustomer : AccountCustomer -> Element Msg
 viewCustomer ac =
     column [ spacing 10, Background.color Style.gray, padding 10 ]
         [ link []
-            { url = Route.url (Admin (Route.Customer ac.account.accountId))
+            { url = Route.url (Route.Account ac.account.accountId Route.AccountMain)
             , label =
                 row [ spacing 5, Font.bold ]
                     [ text ac.customer.firstName
