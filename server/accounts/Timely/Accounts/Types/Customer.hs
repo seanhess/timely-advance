@@ -19,6 +19,18 @@ import           Timely.Accounts.Types.Api     ()
 
 
 
+-- aggregate all account information
+
+
+data AccountCustomer = AccountCustomer
+    { account  :: Account
+    , customer :: Customer
+    } deriving (Generic, Eq, Show)
+
+instance ToJSON AccountCustomer
+
+
+
 data Customer = Customer
     { id          :: ID Customer
     , accountId   :: Guid Account

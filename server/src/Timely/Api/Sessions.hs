@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE MonoLocalBinds    #-}
+{-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Timely.Api.Sessions where
 
@@ -136,3 +137,13 @@ protectAccount api (Authenticated (Session _ (Just a) _)) a2
   | otherwise = throwAll err401
 protectAccount api (Authenticated (Session _ _ True)) a2 = api a2
 protectAccount _ _ _ = throwAll err401
+
+
+
+
+protectAdmin :: ThrowAll api => api -> AuthResult Session -> api
+protectAdmin api (Authenticated Session {isAdmin}) =
+  if isAdmin
+    then api
+    else throwAll err401
+protectAdmin _ _ = throwAll err401

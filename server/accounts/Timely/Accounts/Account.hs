@@ -49,9 +49,22 @@ healths = table "accounts_healths"
     ]
 
 
-allAccounts :: (Selda m) => m [Account]
-allAccounts =
-    query $ select accounts
+allAccounts :: (Selda m) => m [AccountCustomer]
+allAccounts = do
+    acs <- query $ do
+      a <- select accounts
+      c <- select customers
+      restrict (a ! #accountId .== c ! #accountId)
+      pure (a :*: c)
+    pure $ map toAccCust acs
+  where
+    toAccCust (a :*: c) = AccountCustomer a c
+
+
+
+allCustomers :: (Selda m) => m [Customer]
+allCustomers =
+    query $ select customers
 
 
 

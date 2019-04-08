@@ -19,9 +19,6 @@ import           Timely.Transfers.Account (TransferAccount)
 
 
 
--- aggregate all account information
-
-
 
 data Account = Account
     { accountId  :: Guid Account

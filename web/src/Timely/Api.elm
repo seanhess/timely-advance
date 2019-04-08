@@ -1,13 +1,13 @@
-module Timely.Api exposing (Account, AccountHealth, AccountId(..), AccountInfo, Advance, AdvanceId(..), Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Onboarding(..), Phone, SSN(..), Session, Token, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeHealth, decodeId, decodeOnboarding, decodeSession, decodeValid, encodeAccountInfo, encodeAmount, encodeId, encodeValid, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getTransactionHistory, getTransactions, idValue, postAdvanceAccept, postApplications, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
+module Timely.Api exposing (Account, AccountCustomer, AccountHealth, AccountId(..), AccountInfo, Advance, AdvanceId(..), Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Onboarding(..), Phone, SSN(..), Session, Token, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeHealth, decodeId, decodeOnboarding, decodeSession, decodeValid, encodeAccountInfo, encodeAmount, encodeId, encodeValid, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getCustomers, getTransactionHistory, getTransactions, idValue, postAdvanceAccept, postApplications, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
 
 import Http exposing (Error, Expect)
-import Iso8601
 import Json.Decode as Decode exposing (Decoder, bool, int, list, nullable, string)
 import Json.Decode.Pipeline exposing (..)
 import Json.Encode as Encode
 import String
 import Task
 import Time exposing (Month(..))
+import Timely.Types.Date exposing (Date, decodeDate)
 import Timely.Types.Money exposing (Money, decodeMoney, encodeMoney, fromCents, toCents)
 import Timely.Types.Transactions exposing (History, Transaction, decodeHistory, decodeTransaction)
 
@@ -76,7 +76,13 @@ type alias Customer =
     , lastName : String
     , email : String
     , ssn : Valid SSN
-    , dateOfBirth : Time.Posix
+    , dateOfBirth : Date
+    }
+
+
+type alias AccountCustomer =
+    { account : Account
+    , customer : Customer
     }
 
 
@@ -118,10 +124,10 @@ type alias Advance =
     , accountId : Id AccountId
     , amount : Money
     , offer : Money
-    , due : Time.Posix
-    , offered : Time.Posix
-    , activated : Maybe Time.Posix
-    , collected : Maybe Time.Posix
+    , due : Date
+    , offered : Date
+    , activated : Maybe Date
+    , collected : Maybe Date
     }
 
 
@@ -194,7 +200,7 @@ decodeHealth =
 
 -- type alias Transaction =
 --     { transactionId : String
---     , date : Time.Posix
+--     , date : Date
 --     , category : String
 --     , pending : Bool
 --     , amount : Money
@@ -211,6 +217,13 @@ decodeBankAccount =
         |> required "balance" decodeMoney
 
 
+decodeAccountCustomer : Decoder AccountCustomer
+decodeAccountCustomer =
+    Decode.succeed AccountCustomer
+        |> required "account" decodeAccount
+        |> required "customer" decodeCustomer
+
+
 decodeCustomer : Decoder Customer
 decodeCustomer =
     Decode.succeed Customer
@@ -220,7 +233,7 @@ decodeCustomer =
         |> required "lastName" string
         |> required "email" string
         |> required "ssn" decodeValid
-        |> required "dateOfBirth" Iso8601.decoder
+        |> required "dateOfBirth" decodeDate
 
 
 decodeApplication : Decoder Application
@@ -298,10 +311,10 @@ decodeAdvance =
         |> required "accountId" decodeId
         |> required "amount" decodeMoney
         |> required "offer" decodeMoney
-        |> required "due" Iso8601.decoder
-        |> required "offered" Iso8601.decoder
-        |> required "activated" (nullable Iso8601.decoder)
-        |> required "collected" (nullable Iso8601.decoder)
+        |> required "due" decodeDate
+        |> required "offered" decodeDate
+        |> required "activated" (nullable decodeDate)
+        |> required "collected" (nullable decodeDate)
 
 
 request : String -> Http.Body -> (Result Error a -> msg) -> List String -> Decoder a -> Cmd msg
@@ -385,6 +398,15 @@ getTransactionHistory toMsg (Id a) =
 postAdvanceAccept : (Result Error Advance -> msg) -> Id AccountId -> Id AdvanceId -> Money -> Cmd msg
 postAdvanceAccept toMsg (Id a) (Id adv) amt =
     requestPOST toMsg [ "", "v1", "accounts", a, "advances", adv, "accept" ] (encodeAmount { amount = amt }) decodeAdvance
+
+
+
+-- Admin -------------------
+
+
+getCustomers : (Result Error (List AccountCustomer) -> msg) -> Cmd msg
+getCustomers toMsg =
+    requestGET toMsg [ "", "v1", "admin", "customers" ] (list decodeAccountCustomer)
 
 
 

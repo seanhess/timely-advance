@@ -25,6 +25,7 @@ type Onboard
 
 type Admin
     = Sudo
+    | Customer (Id AccountId)
 
 
 type Route
@@ -65,6 +66,7 @@ parserAdmin =
     oneOf
         [ Parser.map Sudo Parser.top
         , Parser.map Sudo (s "sudo")
+        , Parser.map Customer (s "customers" </> Parser.map Id string)
         ]
 
 
@@ -130,6 +132,9 @@ url page =
 
                 Admin Sudo ->
                     [ "admin", "sudo" ]
+
+                Admin (Customer (Id s)) ->
+                    [ "admin", "customers", s ]
 
                 Account (Id s) AccountMain ->
                     [ "accounts", s ]

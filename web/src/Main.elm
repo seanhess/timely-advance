@@ -10,6 +10,7 @@ import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Page.Account as Account
+import Page.Admin.Customer as Customer
 import Page.Admin.Sudo as Sudo
 import Page.Advance as Advance
 import Page.Init as Init
@@ -49,6 +50,7 @@ type PageModel
     | Account Account.Model
     | Advance Advance.Model
     | Sudo Sudo.Model
+    | Customer Customer.Model
 
 
 init : flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -81,6 +83,7 @@ type Msg
     | OnAdvance Advance.Msg
     | OnAccount Account.Msg
     | OnSudo Sudo.Msg
+    | OnCustomer Customer.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -173,6 +176,10 @@ changeRouteTo key maybeRoute =
             Sudo.init key
                 |> initWith Sudo OnSudo
 
+        Just (Route.Admin (Route.Customer i)) ->
+            Customer.init i
+                |> initWith Customer OnCustomer
+
         Just (Route.Account i Route.AccountMain) ->
             Account.init i
                 |> initWith Account OnAccount
@@ -221,6 +228,9 @@ view model =
 
                 Sudo m ->
                     Element.map OnSudo <| Sudo.view m
+
+                Customer m ->
+                    Element.map OnCustomer <| Customer.view m
     in
     { title = "TODO: Title"
     , body = [ Element.layout [] (pageView model.page) ]

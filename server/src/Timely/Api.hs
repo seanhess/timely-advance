@@ -74,6 +74,7 @@ data VersionedApi route = VersionedApi
     , _config   :: route :- "config"       :> Get '[JSON] ClientConfig
     , _config'  :: route :- "config.js"    :> Get '[JS "CONFIG"] ClientConfig
     , _hooks    :: route :- "webhooks"     :> ToServantApi WebhooksApi
+    , _admin    :: route :- "admin"        :> Auth '[Cookie] Session :> ToServantApi AdminApi
     } deriving (Generic)
 
 
@@ -123,6 +124,12 @@ data SessionsApi route = SessionsApi
 
 data WebhooksApi route = WebhooksApi
     { _plaid :: route :- "plaid" :> ReqBody '[JSON] Webhooks.Plaid :> Post '[JSON] NoContent
+    } deriving (Generic)
+
+
+data AdminApi route = AdminApi
+    { _test :: route :- Get '[JSON] Text
+    , _customers :: route :- "customers" :> Get '[JSON] [AccountCustomer]
     } deriving (Generic)
 
 
@@ -177,6 +184,13 @@ webhooksApi = genericServerT WebhooksApi
     }
 
 
+adminApi :: ToServant AdminApi (AsServerT AppM)
+adminApi = genericServerT AdminApi
+    { _test = pure "Hello"
+    , _customers = Accounts.all
+    }
+
+
 baseApi :: FilePath -> ToServant BaseApi (AsServerT AppM)
 baseApi _ = genericServerT BaseApi
     { _versioned = versionedApi
@@ -194,6 +208,7 @@ versionedApi = genericServerT VersionedApi
     , _config'  = clientConfig
     , _hooks    = webhooksApi
     , _info     = pure [Link "accounts" [], Link "applications" [], Link "config" []]
+    , _admin    = Sessions.protectAdmin adminApi
     }
 
 

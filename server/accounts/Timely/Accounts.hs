@@ -49,7 +49,7 @@ import           Timely.Evaluate.Types        (Projection (..))
 
 
 data Accounts m = AccountsMethods
-    { _all              :: m [Account]
+    { _all              :: m [AccountCustomer]
     , _find             :: Guid Account -> m (Maybe Account)
     , _findCustomer     :: Guid Account -> m (Maybe Customer)
     , _findByPhone      :: Valid Phone -> m (Maybe Account)
@@ -75,7 +75,7 @@ data Accounts m = AccountsMethods
 
 instance Effect Accounts
 
-all          :: MonadEffect Accounts m => m [Account]
+all          :: MonadEffect Accounts m => m [AccountCustomer]
 find         :: MonadEffect Accounts m => Guid Account -> m (Maybe Account)
 findCustomer :: MonadEffect Accounts m => Guid Account -> m (Maybe Customer)
 findByPhone  :: MonadEffect Accounts m => Valid Phone -> m (Maybe Account)
