@@ -6,7 +6,6 @@ import           Data.Aeson               (FromJSON, ToJSON)
 import           Data.Model.Money         (Money)
 import           Data.Number.Abs          (Abs (..))
 import           Data.Text                (Text)
-import           Database.Selda           (SqlType)
 import           GHC.Generics             (Generic)
 import           Timely.Evaluate.Schedule (Schedule)
 

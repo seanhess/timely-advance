@@ -16,11 +16,9 @@ import           Data.Model.Guid
 import           Data.Model.Id                (Id)
 import           Data.Model.Types             (Phone)
 import           Data.Model.Valid             (Valid)
-import qualified Data.Time.Clock              as Time
 import           Database.Selda               hiding (deleteFrom, insert, query, tryCreateTable)
 import           Timely.Accounts.Types
 import           Timely.Bank                  (Item)
-import           Timely.Evaluate.Types        (Projection (..))
 
 
 

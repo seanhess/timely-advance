@@ -12,7 +12,6 @@ module Timely.Accounts.Budgets where
 
 import           Control.Effects          (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
 import           Control.Monad.Selda      (Selda, deleteFrom, insert, query, tryCreateTable)
-import           Data.Aeson               (FromJSON, ToJSON)
 import           Data.Maybe               (listToMaybe)
 import           Data.Model.Guid          (Guid)
 import           Data.Model.Money         (Money)

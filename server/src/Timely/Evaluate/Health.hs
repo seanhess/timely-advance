@@ -6,43 +6,46 @@ module Timely.Evaluate.Health
   ( Budget(Budget)
   , Transaction(Transaction)
   , Expense, Income
+  , AccountHealth(..)
+  , Bill(..)
   , neededForBill
   , dueDates
   , incomeSince
   , incomeUntil
 
-  -- TODO remove these
-  , analyze
-  , projectedSpending
-
   ) where
 
-import           Data.Aeson                         (FromJSON, ToJSON)
+import           Data.Aeson                         (ToJSON)
 import           Data.Model.Money                   (Money)
 import qualified Data.Model.Money                   as Money
 import           Data.Number.Abs                    (Abs (..))
 import           Data.Time.Calendar                 (Day)
--- import           Debug.Trace                        (traceShow)
+import           GHC.Generics                       (Generic)
 import           Timely.Evaluate.Health.Budget      (Budget (..))
-import           Timely.Evaluate.Health.Transaction (Transaction, Income, Expense)
+import           Timely.Evaluate.Health.Transaction (Expense, Income, Transaction)
 import qualified Timely.Evaluate.Health.Transaction as Trans
-import           Timely.Evaluate.Schedule           (Schedule)
 import qualified Timely.Evaluate.Schedule           as Schedule
-import           Timely.Evaluate.Types              (Projection (..))
 
 
 
-analyze :: Money -> Projection
-analyze checking =
-    Projection
-      { expenses  = projectedSpending
-      , available = checking
-      }
+-- this is the information reported to the user
+data AccountHealth = AccountHealth
+  { balance  :: Money
+  , budgeted :: Abs Money
+  , income   :: Budget Income
+  , bills    :: [Bill]
+  } deriving (Show, Eq, Generic)
 
--- TODO inputs
-projectedSpending :: Money
-projectedSpending = Money.fromFloat 200.00
+instance ToJSON AccountHealth
 
+
+data Bill = Bill
+  { saved  :: Abs Money
+  , next   :: Day
+  , budget :: Budget Expense
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON Bill
 
 
 
@@ -63,9 +66,9 @@ incomeUntil today due Budget {schedule, amount} =
 
 
 
-neededForBills :: Day -> [Transaction Income] -> Budget Income -> [Budget Expense] -> Money
-neededForBills today paychecks income bills =
-  sum $ map (neededForBill today paychecks income) bills
+-- neededForBills :: Day -> [Transaction Income] -> Budget Income -> [Budget Expense] -> Money
+-- neededForBills today paychecks income bills =
+--   sum $ map (neededForBill today paychecks income) bills
 
 
 -- this is just for the NEXT instance of the bill

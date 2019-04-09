@@ -2,22 +2,22 @@
 module Test.Evaluate.History.Transactions where
 
 
+import           Data.Maybe                        (fromJust, mapMaybe)
 import           Data.Model.Id                     (Id (..))
 import           Data.Model.Money                  (Money (..))
-import qualified Data.List as List
 import           Test.Dates                        (parseDay)
 
 import           Timely.Accounts.Types.Transaction
-import           Timely.Api.Transactions           (isExpense, isIncome, fromRow)
+import           Timely.Api.Transactions           (toExpense, toIncome)
 
 
-transaction = fromRow $
+transaction = fromJust $ toExpense $
     TransactionRow {transactionId = Id "5gDKvpZmyWFEaVJMVqaXIqrWQKAkKdhZv719B", accountId = "acc-DgKodQpnuLMOgkRgoR4d", date = parseDay "2019-03-19", category = Category "Food and Drink | Restaurants | Coffee Shop", pending = False, amount = Money 433, name = "Starbucks"}
 
 
 
-expenses = List.map fromRow $ List.filter isExpense allTransactions
-incomes  = List.map fromRow $ List.filter isIncome allTransactions
+expenses = mapMaybe toExpense allTransactions
+incomes  = mapMaybe toIncome allTransactions
 
 
 allTransactions =

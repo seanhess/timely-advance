@@ -41,7 +41,6 @@ import           Timely.Accounts.Transactions (Count, Offset)
 import qualified Timely.Accounts.Transactions as Transactions
 import           Timely.Accounts.Types
 import           Timely.Bank                  (Item)
-import           Timely.Evaluate.Types        (Projection (..))
 
 
 

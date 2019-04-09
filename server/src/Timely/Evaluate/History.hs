@@ -13,7 +13,7 @@ import           Data.Text                          (Text)
 import           GHC.Generics                       (Generic)
 import           Timely.Evaluate.Schedule           (Schedule)
 import qualified Timely.Evaluate.Schedule           as Schedule
-import           Timely.Evaluate.Health.Transaction (Transaction, Expense, Income)
+import           Timely.Evaluate.Health.Transaction (Transaction)
 import qualified Timely.Evaluate.Health.Transaction as Transaction
 
 

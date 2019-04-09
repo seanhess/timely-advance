@@ -7,9 +7,9 @@ module Timely.Api.Transactions where
 
 import Control.Effects (MonadEffects)
 import           Data.Aeson                         (ToJSON)
-import qualified Data.List                          as List
 import           Data.Model.Guid                    (Guid)
-import           Data.Number.Abs                    (Abs (value), absolute)
+import Data.Maybe (mapMaybe)
+import           Data.Number.Abs                    (absolute)
 import           GHC.Generics                       (Generic)
 import           Timely.Accounts                    (Account, Accounts, TransactionRow(..))
 import qualified Timely.Accounts                    as Accounts
@@ -40,8 +40,8 @@ isIncome TransactionRow {amount} =
 
 rowsToHistory :: [TransactionRow] -> History
 rowsToHistory ts = History
-  (History.groups $ List.map fromRow $ List.filter isIncome ts)
-  (History.groups $ List.map fromRow $ List.filter isExpense ts)
+  (History.groups $ mapMaybe toIncome ts)
+  (History.groups $ mapMaybe toExpense ts)
 
 
 recent :: MonadEffects '[Accounts] m => Guid Account -> m [TransactionRow]
@@ -56,6 +56,16 @@ history i = do
 
 
 
-fromRow :: TransactionRow -> Transaction a
-fromRow TransactionRow {name, date, amount} =
-  Transaction name (absolute amount) date
+
+toIncome :: TransactionRow -> Maybe (Transaction Income)
+toIncome row@TransactionRow {name, date, amount} =
+  if isIncome row
+    then Just $ Transaction name (absolute amount) date
+    else Nothing
+
+
+toExpense :: TransactionRow -> Maybe (Transaction Expense)
+toExpense row@TransactionRow {name, date, amount} =
+  if isExpense row
+    then Just $ Transaction name (absolute amount) date
+    else Nothing
