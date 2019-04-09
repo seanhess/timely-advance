@@ -67,4 +67,4 @@ transactions info = do
     Plaid.DEFAULT_UPDATE -> do
       Log.info "default_update"
       accounts <- Accounts.findByBankId itemId
-      mapM_ (\a -> Worker.publish Events.transactionsUpdate (a, total)) accounts
+      mapM_ (Worker.publish Events.transactionsUpdate) accounts

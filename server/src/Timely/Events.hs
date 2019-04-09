@@ -17,7 +17,7 @@ applicationsNew :: Key Routing Application
 applicationsNew = key "applications" & word "new"
 
 
-transactionsUpdate :: Key Routing (Account, Int)
+transactionsUpdate :: Key Routing Account
 transactionsUpdate = key "transactions" & word "update"
 
 

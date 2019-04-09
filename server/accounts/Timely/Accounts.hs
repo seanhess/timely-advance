@@ -20,8 +20,10 @@ module Timely.Accounts
   , findBanks
   , create
   , setBanks
-  , saveTransactions
-  , listTransactions
+  , transSave
+  , transList
+  , transSince
+  , transDays
 
   , module Timely.Accounts.Types
   ) where
@@ -33,6 +35,7 @@ import           Data.Model.Guid
 import           Data.Model.Id                (Id)
 import           Data.Model.Types             (Phone)
 import           Data.Model.Valid             (Valid)
+import           Data.Time.Calendar           (Day, addDays)
 import           Database.Selda               hiding (deleteFrom, insert, query, tryCreateTable)
 import           GHC.Generics                 (Generic)
 import           Prelude                      hiding (all)
@@ -46,17 +49,18 @@ import           Timely.Bank                  (Item)
 
 
 data Accounts m = AccountsMethods
-    { _all              :: m [AccountCustomer]
-    , _find             :: Guid Account -> m (Maybe Account)
-    , _findCustomer     :: Guid Account -> m (Maybe Customer)
-    , _findByPhone      :: Valid Phone -> m (Maybe Account)
-    , _findByBankId     :: Id Item -> m [Account]
-    , _create           :: Account -> Customer -> [BankAccount] -> [TransactionRow] -> m ()
-    , _findBanks        :: Guid Account -> m [BankAccount]
-    , _setBanks         :: Guid Account -> [BankAccount] -> m ()
+    { _all          :: m [AccountCustomer]
+    , _find         :: Guid Account -> m (Maybe Account)
+    , _findCustomer :: Guid Account -> m (Maybe Customer)
+    , _findByPhone  :: Valid Phone -> m (Maybe Account)
+    , _findByBankId :: Id Item -> m [Account]
+    , _create       :: Account -> Customer -> [BankAccount] -> [TransactionRow] -> m ()
+    , _findBanks    :: Guid Account -> m [BankAccount]
+    , _setBanks     :: Guid Account -> [BankAccount] -> m ()
 
-    , _saveTransactions :: Guid Account -> [TransactionRow] -> m ()
-    , _listTransactions :: Guid Account -> Offset -> Count -> m [TransactionRow]
+    , _transSave    :: Guid Account -> [TransactionRow] -> m ()
+    , _transList    :: Guid Account -> Offset -> Count -> m [TransactionRow]
+    , _transSince   :: Guid Account -> Day -> m [TransactionRow]
     } deriving (Generic)
 
 
@@ -78,9 +82,10 @@ findByBankId :: MonadEffect Accounts m => Id Item     -> m [Account]
 findBanks    :: MonadEffect Accounts m => Guid Account -> m [BankAccount]
 create       :: MonadEffect Accounts m => Account -> Customer -> [BankAccount] -> [TransactionRow] -> m ()
 setBanks     :: MonadEffect Accounts m => Guid Account -> [BankAccount] -> m ()
-saveTransactions :: MonadEffect Accounts m => Guid Account -> [TransactionRow] -> m ()
-listTransactions :: MonadEffect Accounts m => Guid Account -> Offset -> Count -> m [TransactionRow]
-AccountsMethods all find findCustomer findByPhone findByBankId create findBanks setBanks saveTransactions listTransactions = effect
+transSave :: MonadEffect Accounts m => Guid Account -> [TransactionRow] -> m ()
+transList :: MonadEffect Accounts m => Guid Account -> Offset -> Count -> m [TransactionRow]
+transSince :: MonadEffect Accounts m => Guid Account -> Day -> m [TransactionRow]
+AccountsMethods all find findCustomer findByPhone findByBankId create findBanks setBanks transSave transList transSince = effect
 
 
 
@@ -97,12 +102,18 @@ implementIO = implement $
     Account.setBankAccounts
     Transactions.save
     Transactions.list
+    Transactions.since
   where
     createAccount acc@Account{accountId} cust banks trans = do
       Account.createAccount acc cust
       Account.setBankAccounts accountId banks
       Transactions.save accountId trans
 
+
+
+transDays :: MonadEffect Accounts m => Guid Account -> Integer -> Day -> m [TransactionRow]
+transDays i num today =
+  transSince i (addDays (-num) today)
 
 
 initialize :: (Selda m, MonadIO m) => m ()

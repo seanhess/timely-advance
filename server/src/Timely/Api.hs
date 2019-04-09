@@ -27,28 +27,33 @@ import           Servant.Server.Generic               (AsServerT, genericServerT
 -- import           Servant.Server.StaticFiles           (serveDirectoryFileServer)
 import           Timely.Accounts                      as Accounts
 import qualified Timely.Accounts.Application          as Application
-import qualified Timely.Accounts.Budgets               as Budgets
+import qualified Timely.Accounts.Budgets              as Budgets
 import           Timely.Accounts.Types                (AppResult, Application, TransactionRow)
 import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
+import qualified Timely.Api.AccountHealth             as AccountHealth
 import           Timely.Api.Advances                  as Advances
 import qualified Timely.Api.ApiHealth                 as ApiHealth
 import qualified Timely.Api.Applications              as Applications
 import           Timely.Api.Combinators               (notFound)
 import           Timely.Api.Sessions                  (SetSession)
 import qualified Timely.Api.Sessions                  as Sessions
-import           Timely.Api.Types
+import           Timely.Api.Transactions              (History)
+import qualified Timely.Api.Transactions              as Transactions
+import           Timely.Api.Types                     hiding (Result)
 import qualified Timely.Api.Webhooks                  as Webhooks
 import           Timely.App                           (AppM, AppState (..), clientConfig, loadState, nt, runAppIO)
 import qualified Timely.App                           as App
 import           Timely.Auth                          (AuthCode)
 import           Timely.Config                        (port, serveDir)
-import           Timely.Api.Transactions        (History)
-import           Timely.Evaluate.Health               (Budget, Income, Expense)
-import qualified Timely.Api.Transactions        as Transactions
+import           Timely.Evaluate.Health               (Budget, Expense, Income)
 import qualified Timely.Transfers                     as Transfers
 import           Timely.Types.Config
+import           Timely.Types.Health                  (AccountHealth)
+import           Timely.Types.Result                  (Result)
+import qualified Timely.Types.Result                  as Result
 import           Timely.Types.Session
+import qualified Timely.Types.Update                  as Update
 
 type Api = ToServant BaseApi AsApi
 
@@ -84,7 +89,7 @@ data AccountApi route = AccountApi
     { _get         :: route :- Get '[JSON, HTML] Account
     , _banks       :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
     , _customer    :: route :- "customer" :> Get '[JSON] Customer
-    -- , _health      :: route :- "health"   :> Get '[JSON] Health
+    , _health      :: route :- "health"   :> Get '[JSON] (Result Update.Error AccountHealth)
     , _trans       :: route :- "transactions" :> Get '[JSON] [TransactionRow]
     , _history     :: route :- "transactions" :> "history" :> Get '[JSON] History
     , _app         :: route :- "application" :> Get '[JSON] Application
@@ -140,7 +145,7 @@ accountApi i = genericServerT AccountApi
     , _customer = Accounts.findCustomer i  >>= notFound
     , _app     = Application.find i        >>= notFound
     , _result  = Application.findResult i  >>= notFound
-    -- , _health  = Accounts.findHealth i     >>= notFound
+    , _health  = Result.handle $ AccountHealth.analyze i
     , _trans   = Transactions.recent i
     , _history  = Transactions.history i
     , _advances = advanceApi i
@@ -246,6 +251,7 @@ initialize = do
       Application.initialize
       Advances.initialize
       Transfers.initialize
+      Budgets.initialize
 
     putStrLn "Done"
 

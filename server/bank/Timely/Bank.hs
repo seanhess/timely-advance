@@ -35,8 +35,8 @@ module Timely.Bank
     , loadIdentity -- remove me when you add it back in
     , loadAccounts
     , loadTransactions
+    , loadTransactionsRange
     , loadTransactionsDays
-    , limitLast
     , getACH
     , implementBankIO
     -- , runPlaid
@@ -82,28 +82,19 @@ BanksMethods authenticate loadIdentity loadAccounts loadTransactions getACH = ef
 
 
 
--- | Loads the most recent N transactions (N < 500)
-limitLast :: Day -> Int -> Options
-limitLast today num = Options
-    { start_date = Day.addDays (-365) today
-    , end_date   = Day.addDays (1) today
-    , count      = num
-    , offset     = 0
-    }
-
 
 
 -- | loads all the transactions in the range, and continues to load them until it gets the full range
-loadTransactionsDays :: MonadEffects '[Banks] m => Token Access -> Id Account -> Day -> Integer -> m [Transaction]
-loadTransactionsDays tok aid today days = do
+loadTransactionsRange :: MonadEffects '[Banks] m => Token Access -> Id Account -> Day -> Day -> m [Transaction]
+loadTransactionsRange tok aid start end = do
   tss <- Loops.unfoldrM loadNext 0
   pure $ List.concat tss
 
   where
     loadNext offset = do
       res <- loadTransactions tok aid $ Options
-               { start_date = Day.addDays (-days) today
-               , end_date   = Day.addDays (1) today
+               { start_date = start
+               , end_date   = end
                , count = 500
                , offset = offset
                }
@@ -112,6 +103,10 @@ loadTransactionsDays tok aid today days = do
         [] -> pure Nothing
         ts -> pure $ Just (ts, offset + 500)
 
+
+loadTransactionsDays :: MonadEffects '[Banks] m => Token Access -> Id Account -> Integer -> Day -> m [Transaction]
+loadTransactionsDays tok aid days today = do
+  loadTransactionsRange tok aid (Day.addDays (-days) today) today
 
 
 

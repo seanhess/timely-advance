@@ -44,15 +44,27 @@ save _ ts = do
     pure ()
 
 
+selectAccount :: Guid Account -> Query s (Row s TransactionRow)
+selectAccount i = do
+  t <- select transactions
+  restrict (t ! #accountId .== literal i)
+  order    (t ! #date) descending
+  pure t
+
+
+
 list :: Selda m => Guid Account -> Offset -> Count -> m [TransactionRow]
 list i offset count = do
-  ts <- query $ limit offset count $ do
-    t <- select transactions
-    restrict (t ! #accountId .== literal i)
-    order    (t ! #date) descending
+  query $ limit offset count $ selectAccount i
+
+
+since :: Selda m => Guid Account -> Day -> m [TransactionRow]
+since i day =
+  query $ do
+    t <- selectAccount i
+    restrict (t ! #date .>= literal day)
     pure t
-  liftIO $ mapM print ts
-  pure ts
+
 
 
 

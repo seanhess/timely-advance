@@ -17,37 +17,36 @@ import           Control.Monad                     (when)
 import           Control.Monad.Catch               (MonadThrow (..))
 import           Data.Function                     ((&))
 import qualified Data.List                         as List
-import           Data.Maybe                        (fromMaybe, mapMaybe)
+import           Data.Maybe                        (fromMaybe)
 import           Data.Model.Guid                   as Guid
 import           Data.Model.Money                  (Money)
+import           Data.Number.Abs                   (Abs (value))
 import           Data.Time.Calendar                (Day)
 import qualified Network.AMQP.Worker               as Worker (Queue, topic)
 import           Timely.Accounts                   (Accounts, TransactionRow (transactionId))
 import qualified Timely.Accounts                   as Accounts
 import           Timely.Accounts.Budgets           (Budgets)
-import           Timely.Accounts.Types             (Account (..), BankAccount (balance, bankAccountId))
+import           Timely.Accounts.Types             (Account (..), BankAccount (bankAccountId))
 import qualified Timely.Accounts.Types             as Account (Account (..))
 import qualified Timely.Accounts.Types.BankAccount as BankAccount
 import qualified Timely.Accounts.Types.Transaction as Transaction
 import           Timely.Advances                   (Advance, Advances)
 import qualified Timely.Advances                   as Advances
 import qualified Timely.Api.AccountHealth          as AccountHealth
-import           Timely.Api.Transactions           (toIncome)
 import qualified Timely.App                        as App
 import           Timely.Bank                       (Access, Banks, Token)
 import qualified Timely.Bank                       as Bank
-import           Timely.Evaluate.Health            (AccountHealth, Budget, Income, Transaction)
-import qualified Timely.Evaluate.Health            as Health
 import qualified Timely.Evaluate.Offer             as Offer
 import           Timely.Evaluate.Schedule          (DayOfMonth (..), Schedule (..))
 import qualified Timely.Evaluate.Schedule          as Schedule
 import           Timely.Events                     as Events
 import           Timely.Notify                     (Notify)
 import qualified Timely.Notify                     as Notify
+import           Timely.Types.Health               (AccountHealth (..))
 import           Timely.Types.Update               (Error (..))
 
 
-queue :: Worker.Queue (Account, Int)
+queue :: Worker.Queue Account
 queue = Worker.topic Events.transactionsUpdate "app.account.update"
 
 
@@ -59,11 +58,11 @@ handler
   :: ( MonadEffects '[Time, Accounts, Log, Banks, Advances, Notify, Budgets] m
      , MonadThrow m
      )
-  => (Account, Int) -> m ()
-handler (account, numTransactions) = do
+  => Account -> m ()
+handler account = do
     Log.context $ Guid.toText (accountId account)
     Log.info "AccountUpdate"
-    accountUpdate account numTransactions
+    accountUpdate account
       & Signal.handleException onError
 
   where
@@ -79,17 +78,15 @@ handler (account, numTransactions) = do
 accountUpdate
   :: ( MonadEffects '[Time, Accounts, Log, Banks, Advances, Notify, Throw Error, Budgets] m
      )
-  => Account -> Int -> m ()
-accountUpdate account@(Account{ accountId, bankToken }) numTransactions = do
+  => Account -> m ()
+accountUpdate account@(Account{ accountId, bankToken }) = do
     now      <- Time.currentTime
     today    <- Time.currentDate
 
     checking <- bankBalances accountId bankToken now
-    trans    <- updateTransactions accountId bankToken checking numTransactions today
+    _        <- updateTransactions accountId bankToken checking today
 
     health   <- AccountHealth.analyze accountId
-
-    -- TODO calculate health based on transactions and checking balance :)
 
     isOffer  <- checkAdvance account health now
     when isOffer $ do
@@ -108,7 +105,8 @@ checkAdvance
 checkAdvance account health now = do
     offer  <- Advances.findOffer  (accountId account)
     active <- Advances.findActive (accountId account)
-    pure $ (Offer.isNeeded offer active health now)
+    let projection = Offer.Projection (balance health) (value $ budgeted health)
+    pure $ (Offer.isNeeded offer active projection now)
 
 
 
@@ -149,26 +147,27 @@ bankBalances accountId token now = do
 
 
 
--- | Load the last n transactions from the bank. Check to see if any are already saved, and save the rest
--- TODO syncronoize, instead of relying on the number
+-- | Synchronizes the last 30 days of transactions with the bank
 updateTransactions
   :: ( MonadEffects '[Banks, Log, Accounts] m )
-  => Guid Account -> Token Bank.Access -> BankAccount -> Int -> Day -> m [TransactionRow]
-updateTransactions accountId bankToken checking numTransactions today = do
-    Log.info "update transactions"
-    ts <- Bank.loadTransactions bankToken (bankAccountId checking) $
-            Bank.limitLast today numTransactions
+  => Guid Account -> Token Bank.Access -> BankAccount -> Day -> m [TransactionRow]
+updateTransactions accountId token check today = do
 
-    let tsNew = List.map (Transaction.fromBank accountId) ts
-    tsOld <- Accounts.listTransactions accountId 0 numTransactions
-    let tsSave = List.deleteFirstsBy eqTransId tsNew tsOld
-    Log.debug ("new transactions", List.length tsSave)
-    Accounts.saveTransactions accountId tsSave
-    ERROR "this should return all recent transactions. We need it for analysis anyway, so just load all of them and synchronize!"
-    pure _
+    let numDays = 30
+    tsb   <- fromBank <$> Bank.loadTransactionsDays token (bankAccountId check) numDays today
+    tsa   <- Accounts.transDays accountId numDays today
+
+    let tsNew = List.deleteFirstsBy eqTransId tsb tsa
+    Log.debug ("new transactions", List.length tsNew)
+    Accounts.transSave accountId tsNew
+
+    pure $ List.unionBy eqTransId tsa tsb
+
 
   where
     eqTransId t1 t2 = transactionId t1 == transactionId t2
+
+    fromBank = List.map (Transaction.fromBank accountId)
 
 
 

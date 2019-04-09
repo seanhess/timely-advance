@@ -4,21 +4,26 @@ module Timely.Evaluate.Offer where
 import qualified Data.List              as List
 import qualified Data.Maybe             as Maybe
 import           Data.Model.Money       as Money
-import           Data.Number.Abs        (Abs (value))
 import           Data.Time.Clock        (NominalDiffTime, UTCTime (..))
 import qualified Data.Time.Clock        as Time
 import           Timely.Advances        (Advance (..))
-import           Timely.Evaluate.Health (AccountHealth (..))
 
 -- If they have any active advances, the trigger amount changes to 250.00
 -- If they have any recent advances, don't advance
 -- If they have any unclaimed offers at all, don't advance
 
-isNeeded :: Maybe Advance -> [Advance] -> AccountHealth -> UTCTime -> Bool
+
+data Projection = Projection
+  { expenses :: Money
+  , available :: Money
+  }
+
+
+isNeeded :: Maybe Advance -> [Advance] -> Projection -> UTCTime -> Bool
 isNeeded offer active health today
   | isAnyRecent today $ advanceTimes offer active = False
   | Maybe.isJust offer = False
-  | otherwise = balance health < value (budgeted health)
+  | otherwise = available health < expenses health
 
 
 -- triggerAmount :: [Advance] -> Money

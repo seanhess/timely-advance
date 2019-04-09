@@ -46,7 +46,7 @@ rowsToHistory ts = History
 
 recent :: MonadEffects '[Accounts] m => Guid Account -> m [TransactionRow]
 recent i =
-  Accounts.listTransactions i 0 100
+  Accounts.transList i 0 100
 
 
 history :: MonadEffects '[Accounts] m => Guid Account -> m History

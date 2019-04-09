@@ -13,9 +13,9 @@ import qualified Test.Evaluate.Schedule   as Schedule
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
 import           Timely.Advances          (Advance (..))
+import           Timely.Evaluate.Offer    (Projection (..))
 import qualified Timely.Evaluate.Offer    as Offer
 import qualified Timely.Evaluate.Schedule as Schedule
-import           Timely.Evaluate.Types    (Projection (..))
 
 tests :: Tests ()
 tests = do
@@ -90,9 +90,10 @@ testOffer = do
         Offer.isAnyRecent now [agoOld now ] @?= False
 
 
-    group "triggerAmount" $ do
-      test "should be higher if there are no advances" $ do
-        Offer.triggerAmount [] > Offer.triggerAmount [undefined] @? "greater"
+    -- I removed triggerAmount with the new balance logic
+    -- group "triggerAmount" $ do
+    --   test "should be higher if there are no advances" $ do
+    --     Offer.triggerAmount [] > Offer.triggerAmount [undefined] @? "greater"
 
 
 

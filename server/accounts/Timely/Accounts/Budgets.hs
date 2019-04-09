@@ -36,7 +36,8 @@ instance SqlType BudgetType
 
 
 data BudgetRow = BudgetRow
-  { accountId  :: Guid Account
+  { budgetId   :: ID BudgetRow
+  , accountId  :: Guid Account
   , budgetType :: BudgetType
   , name       :: Text
   , schedule   :: Field Schedule
@@ -89,8 +90,9 @@ implementIO = implement $
 
 budget :: Table BudgetRow
 budget = table "accounts_budget"
-  [ #accountId :- primary
+  [ #budgetId :- autoPrimary
   , #accountId :- foreignKey accounts #accountId
+  , #accountId :- index
   ]
 
 
@@ -130,7 +132,8 @@ initialize = do
 budgetRow :: Guid Account -> BudgetType -> Budget a -> BudgetRow
 budgetRow accountId budgetType Budget {name, amount, schedule} =
   BudgetRow
-    { accountId
+    { budgetId = def
+    , accountId
     , budgetType
     , name
     , amount = value amount

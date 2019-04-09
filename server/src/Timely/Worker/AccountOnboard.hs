@@ -179,7 +179,7 @@ loadTransactions accountId bankToken appBankId checking (UTCTime today _) = do
     -- Waits for the webhook to update the transactions before continuing
     Async.poll second $ Applications.findTransactions appBankId
 
-    ts <- Bank.loadTransactionsDays bankToken (bankAccountId checking) today year
+    ts <- Bank.loadTransactionsDays bankToken (bankAccountId checking) year today
     -- Log.debug ("transactions", List.length ts)
     Log.debug ("transactions", ts)
     pure $ List.map (Transaction.fromBank accountId) ts

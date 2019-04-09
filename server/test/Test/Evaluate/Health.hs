@@ -124,6 +124,17 @@ testNeededForBill = do
       let checks = [parseDay "2019-02-01", parseDay "2019-03-05"]
       neededForBill today (paychecks payAmount checks) income bill @?= (Money.fromFloat 1000)
 
+    test "paychecks don't match, paid 1x $500, due tomorrow" $ do
+      let today = parseDay "2019-03-04"
+      -- they were paid 500, not 2000, and there are no more paychecks before the next due date
+      neededForBill today (paychecks (Money.fromFloat 500) [parseDay "2019-02-20"]) income bill @?= (Money.fromFloat 1000)
+
+    test "paychecks don't match, paid 2x $500, due later" $ do
+      let today = parseDay "2019-02-16"
+      let checks = [parseDay "2019-02-01", parseDay "2019-02-15"]
+      neededForBill today (paychecks (Money.fromFloat 500) checks) income bill @?= (Money.fromFloat 200)
+
+
 
 
 

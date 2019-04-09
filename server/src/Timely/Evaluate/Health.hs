@@ -6,8 +6,6 @@ module Timely.Evaluate.Health
   ( Budget(Budget)
   , Transaction(Transaction)
   , Expense, Income
-  , AccountHealth(..)
-  , Bill(..)
   , neededForBill
   , dueDates
   , incomeSince
@@ -15,12 +13,11 @@ module Timely.Evaluate.Health
 
   ) where
 
-import           Data.Aeson                         (ToJSON)
+-- import Debug.Trace (traceShow)
 import           Data.Model.Money                   (Money)
 import qualified Data.Model.Money                   as Money
 import           Data.Number.Abs                    (Abs (..))
 import           Data.Time.Calendar                 (Day)
-import           GHC.Generics                       (Generic)
 import           Timely.Evaluate.Health.Budget      (Budget (..))
 import           Timely.Evaluate.Health.Transaction (Expense, Income, Transaction)
 import qualified Timely.Evaluate.Health.Transaction as Trans
@@ -28,24 +25,6 @@ import qualified Timely.Evaluate.Schedule           as Schedule
 
 
 
--- this is the information reported to the user
-data AccountHealth = AccountHealth
-  { balance  :: Money
-  , budgeted :: Abs Money
-  , income   :: Budget Income
-  , bills    :: [Bill]
-  } deriving (Show, Eq, Generic)
-
-instance ToJSON AccountHealth
-
-
-data Bill = Bill
-  { saved  :: Abs Money
-  , next   :: Day
-  , budget :: Budget Expense
-  } deriving (Show, Eq, Generic)
-
-instance ToJSON Bill
 
 
 
@@ -78,7 +57,7 @@ neededForBill :: Day -> [Transaction Income] -> Budget Income -> Budget Expense 
 neededForBill today paychecks income bill =
   let lastDue = Schedule.last (schedule bill) today
       dates   = dueDates today income bill
-  in sum $ map (neededForNextBill paychecks income (amount bill) lastDue) dates
+  in sum $ map (neededForNextBill paychecks income (amount bill) today lastDue) dates
 
 
 
@@ -98,10 +77,11 @@ dueDates today income bill =
 
 
 -- oh, there is no income in this period
-neededForNextBill :: [Transaction Income] -> Budget Income -> Abs Money -> Day -> Day -> Money
-neededForNextBill paychecks income amount lastDue nextDue =
+neededForNextBill :: [Transaction Income] -> Budget Income -> Abs Money -> Day -> Day -> Day -> Money
+neededForNextBill paychecks income amount today lastDue nextDue =
   let incPrev = incomeSince lastDue paychecks
-      incTotal = incomeUntil lastDue nextDue income
+      incNext = incomeUntil today   nextDue income
+      incTotal = incPrev + incNext
       percent = if incTotal > 0
                    then (Money.toFloat incPrev / Money.toFloat incTotal)
                    else 1.0

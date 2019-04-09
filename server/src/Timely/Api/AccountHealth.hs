@@ -13,10 +13,8 @@ import           Data.Function                      ((&))
 import qualified Data.List                          as List
 import           Data.Maybe                         (mapMaybe)
 import           Data.Model.Guid                    (Guid)
-import           Data.Model.Money                   (Money)
 import           Data.Number.Abs                    (Abs (value), absolute)
-import           Data.Time.Calendar                 (Day)
-import           GHC.Generics                       (Generic)
+import           Data.Time.Calendar                 (Day, addDays)
 import           Timely.Accounts                    (Accounts)
 import qualified Timely.Accounts                    as Accounts
 import           Timely.Accounts.Budgets            as Budgets
@@ -24,15 +22,13 @@ import           Timely.Accounts.Types              (Account)
 import qualified Timely.Accounts.Types.BankAccount  as BankAccount
 import           Timely.Api.Transactions            (toIncome)
 import qualified Timely.Api.Transactions            as Transactions
-import           Timely.Evaluate.Health             (AccountHealth (..), Bill (..), Budget, Expense, Income)
+import           Timely.Evaluate.Health             (Budget, Expense, Income)
 import qualified Timely.Evaluate.Health             as Health
 import           Timely.Evaluate.Health.Budget      (Budget (..))
 import           Timely.Evaluate.Health.Transaction (Transaction (..))
 import qualified Timely.Evaluate.Schedule           as Schedule
-import           Timely.Types.Update                (Error(..))
-
-
-
+import           Timely.Types.Health                (AccountHealth (..), Bill(..))
+import           Timely.Types.Update                (Error (..))
 
 
 
@@ -42,8 +38,10 @@ import           Timely.Types.Update                (Error(..))
 
 -- TODO function that converts this into something user readable
 -- Either Error AccountHealth
--- then convert it into something that can be serialized
--- I need a type that just serializes either one, easy
+
+
+
+
 
 
 analyze :: (MonadEffects '[Budgets, Accounts, Throw Error, Time] m) => Guid Account -> m AccountHealth
@@ -55,17 +53,20 @@ analyze i = do
     tns <- mapMaybe toIncome <$> Transactions.recent i
 
     let bills = map (bill now tns inc) exs
+        checks = filter (isRecent now) tns
 
     pure $ AccountHealth
       { balance = bal
       , income = inc
       , budgeted = absolute $ sum (map (value . saved) bills)
       , bills = bills
+      , paychecks = checks
       }
 
   where
     budgetIncome i   = Budgets.income i   >>= required (MissingIncome i)
     budgetExpenses i = Budgets.expenses i >>= required' Just (MissingExpenses i)
+    isRecent now t = date t >= addDays (-30) now
     bankBalance i = do
       banks <- Accounts.findBanks i
       check <- List.find BankAccount.isChecking banks
