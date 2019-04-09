@@ -18,8 +18,6 @@ module Timely.Accounts
   , findByPhone
   , findByBankId
   , findBanks
-  , setHealth
-  , findHealth
   , create
   , setBanks
   , saveTransactions
@@ -54,14 +52,12 @@ data Accounts m = AccountsMethods
     , _findCustomer     :: Guid Account -> m (Maybe Customer)
     , _findByPhone      :: Valid Phone -> m (Maybe Account)
     , _findByBankId     :: Id Item -> m [Account]
-    , _create           :: Account -> Customer -> [BankAccount] -> [Transaction] -> m ()
-    , _setHealth        :: Guid Account -> Projection -> m ()
-    , _findHealth       :: Guid Account -> m (Maybe Health)
+    , _create           :: Account -> Customer -> [BankAccount] -> [TransactionRow] -> m ()
     , _findBanks        :: Guid Account -> m [BankAccount]
     , _setBanks         :: Guid Account -> [BankAccount] -> m ()
 
-    , _saveTransactions :: Guid Account -> [Transaction] -> m ()
-    , _listTransactions :: Guid Account -> Offset -> Count -> m [Transaction]
+    , _saveTransactions :: Guid Account -> [TransactionRow] -> m ()
+    , _listTransactions :: Guid Account -> Offset -> Count -> m [TransactionRow]
     } deriving (Generic)
 
 
@@ -81,13 +77,11 @@ findCustomer :: MonadEffect Accounts m => Guid Account -> m (Maybe Customer)
 findByPhone  :: MonadEffect Accounts m => Valid Phone -> m (Maybe Account)
 findByBankId :: MonadEffect Accounts m => Id Item     -> m [Account]
 findBanks    :: MonadEffect Accounts m => Guid Account -> m [BankAccount]
-setHealth    :: MonadEffect Accounts m => Guid Account -> Projection -> m ()
-findHealth   :: MonadEffect Accounts m => Guid Account -> m (Maybe Health)
-create       :: MonadEffect Accounts m => Account -> Customer -> [BankAccount] -> [Transaction] -> m ()
+create       :: MonadEffect Accounts m => Account -> Customer -> [BankAccount] -> [TransactionRow] -> m ()
 setBanks     :: MonadEffect Accounts m => Guid Account -> [BankAccount] -> m ()
-saveTransactions :: MonadEffect Accounts m => Guid Account -> [Transaction] -> m ()
-listTransactions :: MonadEffect Accounts m => Guid Account -> Offset -> Count -> m [Transaction]
-AccountsMethods all find findCustomer findByPhone findByBankId create setHealth findHealth findBanks setBanks saveTransactions listTransactions = effect
+saveTransactions :: MonadEffect Accounts m => Guid Account -> [TransactionRow] -> m ()
+listTransactions :: MonadEffect Accounts m => Guid Account -> Offset -> Count -> m [TransactionRow]
+AccountsMethods all find findCustomer findByPhone findByBankId create findBanks setBanks saveTransactions listTransactions = effect
 
 
 
@@ -100,8 +94,6 @@ implementIO = implement $
     Account.getAccountIdByPhone
     Account.getAccountByBankId
     createAccount
-    Account.setAccountHealth
-    Account.getAccountHealth
     Account.getBankAccounts
     Account.setBankAccounts
     Transactions.save
@@ -120,5 +112,4 @@ initialize = do
     tryCreateTable Account.accounts
     tryCreateTable Account.customers
     tryCreateTable Account.banks
-    tryCreateTable Account.healths
     tryCreateTable Transactions.transactions

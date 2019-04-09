@@ -42,13 +42,6 @@ banks :: Table BankAccount
 banks = table "accounts_banks" [#id :- autoPrimary, #accountId :- foreignKey accounts #accountId]
 
 
-healths :: Table Health
-healths = table "accounts_healths"
-    [ #accountId :- primary
-    , #accountId :- foreignKey accounts #accountId
-    ]
-
-
 allAccounts :: (Selda m) => m [AccountCustomer]
 allAccounts = do
     acs <- query $ do
@@ -113,22 +106,6 @@ getBankAccounts i =
       pure b
 
 
-
-setAccountHealth :: Selda m => Guid Account -> Projection -> m ()
-setAccountHealth i Projection {expenses, available} = do
-    now <- liftIO $ Time.getCurrentTime
-    deleteFrom healths (\h -> h ! #accountId .== literal i)
-    insert healths [Health {accountId = i, expenses, available, created = now }]
-    pure ()
-
-
-getAccountHealth :: Selda m => Guid Account -> m (Maybe Health)
-getAccountHealth i = do
-  hs <- query $ do
-    b <- select healths
-    restrict (b ! #accountId .== literal i)
-    pure b
-  pure $ listToMaybe hs
 
 
 createAccount :: Selda m => Account -> Customer -> m ()

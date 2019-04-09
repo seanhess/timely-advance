@@ -23,7 +23,7 @@ import           Data.Model.Guid                   as Guid
 import           Data.Model.Money                  (Money)
 import           Data.Time.Calendar                (Day)
 import qualified Network.AMQP.Worker               as Worker (Queue, topic)
-import           Timely.Accounts                   (Accounts, Transaction (transactionId))
+import           Timely.Accounts                   (Accounts, TransactionRow(transactionId))
 import qualified Timely.Accounts                   as Accounts
 import           Timely.Accounts.Types             (Account (..), BankAccount (bankAccountId))
 import qualified Timely.Accounts.Types             as Account (Account (..))
@@ -82,13 +82,15 @@ accountUpdate account@(Account{ accountId, bankToken }) numTransactions = do
     let today = Time.utctDay now
 
     checking <- bankBalances accountId bankToken now
-    health   <- updateHealth accountId checking
     _        <- updateTransactions accountId bankToken checking numTransactions today
 
-    isOffer  <- checkAdvance account health now
-    when isOffer $ do
-      offerAdvance account Offer.amount (Time.utctDay now)
-      pure ()
+    -- TODO calculate health based on transactions and checking balance :)
+
+    -- isOffer  <- checkAdvance account health now
+    -- when isOffer $ do
+    --   offerAdvance account Offer.amount (Time.utctDay now)
+
+    pure ()
 
 
 
@@ -126,15 +128,6 @@ offerAdvance account amount today = do
 
 
 
-updateHealth
-  :: ( MonadEffects '[Accounts, Log] m)
-  => Guid Account -> BankAccount -> m Projection
-updateHealth accountId checking = do
-    let health = Health.analyze (BankAccount.balance checking)
-    Accounts.setHealth accountId health
-    Log.debug ("Health", health)
-    pure health
-
 
 
 -- | updates the bank accounts and returns the checking account
@@ -153,6 +146,7 @@ bankBalances accountId token now = do
 
 
 -- | Load the last n transactions from the bank. Check to see if any are already saved, and save the rest
+-- TODO syncronoize, instead of relying on the number
 updateTransactions
   :: ( MonadEffects '[Banks, Log, Accounts] m )
   => Guid Account -> Token Bank.Access -> BankAccount -> Int -> Day -> m ()
@@ -172,29 +166,6 @@ updateTransactions accountId bankToken checking numTransactions today = do
 
 
 
-
--- TODO need a way to know if advances are pending or not. Do they have the money, or have we just SENT them money?
-
--- ASSUME: that we know if an advance is pending.. WE neet to mark them as pending / active / etc at some point (when we analyze their transactions, aka here)
-
--- ASSUME: daily... or on an interval we KNOW they will resolve. 2-3 days? erm... WE could scan in the middle of the night
-
-
--- DAY 1: they need money
--- DAY 2: (A) they still need money, it's on the way. pending advance. So they're healthy!
--- DAY 2: (B) things are worse, they need MORE money. We can send them another advance?
--- DAY 3: Advance arrives, they're healthy
-
-
-
--- findAccountByBankId
---   :: (MonadEffects '[Accounts, Throw Error] m)
---   => Id Plaid.Item -> m (Guid Account)
--- findAccountByBankId i = do
---   ma <- Accounts.findByBankId i
---   case ma of
---     (Just a) -> pure a
---     Nothing  -> throwSignal $ MissingBankId i
 
 
 data UpdateError

@@ -13,7 +13,7 @@ import           Control.Monad.Selda     (Selda, insert, query, tryCreateTable)
 import           Data.Model.Guid         (Guid)
 import           Database.Selda          hiding (deleteFrom, insert, query, tryCreateTable)
 import           Timely.Accounts.Account (accounts)
-import           Timely.Accounts.Types   (Account, Transaction(..))
+import           Timely.Accounts.Types   (Account, TransactionRow(..))
 
 
 
@@ -29,7 +29,7 @@ type Offset = Int
 
 
 
-transactions :: Table Transaction
+transactions :: Table TransactionRow
 transactions = table "accounts_transactions"
   [ #transactionId :- primary
   , #accountId     :- foreignKey accounts #accountId
@@ -38,13 +38,13 @@ transactions = table "accounts_transactions"
 
 
 -- | This will fail if any of the transactionIds already exists. That's kind of stupid
-save :: Selda m => Guid Account -> [Transaction] -> m ()
+save :: Selda m => Guid Account -> [TransactionRow] -> m ()
 save _ ts = do
     insert transactions ts
     pure ()
 
 
-list :: Selda m => Guid Account -> Offset -> Count -> m [Transaction]
+list :: Selda m => Guid Account -> Offset -> Count -> m [TransactionRow]
 list i offset count = do
   ts <- query $ limit offset count $ do
     t <- select transactions

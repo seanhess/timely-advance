@@ -28,7 +28,7 @@ import           Servant.Server.Generic               (AsServerT, genericServerT
 import           Timely.Accounts                      as Accounts
 import qualified Timely.Accounts.Application          as Application
 import qualified Timely.Accounts.Budgets               as Budgets
-import           Timely.Accounts.Types                (AppResult, Application, Transaction)
+import           Timely.Accounts.Types                (AppResult, Application, TransactionRow)
 import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
 import           Timely.Api.Advances                  as Advances
@@ -43,9 +43,9 @@ import           Timely.App                           (AppM, AppState (..), clie
 import qualified Timely.App                           as App
 import           Timely.Auth                          (AuthCode)
 import           Timely.Config                        (port, serveDir)
-import           Timely.Evaluate.History              (History)
+import           Timely.Api.Transactions        (History)
 import           Timely.Evaluate.Health               (Budget, Income, Expense)
-import qualified Timely.Evaluate.History              as History
+import qualified Timely.Api.Transactions        as Transactions
 import qualified Timely.Transfers                     as Transfers
 import           Timely.Types.Config
 import           Timely.Types.Session
@@ -84,8 +84,8 @@ data AccountApi route = AccountApi
     { _get         :: route :- Get '[JSON, HTML] Account
     , _banks       :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
     , _customer    :: route :- "customer" :> Get '[JSON] Customer
-    , _health      :: route :- "health"   :> Get '[JSON] Health
-    , _trans       :: route :- "transactions" :> Get '[JSON] [Transaction]
+    -- , _health      :: route :- "health"   :> Get '[JSON] Health
+    , _trans       :: route :- "transactions" :> Get '[JSON] [TransactionRow]
     , _history     :: route :- "transactions" :> "history" :> Get '[JSON] History
     , _app         :: route :- "application" :> Get '[JSON] Application
     , _result      :: route :- "application" :> "result" :> Get '[JSON] AppResult
@@ -140,9 +140,9 @@ accountApi i = genericServerT AccountApi
     , _customer = Accounts.findCustomer i  >>= notFound
     , _app     = Application.find i        >>= notFound
     , _result  = Application.findResult i  >>= notFound
-    , _health  = Accounts.findHealth i     >>= notFound
-    , _trans   = Accounts.listTransactions i 0 100
-    , _history  = History.history <$> Accounts.listTransactions i 0 100
+    -- , _health  = Accounts.findHealth i     >>= notFound
+    , _trans   = Transactions.recent i
+    , _history  = Transactions.history i
     , _advances = advanceApi i
     , _setIncome = (\inc -> Budgets.setIncome i inc >> pure NoContent)
     , _getIncome = Budgets.income i        >>= notFound

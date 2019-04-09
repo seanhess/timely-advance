@@ -30,7 +30,7 @@ import           Data.Text                         as Text
 import qualified Database.Selda                    as Selda
 import           Network.AMQP.Worker               (Queue)
 import qualified Network.AMQP.Worker               as Worker hiding (bindQueue, publish, worker)
-import           Timely.Accounts                   (Accounts, Transaction)
+import           Timely.Accounts                   (Accounts, TransactionRow)
 import qualified Timely.Accounts                   as Accounts
 import           Timely.Accounts.Application       (Applications)
 import qualified Timely.Accounts.Application       as Applications
@@ -173,7 +173,7 @@ initTransfers cust bankToken checking = do
 
 loadTransactions
   :: ( MonadEffects '[Banks, Applications, Log, Async] m )
-  => Guid Account -> Token Bank.Access -> Id AppBank -> BankAccount -> UTCTime -> m [ Transaction ]
+  => Guid Account -> Token Bank.Access -> Id AppBank -> BankAccount -> UTCTime -> m [ TransactionRow ]
 loadTransactions accountId bankToken appBankId checking (UTCTime today _) = do
     Log.info "load transactions"
     -- Waits for the webhook to update the transactions before continuing

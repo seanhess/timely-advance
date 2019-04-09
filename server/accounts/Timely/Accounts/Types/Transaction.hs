@@ -24,8 +24,8 @@ import qualified Timely.Bank                   as Bank (Category (..), Currency 
 
 -- Transaction -----------------------------
 
-data Transaction = Transaction
-  { transactionId :: Id Transaction
+data TransactionRow = TransactionRow
+  { transactionId :: Id TransactionRow
   , accountId     :: Guid Account
   , date          :: Day
   , category      :: Category
@@ -34,8 +34,8 @@ data Transaction = Transaction
   , name          :: Text
   } deriving (Show, Eq, Generic)
 
-instance SqlRow Transaction
-instance ToJSON Transaction
+instance SqlRow TransactionRow
+instance ToJSON TransactionRow
 
 
 newtype Category = Category Text
@@ -51,11 +51,11 @@ instance SqlType Category where
 
 -- More Types ---------------------------------------------
 
-fromBank :: Guid Account -> Bank.Transaction -> Transaction
+fromBank :: Guid Account -> Bank.Transaction -> TransactionRow
 fromBank accountId t =
   let Id id = Bank.transaction_id t
       Bank.Currency a = Bank.amount t
-  in Transaction
+  in TransactionRow
     { transactionId = Id id
     , accountId = accountId
     , date = Bank.date t

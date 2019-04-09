@@ -103,19 +103,14 @@ accountHealth i = do
 
 
 bill :: Day -> Budget Expense -> Bill
-bill now budget@(Budget {schedule, amount}) =
+bill now budget@(Budget {schedule}) =
   Bill
-    { saved  = undefined
+    { saved  = absolute $ Health.neededForBill now undefined undefined budget
     , next   = Schedule.nextToday schedule now
     , budget = budget
     }
 
 
-
-paycheck :: Accounts.Transaction -> Maybe (Transaction Income)
-paycheck Accounts.Transaction {date, amount}
-  | amount < 0 = Just $ Transaction (absolute amount) date
-  | otherwise  = Nothing
 
 
 

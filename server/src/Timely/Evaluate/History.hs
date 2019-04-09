@@ -4,60 +4,47 @@
 module Timely.Evaluate.History where
 
 
-import           Data.Aeson                        (ToJSON)
-import           Data.Function                     ((&))
-import qualified Data.List                         as List
-import           Data.Model.Money                  (Money, fromCents, toCents)
-import           Data.Number.Abs                   (Abs (value), absolute)
-import           Data.Text                         (Text)
-import           GHC.Generics                      (Generic)
-import           Timely.Accounts.Types.Transaction (Transaction)
-import qualified Timely.Accounts.Types.Transaction as Transaction
-import           Timely.Evaluate.Schedule          (Schedule)
-import qualified Timely.Evaluate.Schedule as Schedule
+import           Data.Aeson                         (ToJSON)
+import           Data.Function                      ((&))
+import qualified Data.List                          as List
+import           Data.Model.Money                   (Money, fromCents, toCents)
+import           Data.Number.Abs                    (Abs (value), absolute)
+import           Data.Text                          (Text)
+import           GHC.Generics                       (Generic)
+import           Timely.Evaluate.Schedule           (Schedule)
+import qualified Timely.Evaluate.Schedule           as Schedule
+import           Timely.Evaluate.Health.Transaction (Transaction, Expense, Income)
+import qualified Timely.Evaluate.Health.Transaction as Transaction
 
 
 
 
-data History = History
-  { income   :: [Group]
-  , expenses :: [Group]
-  } deriving (Show, Eq, Generic)
 
-instance ToJSON History
 
-data Group = Group
+data Group a = Group
   { name         :: Text
   , average      :: Abs Money
   , total        :: Abs Money
   , schedule     :: Maybe Schedule
-  , transactions :: [Transaction]
+  , transactions :: [Transaction a]
   } deriving (Show, Eq, Generic)
 
-instance ToJSON Group
+instance ToJSON (Group a)
 
 
-transAverage :: [Transaction] -> Abs Money
+transAverage :: [Transaction a] -> Abs Money
 transAverage ts =
   absolute $ fromCents $ (toCents $ value $ transTotal ts) `div` length ts
 
 
-transTotal :: [Transaction] -> Abs Money
+transTotal :: [Transaction a] -> Abs Money
 transTotal =
-  absolute . sum . map (abs . Transaction.amount)
+  absolute . sum . map (value . Transaction.amount)
 
 
 
-isExpense :: Transaction -> Bool
-isExpense t = Transaction.amount t >= 0
 
-
-isIncome :: Transaction -> Bool
-isIncome t = Transaction.amount t < 0
-
-
-
-groups :: [Transaction] -> [Group]
+groups :: [Transaction a] -> [Group a]
 groups ts =
   ts & List.sortOn Transaction.name
      & List.groupBy nameEq
@@ -66,11 +53,11 @@ groups ts =
      & List.reverse
 
   where
-    nameEq :: Transaction -> Transaction -> Bool
+    nameEq :: Transaction a -> Transaction a -> Bool
     nameEq t1 t2 = Transaction.name t1 == Transaction.name t2
 
 
-    toGroup :: [Transaction] -> Group
+    toGroup :: [Transaction a] -> Group a
     toGroup ts@(t:_) =
       Group
         (Transaction.name t)
@@ -83,7 +70,3 @@ groups ts =
 
 
 
-history :: [Transaction] -> History
-history ts = History
-  (groups $ List.filter isIncome ts)
-  (groups $ List.filter isExpense ts)

@@ -180,4 +180,4 @@ testNeededForBill = do
 
 
 paychecks :: Money -> [Day] -> [Transaction a]
-paychecks amt ds = map (Transaction (absolute amt)) ds
+paychecks amt ds = map (Transaction "" (absolute amt)) ds
