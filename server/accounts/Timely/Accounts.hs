@@ -11,6 +11,7 @@ module Timely.Accounts
   ( Accounts(..)
   , implementIO
   , initialize
+  , empty
 
   , all
   , find
@@ -108,6 +109,11 @@ implementIO = implement $
       Account.createAccount acc cust
       Account.setBankAccounts accountId banks
       Transactions.save accountId trans
+
+
+empty :: Accounts m
+empty = AccountsMethods
+  undefined undefined undefined undefined undefined undefined undefined undefined undefined undefined undefined
 
 
 

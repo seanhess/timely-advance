@@ -1,4 +1,4 @@
-module Timely.Types.Transactions exposing (Group, History, Transaction, decodeGroup, decodeHistory, decodeTransaction)
+module Timely.Types.Transactions exposing (Group, History, Schedule(..), Transaction, decodeGroup, decodeHistory, decodeSchedule, decodeTransaction)
 
 import Json.Decode as Decode exposing (Decoder, at, bool, fail, field, int, list, nullable, string, succeed)
 import Json.Decode.Pipeline exposing (..)

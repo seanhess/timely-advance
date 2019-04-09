@@ -8,9 +8,10 @@ import Element.Input as Input
 import Http exposing (Error)
 import Route
 import Time exposing (Zone)
-import Timely.Api as Api exposing (Account, AccountHealth, AccountId, Advance, BankAccount, BankAccountType(..), Customer, Id, advanceIsActive, advanceIsCollected, advanceIsOffer, idValue)
+import Timely.Api as Api exposing (Account, AccountId, Advance, BankAccount, BankAccountType(..), Customer, Id, advanceIsActive, advanceIsCollected, advanceIsOffer, idValue)
 import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
+import Timely.Types.AccountHealth exposing (AccountHealth)
 import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money as Money exposing (formatMoney, fromCents, toCents)
 import Timely.Types.Transactions exposing (Transaction)
@@ -161,7 +162,7 @@ accountHealth : AccountHealth -> Element Msg
 accountHealth health =
     let
         projectedBalance =
-            fromCents (toCents health.available - toCents health.expenses)
+            fromCents (toCents health.balance - toCents health.budgeted)
 
         isHealthy =
             toCents projectedBalance > 0
@@ -191,11 +192,11 @@ accountInfo account health advances =
     wrappedRow [ spacing 20 ]
         [ column [ spacing 4 ]
             [ el [ Font.bold ] (text "Balance")
-            , el [ Font.color Style.darkGreen ] (text <| formatMoney health.available)
+            , el [ Font.color Style.darkGreen ] (text <| formatMoney health.balance)
             ]
         , column [ spacing 4 ]
             [ el [ Font.bold ] (text "Future Expenses")
-            , el [ Font.color Style.red ] (text <| formatMoney health.expenses)
+            , el [ Font.color Style.red ] (text <| formatMoney health.budgeted)
             ]
         , column [ spacing 4 ]
             [ el [ Font.bold ] (text "Owed")

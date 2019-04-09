@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountCustomer, AccountHealth, AccountId(..), AccountInfo, Advance, AdvanceId(..), Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Onboarding(..), Phone, SSN(..), Session, Token, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, decodeAccount, decodeAccountInfo, decodeAdvance, decodeApplication, decodeApproval, decodeApprovalResult, decodeBankAccount, decodeBankAccountType, decodeCustomer, decodeDenial, decodeHealth, decodeId, decodeOnboarding, decodeSession, decodeValid, encodeAccountInfo, encodeAmount, encodeId, encodeValid, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getCustomers, getTransactionHistory, getTransactions, idValue, postAdvanceAccept, postApplications, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
+module Timely.Api exposing (Account, AccountCustomer, AccountId(..), AccountInfo, Advance, AdvanceId(..), Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Onboarding(..), Phone, SSN(..), Session, Token, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getCustomers, getTransactionHistory, getTransactions, idValue, postAdvanceAccept, postApplications, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
 
 import Http exposing (Error, Expect)
 import Json.Decode as Decode exposing (Decoder, bool, int, list, nullable, string)
@@ -7,6 +7,7 @@ import Json.Encode as Encode
 import String
 import Task
 import Time exposing (Month(..))
+import Timely.Types.AccountHealth exposing (AccountHealth, decodeAccountHealth)
 import Timely.Types.Date exposing (Date, decodeDate)
 import Timely.Types.Money exposing (Money, decodeMoney, encodeMoney, fromCents, toCents)
 import Timely.Types.Transactions exposing (History, Transaction, decodeHistory, decodeTransaction)
@@ -24,12 +25,6 @@ type alias Account =
     { accountId : Id AccountId
     , phone : String
     , credit : Money
-    }
-
-
-type alias AccountHealth =
-    { expenses : Money
-    , available : Money
     }
 
 
@@ -188,13 +183,6 @@ decodeAccount =
         |> required "accountId" decodeId
         |> required "phone" string
         |> required "credit" decodeMoney
-
-
-decodeHealth : Decoder AccountHealth
-decodeHealth =
-    Decode.succeed AccountHealth
-        |> required "expenses" decodeMoney
-        |> required "available" decodeMoney
 
 
 
@@ -362,7 +350,7 @@ getCustomer toMsg (Id a) =
 
 getAccountHealth : (Result Error AccountHealth -> msg) -> Id AccountId -> Cmd msg
 getAccountHealth toMsg (Id a) =
-    requestGET toMsg [ "", "v1", "accounts", a, "health" ] decodeHealth
+    requestGET toMsg [ "", "v1", "accounts", a, "health" ] decodeAccountHealth
 
 
 getApplication : (Result Error Application -> msg) -> Id AccountId -> Cmd msg

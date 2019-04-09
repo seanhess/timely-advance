@@ -19,6 +19,7 @@ import           Data.Function                     ((&))
 import qualified Data.List                         as List
 import           Data.Maybe                        (fromMaybe)
 import           Data.Model.Guid                   as Guid
+import           Data.Model.Id                     (Id)
 import           Data.Model.Money                  (Money)
 import           Data.Number.Abs                   (Abs (value))
 import           Data.Time.Calendar                (Day)
@@ -80,15 +81,15 @@ accountUpdate
      )
   => Account -> m ()
 accountUpdate account@(Account{ accountId, bankToken }) = do
-    now      <- Time.currentTime
-    today    <- Time.currentDate
+    now    <- Time.currentTime
+    today  <- Time.currentDate
 
-    checking <- bankBalances accountId bankToken now
-    _        <- updateTransactions accountId bankToken checking today
+    check  <- bankBalances accountId bankToken now
+    _      <- updateTransactions accountId bankToken (bankAccountId check) today
 
-    health   <- AccountHealth.analyze accountId
+    health <- AccountHealth.analyze accountId
 
-    isOffer  <- checkAdvance account health now
+    isOffer <- checkAdvance account health now
     when isOffer $ do
       offerAdvance account Offer.amount (Time.utctDay now)
       pure ()
@@ -150,27 +151,31 @@ bankBalances accountId token now = do
 -- | Synchronizes the last 30 days of transactions with the bank
 updateTransactions
   :: ( MonadEffects '[Banks, Log, Accounts] m )
-  => Guid Account -> Token Bank.Access -> BankAccount -> Day -> m [TransactionRow]
-updateTransactions accountId token check today = do
-
+  => Guid Account -> Token Bank.Access -> Id Bank.Account -> Day -> m [TransactionRow]
+updateTransactions accountId token checkId today = do
     let numDays = 30
-    tsb   <- fromBank <$> Bank.loadTransactionsDays token (bankAccountId check) numDays today
+    tsb   <- fromBank <$> Bank.loadTransactionsDays token checkId numDays today
     tsa   <- Accounts.transDays accountId numDays today
-
-    let tsNew = List.deleteFirstsBy eqTransId tsb tsa
-    Log.debug ("new transactions", List.length tsNew)
-    Accounts.transSave accountId tsNew
-
-    pure $ List.unionBy eqTransId tsa tsb
+    Accounts.transSave accountId $ transNew tsb tsa
+    pure $ transAll tsb tsa
 
 
   where
-    eqTransId t1 t2 = transactionId t1 == transactionId t2
-
     fromBank = List.map (Transaction.fromBank accountId)
 
 
 
+transNew :: [TransactionRow] -> [TransactionRow] -> [TransactionRow]
+transNew bank account =
+    List.deleteFirstsBy eqTransId bank account
+
+
+transAll :: [TransactionRow] -> [TransactionRow] -> [TransactionRow]
+transAll bank account =
+    List.unionBy eqTransId bank account
+
+
+eqTransId t1 t2 = transactionId t1 == transactionId t2
 
 
 
