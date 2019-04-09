@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE MonoLocalBinds    #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Timely.Api.Health where
+module Timely.Api.ApiHealth where
 
 
 import           Control.Effects             (MonadEffects)

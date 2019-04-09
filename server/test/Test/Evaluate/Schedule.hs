@@ -113,9 +113,14 @@ testUntil = do
     let dates = Schedule.untilL (parseDay "2019-02-01") (Monthly (DayOfMonth 1)) today
     dates @?= []
 
+  test "untilToday includes today" $ do
+    let dates = Schedule.untilToday (< (parseDay "2019-02-01")) (Monthly (DayOfMonth 1)) today
+    dates @?= [parseDay "2019-01-01"]
+
 
 testNext :: Tests ()
 testNext = do
+
   group "weekly" $ do
     let today = parseDay "2019-01-01" -- Tuesday
 
@@ -182,6 +187,18 @@ testNext = do
 
     test "next wednesday B" $ do
       next (Biweekly Wednesday B) today @?= parseDay "2019-01-23"
+
+  group "next today" $ do
+    let today = parseDay "2019-01-01" -- Tuesday
+    test "next monday is next week" $ do
+      nextToday (Weekly Monday) today @?= parseDay "2019-01-07"
+
+    test "next tuesday is today" $ do
+      nextToday (Weekly Tuesday) today @?= parseDay "2019-01-01"
+
+    test "next month is today" $ do
+      nextToday (Monthly (DayOfMonth 1)) today @?= parseDay "2019-01-01"
+
 
 
 

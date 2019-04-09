@@ -34,7 +34,7 @@ import qualified Timely.Advances                   as Advances
 import qualified Timely.App                        as App
 import           Timely.Bank                       (Access, Banks, Token)
 import qualified Timely.Bank                       as Bank
-import qualified Timely.Evaluate.AccountHealth     as AccountHealth
+import qualified Timely.Evaluate.Health            as Health
 import qualified Timely.Evaluate.Offer             as Offer
 import           Timely.Evaluate.Schedule          (DayOfMonth (..), Schedule (..))
 import qualified Timely.Evaluate.Schedule          as Schedule
@@ -130,7 +130,7 @@ updateHealth
   :: ( MonadEffects '[Accounts, Log] m)
   => Guid Account -> BankAccount -> m Projection
 updateHealth accountId checking = do
-    let health = AccountHealth.analyze (BankAccount.balance checking)
+    let health = Health.analyze (BankAccount.balance checking)
     Accounts.setHealth accountId health
     Log.debug ("Health", health)
     pure health

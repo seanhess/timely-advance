@@ -8,7 +8,7 @@
 {-# LANGUAGE NoMonomorphismRestriction  #-}
 {-# LANGUAGE OverloadedLabels           #-}
 {-# LANGUAGE OverloadedStrings          #-}
-module Timely.Accounts.Budget where
+module Timely.Accounts.Budgets where
 
 import           Control.Effects          (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
 import           Control.Monad.Selda      (Selda, deleteFrom, insert, query, tryCreateTable)
@@ -22,69 +22,61 @@ import           Database.Selda.Field     (Field (..))
 import           GHC.Generics             (Generic)
 import           Timely.Accounts.Account  (accounts)
 import           Timely.Accounts.Types    (Account)
+import           Timely.Evaluate.Health   (Expense, Income)
+import           Timely.Evaluate.Health.Budget (Budget(..))
 import           Timely.Evaluate.Schedule (Schedule)
 
 
 
 
-data ItemType
+data BudgetType
   = Income
   | Expense
   deriving (Show, Read, Bounded, Enum, Eq, Generic)
-instance SqlType ItemType
+instance SqlType BudgetType
 
 
-data Item (a :: ItemType) = Item
-  { name     :: Text
-  , amount   :: Abs Money
-  , schedule :: Schedule
+data BudgetRow = BudgetRow
+  { accountId  :: Guid Account
+  , budgetType :: BudgetType
+  , name       :: Text
+  , schedule   :: Field Schedule
+  , amount     :: Money
   } deriving (Show, Eq, Generic)
 
-instance ToJSON (Item a)
-instance FromJSON (Item a)
-
-
-data ItemRow = ItemRow
-  { accountId :: Guid Account
-  , itemType  :: ItemType
-  , name      :: Text
-  , schedule  :: Field Schedule
-  , amount    :: Money
-  } deriving (Show, Eq, Generic)
-
-instance SqlRow ItemRow
+instance SqlRow BudgetRow
 
 
 
 
 
 
-data Budget m = BudgetMethods
-  { _setIncome   :: Guid Account -> Item 'Income -> m ()
-  , _setExpenses :: Guid Account -> [Item 'Expense] -> m ()
-  , _income      :: Guid Account -> m (Maybe (Item 'Income))
-  , _expenses    :: Guid Account -> m [Item 'Expense]
+data Budgets m = BudgetsMethods
+  { _setIncome   :: Guid Account -> Budget Income -> m ()
+  , _setExpenses :: Guid Account -> [Budget Expense] -> m ()
+  , _income      :: Guid Account -> m (Maybe (Budget Income))
+  , _expenses    :: Guid Account -> m [Budget Expense]
   } deriving (Generic)
 
-instance Effect Budget
+instance Effect Budgets
 
 
-setIncome   :: MonadEffect Budget m => Guid Account -> Item 'Income -> m ()
-income      :: MonadEffect Budget m => Guid Account -> m (Maybe (Item 'Income))
-setExpenses :: MonadEffect Budget m => Guid Account -> [Item 'Expense] -> m ()
-expenses    :: MonadEffect Budget m => Guid Account -> m [Item 'Expense]
-BudgetMethods setIncome setExpenses income expenses = effect
+setIncome   :: MonadEffect Budgets m => Guid Account -> Budget Income -> m ()
+income      :: MonadEffect Budgets m => Guid Account -> m (Maybe (Budget Income))
+setExpenses :: MonadEffect Budgets m => Guid Account -> [Budget Expense] -> m ()
+expenses    :: MonadEffect Budgets m => Guid Account -> m [Budget Expense]
+BudgetsMethods setIncome setExpenses income expenses = effect
 
 
 
 
-implementIO :: Selda m => RuntimeImplemented Budget m a -> m a
+implementIO :: Selda m => RuntimeImplemented Budgets m a -> m a
 implementIO = implement $
-  BudgetMethods
-    (\a i -> saveItemsOfType Income a [i])
-    (saveItemsOfType Expense)
-    (\a -> listToMaybe <$> getItemsOfType Income a )
-    (getItemsOfType Expense)
+  BudgetsMethods
+    (\a i -> saveBudgetsOfType Income a [i])
+    (saveBudgetsOfType Expense)
+    (\a -> listToMaybe <$> getBudgetsOfType Income a )
+    (getBudgetsOfType Expense)
 
 
 
@@ -96,29 +88,29 @@ implementIO = implement $
 -- Selda implementation ------------------------------
 
 
-budget :: Table ItemRow
+budget :: Table BudgetRow
 budget = table "accounts_budget"
   [ #accountId :- primary
   , #accountId :- foreignKey accounts #accountId
   ]
 
 
-saveItemsOfType :: Selda m => ItemType -> Guid Account -> [Item a] -> m ()
-saveItemsOfType typ a items = do
+saveBudgetsOfType :: Selda m => BudgetType -> Guid Account -> [Budget a] -> m ()
+saveBudgetsOfType typ a bs = do
   deleteFrom budget
-    (\item -> item ! #accountId .== literal a .&& item ! #itemType .== literal typ)
-  insert budget $ map (itemRow a typ) items
+    (\b -> b ! #accountId .== literal a .&& b ! #budgetType .== literal typ)
+  insert budget $ map (budgetRow a typ) bs
   pure ()
 
 
-getItemsOfType :: Selda m => ItemType -> Guid Account -> m [Item a]
-getItemsOfType typ a = do
+getBudgetsOfType :: Selda m => BudgetType -> Guid Account -> m [Budget a]
+getBudgetsOfType typ a = do
   is <- query $ do
     i <- select budget
     restrict (i ! #accountId .== literal a)
-    restrict (i ! #itemType .== literal typ)
+    restrict (i ! #budgetType .== literal typ)
     pure i
-  pure $ map fromItemRow is
+  pure $ map fromBudgetRow is
 
 
 
@@ -136,19 +128,19 @@ initialize = do
 -- More Types ---------------------------------------------
 
 
-itemRow :: Guid Account -> ItemType -> Item a -> ItemRow
-itemRow accountId itemType Item {name, amount, schedule} =
-  ItemRow
+budgetRow :: Guid Account -> BudgetType -> Budget a -> BudgetRow
+budgetRow accountId budgetType Budget {name, amount, schedule} =
+  BudgetRow
     { accountId
-    , itemType
+    , budgetType
     , name
     , amount = value amount
     , schedule = Field schedule
     }
 
-fromItemRow :: ItemRow -> Item a
-fromItemRow ItemRow {name, amount, schedule} =
-  Item
+fromBudgetRow :: BudgetRow -> Budget a
+fromBudgetRow BudgetRow {name, amount, schedule} =
+  Budget
     { name
     , amount = absolute amount
     , schedule = field schedule

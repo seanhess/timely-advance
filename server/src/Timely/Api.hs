@@ -27,16 +27,14 @@ import           Servant.Server.Generic               (AsServerT, genericServerT
 -- import           Servant.Server.StaticFiles           (serveDirectoryFileServer)
 import           Timely.Accounts                      as Accounts
 import qualified Timely.Accounts.Application          as Application
-import           Timely.Accounts.Budget               (Item, ItemType (Expense, Income))
-import qualified Timely.Accounts.Budget               as Budget
-import qualified Timely.Accounts.Transactions         as Transactions
+import qualified Timely.Accounts.Budgets               as Budgets
 import           Timely.Accounts.Types                (AppResult, Application, Transaction)
 import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
 import           Timely.Api.Advances                  as Advances
+import qualified Timely.Api.ApiHealth                 as ApiHealth
 import qualified Timely.Api.Applications              as Applications
 import           Timely.Api.Combinators               (notFound)
-import qualified Timely.Api.Health                    as Health
 import           Timely.Api.Sessions                  (SetSession)
 import qualified Timely.Api.Sessions                  as Sessions
 import           Timely.Api.Types
@@ -46,6 +44,7 @@ import qualified Timely.App                           as App
 import           Timely.Auth                          (AuthCode)
 import           Timely.Config                        (port, serveDir)
 import           Timely.Evaluate.History              (History)
+import           Timely.Evaluate.Health               (Budget, Income, Expense)
 import qualified Timely.Evaluate.History              as History
 import qualified Timely.Transfers                     as Transfers
 import           Timely.Types.Config
@@ -91,10 +90,10 @@ data AccountApi route = AccountApi
     , _app         :: route :- "application" :> Get '[JSON] Application
     , _result      :: route :- "application" :> "result" :> Get '[JSON] AppResult
     , _advances    :: route :- "advances" :> ToServantApi AdvanceApi
-    , _setIncome   :: route :- "income" :> ReqBody '[JSON] (Item 'Income) :> Put '[JSON] NoContent
-    , _getIncome   :: route :- "income" :> Get '[JSON] (Item 'Income)
-    , _setExpenses :: route :- "expenses" :> ReqBody '[JSON] [Item 'Expense] :> Put '[JSON] NoContent
-    , _getExpenses :: route :- "expenses" :> Get '[JSON] [Item 'Expense]
+    , _setIncome   :: route :- "income" :> ReqBody '[JSON] (Budget Income) :> Put '[JSON] NoContent
+    , _getIncome   :: route :- "income" :> Get '[JSON] (Budget Income)
+    , _setExpenses :: route :- "expenses" :> ReqBody '[JSON] [Budget Expense] :> Put '[JSON] NoContent
+    , _getExpenses :: route :- "expenses" :> Get '[JSON] [Budget Expense]
     } deriving (Generic)
 
 
@@ -128,7 +127,7 @@ data WebhooksApi route = WebhooksApi
 
 
 data AdminApi route = AdminApi
-    { _test :: route :- Get '[JSON] Text
+    { _test      :: route :- Get '[JSON] Text
     , _customers :: route :- "customers" :> Get '[JSON] [AccountCustomer]
     } deriving (Generic)
 
@@ -142,13 +141,13 @@ accountApi i = genericServerT AccountApi
     , _app     = Application.find i        >>= notFound
     , _result  = Application.findResult i  >>= notFound
     , _health  = Accounts.findHealth i     >>= notFound
-    , _trans   = Transactions.list i 0 100
-    , _history  = History.history <$> Transactions.list i 0 100
+    , _trans   = Accounts.listTransactions i 0 100
+    , _history  = History.history <$> Accounts.listTransactions i 0 100
     , _advances = advanceApi i
-    , _setIncome = (\inc -> Budget.setIncome i inc >> pure NoContent)
-    , _getIncome = Budget.income i        >>= notFound
-    , _setExpenses = (\incs -> Budget.setExpenses i incs >> pure NoContent)
-    , _getExpenses = Budget.expenses i
+    , _setIncome = (\inc -> Budgets.setIncome i inc >> pure NoContent)
+    , _getIncome = Budgets.income i        >>= notFound
+    , _setExpenses = (\incs -> Budgets.setExpenses i incs >> pure NoContent)
+    , _getExpenses = Budgets.expenses i
     }
 
 
@@ -194,7 +193,7 @@ adminApi = genericServerT AdminApi
 baseApi :: FilePath -> ToServant BaseApi (AsServerT AppM)
 baseApi _ = genericServerT BaseApi
     { _versioned = versionedApi
-    , _health = Health.health
+    , _health = ApiHealth.health
     , _debug = App.debug
     -- , _files = serveDirectoryFileServer p
     }

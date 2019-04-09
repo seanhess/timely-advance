@@ -8,9 +8,11 @@ module Timely.Evaluate.Schedule
   , schedule
   , last
   , next
+  , nextToday
   , until
   , untilL
   , untilLE
+  , untilToday
   , dayOfWeek
   , dayOfMonth
   , nextWeekday
@@ -186,6 +188,7 @@ last schedule today =
 -- Next -------------------------------------
 
 
+-- this currently skips today. That isn't always what we want
 next :: Schedule -> Day -> Day
 next (Weekly dow) today = nextWeekday dow today
 next (Biweekly d b) today =
@@ -199,6 +202,12 @@ next (Semimonthly d1 d2) today = min
   (nextMonthday d2 today)
 
 
+-- | same as next, but includes today
+nextToday :: Schedule -> Day -> Day
+nextToday s d = next s $ Day.addDays (-1) d
+
+
+
 untilL :: Day -> Schedule -> Day -> [Day]
 untilL end = until (< end)
 
@@ -210,6 +219,10 @@ untilLE end = until (<= end)
 until :: (Day -> Bool) -> Schedule -> Day -> [Day]
 until p schedule today =
   List.takeWhile p $ drop 1 $ List.iterate (next schedule) today
+
+untilToday :: (Day -> Bool) -> Schedule -> Day -> [Day]
+untilToday p schedule today =
+  until p schedule $ (Day.addDays (-1) today)
 
 
 
