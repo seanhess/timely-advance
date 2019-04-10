@@ -5,9 +5,12 @@
 module Timely.Api.Transactions where
 
 
+import Data.Time.Calendar (Day)
 import Control.Effects (MonadEffects)
 import           Data.Aeson                         (ToJSON)
 import           Data.Model.Guid                    (Guid)
+import qualified Control.Effects.Time as Time
+import Control.Effects.Time (Time)
 import Data.Maybe (mapMaybe)
 import           Data.Number.Abs                    (absolute)
 import           GHC.Generics                       (Generic)
@@ -44,12 +47,14 @@ rowsToHistory ts = History
   (History.groups $ mapMaybe toExpense ts)
 
 
-recent :: MonadEffects '[Accounts] m => Guid Account -> m [TransactionRow]
-recent i =
-  Accounts.transList i 0 100
+-- the last 90 days of transactions
+recent :: MonadEffects '[Accounts, Time] m => Guid Account -> m [TransactionRow]
+recent i = do
+  today <- Time.currentDate
+  Accounts.transDays i 90 today
 
 
-history :: MonadEffects '[Accounts] m => Guid Account -> m History
+history :: MonadEffects '[Accounts, Time] m => Guid Account -> m History
 history i = do
   ts <- recent i
   pure $ rowsToHistory ts

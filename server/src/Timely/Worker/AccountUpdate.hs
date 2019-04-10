@@ -117,6 +117,8 @@ offerAdvance
 offerAdvance account amount today = do
     let id = accountId account
         transactions = []
+        -- TODO don't use Schedule.schedule, they have an income schedule for sure. Get their budget!
+        -- Already called from AccountHealth.analyze. Figure out some way to share / pass
         schedule     = fromMaybe (Monthly (DayOfMonth 1)) $ Schedule.schedule transactions
         nextPayday   = Schedule.next schedule today
         due          = nextPayday

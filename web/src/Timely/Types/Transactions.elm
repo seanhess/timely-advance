@@ -18,7 +18,7 @@ type alias Group =
     { name : String
     , average : Money
     , total : Money
-    , schedule : Schedule
+    , schedule : Maybe Schedule
     , transactions : List Transaction
     }
 
@@ -97,7 +97,7 @@ decodeGroup =
         |> required "name" string
         |> required "average" decodeMoney
         |> required "total" decodeMoney
-        |> required "schedule" decodeSchedule
+        |> required "schedule" (nullable decodeSchedule)
         |> required "transactions" (list decodeTransaction)
 
 

@@ -81,6 +81,8 @@ biweek d =
 
 
 
+-- this isn't very complex
+-- any long drift is going to end up being semimonthly
 schedule :: [Day] -> Maybe Schedule
 schedule ds = do
   let mgs = monthdayGroups ds
@@ -88,10 +90,10 @@ schedule ds = do
   wg  <- listToMaybe wgs
   let int = average $ intervals ds
 
-  semimonthly mgs
-    <|> biweekly int wg ds
-    <|> monthly mgs
+  monthly mgs
     <|> weekly int wg
+    <|> semimonthly mgs
+    <|> biweekly int wg ds
     <|> monthlyDrift ds
 
   where
@@ -101,6 +103,8 @@ schedule ds = do
 
     -- Note: Maybe calls fail if a pattern match fails (=Nothing)
     semimonthly mgs = do
+      -- reject more than 3 groups)
+      guard $ length mgs <= 3
       [mg1, mg2] <- pure $ take 2 mgs
       m1 <- atLeastTwo mg1
       m2 <- atLeastTwo mg2
@@ -117,7 +121,6 @@ schedule ds = do
       guard $ 6 < int && int < 8
       pure $ Weekly w
 
-    monthly :: [[DayOfMonth]] -> Maybe Schedule
     monthly mgs = do
       mg <- listToMaybe mgs
       m <- atLeastTwo mg

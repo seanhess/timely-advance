@@ -9,23 +9,32 @@ import Element.Font as Font
 import Element.Input as Input exposing (button)
 import Element.Region as Region
 import Http
+import List.Selection as Selection exposing (Selection)
 import Platform.Updates exposing (Updates, command, updates)
-import Route exposing (Onboard(..), Route(..))
+import Result.Cat as Result
+import Route
+import Time exposing (Weekday(..))
 import Timely.Api as Api exposing (AccountId, Id(..))
 import Timely.Components as Components
 import Timely.Resource exposing (Resource(..), resource)
 import Timely.Style as Style
+import Timely.Types.AccountHealth exposing (Budget)
 import Timely.Types.Money exposing (formatMoney)
 import Timely.Types.Transactions exposing (Group, History, Schedule(..), formatBiweek, formatWeekday)
 import Validate exposing (Validator, validate)
 
 
+
+-- modify : (a -> Bool) -> (a -> a) -> List a -> List a
+-- modify =
+
+
 type alias Model =
     { key : Nav.Key
     , accountId : Id AccountId
-    , history : Resource History
-    , income : Maybe Group
-    , bills : List Group
+    , income : Selection Group
+    , bills : Selection Group
+    , editing : Maybe Group
     }
 
 
@@ -34,6 +43,9 @@ type Msg
     | OnHistory (Result Http.Error History)
     | OnIncome Group Bool
     | OnBill Group Bool
+    | OnEdit Group
+    | OnEditSave Group
+    | OnEditClose
     | Save
 
 
@@ -41,9 +53,9 @@ init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
 init key id =
     ( { key = key
       , accountId = id
-      , history = Loading
-      , income = Nothing
-      , bills = []
+      , income = Selection.fromList []
+      , bills = Selection.fromList []
+      , editing = Nothing
       }
     , Api.getTransactionHistory OnHistory id
     )
@@ -57,48 +69,80 @@ update msg model =
                 |> command (Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain)
 
         OnHistory (Err e) ->
-            updates { model | history = Failed e }
+            updates model
 
         OnHistory (Ok h) ->
-            updates { model | history = Ready h }
+            updates
+                { model
+                    | income = Selection.fromValues h.income
+                    , bills = Selection.fromValues h.expenses
+                }
 
         OnIncome inc selected ->
-            let
-                income =
-                    if selected then
-                        Just inc
-
-                    else
-                        Nothing
-            in
-            updates { model | income = income }
+            updates { model | income = Selection.change inc model.income }
 
         OnBill bill selected ->
-            let
-                delete g =
-                    List.filter (\a -> a /= g)
+            updates { model | bills = Selection.set bill selected model.bills }
 
-                bills =
-                    if selected then
-                        bill :: model.bills
+        OnEdit group ->
+            updates { model | editing = Just group }
 
-                    else
-                        delete bill model.bills
-            in
-            updates { model | bills = bills }
+        OnEditClose ->
+            updates { model | editing = Nothing }
+
+        OnEditSave group ->
+            updates
+                { model
+                    | editing = Nothing
+                    , income = Selection.replace (isName group.name) group model.income
+                    , bills = Selection.replace (isName group.name) group model.bills
+                }
 
         Save ->
             case validate model of
                 Err _ ->
                     updates model
 
-                Ok ( inc, bills ) ->
-                    updates model
-                        |> command (Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain)
+                Ok ( inc, bs ) ->
+                    Debug.log (Debug.toString ( inc, bs ))
+                        (updates model
+                            |> command (Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain)
+                        )
 
 
 view : Model -> Element Msg
 view model =
+    case model.editing of
+        Nothing ->
+            viewMain model
+
+        Just g ->
+            viewEditing model g
+
+
+viewEditing : Model -> Group -> Element Msg
+viewEditing model group =
+    column Style.page
+        [ column Style.info
+            [ row [ spacing 15 ]
+                [ Components.back OnEditClose
+                , el Style.header (text <| "Budgets: " ++ group.name)
+                ]
+            ]
+        , column Style.section
+            [ text (Maybe.withDefault "None" <| Maybe.map formatSchedule group.schedule)
+            , button [] { onPress = Just (OnEdit { group | schedule = Just <| Monthly { date = 1 } }), label = text "Monthly 1" }
+            , button [] { onPress = Just (OnEdit { group | schedule = Just <| Monthly { date = 5 } }), label = text "Monthly 5" }
+            , button [] { onPress = Just (OnEdit { group | schedule = Just <| Weekly { weekday = Mon } }), label = text "Weekly Mon" }
+            , button
+                (Style.button Style.primary)
+                { onPress = Just (OnEditSave group), label = text "Save" }
+            ]
+        ]
+
+
+viewMain : Model -> Element Msg
+viewMain model =
     let
         isValid =
             case validate model of
@@ -116,28 +160,28 @@ view model =
                 ]
             ]
         , column Style.section
-            [ resource (viewHistory model) model.history
+            [ viewHistory model
             , submitButton Save isValid (text "Save")
             ]
         ]
 
 
-viewHistory : Model -> History -> Element Msg
-viewHistory model history =
+viewHistory : Model -> Element Msg
+viewHistory model =
     let
         isIncome group =
-            Just group == model.income
+            Selection.member group model.income
 
         isExpense group =
-            List.member group model.bills
+            Selection.member group model.bills
     in
     column [ spacing 15, width fill ]
         [ el Style.banner (text "Income")
         , paragraph [] [ text "Select your primary income" ]
-        , column [ spacing 0, width fill, Border.widthXY 0 1, Border.color Style.gray ] (List.map (viewGroup OnIncome isIncome) history.income)
+        , column [ spacing 0, width fill, Border.widthXY 0 1, Border.color Style.gray ] (List.map (viewGroup OnIncome isIncome) <| Selection.toValues model.income)
         , el Style.banner (text "Bills")
         , paragraph [] [ text "Select all your bills" ]
-        , column [ spacing 0, width fill, Border.widthXY 0 1, Border.color Style.gray ] (List.map (viewGroup OnBill isExpense) history.expenses)
+        , column [ spacing 0, width fill, Border.widthXY 0 1, Border.color Style.gray ] (List.map (viewGroup OnBill isExpense) <| Selection.toValues model.bills)
         ]
 
 
@@ -149,14 +193,27 @@ viewHistory model history =
 viewGroup : (Group -> Bool -> Msg) -> (Group -> Bool) -> Group -> Element Msg
 viewGroup onSelect isSelected group =
     row [ paddingXY 0 10, Border.widthXY 0 1, Border.color Style.gray, width fill, spacing 14 ]
-        [ select (onSelect group) (isSelected group)
+        [ selectButton (onSelect group) (isSelected group)
         , column [ spacing 6, width fill ]
             [ row [ spacing 8, width fill ]
                 [ text group.name
                 , el [ alignRight ] (text (formatMoney group.average))
                 ]
-            , row [ Font.size 16 ] [ text (formatSchedule group.schedule) ]
+            , button [ Style.link ] { onPress = Just (OnEdit group), label = viewSchedule group.schedule }
             ]
+        ]
+
+
+viewSchedule : Maybe Schedule -> Element Msg
+viewSchedule ms =
+    row [ Font.size 16 ]
+        [ text <|
+            case ms of
+                Nothing ->
+                    "Select a schedule"
+
+                Just s ->
+                    formatSchedule s
         ]
 
 
@@ -180,24 +237,19 @@ formatSchedule schedule =
             "Semimonthly on " ++ formatDay info.date1 ++ " " ++ formatDay info.date2
 
 
-groupKey : Group -> String
-groupKey group =
-    String.join "-" [ group.name, formatMoney group.average ]
-
-
-validate : Model -> Result Invalid ( Group, List Group )
+validate : Model -> Result Invalid ( Budget, List Budget )
 validate model =
     let
         validIncome mi =
-            case mi of
-                Nothing ->
-                    Err NoIncome
-
-                Just i ->
+            case Selection.get mi of
+                [ i ] ->
                     Ok i
 
+                _ ->
+                    Err NoIncome
+
         validBills bills =
-            case bills of
+            case Selection.get bills of
                 [] ->
                     Err NoBills
 
@@ -205,21 +257,47 @@ validate model =
                     Ok bs
     in
     Result.map2 (\i b -> ( i, b ))
-        (validIncome model.income)
-        (validBills model.bills)
+        (validIncome model.income |> Result.andThen validBudget)
+        (validBills model.bills |> Result.andThen (Result.cat << List.map validBudget))
+
+
+isName : String -> Group -> Bool
+isName name g =
+    g.name == name
+
+
+findGroup : List Group -> String -> Maybe Group
+findGroup groups name =
+    List.head <| List.filter (isName name) groups
+
+
+validBudget : Group -> Result Invalid Budget
+validBudget group =
+    case group.schedule of
+        Nothing ->
+            Err NoIncome
+
+        Just s ->
+            Ok
+                { name = group.name
+                , schedule = s
+                , amount = group.average
+                }
 
 
 type Invalid
     = NoIncome
     | NoBills
+    | NoHistory
+    | NoGroup
 
 
 
 -- Select -------------------------------
 
 
-select : (Bool -> msg) -> Bool -> Element msg
-select onSelect selected =
+selectButton : (Bool -> msg) -> Bool -> Element msg
+selectButton onSelect selected =
     let
         color =
             if selected then

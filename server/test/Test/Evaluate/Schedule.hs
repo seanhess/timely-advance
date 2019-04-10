@@ -257,3 +257,7 @@ testSchedule = do
       schedule [parseDay "2019-01-05", parseDay "2019-01-20", parseDay "2019-02-05", parseDay "2019-02-19"] @?= Nothing
 
 
+    group "long lists" $ do
+      let days = [ parseDay "2019-03-20" , parseDay "2019-02-18" , parseDay "2019-01-19" , parseDay "2018-12-20" , parseDay "2018-11-20" , parseDay "2018-10-21" , parseDay "2018-09-21"]
+      test "should reject long list" $ do
+        schedule days @?= Nothing
