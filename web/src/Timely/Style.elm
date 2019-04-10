@@ -1,4 +1,4 @@
-module Timely.Style exposing (blue, box, button, dark, darkBlue, darkGreen, error, formPage, gray, green, header, info, lightBlue, lightRed, link, page, primary, red, secondary, section, space, success, white)
+module Timely.Style exposing (banner, blue, box, button, dark, darkBlue, darkGreen, error, formPage, gray, green, header, info, lightBlue, lightRed, link, page, primary, red, secondary, section, space, success, white)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -54,6 +54,7 @@ button : List (Attribute msg) -> List (Attribute msg)
 button styles =
     styles
         ++ [ paddingXY 32 16
+           , spacing 10
            , Border.rounded 3
            , width fill
            ]
@@ -91,6 +92,11 @@ formPage =
 header : List (Attribute msg)
 header =
     [ Region.heading 1, Font.size 36, alignLeft ]
+
+
+banner : List (Attribute msg)
+banner =
+    [ Region.heading 2, Font.size 28, alignLeft, Background.color gray, width fill, padding 10 ]
 
 
 error : Attribute msg

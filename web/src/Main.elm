@@ -10,6 +10,7 @@ import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Page.Account as Account
+import Page.Account.Budgets as Budgets
 import Page.Admin.Customer as Customer
 import Page.Admin.Sudo as Sudo
 import Page.Advance as Advance
@@ -51,6 +52,7 @@ type PageModel
     | Advance Advance.Model
     | Sudo Sudo.Model
     | Customer Customer.Model
+    | Budgets Budgets.Model
 
 
 init : flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -84,6 +86,7 @@ type Msg
     | OnAccount Account.Msg
     | OnSudo Sudo.Msg
     | OnCustomer Customer.Msg
+    | OnBudgets Budgets.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -132,6 +135,10 @@ update msg model =
         ( OnAdvance adv, Advance m ) ->
             Advance.update adv m
                 |> runUpdates (always Cmd.none) Advance OnAdvance model
+
+        ( OnBudgets set, Budgets m ) ->
+            Budgets.update set m
+                |> runUpdates (always Cmd.none) Budgets OnBudgets model
 
         ( OnSudo mg, Sudo m ) ->
             Sudo.update mg m
@@ -189,6 +196,10 @@ changeRouteTo key maybeRoute =
             Advance.init key a adv
                 |> initWith Advance OnAdvance
 
+        Just (Route.Account i Route.Budgets) ->
+            Budgets.init key i
+                |> initWith Budgets OnBudgets
+
         Just Route.Init ->
             Init.init key
                 |> initWith Init OnInit
@@ -231,6 +242,9 @@ view model =
 
                 Customer m ->
                     Element.map OnCustomer <| Customer.view m
+
+                Budgets m ->
+                    Element.map OnBudgets <| Budgets.view m
     in
     { title = "TODO: Title"
     , body = [ Element.layout [] (pageView model.page) ]

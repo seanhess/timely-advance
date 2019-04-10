@@ -11,11 +11,11 @@ import           Timely.Evaluate.Health.Transaction (Expense, Income, Transactio
 
 -- this is the information reported to the user
 data AccountHealth = AccountHealth
-  { balance  :: Money
-  , budgeted :: Abs Money
-  , income   :: Budget Income
+  { balance   :: Money
+  , budgeted  :: Abs Money
+  , income    :: Budget Income
 
-  , bills    :: [Bill]
+  , bills     :: [Bill]
 
   , paychecks :: [Transaction Income]
   } deriving (Show, Eq, Generic)
@@ -30,5 +30,3 @@ data Bill = Bill
   } deriving (Show, Eq, Generic)
 
 instance ToJSON Bill
-
-

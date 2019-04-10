@@ -1,4 +1,4 @@
-module Timely.Types.Transactions exposing (Group, History, Schedule(..), Transaction, decodeGroup, decodeHistory, decodeSchedule, decodeTransaction)
+module Timely.Types.Transactions exposing (Group, History, Schedule(..), TransRow, Transaction, decodeGroup, decodeHistory, decodeSchedule, decodeTransRow, decodeTransaction, formatBiweek, formatWeekday)
 
 import Json.Decode as Decode exposing (Decoder, at, bool, fail, field, int, list, nullable, string, succeed)
 import Json.Decode.Pipeline exposing (..)
@@ -23,11 +23,18 @@ type alias Group =
     }
 
 
-type alias Transaction =
+type alias TransRow =
     { transactionId : String
     , date : Date
     , category : String
     , pending : Bool
+    , amount : Money
+    , name : String
+    }
+
+
+type alias Transaction =
+    { date : Date
     , amount : Money
     , name : String
     }
@@ -65,13 +72,21 @@ type alias Day =
     Int
 
 
-decodeTransaction : Decoder Transaction
-decodeTransaction =
-    Decode.succeed Transaction
+decodeTransRow : Decoder TransRow
+decodeTransRow =
+    Decode.succeed TransRow
         |> required "transactionId" string
         |> required "date" decodeDate
         |> required "category" string
         |> required "pending" bool
+        |> required "amount" decodeMoney
+        |> required "name" string
+
+
+decodeTransaction : Decoder Transaction
+decodeTransaction =
+    Decode.succeed Transaction
+        |> required "date" decodeDate
         |> required "amount" decodeMoney
         |> required "name" string
 

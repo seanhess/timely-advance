@@ -10,7 +10,7 @@ import Time exposing (Month(..))
 import Timely.Types.AccountHealth exposing (AccountHealth, decodeAccountHealth)
 import Timely.Types.Date exposing (Date, decodeDate)
 import Timely.Types.Money exposing (Money, decodeMoney, encodeMoney, fromCents, toCents)
-import Timely.Types.Transactions exposing (History, Transaction, decodeHistory, decodeTransaction)
+import Timely.Types.Transactions exposing (History, TransRow, Transaction, decodeHistory, decodeTransRow, decodeTransaction)
 
 
 type Bank
@@ -373,9 +373,9 @@ getAdvances toMsg (Id a) =
     requestGET toMsg [ "", "v1", "accounts", a, "advances" ] (list decodeAdvance)
 
 
-getTransactions : (Result Error (List Transaction) -> msg) -> Id AccountId -> Cmd msg
+getTransactions : (Result Error (List TransRow) -> msg) -> Id AccountId -> Cmd msg
 getTransactions toMsg (Id a) =
-    requestGET toMsg [ "", "v1", "accounts", a, "transactions" ] (list decodeTransaction)
+    requestGET toMsg [ "", "v1", "accounts", a, "transactions" ] (list decodeTransRow)
 
 
 getTransactionHistory : (Result Error History -> msg) -> Id AccountId -> Cmd msg

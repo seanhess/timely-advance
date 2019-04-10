@@ -9,12 +9,12 @@ import Http exposing (Error)
 import Route
 import Time exposing (Zone)
 import Timely.Api as Api exposing (Account, AccountId, Advance, BankAccount, BankAccountType(..), Customer, Id, advanceIsActive, advanceIsCollected, advanceIsOffer, idValue)
-import Timely.Resource as Resource exposing (Resource(..), resource)
+import Timely.Resource as Resource exposing (Resource(..), resource, resource_)
 import Timely.Style as Style
 import Timely.Types.AccountHealth exposing (AccountHealth)
 import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money as Money exposing (formatMoney, fromCents, toCents)
-import Timely.Types.Transactions exposing (Transaction)
+import Timely.Types.Transactions exposing (TransRow)
 
 
 type alias Model =
@@ -22,7 +22,7 @@ type alias Model =
     , account : Resource Account
     , customer : Resource Customer
     , health : Resource AccountHealth
-    , transactions : Resource (List Transaction)
+    , transactions : Resource (List TransRow)
     , banks : Resource (List BankAccount)
     , advances : Resource (List Advance)
     , zone : Zone
@@ -34,7 +34,7 @@ type Msg
     | OnCustomer (Result Error Customer)
     | OnHealth (Result Error AccountHealth)
     | OnBanks (Result Error (List BankAccount))
-    | OnTransactions (Result Error (List Transaction))
+    | OnTransactions (Result Error (List TransRow))
     | OnAdvances (Result Error (List Advance))
     | OnTimeZone Time.Zone
     | Logout
@@ -140,8 +140,10 @@ view model =
             , resource (offersView model.zone model.accountId) offers
             ]
         , column Style.section
-            [ resource accountHealth model.health
-            , resource identity
+            [ resource_ (accountHealthMissing model.accountId) accountHealth model.health
+            , resource_
+                (\_ -> Element.none)
+                identity
                 (Resource.pure accountInfo
                     |> Resource.apply model.account
                     |> Resource.apply model.health
@@ -187,6 +189,26 @@ accountHealth health =
         ]
 
 
+accountHealthMissing : Id AccountId -> Http.Error -> Element Msg
+accountHealthMissing id _ =
+    link (Style.button Style.primary)
+        { url = Route.url (Route.Account id Route.Budgets)
+        , label =
+            Element.column [ spacing 10 ]
+                [ el [ Font.bold ] (text "Finish Setup")
+                , paragraph [] [ text "Tap here to add your income and identify your bills" ]
+                ]
+        }
+
+
+
+-- Element.column
+--     (Style.button Style.primary)
+--     [ el [ Font.bold ] (text "Account Health")
+--     ]
+--     [
+
+
 accountInfo : Account -> AccountHealth -> List Advance -> Element Msg
 accountInfo account health advances =
     wrappedRow [ spacing 20 ]
@@ -229,7 +251,7 @@ customerView customer =
         ]
 
 
-transTable : Time.Zone -> List Transaction -> Element Msg
+transTable : Time.Zone -> List TransRow -> Element Msg
 transTable zone ts =
     Element.table [ spacing 8 ]
         { data = ts
