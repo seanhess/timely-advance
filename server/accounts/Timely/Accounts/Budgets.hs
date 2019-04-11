@@ -10,7 +10,6 @@
 {-# LANGUAGE OverloadedStrings          #-}
 module Timely.Accounts.Budgets where
 
-import qualified Data.Aeson as Aeson
 import           Control.Effects          (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
 import           Control.Monad.Selda      (Selda, deleteFrom, insert, query, tryCreateTable)
 import           Data.Maybe               (listToMaybe)
@@ -99,7 +98,6 @@ budget = table "accounts_budget"
 
 saveBudgetsOfType :: Selda m => BudgetType -> Guid Account -> [Budget a] -> m ()
 saveBudgetsOfType typ a bs = do
-  liftIO $ print ("Budgets", bs, Aeson.encode (bs))
   deleteFrom budget
     (\b -> b ! #accountId .== literal a .&& b ! #budgetType .== literal typ)
   insert budget $ map (budgetRow a typ) bs
