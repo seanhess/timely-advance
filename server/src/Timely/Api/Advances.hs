@@ -13,7 +13,7 @@ import           Control.Monad          (when)
 import           Data.Model.Guid        as Guid
 import           Data.Model.Money       (Money)
 import           Servant                (ServantErr (..), err400)
-import           Timely.Accounts        (Accounts, Account)
+import           Timely.Accounts        (Account, Accounts)
 import qualified Timely.Accounts        as Accounts
 import           Timely.Advances        (Advance (..), Advances (..))
 import qualified Timely.Advances        as Advances

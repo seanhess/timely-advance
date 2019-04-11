@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Timely.Types.Health where
+module Timely.Types.AccountHealth where
 
 import           Data.Aeson                         (ToJSON)
 import           Data.Model.Money                   (Money)

@@ -26,26 +26,25 @@ import           Prelude                 hiding (id)
 import           Servant.Client          (BaseUrl)
 import qualified Servant.Client          as Servant
 import           Timely.Accounts.Types   (Account (..))
-import qualified Timely.Accounts.Types   as Account
 import qualified Twilio                  as Twilio
 import qualified Twilio.Messages         as Twilio
 
 
 data Notify m = NotifyMethods
-  { _send :: forall a. GuidPrefix a => Account -> Message a -> m ()
+  { _send :: forall a. GuidPrefix a => Guid Account -> Valid Phone -> Message a -> m ()
   }
 
 instance Effect Notify where
   liftThrough methods = NotifyMethods
-    (\a m -> lift (_send methods a m))
+    (\a p m -> lift (_send methods a p m))
 
-  mergeContext mm = NotifyMethods
-    (\i t -> do
-        m <- mm
-        _send m i t)
+  mergeContext nm = NotifyMethods
+    (\a p m -> do
+        n <- nm
+        _send n a p m)
 
 
-send :: (MonadEffect Notify m, GuidPrefix a) => Account -> Message a -> m ()
+send :: (MonadEffect Notify m, GuidPrefix a) => Guid Account -> Valid Phone -> Message a -> m ()
 send = _send effect
 
 
@@ -62,13 +61,13 @@ implementIO = implement $
 
 sendMessage
   :: (MonadIO m, MonadConfig Config m, GuidPrefix a)
-  => Account -> Message a -> m ()
-sendMessage account message = do
+  => Guid Account -> Valid Phone -> Message a -> m ()
+sendMessage accountId toPhone message = do
   Config { fromPhone, accountSid, authToken, appBaseUrl } <- config
   let (Valid from) = fromPhone
-      (Valid to)   = Account.phone (account :: Account)
+      (Valid to)   = toPhone
   liftIO $ Twilio.runTwilio (accountSid, authToken) $ do
-    Twilio.post $ Twilio.PostMessage ("+1" <> to) ("+1" <> from) (body appBaseUrl (accountId account) message) Nothing
+    Twilio.post $ Twilio.PostMessage ("+1" <> to) ("+1" <> from) (body appBaseUrl accountId message) Nothing
   pure ()
 
 

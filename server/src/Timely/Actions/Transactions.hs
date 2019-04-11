@@ -2,7 +2,7 @@
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns        #-}
-module Timely.Api.Transactions where
+module Timely.Actions.Transactions where
 
 
 import           Control.Effects (MonadEffects)

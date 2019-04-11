@@ -8,7 +8,7 @@ import           Data.Model.Money                  (Money (..))
 import           Test.Dates                        (parseDay)
 
 import           Timely.Accounts.Types.Transaction
-import           Timely.Api.Transactions           (toExpense, toIncome)
+import           Timely.Actions.Transactions       (toExpense, toIncome)
 
 
 transaction = fromJust $ toExpense $

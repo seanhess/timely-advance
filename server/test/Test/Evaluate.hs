@@ -3,6 +3,8 @@ module Test.Evaluate where
 
 import           Data.Model.Id            (Id (..))
 import           Data.Model.Money         (Money (..))
+import qualified Data.Model.Money         as Money
+import           Data.Number.Abs          (absolute)
 import           Data.Time.Calendar       (Day)
 import qualified Data.Time.Calendar       as Day
 import qualified Data.Time.Clock          as Time
@@ -103,23 +105,23 @@ testOffer = do
         let health = Projection {expenses = Money 20000, available = Money 11000}
             offer = parseTime "2019-02-01T20:02:46"
             now   = parseTime "2019-02-01T20:04:10"
-        Offer.isNeeded (Just $ advance offer) [] health now @?= False
+        Offer.isNeeded (Just $ advance offer) [] health now @?= Nothing
 
       test "should not advance with old offer" $ do
         let health = Projection {expenses = Money 20000, available = Money 11000}
             now   = parseTime "2019-02-04T20:04:10"
             offer = parseTime "2019-02-01T20:04:10"
-        Offer.isNeeded (Just $ advance offer) [] health now @?= False
+        Offer.isNeeded (Just $ advance offer) [] health now @?= Nothing
 
       test "should advance with no offers" $ do
         let health = Projection {expenses = Money 20000, available = Money 11000}
             now = parseTime "2019-02-01T20:04:10"
-        Offer.isNeeded Nothing [] health now @?= True
+        Offer.isNeeded Nothing [] health now @?= Just (absolute (Money.fromFloat 90))
 
       test "should not advance if sufficient funds" $ do
         let health = Projection {expenses = Money 20000, available = Money 110000000}
             now = parseTime "2019-02-01T20:04:10"
-        Offer.isNeeded Nothing [] health now @?= False
+        Offer.isNeeded Nothing [] health now @?= Nothing
 
 
 

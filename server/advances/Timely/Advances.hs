@@ -25,6 +25,7 @@ import           Control.Monad.Selda      (Selda)
 import           Data.Model.Guid          as Guid
 import           Data.Model.Id            (Id)
 import           Data.Model.Money         as Money
+import           Data.Number.Abs          (Abs)
 import           Data.Time.Calendar       (Day)
 import           GHC.Generics             (Generic)
 import           Timely.Accounts.Types    (Account)
@@ -42,7 +43,7 @@ import           Timely.Transfers.Account (TransferAccount)
 
 
 data Advances m = AdvancesMethods
-    { _create        :: Guid Account -> Id TransferAccount -> Money -> Day -> m Advance
+    { _create        :: Guid Account -> Id TransferAccount -> Abs Money -> Day -> m Advance
 
     , _findOffer     :: Guid Account -> m (Maybe Advance)
     , _findActive    :: Guid Account -> m [Advance]
@@ -57,7 +58,7 @@ data Advances m = AdvancesMethods
 instance Effect Advances
 
 
-create        :: MonadEffect Advances m => Guid Account -> Id TransferAccount -> Money -> Day -> m Advance
+create        :: MonadEffect Advances m => Guid Account -> Id TransferAccount -> Abs Money -> Day -> m Advance
 
 findOffer     :: MonadEffect Advances m => Guid Account -> m (Maybe Advance)
 findActive    :: MonadEffect Advances m => Guid Account -> m [Advance]

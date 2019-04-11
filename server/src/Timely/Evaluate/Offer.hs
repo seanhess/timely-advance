@@ -3,6 +3,7 @@ module Timely.Evaluate.Offer where
 
 import qualified Data.List              as List
 import qualified Data.Maybe             as Maybe
+import Data.Number.Abs (Abs, absolute)
 import           Data.Model.Money       as Money
 import           Data.Time.Clock        (NominalDiffTime, UTCTime (..))
 import qualified Data.Time.Clock        as Time
@@ -19,11 +20,12 @@ data Projection = Projection
   }
 
 
-isNeeded :: Maybe Advance -> [Advance] -> Projection -> UTCTime -> Bool
+isNeeded :: Maybe Advance -> [Advance] -> Projection -> UTCTime -> Maybe (Abs Money)
 isNeeded offer active health today
-  | isAnyRecent today $ advanceTimes offer active = False
-  | Maybe.isJust offer = False
-  | otherwise = available health < expenses health
+  | isAnyRecent today $ advanceTimes offer active = Nothing
+  | Maybe.isJust offer = Nothing
+  | available health > expenses health = Nothing
+  | otherwise = Just $ absolute $ expenses health - available health
 
 
 -- triggerAmount :: [Advance] -> Money
@@ -49,5 +51,3 @@ intervalRecent :: NominalDiffTime
 intervalRecent = 1 * Time.nominalDay
 
 
-amount :: Money
-amount = Money.fromFloat 200.00

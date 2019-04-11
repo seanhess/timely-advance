@@ -3,7 +3,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE NamedFieldPuns        #-}
-module Timely.Api.AccountHealth where
+module Timely.Actions.AccountHealth where
 
 import           Control.Effects                    (MonadEffect, MonadEffects)
 import           Control.Effects.Signal             (Throw, throwSignal)
@@ -17,17 +17,18 @@ import           Data.Number.Abs                    (Abs (value), absolute)
 import           Data.Time.Calendar                 (Day, addDays)
 import           Timely.Accounts                    (Accounts)
 import qualified Timely.Accounts                    as Accounts
-import           Timely.Accounts.Budgets            as Budgets
-import           Timely.Accounts.Types              (Account)
+import           Timely.Accounts.Budgets            (Budgets)
+import qualified Timely.Accounts.Budgets            as Budgets
+import           Timely.Accounts.Types              (Account, BankAccount, TransactionRow)
 import qualified Timely.Accounts.Types.BankAccount  as BankAccount
-import           Timely.Api.Transactions            (toIncome)
-import qualified Timely.Api.Transactions            as Transactions
+import           Timely.Actions.Transactions        (toIncome)
+import qualified Timely.Actions.Transactions        as Transactions
 import           Timely.Evaluate.Health             (Budget, Expense, Income)
 import qualified Timely.Evaluate.Health             as Health
 import           Timely.Evaluate.Health.Budget      (Budget (..))
 import           Timely.Evaluate.Health.Transaction (Transaction (..))
 import qualified Timely.Evaluate.Schedule           as Schedule
-import           Timely.Types.Health                (AccountHealth (..), Bill(..))
+import           Timely.Types.AccountHealth         (AccountHealth (..), Bill (..))
 import           Timely.Types.Update                (Error (..))
 
 
@@ -49,16 +50,31 @@ analyze i = do
     now <- Time.currentDate
     inc <- budgetIncome i
     exs <- budgetExpenses i
-    bal <- bankBalance i
-    tns <- mapMaybe toIncome <$> Transactions.recent i
+    tns <- Transactions.recent i
+    chk <- loadChecking i
+    pure $ analyzeWith now chk inc exs tns
 
-    let bills = map (bill now tns inc) exs
+  where
+    budgetIncome i   = Budgets.income i   >>= required (NoIncome i)
+    budgetExpenses i = Budgets.expenses i
+    loadChecking i = do
+      banks <- Accounts.findBanks i
+      List.find BankAccount.isChecking banks
+          & required (NoChecking i)
+
+
+
+analyzeWith :: Day -> BankAccount -> Budget Income -> [Budget Expense] -> [TransactionRow] -> AccountHealth
+analyzeWith now check incm exps trans =
+    let bal = BankAccount.balance check
+        tns = mapMaybe toIncome trans
+        bills = map (bill now tns incm) exps
         checks = filter (isRecent now) tns
         budgeted = absolute $ sum (map (value . saved) bills)
 
-    pure $ AccountHealth
+    in AccountHealth
       { balance = bal
-      , income = inc
+      , income = incm
       , budgeted = budgeted
       , spending = bal - value budgeted
       , bills = bills
@@ -66,16 +82,7 @@ analyze i = do
       }
 
   where
-    budgetIncome i   = Budgets.income i   >>= required (MissingIncome i)
-    budgetExpenses i = Budgets.expenses i >>= required' Just (MissingExpenses i)
     isRecent now t = date t >= addDays (-30) now
-    bankBalance i = do
-      banks <- Accounts.findBanks i
-      check <- List.find BankAccount.isChecking banks
-                & required (MissingChecking i)
-      pure $ BankAccount.balance check
-
-
 
 
 bill :: Day -> [Transaction Income] -> Budget Income -> Budget Expense -> Bill

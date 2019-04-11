@@ -9,9 +9,8 @@ import           GHC.Generics          (Generic)
 import           Timely.Accounts.Types (Account)
 
 data Error
-  = MissingIncome   (Guid Account)
-  | MissingExpenses (Guid Account)
-  | MissingChecking (Guid Account)
+  = NoIncome   (Guid Account)
+  | NoChecking (Guid Account)
   deriving (Show, Eq, Generic)
 
 instance ToJSON Error where

@@ -16,6 +16,7 @@ import qualified Data.Maybe               as Maybe
 import           Data.Model.Guid          as Guid
 import           Data.Model.Id            (Id)
 import           Data.Model.Money         as Money
+import           Data.Number.Abs          (Abs(value))
 import           Data.Ord                 (Down (..), comparing)
 import           Data.Time.Calendar       (Day)
 import qualified Data.Time.Clock          as Time
@@ -51,7 +52,7 @@ advances =
       [ #advanceId :- primary ]
 
 
-create :: Selda m => Guid Account -> Id TransferAccount -> Money -> Day -> m Advance
+create :: Selda m => Guid Account -> Id TransferAccount -> Abs Money -> Day -> m Advance
 create i tid a d = do
     time <- liftIO $ Time.getCurrentTime
     id <- Guid.randomId
@@ -59,7 +60,7 @@ create i tid a d = do
                     { advanceId = id
                     , accountId = i
                     , transferId = tid
-                    , offer = a
+                    , offer = value a
                     , amount = Money.fromFloat 0
                     , due = d
                     , offered = time
