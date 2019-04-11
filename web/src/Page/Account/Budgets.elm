@@ -20,7 +20,7 @@ import Timely.Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types.AccountHealth exposing (Budget)
 import Timely.Types.Money exposing (formatMoney)
-import Timely.Types.Transactions exposing (Group, History, Schedule(..), formatBiweek, formatWeekday)
+import Timely.Types.Transactions exposing (Group, History, Schedule(..), formatBiweek, formatDay, formatWeekday)
 import Validate exposing (Validator, validate)
 
 
@@ -41,6 +41,7 @@ type alias Model =
 type Msg
     = OnBack
     | OnHistory (Result Http.Error History)
+    | Ignore (Result Http.Error String)
     | OnIncome Group Bool
     | OnBill Group Bool
     | OnEdit Group
@@ -67,6 +68,9 @@ update msg model =
         OnBack ->
             updates model
                 |> command (Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain)
+
+        Ignore _ ->
+            updates model
 
         OnHistory (Err e) ->
             updates model
@@ -104,10 +108,10 @@ update msg model =
                     updates model
 
                 Ok ( inc, bs ) ->
-                    Debug.log (Debug.toString ( inc, bs ))
-                        (updates model
-                            |> command (Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain)
-                        )
+                    updates model
+                        |> command (Api.putSetIncome Ignore model.accountId inc)
+                        |> command (Api.putSetExpenses Ignore model.accountId bs)
+                        |> command (Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain)
 
 
 view : Model -> Element Msg
@@ -130,15 +134,61 @@ viewEditing model group =
                 ]
             ]
         , column Style.section
-            [ text (Maybe.withDefault "None" <| Maybe.map formatSchedule group.schedule)
-            , button [] { onPress = Just (OnEdit { group | schedule = Just <| Monthly { date = 1 } }), label = text "Monthly 1" }
-            , button [] { onPress = Just (OnEdit { group | schedule = Just <| Monthly { date = 5 } }), label = text "Monthly 5" }
-            , button [] { onPress = Just (OnEdit { group | schedule = Just <| Weekly { weekday = Mon } }), label = text "Weekly Mon" }
+            [ el [ Font.bold ] (text "Schedule")
+            , el [] (text (Maybe.withDefault "None" <| Maybe.map formatSchedule group.schedule))
+            , selectSchedule group
             , button
                 (Style.button Style.primary)
                 { onPress = Just (OnEditSave group), label = text "Save" }
             ]
         ]
+
+
+selectSchedule : Group -> Element Msg
+selectSchedule group =
+    column [ spacing 10 ]
+        [ row [ spacing 10 ]
+            [ button (Style.button Style.secondary) { onPress = Just (OnEdit { group | schedule = Just <| Monthly { date = 1 } }), label = text "Monthly" }
+            , button (Style.button Style.secondary) { onPress = Just (OnEdit { group | schedule = Just <| Weekly { weekday = Mon } }), label = text "Weekly" }
+            ]
+        , case group.schedule of
+            Just (Monthly _) ->
+                wrappedRow [ spacing 2 ]
+                    (List.map
+                        (selectDate (\n -> OnEdit { group | schedule = Just <| Monthly { date = n } }))
+                        (List.range 1 28)
+                    )
+
+            Just (Weekly _) ->
+                wrappedRow [ spacing 2 ]
+                    (List.map
+                        (selectWeekday (\w -> OnEdit { group | schedule = Just <| Weekly { weekday = w } }))
+                        [ Sun, Mon, Tue, Wed, Thu, Fri, Sat ]
+                    )
+
+            _ ->
+                none
+        ]
+
+
+
+-- (OnEdit { group | schedule = Just <| Monthly { date = n
+
+
+selectDate : (Int -> Msg) -> Int -> Element Msg
+selectDate onSelect n =
+    button Style.option
+        { onPress = Just (onSelect n)
+        , label = el [ centerX ] (text (String.fromInt n))
+        }
+
+
+selectWeekday : (Weekday -> Msg) -> Weekday -> Element Msg
+selectWeekday onSelect w =
+    button Style.option
+        { onPress = Just (onSelect w)
+        , label = el [ centerX ] (text (formatWeekday w))
+        }
 
 
 viewMain : Model -> Element Msg
@@ -219,10 +269,6 @@ viewSchedule ms =
 
 formatSchedule : Schedule -> String
 formatSchedule schedule =
-    let
-        formatDay n =
-            String.fromInt n ++ "th"
-    in
     case schedule of
         Weekly info ->
             "Weekly on " ++ formatWeekday info.weekday

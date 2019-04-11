@@ -201,33 +201,31 @@ accountHealthMissing id _ =
         }
 
 
-
--- Element.column
---     (Style.button Style.primary)
---     [ el [ Font.bold ] (text "Account Health")
---     ]
---     [
-
-
 accountInfo : Account -> AccountHealth -> List Advance -> Element Msg
 accountInfo account health advances =
-    wrappedRow [ spacing 20 ]
-        [ column [ spacing 4 ]
-            [ el [ Font.bold ] (text "Balance")
-            , el [ Font.color Style.darkGreen ] (text <| formatMoney health.balance)
+    column [ spacing 20 ]
+        [ wrappedRow [ spacing 20 ]
+            [ column [ spacing 4 ]
+                [ el [ Font.bold ] (text "Balance")
+                , el [ Font.color Style.darkGreen ] (text <| formatMoney health.balance)
+                ]
+            , column [ spacing 4 ]
+                [ el [ Font.bold ] (text "Future Expenses")
+                , el [ Font.color Style.red ] (text <| formatMoney health.budgeted)
+                ]
+            , column [ spacing 4 ]
+                [ el [ Font.bold ] (text "Owed")
+                , el [] (text <| (formatMoney <| Money.total <| List.map .amount advances))
+                ]
+            , column [ spacing 4 ]
+                [ el [ Font.bold ] (text "Max Credit")
+                , el [] (text <| formatMoney account.credit)
+                ]
             ]
-        , column [ spacing 4 ]
-            [ el [ Font.bold ] (text "Future Expenses")
-            , el [ Font.color Style.red ] (text <| formatMoney health.budgeted)
-            ]
-        , column [ spacing 4 ]
-            [ el [ Font.bold ] (text "Owed")
-            , el [] (text <| (formatMoney <| Money.total <| List.map .amount advances))
-            ]
-        , column [ spacing 4 ]
-            [ el [ Font.bold ] (text "Max Credit")
-            , el [] (text <| formatMoney account.credit)
-            ]
+        , link [ Style.link ]
+            { url = Route.url (Route.Account account.accountId Route.Budgets)
+            , label = text "Edit Income and Bills"
+            }
         ]
 
 

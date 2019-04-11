@@ -9,6 +9,7 @@ import qualified Test.Advances
 import qualified Test.Dwolla
 import qualified Test.Notify
 import qualified Test.Bank
+import qualified Test.Field
 
 
 
@@ -26,5 +27,6 @@ allTests = do
     group "Dwolla"         Test.Dwolla.tests
     group "Notify"         Test.Notify.tests
     group "Bank"           Test.Bank.tests
+    group "Field"          Test.Field.tests
 
 

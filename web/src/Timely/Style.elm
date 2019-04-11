@@ -1,4 +1,4 @@
-module Timely.Style exposing (banner, blue, box, button, dark, darkBlue, darkGreen, error, formPage, gray, green, header, info, lightBlue, lightRed, link, page, primary, red, secondary, section, space, success, white)
+module Timely.Style exposing (banner, blue, box, button, dark, darkBlue, darkGreen, error, formPage, gray, green, header, info, lightBlue, lightRed, link, option, page, primary, red, secondary, section, space, success, white)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -79,6 +79,17 @@ success =
 secondary : List (Attribute msg)
 secondary =
     [ Background.color gray
+    , Font.color dark
+    , Border.color gray
+    ]
+
+
+option : List (Attribute msg)
+option =
+    [ padding 8
+    , spacing 10
+    , Border.rounded 3
+    , Background.color gray
     , Font.color dark
     , Border.color gray
     ]

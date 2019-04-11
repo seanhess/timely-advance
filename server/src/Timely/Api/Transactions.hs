@@ -5,13 +5,12 @@
 module Timely.Api.Transactions where
 
 
-import Data.Time.Calendar (Day)
-import Control.Effects (MonadEffects)
+import           Control.Effects (MonadEffects)
 import           Data.Aeson                         (ToJSON)
 import           Data.Model.Guid                    (Guid)
 import qualified Control.Effects.Time as Time
-import Control.Effects.Time (Time)
-import Data.Maybe (mapMaybe)
+import           Control.Effects.Time (Time)
+import           Data.Maybe (mapMaybe)
 import           Data.Number.Abs                    (absolute)
 import           GHC.Generics                       (Generic)
 import           Timely.Accounts                    (Account, Accounts, TransactionRow(..))

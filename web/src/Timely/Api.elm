@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountCustomer, AccountId(..), AccountInfo, Advance, AdvanceId(..), Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Onboarding(..), Phone, SSN(..), Session, Token, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getCustomers, getTransactionHistory, getTransactions, idValue, postAdvanceAccept, postApplications, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
+module Timely.Api exposing (Account, AccountCustomer, AccountId(..), AccountInfo, Advance, AdvanceId(..), Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Onboarding(..), Phone, SSN(..), Session, Token, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getCustomers, getTransactionHistory, getTransactions, idValue, postAdvanceAccept, postApplications, putSetExpenses, putSetIncome, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
 
 import Http exposing (Error, Expect)
 import Json.Decode as Decode exposing (Decoder, bool, int, list, nullable, string)
@@ -7,7 +7,7 @@ import Json.Encode as Encode
 import String
 import Task
 import Time exposing (Month(..))
-import Timely.Types.AccountHealth exposing (AccountHealth, decodeAccountHealth)
+import Timely.Types.AccountHealth exposing (AccountHealth, Budget, decodeAccountHealth, encodeBudget)
 import Timely.Types.Date exposing (Date, decodeDate)
 import Timely.Types.Money exposing (Money, decodeMoney, encodeMoney, fromCents, toCents)
 import Timely.Types.Transactions exposing (History, TransRow, Transaction, decodeHistory, decodeTransRow, decodeTransaction)
@@ -328,6 +328,11 @@ requestPOST onMsg path body decode =
     request "POST" (Http.jsonBody body) onMsg path decode
 
 
+requestPUT : (Result Error a -> msg) -> List String -> Encode.Value -> Decoder a -> Cmd msg
+requestPUT onMsg path body decode =
+    request "PUT" (Http.jsonBody body) onMsg path decode
+
+
 postApplications : (Result Error Application -> msg) -> AccountInfo -> Cmd msg
 postApplications toMsg body =
     requestPOST toMsg [ "", "v1", "applications" ] (encodeAccountInfo body) decodeApplication
@@ -381,6 +386,16 @@ getTransactions toMsg (Id a) =
 getTransactionHistory : (Result Error History -> msg) -> Id AccountId -> Cmd msg
 getTransactionHistory toMsg (Id a) =
     requestGET toMsg [ "", "v1", "accounts", a, "transactions", "history" ] decodeHistory
+
+
+putSetIncome : (Result Error String -> msg) -> Id AccountId -> Budget -> Cmd msg
+putSetIncome toMsg (Id a) b =
+    requestPUT toMsg [ "", "v1", "accounts", a, "income" ] (encodeBudget b) string
+
+
+putSetExpenses : (Result Error String -> msg) -> Id AccountId -> List Budget -> Cmd msg
+putSetExpenses toMsg (Id a) bs =
+    requestPUT toMsg [ "", "v1", "accounts", a, "expenses" ] (Encode.list encodeBudget bs) string
 
 
 postAdvanceAccept : (Result Error Advance -> msg) -> Id AccountId -> Id AdvanceId -> Money -> Cmd msg

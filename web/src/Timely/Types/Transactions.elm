@@ -1,4 +1,4 @@
-module Timely.Types.Transactions exposing (Group, History, Schedule(..), TransRow, Transaction, decodeGroup, decodeHistory, decodeSchedule, decodeTransRow, decodeTransaction, formatBiweek, formatWeekday)
+module Timely.Types.Transactions exposing (Group, History, Schedule(..), TransRow, Transaction, decodeGroup, decodeHistory, decodeSchedule, decodeTransRow, decodeTransaction, encodeSchedule, formatBiweek, formatDay, formatDaySuffix, formatWeekday)
 
 import Json.Decode as Decode exposing (Decoder, at, bool, fail, field, int, list, nullable, string, succeed)
 import Json.Decode.Pipeline exposing (..)
@@ -290,3 +290,19 @@ formatWeekday wd =
 
         Sun ->
             "Sunday"
+
+
+formatDay n =
+    String.fromInt n ++ formatDaySuffix n
+
+
+formatDaySuffix n =
+    case n of
+        1 ->
+            "st"
+
+        2 ->
+            "nd"
+
+        _ ->
+            "th"

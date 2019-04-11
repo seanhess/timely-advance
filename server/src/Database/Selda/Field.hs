@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Database.Selda.Field where
 
 import           Data.Aeson              (FromJSON, ToJSON)
@@ -9,10 +10,11 @@ import           Database.Selda.SqlType  (Lit (..), SqlType (..), SqlTypeRep (..
 
 -- stores are parses things as JSON
 newtype Field a = Field { field :: a }
-  deriving (Show, Eq)
+  deriving (Show, Eq, ToJSON, FromJSON)
+
 
 instance (ToJSON a, FromJSON a, Typeable a) => SqlType (Field a) where
-    mkLit (Field a) =  LCustom $ mkLit $ Aeson.encode a
+    mkLit (Field a) =  LCustom $ mkLit (cs (Aeson.encode a) :: Text)
     sqlType _ = TText
     fromSql (SqlString x) =
       case Aeson.eitherDecode (cs x) of

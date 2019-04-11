@@ -1,12 +1,12 @@
-module Timely.Types.AccountHealth exposing (AccountHealth, Bill, Budget, decodeAccountHealth)
+module Timely.Types.AccountHealth exposing (AccountHealth, Bill, Budget, decodeAccountHealth, encodeBudget)
 
 import Json.Decode as Decode exposing (Decoder, at, bool, fail, field, int, list, nullable, string, succeed)
 import Json.Decode.Pipeline exposing (..)
 import Json.Encode as Encode exposing (Value)
 import Time exposing (Weekday(..))
 import Timely.Types.Date exposing (Date, decodeDate)
-import Timely.Types.Money exposing (Money, decodeMoney)
-import Timely.Types.Transactions exposing (Schedule, Transaction, decodeSchedule, decodeTransaction)
+import Timely.Types.Money exposing (Money, decodeMoney, encodeMoney)
+import Timely.Types.Transactions exposing (Schedule, Transaction, decodeSchedule, decodeTransaction, encodeSchedule)
 
 
 type alias AccountHealth =
@@ -56,3 +56,12 @@ decodeBill =
         |> required "saved" decodeMoney
         |> required "next" decodeDate
         |> required "budget" decodeBudget
+
+
+encodeBudget : Budget -> Value
+encodeBudget b =
+    Encode.object
+        [ ( "name", Encode.string b.name )
+        , ( "schedule", encodeSchedule b.schedule )
+        , ( "amount", encodeMoney b.amount )
+        ]
