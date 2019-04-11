@@ -35,6 +35,8 @@ type alias Model =
     , income : Selection Group
     , bills : Selection Group
     , editing : Maybe Group
+    , savedBills : Bool
+    , savedIncome : Bool
     }
 
 
@@ -48,6 +50,8 @@ type Msg
     | OnEditSave Group
     | OnEditClose
     | Save
+    | OnSavedIncome (Result Http.Error String)
+    | OnSavedBills (Result Http.Error String)
 
 
 init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
@@ -57,6 +61,8 @@ init key id =
       , income = Selection.fromList []
       , bills = Selection.fromList []
       , editing = Nothing
+      , savedBills = False
+      , savedIncome = False
       }
     , Api.getTransactionHistory OnHistory id
     )
@@ -64,10 +70,21 @@ init key id =
 
 update : Msg -> Model -> Updates Model Msg ()
 update msg model =
+    let
+        goAccount =
+            Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain
+
+        goAccountIfSaved mod =
+            if mod.savedBills && mod.savedIncome then
+                updates mod |> command goAccount
+
+            else
+                updates mod
+    in
     case msg of
         OnBack ->
             updates model
-                |> command (Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain)
+                |> command goAccount
 
         Ignore _ ->
             updates model
@@ -109,9 +126,20 @@ update msg model =
 
                 Ok ( inc, bs ) ->
                     updates model
-                        |> command (Api.putSetIncome Ignore model.accountId inc)
-                        |> command (Api.putSetExpenses Ignore model.accountId bs)
-                        |> command (Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain)
+                        |> command (Api.putSetIncome OnSavedIncome model.accountId inc)
+                        |> command (Api.putSetExpenses OnSavedBills model.accountId bs)
+
+        OnSavedIncome _ ->
+            goAccountIfSaved { model | savedIncome = True }
+
+        OnSavedBills _ ->
+            goAccountIfSaved { model | savedBills = True }
+
+
+
+-- we need to wait until both are finished
+-- then we can go
+-- |> command (Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain)
 
 
 view : Model -> Element Msg
