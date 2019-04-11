@@ -11,38 +11,14 @@ import           Test.Tasty.Monad
 import           Timely.Accounts.Types   as Account (Account (..))
 import           Timely.Advances         as Advance (Advance (..))
 import qualified Timely.Advances.Collect as Collect
-import qualified Timely.Advances.Credit  as Credit
 import qualified Timely.Advances.Store   as Store
 
 tests :: Tests ()
 tests = do
     group "advances" testMain
     group "collect" testCollect
-    group "credit" testCredit
 
 
-
-testCredit :: Tests ()
-testCredit = do
-    group "isEnough" $ do
-      let account200 = sampleAccount { credit = Money.fromFloat 200.00 }
-
-      test "should be enough if less than limit" $ do
-        Credit.isEnough (Money.fromFloat 100.00) account200 [] @?= True
-
-      test "should NOT be enough if MORE than limit" $ do
-        Credit.isEnough (Money.fromFloat 250.00) account200 [] @?= False
-
-      test "should be enough if equal limit" $ do
-        Credit.isEnough (Money.fromFloat 200.00) account200 [] @?= True
-
-      test "should not be enough if advances reduce credit" $ do
-        let advance = sample { amount = Money.fromFloat 100.00 }
-        Credit.isEnough (Money.fromFloat 150.00) account200 [advance] @?= False
-
-      test "should be enough if advances leave a little credit" $ do
-        let advance = sample { amount = Money.fromFloat 50.00 }
-        Credit.isEnough (Money.fromFloat 150.00) account200 [advance] @?= True
 
 
 

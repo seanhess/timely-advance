@@ -17,7 +17,7 @@ import           Timely.Accounts        (Account, Accounts)
 import qualified Timely.Accounts        as Accounts
 import           Timely.Advances        (Advance (..), Advances (..))
 import qualified Timely.Advances        as Advances
-import qualified Timely.Advances.Credit as Credit
+import qualified Timely.Evaluate.Offer as Offer
 import           Timely.Api.Combinators (notFound)
 import           Timely.Api.Types       as Types (Amount (..))
 import qualified Timely.Events          as Events
@@ -47,5 +47,5 @@ checkCredit a amount = do
   account <- Accounts.find a >>= notFound
   advances <- Advances.findActive a
 
-  when (not $ Credit.isEnough amount account advances) $ do
+  when (not $ Offer.isEnough amount (Accounts.credit account) advances) $ do
     throwSignal $ err400 { errBody = "Insufficient Credit" }

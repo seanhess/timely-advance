@@ -13,6 +13,7 @@ import           Control.Effects.Signal            (Throw, throwSignal)
 import qualified Control.Effects.Signal            as Signal
 import           Control.Effects.Time              (Time, UTCTime)
 import qualified Control.Effects.Time              as Time
+import           Control.Monad                     (when)
 import           Control.Monad.Catch               (MonadThrow (..))
 import           Data.Function                     ((&))
 import qualified Data.List                         as List
@@ -37,8 +38,9 @@ import qualified Timely.Advances                   as Advances
 import qualified Timely.App                        as App
 import           Timely.Bank                       (Access, Banks, Token)
 import qualified Timely.Bank                       as Bank
-import           Timely.Evaluate.Health            (Expense, Income)
+import           Timely.Evaluate.Health            (Income)
 import           Timely.Evaluate.Health.Budget     (Budget (..))
+import           Timely.Evaluate.Offer             (Projection(..))
 import qualified Timely.Evaluate.Offer             as Offer
 import qualified Timely.Evaluate.Schedule          as Schedule
 import           Timely.Events                     as Events
@@ -81,36 +83,20 @@ handler account = do
 accountUpdate
   :: ( MonadEffects '[Time, Accounts, Log, Banks, Advances, Notify, Throw Error, Budgets] m)
   => Account -> m ()
-accountUpdate account@(Account{ accountId, bankToken, transferId, phone }) = do
+accountUpdate account@(Account{ accountId, bankToken }) = do
     now    <- Time.currentTime
     today  <- Time.currentDate
 
     check  <- bankBalances accountId bankToken now
     trans  <- updateTransactions accountId bankToken (bankAccountId check) today
 
-    (inc, exs) <- loadBudgets accountId
+    inc    <- Budgets.income accountId >>= require (NoIncome accountId)
+    exs    <- Budgets.expenses accountId
 
     let health = AccountHealth.analyzeWith today check inc exs trans
 
-    offer <- checkAdvance account health now
-    case offer of
-      Just amount -> do
-        offerAdvance today accountId transferId phone inc amount
-        pure ()
-      Nothing ->
-        pure ()
+    checkAdvance account health now today inc
 
-
-
-
-
-loadBudgets
-  :: ( MonadEffects '[Budgets, Throw Error] m )
-  => Guid Account -> m (Budget Income, [Budget Expense])
-loadBudgets i = do
-    inc <- Budgets.income i   >>= require (NoIncome i)
-    exs <- Budgets.expenses i
-    pure (inc, exs)
 
 
 
@@ -122,29 +108,30 @@ loadBudgets i = do
 checkAdvance
   :: ( MonadEffects '[Log, Advances, Notify] m
      )
-  => Account -> AccountHealth -> UTCTime -> m (Maybe (Abs Money))
-checkAdvance account health now = do
-    offer  <- Advances.findOffer  (accountId account)
-    active <- Advances.findActive (accountId account)
-    let projection = Offer.Projection (balance health) (value $ budgeted health)
-    pure $ (Offer.isNeeded offer active projection now)
+  => Account -> AccountHealth -> UTCTime -> Day -> Budget Income -> m ()
+checkAdvance Account {accountId, transferId, phone, credit} health now today inc = do
+    offer  <- Advances.findOffer  accountId
+    active <- Advances.findActive accountId
+
+    let proj = Projection (balance health) (value $ budgeted health)
+    when (Offer.isNeeded offer active proj now) $ do
+      offerAdvance today accountId transferId phone inc credit proj active
+      pure ()
 
 
 
 offerAdvance
    :: ( MonadEffects '[Log, Advances, Notify] m)
-   => Day -> Guid Account -> Id TransferAccount -> Valid Phone -> Budget Income -> Abs Money ->  m Advance
-offerAdvance today accountId transferId phone income amount = do
+   => Day -> Guid Account -> Id TransferAccount -> Valid Phone -> Budget Income -> Money -> Projection -> [Advance] -> m Advance
+offerAdvance today accountId transferId phone income credit health advances = do
     let dueNextPay = Schedule.next (schedule income)  today
+    let amount = Offer.amount credit advances health
     advance <- Advances.create accountId transferId amount dueNextPay
     Notify.send accountId phone (Notify.Message (Advances.advanceId advance) Notify.Advance message)
     Log.debug ("advance", advance)
     pure advance
   where
     message = "Your bank balance is getting low. Click here to accept an advance from Timely"
-
-
-
 
 
 
