@@ -54,11 +54,13 @@ analyze i = do
 
     let bills = map (bill now tns inc) exs
         checks = filter (isRecent now) tns
+        budgeted = absolute $ sum (map (value . saved) bills)
 
     pure $ AccountHealth
       { balance = bal
       , income = inc
-      , budgeted = absolute $ sum (map (value . saved) bills)
+      , budgeted = budgeted
+      , spending = bal - value budgeted
       , bills = bills
       , paychecks = checks
       }

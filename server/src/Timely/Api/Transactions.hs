@@ -10,13 +10,15 @@ import           Data.Aeson                         (ToJSON)
 import           Data.Model.Guid                    (Guid)
 import qualified Control.Effects.Time as Time
 import           Control.Effects.Time (Time)
+import qualified Data.List as List
+import qualified Data.Model.Money as Money
 import           Data.Maybe (mapMaybe)
-import           Data.Number.Abs                    (absolute)
+import           Data.Number.Abs                    (absolute, value)
 import           GHC.Generics                       (Generic)
 import           Timely.Accounts                    (Account, Accounts, TransactionRow(..))
 import qualified Timely.Accounts                    as Accounts
 import           Timely.Evaluate.Health.Transaction (Expense, Income, Transaction (..))
-import           Timely.Evaluate.History            (Group)
+import           Timely.Evaluate.History            (Group(..))
 import qualified Timely.Evaluate.History            as History
 
 
@@ -42,8 +44,21 @@ isIncome TransactionRow {amount} =
 
 rowsToHistory :: [TransactionRow] -> History
 rowsToHistory ts = History
-  (History.groups $ mapMaybe toIncome ts)
-  (History.groups $ mapMaybe toExpense ts)
+  (List.filter isValidIncome $ History.groups $ mapMaybe toIncome ts)
+  (List.filter isValidBill $ History.groups $ mapMaybe toExpense ts)
+
+
+isValidIncome :: Group Income -> Bool
+isValidIncome Group {average, transactions} =
+  (value average >= Money.fromFloat 200) &&
+  (length transactions >= 2)
+
+
+isValidBill :: Group Expense -> Bool
+isValidBill Group {average, transactions} =
+  (value average >= Money.fromFloat 10) &&
+  (length transactions >= 2)
+
 
 
 -- the last 90 days of transactions
@@ -56,6 +71,7 @@ recent i = do
 history :: MonadEffects '[Accounts, Time] m => Guid Account -> m History
 history i = do
   ts <- recent i
+  -- it should only show income over $200
   pure $ rowsToHistory ts
 
 

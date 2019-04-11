@@ -13,8 +13,8 @@ import           Timely.Evaluate.Health.Transaction (Expense, Income, Transactio
 data AccountHealth = AccountHealth
   { balance   :: Money
   , budgeted  :: Abs Money
+  , spending  :: Money
   , income    :: Budget Income
-
   , bills     :: [Bill]
 
   , paychecks :: [Transaction Income]

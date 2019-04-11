@@ -1,4 +1,4 @@
-module Page.Account.Budgets exposing (Model, Msg, init, update, view)
+module Page.Account.Budgets exposing (Model, Msg, formatSchedule, init, update, view)
 
 import Browser.Navigation as Nav
 import Dict exposing (Dict)

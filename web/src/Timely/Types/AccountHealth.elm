@@ -12,6 +12,7 @@ import Timely.Types.Transactions exposing (Schedule, Transaction, decodeSchedule
 type alias AccountHealth =
     { balance : Money
     , budgeted : Money
+    , spending : Money
     , income : Budget
     , bills : List Bill
     , paychecks : List Transaction
@@ -37,6 +38,7 @@ decodeAccountHealth =
     Decode.succeed AccountHealth
         |> required "balance" decodeMoney
         |> required "budgeted" decodeMoney
+        |> required "spending" decodeMoney
         |> required "income" decodeBudget
         |> required "bills" (list decodeBill)
         |> required "paychecks" (list decodeTransaction)

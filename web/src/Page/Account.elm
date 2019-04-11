@@ -4,8 +4,9 @@ import Browser.Navigation as Nav
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
-import Element.Input as Input
+import Element.Input as Input exposing (button)
 import Http exposing (Error)
+import Page.Account.Breakdown as Breakdown
 import Route
 import Time exposing (Zone)
 import Timely.Api as Api exposing (Account, AccountId, Advance, BankAccount, BankAccountType(..), Customer, Id, advanceIsActive, advanceIsCollected, advanceIsOffer, idValue)
@@ -26,6 +27,7 @@ type alias Model =
     , banks : Resource (List BankAccount)
     , advances : Resource (List Advance)
     , zone : Zone
+    , screen : Screen
     }
 
 
@@ -39,6 +41,13 @@ type Msg
     | OnTimeZone Time.Zone
     | Logout
     | LogoutDone (Result Error ())
+    | OnBreakdown
+    | OnBack
+
+
+type Screen
+    = Main
+    | Breakdown
 
 
 init : Id AccountId -> ( Model, Cmd Msg )
@@ -51,6 +60,7 @@ init id =
       , advances = Loading
       , transactions = Loading
       , zone = Time.utc
+      , screen = Main
       }
     , Cmd.batch
         [ Api.getAccount OnAccount id
@@ -117,9 +127,25 @@ update nav msg model =
         LogoutDone _ ->
             ( model, Nav.pushUrl nav (Route.url (Route.Onboard Route.Landing)) )
 
+        OnBreakdown ->
+            ( { model | screen = Breakdown }, Cmd.none )
+
+        OnBack ->
+            ( { model | screen = Main }, Cmd.none )
+
 
 view : Model -> Element Msg
 view model =
+    case ( model.screen, model.health ) of
+        ( Breakdown, Ready h ) ->
+            Breakdown.view OnBack model.zone model.accountId h
+
+        _ ->
+            viewMain model
+
+
+viewMain : Model -> Element Msg
+viewMain model =
     let
         collected =
             Resource.map (List.filter advanceIsCollected) model.advances
@@ -163,11 +189,8 @@ view model =
 accountHealth : AccountHealth -> Element Msg
 accountHealth health =
     let
-        projectedBalance =
-            fromCents (toCents health.balance - toCents health.budgeted)
-
         isHealthy =
-            toCents projectedBalance > 0
+            toCents health.spending >= 0
 
         healthyColor =
             if isHealthy then
@@ -176,17 +199,21 @@ accountHealth health =
             else
                 Style.lightRed
     in
-    Element.column
-        [ spacing 4
-        , padding 20
-        , width fill
-        , Background.color healthyColor
-        , Font.color Style.white
-        , Style.box
-        ]
-        [ el [ Font.bold, centerX ] (text "Safe to Spend")
-        , el [ Font.bold, Font.size 40, centerX ] (text <| formatMoney projectedBalance)
-        ]
+    button [ width fill ]
+        { onPress = Just OnBreakdown
+        , label =
+            column
+                [ spacing 4
+                , padding 20
+                , width fill
+                , Background.color healthyColor
+                , Font.color Style.white
+                , Style.box
+                ]
+                [ el [ Font.bold, centerX ] (text "Safe to Spend")
+                , el [ Font.bold, Font.size 40, centerX ] (text <| formatMoney health.spending)
+                ]
+        }
 
 
 accountHealthMissing : Id AccountId -> Http.Error -> Element Msg
@@ -222,10 +249,6 @@ accountInfo account health advances =
                 , el [] (text <| formatMoney account.credit)
                 ]
             ]
-        , link [ Style.link ]
-            { url = Route.url (Route.Account account.accountId Route.Budgets)
-            , label = text "Edit Income and Bills"
-            }
         ]
 
 
