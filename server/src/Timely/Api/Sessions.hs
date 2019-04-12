@@ -114,7 +114,13 @@ logout = do
 
 
 jwtSettings jwk = defaultJWTSettings jwk
-cookieSettings = defaultCookieSettings { cookieIsSecure = NotSecure, cookieXsrfSetting = Nothing }
+hour = 60*60
+day = 24*hour
+cookieSettings = defaultCookieSettings
+  { cookieIsSecure = NotSecure
+  , cookieXsrfSetting = Nothing
+  , cookieMaxAge = Just (1*day)
+  }
 
 
 generateKey :: MonadIO m => m JWK
