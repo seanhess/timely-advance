@@ -147,12 +147,19 @@ update msg model =
         OnEditClose ->
             updates { model | editing = Nothing }
 
+        -- OK, we saved the edits, but we also need to toggle it on
         OnEditSave group ->
             updates
                 { model
                     | editing = Nothing
-                    , income = Selection.replace (isName group.name) group model.income
-                    , bills = Selection.replace (isName group.name) group model.bills
+                    , income =
+                        model.income
+                            |> Selection.replace (isName group.name) group
+                            |> Selection.set group True
+                    , bills =
+                        model.bills
+                            |> Selection.replace (isName group.name) group
+                            |> Selection.set group True
                 }
 
         Save ->
