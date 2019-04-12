@@ -1,4 +1,4 @@
-module Timely.Types.AccountHealth exposing (AccountHealth, Bill, Budget, decodeAccountHealth, encodeBudget)
+module Timely.Types.AccountHealth exposing (AccountHealth, Bill, Budget, decodeAccountHealth, decodeBudget, encodeBudget)
 
 import Json.Decode as Decode exposing (Decoder, at, bool, fail, field, int, list, nullable, string, succeed)
 import Json.Decode.Pipeline exposing (..)

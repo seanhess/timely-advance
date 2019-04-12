@@ -6,7 +6,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Http
 import Json.Encode as Encode
-import Platform.Updates exposing (Updates, base, command, set)
+import Platform.Updates exposing (Updates, command, set, updates)
 import Process
 import Route
 import Task
@@ -58,9 +58,6 @@ subscriptions _ =
 update : Msg -> Model -> Updates Model Msg ()
 update msg model =
     let
-        updates =
-            base model
-
         pollApplication app =
             if isComplete app.onboarding then
                 Api.getApplicationResult OnResult model.accountId
@@ -84,28 +81,21 @@ update msg model =
         --     updates
         --         |> command (Process.sleep 1000 |> Task.perform OnWaited)
         OnApplication (Err e) ->
-            updates
-                |> set { model | application = Failed e }
+            updates { model | application = Failed e }
 
         OnApplication (Ok app) ->
-            updates
-                |> set { model | application = Ready app }
+            updates { model | application = Ready app }
                 |> command (pollApplication app)
 
-        OnResult (Err e) ->
-            updates
-                |> set { model | result = Failed e }
-
-        OnResult (Ok r) ->
-            updates
-                |> set { model | result = Ready r }
+        OnResult rr ->
+            updates { model | result = Resource.fromResult rr }
 
         OnWaited () ->
-            updates
+            updates model
                 |> command (Api.getApplication OnApplication model.accountId)
 
         Close ->
-            updates
+            updates model
                 |> command (Route.pushUrl model.key (Route.Onboard Route.Landing))
 
 

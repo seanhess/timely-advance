@@ -7,14 +7,14 @@ import Element.Input as Input
 import Html.Attributes as Html
 import Http
 import Json.Encode as Encode
-import Platform.Updates exposing (Updates, base, command, set)
+import Platform.Updates exposing (Updates, command, set, updates)
 import Process
 import Route
 import Task
 import Time
 import Timely.Api as Api exposing (Account, AccountId, Advance, AdvanceId, Application, ApprovalResult(..), Id(..), advanceIsActive, idValue)
 import Timely.Components as Components
-import Timely.Resource exposing (Resource(..), resource)
+import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types.Date as Date exposing (formatDate)
 import Timely.Types.Money exposing (Money, formatDollars, fromCents, fromDollars, toCents)
@@ -71,52 +71,36 @@ subscriptions _ =
 
 update : Msg -> Model -> Updates Model Msg ()
 update msg model =
-    let
-        updates =
-            base model
-    in
     case msg of
-        OnAdvance (Err e) ->
-            updates |> set { model | advance = Failed e }
+        OnAdvance ra ->
+            updates { model | advance = Resource.fromResult ra }
 
-        OnAdvance (Ok a) ->
-            updates |> set { model | advance = Ready a }
+        OnAccount ra ->
+            updates { model | account = Resource.fromResult ra }
 
-        OnAccount (Err e) ->
-            updates |> set { model | account = Failed e }
-
-        OnAccount (Ok a) ->
-            updates |> set { model | account = Ready a }
-
-        OnAdvances (Err e) ->
-            updates |> set { model | advances = Failed e }
-
-        OnAdvances (Ok a) ->
-            updates |> set { model | advances = Ready (List.filter advanceIsActive a) }
+        OnAdvances ra ->
+            updates { model | advances = Resource.fromResult ra }
 
         OnTimezone zone ->
-            updates |> set { model | zone = zone }
+            updates { model | zone = zone }
 
         Edit s ->
-            updates |> set { model | acceptAmount = s }
+            updates { model | acceptAmount = s }
 
         Submit advance ->
             let
                 amount =
                     advanceAmount advance.offer model.acceptAmount
             in
-            updates
-                |> set { model | advance = Loading }
+            updates { model | advance = Loading }
                 |> command (Api.postAdvanceAccept OnAccept model.accountId model.advanceId amount)
 
-        OnAccept (Err e) ->
-            updates |> set { model | advance = Failed e }
-
-        OnAccept (Ok a) ->
-            updates |> set { model | advance = Ready a }
+        OnAccept ra ->
+            updates { model | advance = Resource.fromResult ra }
 
         OnBack ->
-            updates |> command (Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain)
+            updates model
+                |> command (Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain)
 
 
 view : Model -> Element Msg

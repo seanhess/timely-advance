@@ -10,7 +10,7 @@ import Route
 import Time exposing (Zone)
 import Timely.Api as Api exposing (AccountId, Id)
 import Timely.Components as Components
-import Timely.Resource exposing (Resource(..), resource)
+import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types.AccountHealth exposing (AccountHealth, Bill, Budget)
 import Timely.Types.Date as Date exposing (Date, TimeZone, formatDate)
@@ -51,11 +51,8 @@ update msg model =
         OnBack ->
             ( model, Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain )
 
-        OnHealth (Err e) ->
-            ( { model | health = Failed e }, Cmd.none )
-
-        OnHealth (Ok h) ->
-            ( { model | health = Ready h }, Cmd.none )
+        OnHealth re ->
+            ( { model | health = Resource.fromResult re }, Cmd.none )
 
         OnTimeZone zone ->
             ( { model | zone = zone }, Cmd.none )

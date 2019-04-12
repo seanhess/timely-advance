@@ -73,41 +73,23 @@ subscriptions _ =
 update : Nav.Key -> Msg -> Model -> ( Model, Cmd Msg )
 update nav msg model =
     case msg of
-        OnAccount (Err e) ->
-            ( { model | account = Failed e }, Cmd.none )
+        OnAccount ra ->
+            ( { model | account = Resource.fromResult ra }, Cmd.none )
 
-        OnAccount (Ok acc) ->
-            ( { model | account = Ready acc }, Cmd.none )
+        OnHealth rh ->
+            ( { model | health = Resource.fromResult rh }, Cmd.none )
 
-        OnHealth (Err e) ->
-            ( { model | health = Failed e }, Cmd.none )
+        OnCustomer rc ->
+            ( { model | customer = Resource.fromResult rc }, Cmd.none )
 
-        OnHealth (Ok h) ->
-            ( { model | health = Ready h }, Cmd.none )
+        OnTransactions rt ->
+            ( { model | transactions = Resource.fromResult rt }, Cmd.none )
 
-        OnCustomer (Err e) ->
-            ( { model | customer = Failed e }, Cmd.none )
+        OnBanks rb ->
+            ( { model | banks = Resource.fromResult rb }, Cmd.none )
 
-        OnCustomer (Ok c) ->
-            ( { model | customer = Ready c }, Cmd.none )
-
-        OnTransactions (Err e) ->
-            ( { model | transactions = Failed e }, Cmd.none )
-
-        OnTransactions (Ok ts) ->
-            ( { model | transactions = Ready ts }, Cmd.none )
-
-        OnBanks (Err e) ->
-            ( { model | banks = Failed e }, Cmd.none )
-
-        OnBanks (Ok bs) ->
-            ( { model | banks = Ready bs }, Cmd.none )
-
-        OnAdvances (Err e) ->
-            ( { model | advances = Failed e }, Cmd.none )
-
-        OnAdvances (Ok adv) ->
-            ( { model | advances = Ready adv }, Cmd.none )
+        OnAdvances ra ->
+            ( { model | advances = Resource.fromResult ra }, Cmd.none )
 
         OnTimeZone zone ->
             ( { model | zone = zone }, Cmd.none )

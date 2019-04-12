@@ -1,4 +1,4 @@
-module Timely.Resource exposing (Resource(..), apply, error, map, map2, map3, pure, resource, resource_)
+module Timely.Resource exposing (Resource(..), apply, error, fromResult, map, map2, map3, pure, resource, resource_)
 
 import Element exposing (Element, el, text)
 import Http exposing (Error)
@@ -10,6 +10,16 @@ type Resource a
     = Loading
     | Failed Http.Error
     | Ready a
+
+
+fromResult : Result Error a -> Resource a
+fromResult res =
+    case res of
+        Err e ->
+            Failed e
+
+        Ok a ->
+            Ready a
 
 
 resource_ : (Error -> Element msg) -> (a -> Element msg) -> Resource a -> Element msg

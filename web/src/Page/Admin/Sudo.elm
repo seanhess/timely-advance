@@ -12,7 +12,7 @@ import Platform.Updates exposing (Updates, command, set, updates)
 import Route exposing (Admin(..), Route(..))
 import Timely.Api as Api exposing (AccountCustomer, AccountInfo, Application, Auth, AuthCode, Bank, Customer, Id(..), Phone, Session, Token, idValue)
 import Timely.Components as Components exposing (loadingButton)
-import Timely.Resource exposing (Resource(..))
+import Timely.Resource as Resource exposing (Resource(..))
 import Timely.Style as Style
 
 
@@ -109,11 +109,8 @@ update msg model =
         GoAdvances ->
             updates model
 
-        OnCustomers (Err e) ->
-            updates { model | customers = Failed e }
-
-        OnCustomers (Ok cs) ->
-            updates { model | customers = Ready cs }
+        OnCustomers rc ->
+            updates { model | customers = Resource.fromResult rc }
 
 
 view : Model -> Element Msg

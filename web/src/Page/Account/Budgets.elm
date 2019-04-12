@@ -10,23 +10,19 @@ import Element.Input as Input exposing (button)
 import Element.Region as Region
 import Http
 import List.Selection as Selection exposing (Selection)
-import Platform.Updates exposing (Updates, command, updates)
+import Platform.Updates exposing (Updates, command, modify, updates)
 import Result.Cat as Result
 import Route
-import Time exposing (Weekday(..))
+import Time exposing (Weekday(..), Zone)
 import Timely.Api as Api exposing (AccountId, Id(..))
 import Timely.Components as Components
-import Timely.Resource exposing (Resource(..), resource)
+import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types.AccountHealth exposing (Budget)
+import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money exposing (formatMoney)
-import Timely.Types.Transactions exposing (Group, History, Schedule(..), formatBiweek, formatDay, formatWeekday)
+import Timely.Types.Transactions exposing (Group, History, Schedule(..), Transaction, formatBiweek, formatDay, formatWeekday)
 import Validate exposing (Validator, validate)
-
-
-
--- modify : (a -> Bool) -> (a -> a) -> List a -> List a
--- modify =
 
 
 type alias Model =
@@ -34,9 +30,13 @@ type alias Model =
     , accountId : Id AccountId
     , income : Selection Group
     , bills : Selection Group
+    , oldIncome : Resource Budget
+    , oldBills : Resource (List Budget)
+    , history : Resource History
     , editing : Maybe Group
     , savedBills : Bool
     , savedIncome : Bool
+    , zone : Zone
     }
 
 
@@ -45,6 +45,8 @@ type Msg
     | OnHistory (Result Http.Error History)
     | Ignore (Result Http.Error String)
     | OnIncome Group Bool
+    | OnOldIncome (Result Http.Error Budget)
+    | OnOldExpenses (Result Http.Error (List Budget))
     | OnBill Group Bool
     | OnEdit Group
     | OnEditSave Group
@@ -52,6 +54,7 @@ type Msg
     | Save
     | OnSavedIncome (Result Http.Error String)
     | OnSavedBills (Result Http.Error String)
+    | OnTimeZone Zone
 
 
 init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
@@ -63,8 +66,17 @@ init key id =
       , editing = Nothing
       , savedBills = False
       , savedIncome = False
+      , zone = Time.utc
+      , oldIncome = Loading
+      , oldBills = Loading
+      , history = Loading
       }
-    , Api.getTransactionHistory OnHistory id
+    , Cmd.batch
+        [ Api.getTransactionHistory OnHistory id
+        , Api.getIncome OnOldIncome id
+        , Api.getExpenses OnOldExpenses id
+        , Date.timezone OnTimeZone
+        ]
     )
 
 
@@ -80,6 +92,28 @@ update msg model =
 
             else
                 updates mod
+
+        initSelections mod =
+            case ( mod.history, mod.oldIncome, mod.oldBills ) of
+                ( Ready h, Ready inc, Ready bs ) ->
+                    { mod
+                        | income = Selection.fromList <| List.map (toSelection [ inc ]) h.income
+                        , bills = Selection.fromList <| List.map (toSelection bs) h.expenses
+                    }
+
+                _ ->
+                    mod
+
+        -- replaces selected, and the schedule, if is there
+        toSelection : List Budget -> Group -> ( Group, Bool )
+        toSelection budgets group =
+            case List.filter (\b -> b.name == group.name) budgets of
+                [ b ] ->
+                    -- replace the schedule with the one from the budget
+                    ( { group | schedule = Just b.schedule }, True )
+
+                _ ->
+                    ( group, False )
     in
     case msg of
         OnBack ->
@@ -89,15 +123,17 @@ update msg model =
         Ignore _ ->
             updates model
 
-        OnHistory (Err e) ->
-            updates model
+        OnHistory rh ->
+            updates { model | history = Resource.fromResult rh }
+                |> modify initSelections
 
-        OnHistory (Ok h) ->
-            updates
-                { model
-                    | income = Selection.fromValues h.income
-                    , bills = Selection.fromValues h.expenses
-                }
+        OnOldIncome inc ->
+            updates { model | oldIncome = Resource.fromResult inc }
+                |> modify initSelections
+
+        OnOldExpenses bs ->
+            updates { model | oldBills = Resource.fromResult bs }
+                |> modify initSelections
 
         OnIncome inc selected ->
             updates { model | income = Selection.change inc model.income }
@@ -135,11 +171,8 @@ update msg model =
         OnSavedBills _ ->
             goAccountIfSaved { model | savedBills = True }
 
-
-
--- we need to wait until both are finished
--- then we can go
--- |> command (Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain)
+        OnTimeZone zone ->
+            updates { model | zone = zone }
 
 
 view : Model -> Element Msg
@@ -256,10 +289,10 @@ viewHistory model =
     column [ spacing 15, width fill ]
         [ el Style.banner (text "Income")
         , paragraph [] [ text "Select your primary income" ]
-        , column [ spacing 0, width fill, Border.widthXY 0 1, Border.color Style.gray ] (List.map (viewGroup OnIncome isIncome) <| Selection.toValues model.income)
+        , column [ spacing 0, width fill, Border.widthXY 0 1, Border.color Style.gray ] (List.map (viewGroup model.zone OnIncome isIncome) <| Selection.toValues model.income)
         , el Style.banner (text "Bills")
         , paragraph [] [ text "Select all your bills" ]
-        , column [ spacing 0, width fill, Border.widthXY 0 1, Border.color Style.gray ] (List.map (viewGroup OnBill isExpense) <| Selection.toValues model.bills)
+        , column [ spacing 0, width fill, Border.widthXY 0 1, Border.color Style.gray ] (List.map (viewGroup model.zone OnBill isExpense) <| Selection.toValues model.bills)
         ]
 
 
@@ -268,8 +301,8 @@ viewHistory model =
 -- it depends on whether group == model.group
 
 
-viewGroup : (Group -> Bool -> Msg) -> (Group -> Bool) -> Group -> Element Msg
-viewGroup onSelect isSelected group =
+viewGroup : Zone -> (Group -> Bool -> Msg) -> (Group -> Bool) -> Group -> Element Msg
+viewGroup zone onSelect isSelected group =
     row [ paddingXY 0 10, Border.widthXY 0 1, Border.color Style.gray, width fill, spacing 14 ]
         [ selectButton (onSelect group) (isSelected group)
         , column [ spacing 6, width fill ]
@@ -277,7 +310,12 @@ viewGroup onSelect isSelected group =
                 [ text group.name
                 , el [ alignRight ] (text (formatMoney group.average))
                 ]
-            , button [ Style.link ] { onPress = Just (OnEdit group), label = viewSchedule group.schedule }
+
+            -- , column el [ Font.size 16 ] (text "2019-01-03")
+            , row [ width fill ]
+                [ button [ Style.link ] { onPress = Just (OnEdit group), label = viewSchedule group.schedule }
+                , wrappedRow [ spacing 4, alignRight ] (List.map (viewTransaction zone) (List.take 2 group.transactions))
+                ]
             ]
         ]
 
@@ -293,6 +331,11 @@ viewSchedule ms =
                 Just s ->
                     formatSchedule s
         ]
+
+
+viewTransaction : Zone -> Transaction -> Element Msg
+viewTransaction zone t =
+    el [ Font.size 14 ] (text <| formatDate zone t.date)
 
 
 formatSchedule : Schedule -> String

@@ -180,8 +180,7 @@ loadTransactions accountId bankToken appBankId checking (UTCTime today _) = do
     Async.poll second $ Applications.findTransactions appBankId
 
     ts <- Bank.loadTransactionsDays bankToken (bankAccountId checking) year today
-    -- Log.debug ("transactions", List.length ts)
-    Log.debug ("transactions", ts)
+    Log.debug ("transactions", List.length ts)
     pure $ List.map (Transaction.fromBank accountId) ts
   where
     days = 1
