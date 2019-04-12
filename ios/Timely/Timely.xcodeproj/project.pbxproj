@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		78CBA0AB22612AC5008E2A79 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 78CBA0AA22612AC5008E2A79 /* WebKit.framework */; };
 		78F07DFD2215FE6300936871 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78F07DFC2215FE6300936871 /* AppDelegate.swift */; };
 		78F07DFF2215FE6300936871 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78F07DFE2215FE6300936871 /* ViewController.swift */; };
 		78F07E022215FE6300936871 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 78F07E002215FE6300936871 /* Main.storyboard */; };
@@ -15,6 +16,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		78CBA0AA22612AC5008E2A79 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		78F07DF92215FE6300936871 /* Timely.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Timely.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		78F07DFC2215FE6300936871 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		78F07DFE2215FE6300936871 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -29,17 +31,27 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				78CBA0AB22612AC5008E2A79 /* WebKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		78CBA0A922612AC5008E2A79 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				78CBA0AA22612AC5008E2A79 /* WebKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		78F07DF02215FE6300936871 = {
 			isa = PBXGroup;
 			children = (
 				78F07DFB2215FE6300936871 /* Timely */,
 				78F07DFA2215FE6300936871 /* Products */,
+				78CBA0A922612AC5008E2A79 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -96,6 +108,7 @@
 				TargetAttributes = {
 					78F07DF82215FE6300936871 = {
 						CreatedOnToolsVersion = 9.4.1;
+						LastSwiftMigration = 1020;
 					};
 				};
 			};
@@ -281,7 +294,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 57Q445VF8X;
+				DEVELOPMENT_TEAM = 3MQYP368UU;
 				INFOPLIST_FILE = Timely/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -289,7 +302,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.timelyadvance.Timely;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.0;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -299,7 +312,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 57Q445VF8X;
+				DEVELOPMENT_TEAM = 3MQYP368UU;
 				INFOPLIST_FILE = Timely/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -307,7 +320,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.timelyadvance.Timely;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 4.0;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

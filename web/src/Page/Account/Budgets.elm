@@ -330,7 +330,7 @@ viewGroup zone onSelect isSelected group =
             -- , column el [ Font.size 16 ] (text "2019-01-03")
             , row [ width fill ]
                 [ button [ Style.link ] { onPress = Just (OnEdit group), label = viewSchedule group.schedule }
-                , wrappedRow [ spacing 4, alignRight ] (List.map (viewTransaction zone) (List.take 2 group.transactions))
+                , wrappedRow [ spacing 4, alignRight ] (List.map (viewTransaction zone) (List.take 1 group.transactions))
                 ]
             ]
         ]
