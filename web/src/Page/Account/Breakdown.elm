@@ -1,20 +1,73 @@
-module Page.Account.Breakdown exposing (view)
+module Page.Account.Breakdown exposing (Model, Msg, init, update, view, viewBreakdown)
 
+import Browser.Navigation as Nav
 import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
+import Http exposing (Error)
 import Page.Account.Budgets exposing (formatSchedule)
 import Route
-import Timely.Api exposing (AccountId, Id)
+import Time exposing (Zone)
+import Timely.Api as Api exposing (AccountId, Id)
 import Timely.Components as Components
+import Timely.Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types.AccountHealth exposing (AccountHealth, Bill, Budget)
-import Timely.Types.Date exposing (TimeZone, formatDate)
+import Timely.Types.Date as Date exposing (Date, TimeZone, formatDate)
 import Timely.Types.Money as Money exposing (formatMoney)
 
 
-view : msg -> TimeZone -> Id AccountId -> AccountHealth -> Element msg
-view onBack zone accountId health =
+type alias Model =
+    { key : Nav.Key
+    , accountId : Id AccountId
+    , health : Resource AccountHealth
+    , zone : Zone
+    }
+
+
+init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
+init key id =
+    ( { key = key
+      , accountId = id
+      , health = Loading
+      , zone = Time.utc
+      }
+    , Cmd.batch
+        [ Date.timezone OnTimeZone
+        , Api.getAccountHealth OnHealth id
+        ]
+    )
+
+
+type Msg
+    = OnBack
+    | OnTimeZone Zone
+    | OnHealth (Result Http.Error AccountHealth)
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        OnBack ->
+            ( model, Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain )
+
+        OnHealth (Err e) ->
+            ( { model | health = Failed e }, Cmd.none )
+
+        OnHealth (Ok h) ->
+            ( { model | health = Ready h }, Cmd.none )
+
+        OnTimeZone zone ->
+            ( { model | zone = zone }, Cmd.none )
+
+
+view : Model -> Element Msg
+view model =
+    resource (viewBreakdown OnBack model.zone model.accountId) model.health
+
+
+viewBreakdown : msg -> TimeZone -> Id AccountId -> AccountHealth -> Element msg
+viewBreakdown onBack zone accountId health =
     let
         healthy val =
             if Money.toCents val >= 0 then

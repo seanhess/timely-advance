@@ -39,6 +39,7 @@ type Account
     = AccountMain
     | Advance (Id AdvanceId)
     | Budgets
+    | Breakdown
 
 
 parser : Parser (Route -> a) a
@@ -77,6 +78,7 @@ parserAccount =
         [ Parser.map Advance (s "advances" </> Parser.map Id string)
         , Parser.map AccountMain Parser.top
         , Parser.map Budgets (s "budgets")
+        , Parser.map Breakdown (s "breakdown")
         ]
 
 
@@ -143,6 +145,9 @@ url page =
 
                 Account (Id s) Budgets ->
                     [ "accounts", s, "budgets" ]
+
+                Account (Id s) Breakdown ->
+                    [ "accounts", s, "breakdown" ]
 
                 Account (Id s) (Advance (Id adv)) ->
                     [ "accounts", s, "advances", adv ]

@@ -27,7 +27,6 @@ type alias Model =
     , banks : Resource (List BankAccount)
     , advances : Resource (List Advance)
     , zone : Zone
-    , screen : Screen
     }
 
 
@@ -41,13 +40,6 @@ type Msg
     | OnTimeZone Time.Zone
     | Logout
     | LogoutDone (Result Error ())
-    | OnBreakdown
-    | OnBack
-
-
-type Screen
-    = Main
-    | Breakdown
 
 
 init : Id AccountId -> ( Model, Cmd Msg )
@@ -60,7 +52,6 @@ init id =
       , advances = Loading
       , transactions = Loading
       , zone = Time.utc
-      , screen = Main
       }
     , Cmd.batch
         [ Api.getAccount OnAccount id
@@ -127,21 +118,10 @@ update nav msg model =
         LogoutDone _ ->
             ( model, Nav.pushUrl nav (Route.url (Route.Onboard Route.Landing)) )
 
-        OnBreakdown ->
-            ( { model | screen = Breakdown }, Cmd.none )
-
-        OnBack ->
-            ( { model | screen = Main }, Cmd.none )
-
 
 view : Model -> Element Msg
-view model =
-    case ( model.screen, model.health ) of
-        ( Breakdown, Ready h ) ->
-            Breakdown.view OnBack model.zone model.accountId h
-
-        _ ->
-            viewMain model
+view =
+    viewMain
 
 
 viewMain : Model -> Element Msg
@@ -166,7 +146,7 @@ viewMain model =
             , resource (offersView model.zone model.accountId) offers
             ]
         , column Style.section
-            [ resource_ (accountHealthMissing model.accountId) accountHealth model.health
+            [ resource_ (accountHealthMissing model.accountId) (accountHealth model.accountId) model.health
             , resource_
                 (\_ -> Element.none)
                 identity
@@ -186,8 +166,8 @@ viewMain model =
         ]
 
 
-accountHealth : AccountHealth -> Element Msg
-accountHealth health =
+accountHealth : Id AccountId -> AccountHealth -> Element Msg
+accountHealth accountId health =
     let
         isHealthy =
             toCents health.spending >= 0
@@ -199,8 +179,8 @@ accountHealth health =
             else
                 Style.lightRed
     in
-    button [ width fill ]
-        { onPress = Just OnBreakdown
+    link [ width fill ]
+        { url = Route.url (Route.Account accountId Route.Breakdown)
         , label =
             column
                 [ spacing 4
