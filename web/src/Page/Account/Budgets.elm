@@ -94,10 +94,19 @@ update msg model =
                 updates mod
 
         initSelections mod =
-            case ( mod.history, mod.oldIncome, mod.oldBills ) of
-                ( Ready h, Ready inc, Ready bs ) ->
+            case ( mod.history, mod.oldBills, mod.oldIncome ) of
+                ( Ready h, Ready bs, inc ) ->
+                    let
+                        incs =
+                            case inc of
+                                Ready i ->
+                                    [ i ]
+
+                                _ ->
+                                    []
+                    in
                     { mod
-                        | income = Selection.fromList <| List.map (toSelection [ inc ]) h.income
+                        | income = Selection.fromList <| List.map (toSelection incs) h.income
                         , bills = Selection.fromList <| List.map (toSelection bs) h.expenses
                     }
 
