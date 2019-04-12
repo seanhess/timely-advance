@@ -17,6 +17,7 @@ import           Control.Monad                     (when)
 import           Control.Monad.Catch               (MonadThrow (..))
 import           Data.Function                     ((&))
 import qualified Data.List                         as List
+import qualified Data.Maybe                        as Maybe
 import           Data.Model.Guid                   as Guid
 import           Data.Model.Id                     (Id)
 import           Data.Model.Money                  (Money)
@@ -40,7 +41,7 @@ import           Timely.Bank                       (Access, Banks, Token)
 import qualified Timely.Bank                       as Bank
 import           Timely.Evaluate.Health            (Income)
 import           Timely.Evaluate.Health.Budget     (Budget (..))
-import           Timely.Evaluate.Offer             (Projection(..))
+import           Timely.Evaluate.Offer             (Projection (..))
 import qualified Timely.Evaluate.Offer             as Offer
 import qualified Timely.Evaluate.Schedule          as Schedule
 import           Timely.Events                     as Events
@@ -90,6 +91,7 @@ accountUpdate account@(Account{ accountId, bankToken }) = do
     check  <- bankBalances accountId bankToken now
     trans  <- updateTransactions accountId bankToken (bankAccountId check) today
 
+    Log.debug ("trans", length trans)
     inc    <- Budgets.income accountId >>= require (NoIncome accountId)
     exs    <- Budgets.expenses accountId
 
@@ -113,7 +115,9 @@ checkAdvance Account {accountId, transferId, phone, credit} health now today inc
     offer  <- Advances.findOffer  accountId
     active <- Advances.findActive accountId
 
-    let proj = Projection (balance health) (value $ budgeted health)
+    let proj = Projection { expenses = value $ budgeted health, available = balance health  }
+    Log.debug ("Offer?", proj, Maybe.isJust offer, List.length active)
+
     when (Offer.isNeeded offer active proj now) $ do
       offerAdvance today accountId transferId phone inc credit proj active
       pure ()

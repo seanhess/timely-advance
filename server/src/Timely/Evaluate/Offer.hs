@@ -19,7 +19,7 @@ import qualified Timely.Advances  as Advances
 data Projection = Projection
   { expenses  :: Money
   , available :: Money
-  }
+  } deriving (Show, Eq)
 
 
 isNeeded :: Maybe Advance -> [Advance] -> Projection -> UTCTime -> Bool

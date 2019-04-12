@@ -276,4 +276,4 @@ isEnoughCredit advance account advances value =
 
 advanceAmount : Money -> String -> Money
 advanceAmount offer value =
-    Maybe.withDefault offer <| Maybe.map fromCents (String.toInt value)
+    Maybe.withDefault offer <| Maybe.map fromDollars (String.toFloat value)

@@ -16,7 +16,7 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        let url = URL(string: "https://timelyadvance.com/app/")!
+        let url = URL(string: "https://test.timelyadvance.com/")!
         let request = URLRequest(url: url)
         print("LOAD", request)
         webView.load(request)

@@ -203,7 +203,7 @@ accountInfo account health advances =
                 , el [ Font.color Style.red ] (text <| formatMoney health.budgeted)
                 ]
             , column [ spacing 4 ]
-                [ el [ Font.bold ] (text "Owed")
+                [ el [ Font.bold ] (text "Advances")
                 , el [] (text <| (formatMoney <| Money.total <| List.map .amount advances))
                 ]
             , column [ spacing 4 ]
