@@ -8,7 +8,6 @@ import Element.Input as Input exposing (button)
 import Http exposing (Error)
 import Page.Account.Breakdown as Breakdown
 import Route
-import Time exposing (Zone)
 import Timely.Api as Api exposing (Account, AccountId, Advance, BankAccount, BankAccountType(..), Customer, Id, advanceIsActive, advanceIsCollected, advanceIsOffer, idValue)
 import Timely.Resource as Resource exposing (Resource(..), resource, resource_)
 import Timely.Style as Style
@@ -26,7 +25,6 @@ type alias Model =
     , transactions : Resource (List TransRow)
     , banks : Resource (List BankAccount)
     , advances : Resource (List Advance)
-    , zone : Zone
     }
 
 
@@ -37,7 +35,6 @@ type Msg
     | OnBanks (Result Error (List BankAccount))
     | OnTransactions (Result Error (List TransRow))
     | OnAdvances (Result Error (List Advance))
-    | OnTimeZone Time.Zone
     | Logout
     | LogoutDone (Result Error ())
 
@@ -51,7 +48,6 @@ init id =
       , banks = Loading
       , advances = Loading
       , transactions = Loading
-      , zone = Time.utc
       }
     , Cmd.batch
         [ Api.getAccount OnAccount id
@@ -60,7 +56,6 @@ init id =
         , Api.getAccountBanks OnBanks id
         , Api.getAdvances OnAdvances id
         , Api.getTransactions OnTransactions id
-        , Date.timezone OnTimeZone
         ]
     )
 
@@ -90,9 +85,6 @@ update nav msg model =
 
         OnAdvances ra ->
             ( { model | advances = Resource.fromResult ra }, Cmd.none )
-
-        OnTimeZone zone ->
-            ( { model | zone = zone }, Cmd.none )
 
         Logout ->
             ( model, Api.sessionsLogout LogoutDone )
@@ -125,7 +117,7 @@ viewMain model =
                 , row [ width fill ] []
                 , Input.button [ Style.link ] { onPress = Just Logout, label = text "Logout" }
                 ]
-            , resource (offersView model.zone model.accountId) offers
+            , resource (offersView model.accountId) offers
             ]
         , column Style.section
             [ resource_ (accountHealthMissing model.accountId) (accountHealth model.accountId) model.health
@@ -137,11 +129,11 @@ viewMain model =
                     |> Resource.apply model.health
                     |> Resource.apply active
                 )
-            , resource (advancesView model.zone model.accountId) active
+            , resource (advancesView model.accountId) active
             , resource customerView <| model.customer
             , resource banksTable model.banks
-            , resource (transTable model.zone) model.transactions
-            , resource (advancesView model.zone model.accountId) collected
+            , resource transTable model.transactions
+            , resource (advancesView model.accountId) collected
 
             -- , el Style.header (text "Advances")
             ]
@@ -234,14 +226,14 @@ customerView customer =
         ]
 
 
-transTable : Time.Zone -> List TransRow -> Element Msg
-transTable zone ts =
+transTable : List TransRow -> Element Msg
+transTable ts =
     Element.table [ spacing 8 ]
         { data = ts
         , columns =
             [ tableColumn "Amount" (\t -> text <| formatMoney t.amount)
             , tableColumn "Source" (\t -> text t.name)
-            , tableColumn "Date" (\t -> text <| formatDate zone t.date)
+            , tableColumn "Date" (\t -> text <| formatDate t.date)
             , tableColumn "Category" (\t -> text t.category)
             ]
         }
@@ -259,14 +251,14 @@ banksTable banks =
         }
 
 
-offersView : Time.Zone -> Id AccountId -> List Advance -> Element Msg
-offersView zone accountId advances =
+offersView : Id AccountId -> List Advance -> Element Msg
+offersView accountId advances =
     Element.column [ spacing 10, width fill ]
-        (List.map (offerView zone accountId) advances)
+        (List.map (offerView accountId) advances)
 
 
-offerView : Time.Zone -> Id AccountId -> Advance -> Element Msg
-offerView zone accountId advance =
+offerView : Id AccountId -> Advance -> Element Msg
+offerView accountId advance =
     let
         advanceUrl =
             Route.url (Route.Account accountId (Route.Advance advance.advanceId))
@@ -300,14 +292,14 @@ advanceLink accountId advance =
     link [ Style.link ] { url = Route.url (Route.Account accountId (Route.Advance advance.advanceId)), label = text "view" }
 
 
-advancesView : Time.Zone -> Id AccountId -> List Advance -> Element Msg
-advancesView zone accountId advances =
+advancesView : Id AccountId -> List Advance -> Element Msg
+advancesView accountId advances =
     Element.column [ spacing 10, width fill ]
-        (List.map (advanceView zone accountId) advances)
+        (List.map (advanceView accountId) advances)
 
 
-advanceView : Time.Zone -> Id AccountId -> Advance -> Element Msg
-advanceView zone accountId advance =
+advanceView : Id AccountId -> Advance -> Element Msg
+advanceView accountId advance =
     let
         advanceUrl =
             Route.url (Route.Account accountId (Route.Advance advance.advanceId))
@@ -315,10 +307,10 @@ advanceView zone accountId advance =
         status a =
             case a.collected of
                 Just c ->
-                    "paid " ++ formatDate zone c
+                    "paid " ++ formatDate c
 
                 Nothing ->
-                    "due " ++ formatDate zone advance.due
+                    "due " ++ formatDate advance.due
     in
     wrappedRow
         [ padding 15

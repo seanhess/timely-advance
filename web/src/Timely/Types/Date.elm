@@ -1,16 +1,22 @@
-module Timely.Types.Date exposing (Date, TimeZone, decodeDate, formatDate, timezone)
+module Timely.Types.Date exposing (Date, decodeDate, formatDate)
 
 import Iso8601
 import Task
 import Time exposing (Month(..))
 
 
+
+-- Dates in UTC
+-- always use UTC with these
+
+
 type alias Date =
     Time.Posix
 
 
-type alias TimeZone =
-    Time.Zone
+
+-- type alias TimeZone =
+--     Time.Zone
 
 
 decodeDate =
@@ -21,14 +27,14 @@ decodeDate =
 -- Dates ----------------------------
 
 
-formatDate : TimeZone -> Date -> String
-formatDate zone time =
+formatDate : Date -> String
+formatDate time =
     let
         formatYear t =
-            String.fromInt <| Time.toYear zone time
+            String.fromInt <| Time.toYear Time.utc time
 
         formatMonth t =
-            case Time.toMonth zone t of
+            case Time.toMonth Time.utc t of
                 Jan ->
                     "Jan"
 
@@ -66,11 +72,12 @@ formatDate zone time =
                     "Dec"
 
         formatDay t =
-            String.fromInt <| Time.toDay zone time
+            String.fromInt <| Time.toDay Time.utc time
     in
     formatMonth time ++ " " ++ formatDay time ++ ", " ++ formatYear time ++ " "
 
 
-timezone : (TimeZone -> msg) -> Cmd msg
-timezone toMsg =
-    Task.perform toMsg Time.here
+
+-- timezone : (TimeZone -> msg) -> Cmd msg
+-- timezone toMsg =
+--     Task.perform toMsg Time.here

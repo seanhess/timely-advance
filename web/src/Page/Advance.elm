@@ -29,7 +29,6 @@ type alias Model =
     , advance : Resource Advance
     , account : Resource Account
     , advances : Resource (List Advance)
-    , zone : Time.Zone
     }
 
 
@@ -38,7 +37,6 @@ type Msg
     | OnAccount (Result Http.Error Account)
     | OnAdvances (Result Http.Error (List Advance))
     | OnBack
-    | OnTimezone Time.Zone
     | Edit String
     | Submit Advance
     | OnAccept (Result Http.Error Advance)
@@ -53,13 +51,11 @@ init key accountId advanceId =
       , account = Loading
       , acceptAmount = ""
       , key = key
-      , zone = Time.utc
       }
     , Cmd.batch
         [ Api.getAdvance OnAdvance accountId advanceId
         , Api.getAccount OnAccount accountId
         , Api.getAdvances OnAdvances accountId
-        , Date.timezone OnTimezone
         ]
     )
 
@@ -80,9 +76,6 @@ update msg model =
 
         OnAdvances ra ->
             updates { model | advances = Resource.fromResult ra }
-
-        OnTimezone zone ->
-            updates { model | zone = zone }
 
         Edit s ->
             updates { model | acceptAmount = s }
@@ -131,10 +124,10 @@ viewStatus model =
         ( Ready account, Ready advance, Ready advances ) ->
             case ( advance.activated, advance.collected ) of
                 ( Just _, Nothing ) ->
-                    viewAccepted model.zone model.accountId advance
+                    viewAccepted model.accountId advance
 
                 ( _, Just c ) ->
-                    viewCollected model.zone model.accountId advance c
+                    viewCollected model.accountId advance c
 
                 _ ->
                     viewForm model account advance advances
@@ -203,12 +196,12 @@ viewInvalid inv =
 -- | this should be completely different: show the due date, etc
 
 
-viewAccepted : Time.Zone -> Id AccountId -> Advance -> Element Msg
-viewAccepted zone accountId advance =
+viewAccepted : Id AccountId -> Advance -> Element Msg
+viewAccepted accountId advance =
     Element.column [ spacing 15, width fill ]
         [ Element.el [] (text "Yay! Your money is on its way")
         , Element.el [] (text <| "Amount: $" ++ formatDollars advance.amount)
-        , Element.el [] (text <| "Due: " ++ formatDate zone advance.due)
+        , Element.el [] (text <| "Due: " ++ formatDate advance.due)
         , Element.link (Style.button Style.secondary)
             { url = Route.url <| Route.Account accountId <| Route.AccountMain
             , label = Element.text "My Account"
@@ -216,12 +209,12 @@ viewAccepted zone accountId advance =
         ]
 
 
-viewCollected : Time.Zone -> Id AccountId -> Advance -> Time.Posix -> Element Msg
-viewCollected zone accountId advance collected =
+viewCollected : Id AccountId -> Advance -> Time.Posix -> Element Msg
+viewCollected accountId advance collected =
     Element.column [ spacing 15, width fill ]
         [ Element.el [] (text "All paid off!")
         , Element.el [] (text <| "Amount: $" ++ formatDollars advance.amount)
-        , Element.el [] (text <| "Paid: " ++ formatDate zone collected)
+        , Element.el [] (text <| "Paid: " ++ formatDate collected)
         , Element.link (Style.button Style.secondary)
             { url = Route.url <| Route.Account accountId <| Route.AccountMain
             , label = Element.text "My Account"

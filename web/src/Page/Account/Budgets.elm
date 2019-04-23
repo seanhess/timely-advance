@@ -13,7 +13,7 @@ import List.Selection as Selection exposing (Selection)
 import Platform.Updates exposing (Updates, command, modify, updates)
 import Result.Cat as Result
 import Route
-import Time exposing (Weekday(..), Zone)
+import Time exposing (Weekday(..))
 import Timely.Api as Api exposing (AccountId, Id(..))
 import Timely.Components as Components
 import Timely.Resource as Resource exposing (Resource(..), resource)
@@ -36,7 +36,6 @@ type alias Model =
     , editing : Maybe Group
     , savedBills : Bool
     , savedIncome : Bool
-    , zone : Zone
     }
 
 
@@ -54,7 +53,6 @@ type Msg
     | Save
     | OnSavedIncome (Result Http.Error String)
     | OnSavedBills (Result Http.Error String)
-    | OnTimeZone Zone
 
 
 init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
@@ -66,7 +64,6 @@ init key id =
       , editing = Nothing
       , savedBills = False
       , savedIncome = False
-      , zone = Time.utc
       , oldIncome = Loading
       , oldBills = Loading
       , history = Loading
@@ -75,7 +72,6 @@ init key id =
         [ Api.getTransactionHistory OnHistory id
         , Api.getIncome OnOldIncome id
         , Api.getExpenses OnOldExpenses id
-        , Date.timezone OnTimeZone
         ]
     )
 
@@ -186,9 +182,6 @@ update msg model =
 
         OnSavedBills _ ->
             goAccountIfSaved { model | savedBills = True }
-
-        OnTimeZone zone ->
-            updates { model | zone = zone }
 
 
 view : Model -> Element Msg
@@ -305,10 +298,10 @@ viewHistory model =
     column [ spacing 15, width fill ]
         [ el Style.banner (text "Income")
         , paragraph [] [ text "Select your primary income" ]
-        , column [ spacing 0, width fill, Border.widthXY 0 1, Border.color Style.gray ] (List.map (viewGroup model.zone OnIncome isIncome) <| Selection.toValues model.income)
+        , column [ spacing 0, width fill, Border.widthXY 0 1, Border.color Style.gray ] (List.map (viewGroup OnIncome isIncome) <| Selection.toValues model.income)
         , el Style.banner (text "Bills")
         , paragraph [] [ text "Select all your bills" ]
-        , column [ spacing 0, width fill, Border.widthXY 0 1, Border.color Style.gray ] (List.map (viewGroup model.zone OnBill isExpense) <| Selection.toValues model.bills)
+        , column [ spacing 0, width fill, Border.widthXY 0 1, Border.color Style.gray ] (List.map (viewGroup OnBill isExpense) <| Selection.toValues model.bills)
         ]
 
 
@@ -317,8 +310,8 @@ viewHistory model =
 -- it depends on whether group == model.group
 
 
-viewGroup : Zone -> (Group -> Bool -> Msg) -> (Group -> Bool) -> Group -> Element Msg
-viewGroup zone onSelect isSelected group =
+viewGroup : (Group -> Bool -> Msg) -> (Group -> Bool) -> Group -> Element Msg
+viewGroup onSelect isSelected group =
     row [ paddingXY 0 10, Border.widthXY 0 1, Border.color Style.gray, width fill, spacing 14 ]
         [ selectButton (onSelect group) (isSelected group)
         , column [ spacing 6, width fill ]
@@ -330,7 +323,7 @@ viewGroup zone onSelect isSelected group =
             -- , column el [ Font.size 16 ] (text "2019-01-03")
             , row [ width fill ]
                 [ button [ Style.link ] { onPress = Just (OnEdit group), label = viewSchedule group.schedule }
-                , wrappedRow [ spacing 4, alignRight ] (List.map (viewTransaction zone) (List.take 1 group.transactions))
+                , wrappedRow [ spacing 4, alignRight ] (List.map viewTransaction (List.take 1 group.transactions))
                 ]
             ]
         ]
@@ -349,9 +342,9 @@ viewSchedule ms =
         ]
 
 
-viewTransaction : Zone -> Transaction -> Element Msg
-viewTransaction zone t =
-    el [ Font.size 14 ] (text <| formatDate zone t.date)
+viewTransaction : Transaction -> Element Msg
+viewTransaction t =
+    el [ Font.size 14 ] (text <| formatDate t.date)
 
 
 formatSchedule : Schedule -> String
