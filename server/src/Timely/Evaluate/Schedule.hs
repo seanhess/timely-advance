@@ -6,6 +6,7 @@ module Timely.Evaluate.Schedule
   , Biweek(..)
   , biweek
   , schedule
+  , scheduleDate
   , last
   , next
   , nextToday
@@ -21,11 +22,13 @@ module Timely.Evaluate.Schedule
 -- import Debug.Trace (traceShow)
 import           Control.Applicative                 ((<|>))
 import           Control.Monad                       (guard)
-import           Data.Aeson                          (FromJSON(..), ToJSON(..), genericToJSON, genericParseJSON, defaultOptions, Options(..), SumEncoding(..))
+import           Data.Aeson                          (FromJSON (..), Options (..), SumEncoding (..), ToJSON (..),
+                                                      defaultOptions, genericParseJSON, genericToJSON)
+import qualified Data.Char                           as Char
 import           Data.List                           (group, sortBy, sortOn)
 import qualified Data.List                           as List
 import           Data.Maybe                          (listToMaybe)
-import qualified Data.Char as Char
+import           Data.Maybe                          (fromMaybe)
 import           Data.Ord                            (Down (..), comparing)
 import           Data.Time.Calendar                  (Day (..), addGregorianMonthsClip, fromGregorian, toGregorian)
 import qualified Data.Time.Calendar                  as Day
@@ -132,6 +135,14 @@ schedule ds = do
       [DayOfMonth d1, DayOfMonth d2] <- pure $ map dayOfMonth ds
       guard $ abs (d1 - d2) == 1
       pure $ Monthly $ DayOfMonth d1
+
+
+
+scheduleDate :: [Day] -> DayOfMonth
+scheduleDate ds = fromMaybe (DayOfMonth 1) $ do
+  dg <- listToMaybe $ monthdayGroups ds
+  d  <- listToMaybe dg
+  pure d
 
 
 

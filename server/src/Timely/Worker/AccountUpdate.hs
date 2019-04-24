@@ -6,50 +6,49 @@
 module Timely.Worker.AccountUpdate where
 
 -- TODO real transaction analysis
-import           Control.Effects                   (MonadEffects)
-import           Control.Effects.Log               (Log)
-import qualified Control.Effects.Log               as Log
-import           Control.Effects.Signal            (Throw, throwSignal)
-import qualified Control.Effects.Signal            as Signal
-import           Control.Effects.Time              (Time, UTCTime)
-import qualified Control.Effects.Time              as Time
-import           Control.Monad                     (when)
-import           Control.Monad.Catch               (MonadThrow (..))
-import           Data.Function                     ((&))
-import qualified Data.List                         as List
-import qualified Data.Maybe                        as Maybe
-import           Data.Model.Guid                   as Guid
-import           Data.Model.Id                     (Id)
-import           Data.Model.Money                  (Money)
-import           Data.Model.Types                  (Phone)
-import           Data.Model.Valid                  as Valid
-import           Data.Number.Abs                   (Abs (value))
-import           Data.Time.Calendar                (Day)
-import qualified Network.AMQP.Worker               as Worker (Queue, topic)
-import           Timely.Accounts                   (Accounts, TransactionRow (transactionId))
-import qualified Timely.Accounts                   as Accounts
-import           Timely.Accounts.Budgets           (Budgets)
-import qualified Timely.Accounts.Budgets           as Budgets
-import           Timely.Accounts.Types             (Account (..), BankAccount (bankAccountId))
-import qualified Timely.Accounts.Types.BankAccount as BankAccount
-import qualified Timely.Accounts.Types.Transaction as Transaction
-import qualified Timely.Actions.AccountHealth      as AccountHealth
-import           Timely.Advances                   (Advance, Advances)
-import qualified Timely.Advances                   as Advances
-import qualified Timely.App                        as App
-import           Timely.Bank                       (Access, Banks, Token)
-import qualified Timely.Bank                       as Bank
-import           Timely.Evaluate.Health            (Income)
-import           Timely.Evaluate.Health.Budget     (Budget (..))
-import           Timely.Evaluate.Offer             (Projection (..))
-import qualified Timely.Evaluate.Offer             as Offer
-import qualified Timely.Evaluate.Schedule          as Schedule
-import           Timely.Events                     as Events
-import           Timely.Notify                     (Notify)
-import qualified Timely.Notify                     as Notify
-import           Timely.Transfers.Account          (TransferAccount)
-import           Timely.Types.AccountHealth        (AccountHealth (..))
-import           Timely.Types.Update               (Error (..))
+import           Control.Effects                    (MonadEffects)
+import           Control.Effects.Log                (Log)
+import qualified Control.Effects.Log                as Log
+import           Control.Effects.Signal             (Throw, throwSignal)
+import qualified Control.Effects.Signal             as Signal
+import           Control.Effects.Time               (Time, UTCTime)
+import qualified Control.Effects.Time               as Time
+-- import           Control.Monad                      (when)
+import           Control.Monad.Catch                (MonadThrow (..))
+import           Data.Function                      ((&))
+import qualified Data.List                          as List
+import qualified Data.Maybe                         as Maybe
+import           Data.Model.Guid                    as Guid
+import           Data.Model.Id                      (Id)
+import           Data.Model.Money                   (Money)
+import           Data.Model.Types                   (Phone)
+import           Data.Model.Valid                   as Valid
+import           Data.Time.Calendar                 (Day)
+import qualified Network.AMQP.Worker                as Worker (Queue, topic)
+import           Timely.Accounts                    (Accounts, TransactionRow (transactionId))
+import qualified Timely.Accounts                    as Accounts
+import           Timely.Accounts.Budgets            (Budgets)
+import qualified Timely.Accounts.Budgets            as Budgets
+import           Timely.Accounts.Types              (Account (..), BankAccount (bankAccountId))
+import qualified Timely.Accounts.Types.BankAccount  as BankAccount
+import qualified Timely.Accounts.Types.Transaction  as Transaction
+import qualified Timely.Actions.AccountHealth       as AccountHealth
+import           Timely.Advances                    (Advance, Advances)
+import qualified Timely.Advances                    as Advances
+import qualified Timely.App                         as App
+import           Timely.Bank                        (Access, Banks, Token)
+import qualified Timely.Bank                        as Bank
+import           Timely.Evaluate.Health.Budget      (Budget (..))
+import           Timely.Evaluate.Health.Transaction (Income)
+import           Timely.Evaluate.Offer              (Projection (..))
+import qualified Timely.Evaluate.Offer              as Offer
+import qualified Timely.Evaluate.Schedule           as Schedule
+import           Timely.Events                      as Events
+import           Timely.Notify                      (Notify)
+import qualified Timely.Notify                      as Notify
+import           Timely.Transfers.Account           (TransferAccount)
+import           Timely.Types.AccountHealth         (AccountHealth (..))
+import           Timely.Types.Update                (Error (..))
 
 
 queue :: Worker.Queue Account
@@ -92,11 +91,12 @@ accountUpdate account@(Account{ accountId, bankToken }) = do
     trans  <- updateTransactions accountId bankToken (bankAccountId check) today
 
     Log.debug ("trans", length trans)
-    inc    <- Budgets.income accountId >>= require (NoIncome accountId)
-    exs    <- Budgets.expenses accountId
+    incs   <- Budgets.getIncomes accountId
+    exps   <- Budgets.getExpenses accountId
 
-    let health = AccountHealth.analyzeWith today check inc exs trans
+    let health = AccountHealth.analyzeWith today check incs exps trans
 
+    inc    <- require (NoIncome accountId) $ Maybe.listToMaybe incs
     checkAdvance account health now today inc
 
 
@@ -114,13 +114,14 @@ checkAdvance
 checkAdvance Account {accountId, transferId, phone, credit} health now today inc = do
     offer  <- Advances.findOffer  accountId
     active <- Advances.findActive accountId
+    error "TODO" transferId phone credit health now today inc offer active
 
-    let proj = Projection { expenses = value $ budgeted health, available = balance health  }
-    Log.debug ("Offer?", proj, Maybe.isJust offer, List.length active)
+--     let proj = Projection { expenses = budgeted health, available = balance health  }
+--     Log.debug ("Offer?", proj, Maybe.isJust offer, List.length active)
 
-    when (Offer.isNeeded offer active proj now) $ do
-      offerAdvance today accountId transferId phone inc credit proj active
-      pure ()
+--     when (Offer.isNeeded offer active proj now) $ do
+--       offerAdvance today accountId transferId phone inc credit proj active
+--       pure ()
 
 
 

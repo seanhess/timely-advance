@@ -27,6 +27,7 @@ import           Servant.Server.Generic               (AsServerT, genericServerT
 -- import           Servant.Server.StaticFiles           (serveDirectoryFileServer)
 import           Timely.Accounts                      as Accounts
 import qualified Timely.Accounts.Application          as Application
+import           Timely.Accounts.Budgets              (BudgetRow)
 import qualified Timely.Accounts.Budgets              as Budgets
 import           Timely.Accounts.Types                (AppResult, Application, TransactionRow)
 import qualified Timely.Actions.AccountHealth         as AccountHealth
@@ -46,7 +47,8 @@ import           Timely.App                           (AppM, AppState (..), clie
 import qualified Timely.App                           as App
 import           Timely.Auth                          (AuthCode)
 import           Timely.Config                        (port, serveDir)
-import           Timely.Evaluate.Health               (Budget, Expense, Income)
+import           Timely.Evaluate.Health.Budget        (Budget)
+import           Timely.Evaluate.Health.Transaction   (Expense, Income)
 import qualified Timely.Transfers                     as Transfers
 import           Timely.Types.AccountHealth           (AccountHealth)
 import           Timely.Types.Config
@@ -86,19 +88,25 @@ data VersionedApi route = VersionedApi
 
 -- Personal Information : Account and Application ---------------------
 data AccountApi route = AccountApi
-    { _get         :: route :- Get '[JSON, HTML] Account
-    , _banks       :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
-    , _customer    :: route :- "customer" :> Get '[JSON] Customer
-    , _health      :: route :- "health"   :> Get '[JSON] (Result Update.Error AccountHealth)
-    , _trans       :: route :- "transactions" :> Get '[JSON] [TransactionRow]
-    , _history     :: route :- "transactions" :> "history" :> Get '[JSON] History
-    , _app         :: route :- "application" :> Get '[JSON] Application
-    , _result      :: route :- "application" :> "result" :> Get '[JSON] AppResult
-    , _advances    :: route :- "advances" :> ToServantApi AdvanceApi
-    , _setIncome   :: route :- "income" :> ReqBody '[JSON] (Budget Income) :> Put '[JSON] NoContent
-    , _getIncome   :: route :- "income" :> Get '[JSON] (Budget Income)
-    , _setExpenses :: route :- "expenses" :> ReqBody '[JSON] [Budget Expense] :> Put '[JSON] NoContent
-    , _getExpenses :: route :- "expenses" :> Get '[JSON] [Budget Expense]
+    { _get      :: route :- Get '[JSON, HTML] Account
+    , _banks    :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
+    , _customer :: route :- "customer" :> Get '[JSON] Customer
+    , _health   :: route :- "health"   :> Get '[JSON] (Result Update.Error AccountHealth)
+    , _trans    :: route :- "transactions" :> Get '[JSON] [TransactionRow]
+    , _history  :: route :- "transactions" :> "history" :> Get '[JSON] History
+    , _app      :: route :- "application" :> Get '[JSON] Application
+    , _result   :: route :- "application" :> "result" :> Get '[JSON] AppResult
+    , _advances :: route :- "advances" :> ToServantApi AdvanceApi
+    , _incomes  :: route :- "incomes" :> ToServantApi (BudgetsApi Income)
+    , _expenses :: route :- "expenses" :> ToServantApi (BudgetsApi Expense)
+    } deriving (Generic)
+
+
+data BudgetsApi a route = BudgetsApi
+    { _edit   :: route :- Capture "id" (Guid BudgetRow) :> ReqBody '[JSON] (Budget a) :> Put '[JSON] NoContent
+    , _delete :: route :- Capture "id" (Guid BudgetRow) :> Delete '[JSON] NoContent
+    , _get    :: route :- Get '[JSON] [Budget a]
+    , _create :: route :- ReqBody '[JSON] (Budget a) :> Post '[JSON] NoContent
     } deriving (Generic)
 
 
@@ -149,11 +157,27 @@ accountApi i = genericServerT AccountApi
     , _trans   = Transactions.recent i
     , _history  = Transactions.history i
     , _advances = advanceApi i
-    , _setIncome = (\inc -> Budgets.setIncome i inc >> pure NoContent)
-    , _getIncome = Budgets.income i        >>= notFound
-    , _setExpenses = (\incs -> Budgets.setExpenses i incs >> pure NoContent)
-    , _getExpenses = Budgets.expenses i
+    , _incomes = incomesApi i
+    , _expenses = expensesApi i
     }
+
+
+incomesApi :: Guid Account -> ToServant (BudgetsApi Income) (AsServerT AppM)
+incomesApi i = genericServerT BudgetsApi
+   { _edit   = \bi b -> Budgets.edit i bi b    >> pure NoContent
+   , _delete = \bi -> Budgets.delete i bi      >> pure NoContent
+   , _create = \b -> Budgets.saveIncomes i [b] >> pure NoContent
+   , _get    = Budgets.getIncomes i
+   }
+
+
+expensesApi :: Guid Account -> ToServant (BudgetsApi Expense) (AsServerT AppM)
+expensesApi i = genericServerT BudgetsApi
+   { _edit   = \bi b -> Budgets.edit i bi b     >> pure NoContent
+   , _delete = \bi -> Budgets.delete i bi       >> pure NoContent
+   , _create = \b -> Budgets.saveExpenses i [b] >> pure NoContent
+   , _get    = Budgets.getExpenses i
+   }
 
 
 advanceApi :: Guid Account -> ToServant AdvanceApi (AsServerT AppM)

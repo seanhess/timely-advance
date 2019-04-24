@@ -8,45 +8,45 @@
 module Timely.Worker.AccountOnboard where
 
 
-import           Control.Effects                   (MonadEffects)
-import           Control.Effects.Async             (Async)
-import qualified Control.Effects.Async             as Async
-import           Control.Effects.Early             (Early)
-import qualified Control.Effects.Early             as Early
-import           Control.Effects.Log               (Log)
-import qualified Control.Effects.Log               as Log
-import           Control.Effects.Signal            (Throw, throwSignal)
-import qualified Control.Effects.Signal            as Signal
-import           Control.Effects.Time              (Time, UTCTime (..))
-import qualified Control.Effects.Time              as Time
-import           Control.Exception                 (Exception)
-import           Control.Monad.Catch               (MonadCatch, MonadThrow (..), SomeException (..), catch)
-import           Data.Function                     ((&))
-import qualified Data.List                         as List
-import           Data.Model.Guid                   as Guid
-import           Data.Model.Id                     (Id, Token)
-import           Data.Model.Types                  (Address (..), Phone, Valid)
-import           Data.Text                         as Text
-import qualified Database.Selda                    as Selda
-import           Network.AMQP.Worker               (Queue)
-import qualified Network.AMQP.Worker               as Worker hiding (bindQueue, publish, worker)
-import           Timely.Accounts                   (Accounts, TransactionRow)
-import qualified Timely.Accounts                   as Accounts
-import           Timely.Accounts.Application       (Applications)
-import qualified Timely.Accounts.Application       as Applications
-import           Timely.Accounts.Types             (Account (..), AppBank, Application (..),
-                                                    BankAccount (bankAccountId), Customer (..), Onboarding (..),
-                                                    isChecking, toBankAccount)
-
-import qualified Timely.Accounts.Types.Transaction as Transaction
-import qualified Timely.App                        as App
-import           Timely.Bank                       (Banks, Dwolla, Identity (..), Names (..))
-import qualified Timely.Bank                       as Bank
-import qualified Timely.Events                     as Events
-import           Timely.Transfers                  (AccountInfo (..), TransferAccount, Transfers)
-import qualified Timely.Transfers                  as Transfers
-import           Timely.Underwriting               (Approval (..), Underwriting (..))
-import qualified Timely.Underwriting               as Underwriting
+import           Control.Effects                    (MonadEffects)
+import           Control.Effects.Async              (Async)
+import qualified Control.Effects.Async              as Async
+import           Control.Effects.Early              (Early)
+import qualified Control.Effects.Early              as Early
+import           Control.Effects.Log                (Log)
+import qualified Control.Effects.Log                as Log
+import           Control.Effects.Signal             (Throw, throwSignal)
+import qualified Control.Effects.Signal             as Signal
+import           Control.Effects.Time               (Time, UTCTime (..))
+import qualified Control.Effects.Time               as Time
+import           Control.Exception                  (Exception)
+import           Control.Monad.Catch                (MonadCatch, MonadThrow (..), SomeException (..), catch)
+import           Data.Function                      ((&))
+import qualified Data.List                          as List
+import           Data.Model.Guid                    as Guid
+import           Data.Model.Id                      (Id, Token)
+import           Data.Model.Types                   (Address (..), Phone, Valid)
+import           Data.Text                          as Text
+import qualified Database.Selda                     as Selda
+import           Network.AMQP.Worker                (Queue)
+import qualified Network.AMQP.Worker                as Worker hiding (bindQueue, publish, worker)
+import           Timely.Accounts                    (Accounts, TransactionRow)
+import qualified Timely.Accounts                    as Accounts
+import           Timely.Accounts.Application        (Applications)
+import qualified Timely.Accounts.Application        as Applications
+import           Timely.Accounts.Budgets            (Budgets)
+import qualified Timely.Accounts.Budgets            as Budgets
+import           Timely.Accounts.Types              (Account (..), AppBank, Application (..), BankAccount (bankAccountId), Customer (..), Onboarding (..), isChecking, toBankAccount)
+import qualified Timely.Accounts.Types.Transaction  as Transaction
+import qualified Timely.Actions.Transactions        as Transactions
+import qualified Timely.App                         as App
+import           Timely.Bank                        (Banks, Dwolla, Identity (..), Names (..))
+import qualified Timely.Bank                        as Bank
+import qualified Timely.Events                      as Events
+import           Timely.Transfers                   (AccountInfo (..), TransferAccount, Transfers)
+import qualified Timely.Transfers                   as Transfers
+import           Timely.Underwriting                (Approval (..), Underwriting (..))
+import qualified Timely.Underwriting                as Underwriting
 
 
 
@@ -60,7 +60,7 @@ start = App.start queue handler
 
 
 handler
-  :: ( MonadEffects '[Time, Applications, Accounts, Log, Banks, Transfers, Underwriting, Async] m
+  :: ( MonadEffects '[Time, Applications, Accounts, Log, Banks, Transfers, Underwriting, Async, Budgets] m
      , MonadThrow m, MonadCatch m
      )
   => Application -> m ()
@@ -87,7 +87,7 @@ handler app@(Application { accountId, phone }) = do
 
 -- | accountOnboard
 accountOnboard
-  :: ( MonadEffects '[Applications, Accounts, Log, Banks, Transfers, Underwriting, Throw OnboardError, Time, Early (), Async] m)
+  :: ( MonadEffects '[Applications, Accounts, Log, Banks, Transfers, Underwriting, Throw OnboardError, Time, Early (), Async, Budgets] m)
   => Application -> Guid Account -> Valid Phone -> m ()
 accountOnboard app accountId phone = do
     now                      <- Time.currentTime
@@ -103,8 +103,26 @@ accountOnboard app accountId phone = do
     let account = Account accountId phone transId bankToken bankItemId amount now
     Accounts.create account customer bankAccounts trans
 
+    createDefaultBudgets accountId
+
     Applications.markResultOnboarding accountId Complete
     Log.info "complete"
+
+
+
+
+createDefaultBudgets
+  :: ( MonadEffects '[Time, Accounts, Budgets] m )
+  => Guid Account -> m ()
+createDefaultBudgets accountId = do
+  history <- Transactions.history accountId
+  let incs = List.map Transactions.defaultBudget $ Transactions.income history
+  let exps = List.map Transactions.defaultBudget $ Transactions.expenses history
+
+  Budgets.saveIncomes accountId incs
+  Budgets.saveExpenses accountId exps
+  pure ()
+
 
 
 
@@ -155,7 +173,7 @@ loadBankAccounts accountId bankToken now = do
     Log.info "load bank accounts"
     banks <- Bank.loadAccounts bankToken
     let bankAccounts = List.map (toBankAccount accountId now) banks
-    checking <- require MissingChecking $ List.find isChecking bankAccounts
+    checking <- require NoChecking $ List.find isChecking bankAccounts
     pure (checking, bankAccounts)
 
 
@@ -217,7 +235,8 @@ toTransferAccountInfo processorToken Customer { accountId, firstName, lastName, 
 data OnboardError
     = BadName Text
     | NoNames
-    | MissingChecking
+    | NoChecking
+    | NoIncome
     deriving (Eq, Show)
 
 instance Exception OnboardError

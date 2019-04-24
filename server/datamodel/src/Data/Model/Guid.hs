@@ -17,6 +17,7 @@ import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Data.Aeson             (FromJSON (..), ToJSON (..))
 import qualified Data.Aeson             as Aeson
 import           Data.Maybe             (fromMaybe, listToMaybe)
+import           Data.Model.Random      (randomAZ)
 import           Data.Proxy             (Proxy (..))
 import           Data.String            as String (IsString (..))
 import qualified Data.String            as String
@@ -29,7 +30,6 @@ import qualified Data.UUID.V4           as UUID
 import           Database.Selda         (SqlType (..))
 import           Database.Selda.SqlType (Lit (..), SqlTypeRep (..), SqlValue (..))
 import           GHC.Generics           (Generic)
-import qualified Test.RandomStrings     as Random
 import           Web.HttpApiData        (FromHttpApiData (..), ToHttpApiData (..))
 
 newtype Guid s = Guid Text
@@ -42,7 +42,7 @@ class GuidPrefix s where
   guidPrefix _ = Text.toLower $ Text.pack $ show $ typeOf (undefined :: s)
 
 instance GuidPrefix s => Show (Guid s) where
-  show = show . toText
+  show = Text.unpack . toText
 
 instance GuidPrefix s => ToJSON (Guid s) where
   toJSON = Aeson.String . toText
@@ -94,6 +94,4 @@ nonUuidError v = error $ "fromSql: text column with non-text value: " ++ show v
 
 
 randomId :: MonadIO m => m (Guid s)
-randomId = (Guid . Text.pack) <$> liftIO (Random.randomString alphaNum 20)
-  where
-    alphaNum = Random.onlyAlphaNum Random.randomASCII
+randomId = Guid <$> randomAZ 20

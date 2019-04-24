@@ -4,7 +4,7 @@
 
 ## Setup
 
-    stack install brittany
+    stack install stylish-haskell
 
 How to properly handle shared state: with config TVar :(, but you could STILL run the sub-functions in StateT, cool!
 

@@ -2,28 +2,39 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DuplicateRecordFields      #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE NamedFieldPuns             #-}
 {-# LANGUAGE NoMonomorphismRestriction  #-}
 {-# LANGUAGE OverloadedLabels           #-}
 {-# LANGUAGE OverloadedStrings          #-}
-module Timely.Accounts.Budgets where
+module Timely.Accounts.Budgets
+  ( BudgetType(..)
+  , Budgets(..)
+  , BudgetRow
+  , edit
+  , delete
+  , saveIncomes
+  , saveExpenses
+  , getIncomes
+  , getExpenses
+  , implementIO
+  , initialize
+  ) where
 
-import           Control.Effects          (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
-import           Control.Monad.Selda      (Selda, deleteFrom, insert, query, tryCreateTable)
-import           Data.Maybe               (listToMaybe)
-import           Data.Model.Guid          (Guid)
-import           Data.Model.Money         (Money)
-import           Data.Number.Abs          (Abs (value), absolute)
-import           Database.Selda           hiding (deleteFrom, insert, query, tryCreateTable)
-import           Database.Selda.Field     (Field (..))
-import           GHC.Generics             (Generic)
-import           Timely.Accounts.Account  (accounts)
-import           Timely.Accounts.Types    (Account)
-import           Timely.Evaluate.Health   (Expense, Income)
-import           Timely.Evaluate.Health.Budget (Budget(..))
-import           Timely.Evaluate.Schedule (Schedule)
+import Control.Effects                    (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
+import Control.Monad.Selda                (Selda, deleteFrom, insert, query, tryCreateTable, update_)
+import Data.Model.Guid                    (Guid, GuidPrefix (..))
+import Data.Model.Money                   (Money)
+import Database.Selda                     hiding (deleteFrom, insert, query, tryCreateTable, update, update_)
+import Database.Selda.Field               (Field (..))
+import GHC.Generics                       (Generic)
+import Timely.Accounts.Account            (accounts)
+import Timely.Accounts.Types              (Account)
+import Timely.Evaluate.Health.Budget      (Budget (..))
+import Timely.Evaluate.Health.Transaction (Expense, Income)
+import Timely.Evaluate.Schedule           (Schedule)
 
 
 
@@ -36,7 +47,7 @@ instance SqlType BudgetType
 
 
 data BudgetRow = BudgetRow
-  { budgetId   :: ID BudgetRow
+  { budgetId   :: Guid BudgetRow
   , accountId  :: Guid Account
   , budgetType :: BudgetType
   , name       :: Text
@@ -45,43 +56,79 @@ data BudgetRow = BudgetRow
   } deriving (Show, Eq, Generic)
 
 instance SqlRow BudgetRow
+instance GuidPrefix BudgetRow where
+  guidPrefix _ = "bgt"
 
 
 
 
 
 
+-- Generic Budgets API
+-- this is going to be really annoying!
 data Budgets m = BudgetsMethods
-  { _setIncome   :: Guid Account -> Budget Income -> m ()
-  , _setExpenses :: Guid Account -> [Budget Expense] -> m ()
-  , _income      :: Guid Account -> m (Maybe (Budget Income))
-  , _expenses    :: Guid Account -> m [Budget Expense]
+  { _edit    :: Guid Account -> Guid BudgetRow -> Budget () -> m ()
+  , _delete  :: Guid Account -> Guid BudgetRow -> m ()
+  , _create  :: BudgetType -> Guid Account -> [Budget ()] -> m ()
+  , _budgets :: BudgetType -> Guid Account -> m [Budget ()]
   } deriving (Generic)
 
 instance Effect Budgets
 
 
-setIncome   :: MonadEffect Budgets m => Guid Account -> Budget Income -> m ()
-income      :: MonadEffect Budgets m => Guid Account -> m (Maybe (Budget Income))
-setExpenses :: MonadEffect Budgets m => Guid Account -> [Budget Expense] -> m ()
-expenses    :: MonadEffect Budgets m => Guid Account -> m [Budget Expense]
-BudgetsMethods setIncome setExpenses income expenses = effect
+edit'    :: MonadEffect Budgets m => Guid Account -> Guid BudgetRow -> Budget () -> m ()
+delete'  :: MonadEffect Budgets m => Guid Account -> Guid BudgetRow -> m ()
+create'  :: MonadEffect Budgets m => BudgetType -> Guid Account -> [Budget ()] -> m ()
+budgets' :: MonadEffect Budgets m => BudgetType -> Guid Account -> m [Budget ()]
+BudgetsMethods edit' delete' create' budgets' = effect
 
 
+
+edit :: MonadEffect Budgets m => Guid Account -> Guid BudgetRow -> Budget a -> m ()
+edit accountId budgetId budget =
+  edit' accountId budgetId (convert budget)
+
+
+delete :: MonadEffect Budgets m => Guid Account -> Guid BudgetRow -> m ()
+delete = delete'
+
+
+saveIncomes :: MonadEffect Budgets m => Guid Account -> [Budget Income] -> m ()
+saveIncomes accountId incomes =
+  create' Income accountId (map convert incomes)
+
+saveExpenses :: MonadEffect Budgets m => Guid Account -> [Budget Expense] -> m ()
+saveExpenses accountId expenses =
+  create' Expense accountId (map convert expenses)
+
+
+getIncomes :: MonadEffect Budgets m => Guid Account -> m [Budget Income]
+getIncomes accountId =
+  map convert <$> budgets' Income accountId
+
+
+getExpenses :: MonadEffect Budgets m => Guid Account -> m [Budget Expense]
+getExpenses accountId =
+  map convert <$> budgets' Expense accountId
 
 
 implementIO :: Selda m => RuntimeImplemented Budgets m a -> m a
 implementIO = implement $
   BudgetsMethods
-    (\a i -> saveBudgetsOfType Income a [i])
-    (saveBudgetsOfType Expense)
-    (\a -> listToMaybe <$> getBudgetsOfType Income a )
-    (getBudgetsOfType Expense)
+    updateRow
+    deleteRow
+    createRows
+    getRows
 
 
 
 
 
+
+
+convert :: Budget a -> Budget b
+convert Budget {name, schedule, amount} =
+  Budget {name, schedule, amount}
 
 
 
@@ -90,22 +137,43 @@ implementIO = implement $
 
 budget :: Table BudgetRow
 budget = table "accounts_budget"
-  [ #budgetId :- autoPrimary
+  [ #budgetId :- primary
   , #accountId :- foreignKey accounts #accountId
   , #accountId :- index
   ]
 
 
-saveBudgetsOfType :: Selda m => BudgetType -> Guid Account -> [Budget a] -> m ()
-saveBudgetsOfType typ a bs = do
+
+deleteRow :: Selda m => Guid Account -> Guid BudgetRow -> m ()
+deleteRow ai bi = do
   deleteFrom budget
-    (\b -> b ! #accountId .== literal a .&& b ! #budgetType .== literal typ)
+    (\b -> b ! #accountId .== literal ai .&& b ! #budgetId .== literal bi)
+  pure ()
+
+
+updateRow :: Selda m => Guid Account -> Guid BudgetRow -> Budget () -> m ()
+updateRow ai bi Budget {name, schedule, amount} = do
+  update_ budget
+    (\b -> b ! #accountId .== literal ai .&& b ! #budgetId .== literal bi)
+    (\b -> b `with` updates)
+  pure ()
+  where
+    updates =
+      [ #name     := literal name
+      , #schedule := literal (Field schedule)
+      , #amount   := literal amount
+      ]
+
+
+
+createRows :: Selda m => BudgetType -> Guid Account -> [Budget a] -> m ()
+createRows typ a bs = do
   insert budget $ map (budgetRow a typ) bs
   pure ()
 
 
-getBudgetsOfType :: Selda m => BudgetType -> Guid Account -> m [Budget a]
-getBudgetsOfType typ a = do
+getRows :: Selda m => BudgetType -> Guid Account -> m [Budget a]
+getRows typ a = do
   is <- query $ do
     i <- select budget
     restrict (i ! #accountId .== literal a)
@@ -136,7 +204,7 @@ budgetRow accountId budgetType Budget {name, amount, schedule} =
     , accountId
     , budgetType
     , name
-    , amount = value amount
+    , amount = amount
     , schedule = Field schedule
     }
 
@@ -144,6 +212,6 @@ fromBudgetRow :: BudgetRow -> Budget a
 fromBudgetRow BudgetRow {name, amount, schedule} =
   Budget
     { name
-    , amount = absolute amount
+    , amount = amount
     , schedule = field schedule
     }
