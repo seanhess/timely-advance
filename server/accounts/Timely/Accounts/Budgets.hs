@@ -27,6 +27,7 @@ import Control.Effects                    (Effect (..), MonadEffect (..), Runtim
 import Control.Monad.Selda                (Selda, deleteFrom, insert, query, tryCreateTable, update_)
 import Data.Model.Guid                    (Guid, GuidPrefix (..))
 import Data.Model.Money                   (Money)
+import Data.Number.Abs                    (Abs (value), absolute)
 import Database.Selda                     hiding (deleteFrom, insert, query, tryCreateTable, update, update_)
 import Database.Selda.Field               (Field (..))
 import GHC.Generics                       (Generic)
@@ -161,7 +162,7 @@ updateRow ai bi Budget {name, schedule, amount} = do
     updates =
       [ #name     := literal name
       , #schedule := literal (Field schedule)
-      , #amount   := literal amount
+      , #amount   := literal (value amount)
       ]
 
 
@@ -204,7 +205,7 @@ budgetRow accountId budgetType Budget {name, amount, schedule} =
     , accountId
     , budgetType
     , name
-    , amount = amount
+    , amount = value amount
     , schedule = Field schedule
     }
 
@@ -212,6 +213,6 @@ fromBudgetRow :: BudgetRow -> Budget a
 fromBudgetRow BudgetRow {name, amount, schedule} =
   Budget
     { name
-    , amount = amount
+    , amount = absolute amount
     , schedule = field schedule
     }

@@ -9,7 +9,7 @@ import           Data.Time.Calendar       (Day)
 import qualified Data.Time.Calendar       as Day
 import qualified Data.Time.Clock          as Time
 import           Test.Dates               (parseDay, parseTime)
-import qualified Test.Evaluate.Health     as Health
+import qualified Test.Evaluate.Needed     as Needed
 import qualified Test.Evaluate.History    as History
 import qualified Test.Evaluate.Schedule   as Schedule
 import           Test.Tasty.HUnit
@@ -28,7 +28,7 @@ tests = do
     group "credit" testCredit
     group "history" History.tests
     group "schedule" Schedule.tests
-    group "health" Health.tests
+    group "needed" Needed.tests
 
 
 

@@ -16,6 +16,7 @@ module Timely.Evaluate.Health.Needed
 -- import Debug.Trace (traceShow)
 import           Data.Model.Money                   (Money)
 import qualified Data.Model.Money                   as Money
+import           Data.Number.Abs                    (Abs (..))
 import           Data.Time.Calendar                 (Day)
 import           Timely.Evaluate.Health.Budget      (Budget (..))
 import           Timely.Evaluate.Health.Transaction (Expense, Income, Transaction)
@@ -34,13 +35,13 @@ import qualified Timely.Evaluate.Schedule           as Schedule
 -- do we include the start date? Yes, be conservative
 incomeSince :: Day -> [Transaction Income] -> Money
 incomeSince start =
-  sum . map (Trans.amount) . filter (\t -> Trans.date t >= start)
+  sum . map (value . Trans.amount) . filter (\t -> Trans.date t >= start)
 
 
 -- where Day is the bill due date
 incomeUntil :: Day -> Day -> Budget Income -> Money
 incomeUntil today due Budget {schedule, amount} =
-  Money.fromCents $ length (Schedule.until (< due) schedule today) * Money.toCents amount
+  Money.fromCents $ length (Schedule.until (< due) schedule today) * Money.toCents (value amount)
 
 
 
@@ -76,7 +77,7 @@ dueDates today income bill =
 
 
 -- oh, there is no income in this period
-neededForNextBill :: [Transaction Income] -> Budget Income -> Money -> Day -> Day -> Day -> Money
+neededForNextBill :: [Transaction Income] -> Budget Income -> Abs Money -> Day -> Day -> Day -> Money
 neededForNextBill paychecks income amount today lastDue nextDue =
   let incPrev = incomeSince lastDue paychecks
       incNext = incomeUntil today   nextDue income
@@ -84,4 +85,4 @@ neededForNextBill paychecks income amount today lastDue nextDue =
       percent = if incTotal > 0
                    then (Money.toFloat incPrev / Money.toFloat incTotal)
                    else 1.0
-  in Money.fromFloat $ percent * (Money.toFloat amount)
+  in Money.fromFloat $ percent * (Money.toFloat $ value amount)
