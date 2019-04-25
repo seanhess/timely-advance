@@ -26,11 +26,11 @@ instance ToJSON (Transaction a)
 
 
 
-expense :: Text -> Day -> Money -> Transaction Expense
-expense n d a = Transaction n d (abs a)
+expense :: Text -> Money -> Day -> Transaction Expense
+expense n a d = Transaction n d (abs a)
 
-income :: Text -> Day -> Money -> Transaction Income
-income n d a = Transaction n d (abs a)
+income :: Text -> Money -> Day -> Transaction Income
+income n a d = Transaction n d (abs a)
 
-any :: Text -> Day -> Money -> Transaction Any
-any n d a = Transaction n d a
+any :: Text -> Money -> Day -> Transaction Any
+any n a d = Transaction n d a

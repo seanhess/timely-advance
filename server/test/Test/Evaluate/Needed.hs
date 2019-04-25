@@ -192,4 +192,4 @@ testNeededForBill = do
 
 
 paychecks :: Money -> [Day] -> [Transaction Income]
-paychecks amt ds = map (\d -> Transaction.income "" d amt) ds
+paychecks amt ds = map (Transaction.income "" amt) ds

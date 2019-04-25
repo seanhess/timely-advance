@@ -29,6 +29,7 @@ import           Timely.Evaluate.Health.Transaction (Expense, Income)
 -- import qualified Timely.Evaluate.Schedule           as Schedule
 import           Timely.Types.AccountHealth         (AccountHealth (..))
 import           Timely.Types.Update                (Error (..))
+-- import Timely.Evaluate.Health.Projection as Projection
 
 
 
@@ -94,12 +95,6 @@ analyzeWith now check incs exps trans = do
 -- but we should look into the transaction history, to see if they've already landed
 -- only if they've landed today?
 -- TRANSACTION: just happened. Rent was deducted. It's due today. The balance is 1500 lower. The balance is now 200.
-
--- events :: Day -> Budget a -> [Transaction a]
--- events now Budget {schedule, name, amount} =
---    let end   = Day.addGregorianMonthsClip 1 now
---        dates = until (<= end) schedule now
---    in List.map (\d -> Event {})
 
 
 -- bill :: Day -> [Transaction Income] -> Budget Income -> Budget Expense -> Bill

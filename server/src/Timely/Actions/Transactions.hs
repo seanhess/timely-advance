@@ -98,12 +98,12 @@ defaultBudget Group {name, average, schedule, transactions} =
 toIncome :: TransactionRow -> Maybe (Transaction Income)
 toIncome row@TransactionRow {name, date, amount} =
   if isIncome row
-    then Just $ Trans.income name date amount
+    then Just $ Trans.income name amount date
     else Nothing
 
 
 toExpense :: TransactionRow -> Maybe (Transaction Expense)
 toExpense row@TransactionRow {name, date, amount} =
   if isExpense row
-    then Just $ Trans.expense name date amount
+    then Just $ Trans.expense name amount date
     else Nothing
