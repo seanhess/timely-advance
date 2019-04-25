@@ -52,8 +52,6 @@ lowestBalance bal es = minimum $ bal : List.map Event.balance es
 
 
 
--- TODO if it's today, we need to know if the transaction has hit yet
-
 allTransactions :: Day -> [Budget Income] -> [Budget Expense] -> [Transaction Any]
 allTransactions now pays bills =
   let creds = List.concatMap (credits now) pays

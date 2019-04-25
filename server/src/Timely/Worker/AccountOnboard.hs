@@ -27,7 +27,6 @@ import           Data.Model.Guid                    as Guid
 import           Data.Model.Id                      (Id, Token)
 import           Data.Model.Types                   (Address (..), Phone, Valid)
 import           Data.Text                          as Text
-import qualified Database.Selda                     as Selda
 import           Network.AMQP.Worker                (Queue)
 import qualified Network.AMQP.Worker                as Worker hiding (bindQueue, publish, worker)
 import           Timely.Accounts                    (Accounts, TransactionRow)
@@ -143,9 +142,9 @@ newCustomer app now bankToken = do
       let Address {street1, street2, city, state, postalCode } = address
           Names {firstName, middleName, lastName} = names
       in Customer
-          { accountId, email, id = Selda.def
+          { accountId
           , firstName, middleName, lastName
-          , ssn, dateOfBirth
+          , email, ssn, dateOfBirth
           , street1, street2, city, state, postalCode
           , created = now
           }

@@ -1,3 +1,4 @@
+-- DEPRECATED -- this is the old method
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}

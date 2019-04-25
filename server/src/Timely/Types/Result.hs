@@ -8,6 +8,7 @@ import           Control.Monad.Except   (ExceptT)
 import           Data.Aeson             (FromJSON (..), ToJSON (..))
 import           GHC.Generics           (Generic)
 
+-- | An error optional type equivalent to Either, which serializes to either the error or the value. Error types should be unique, and probably contain an error field
 data Result e a
   = Ok a
   | Err e

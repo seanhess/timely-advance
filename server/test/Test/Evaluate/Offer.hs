@@ -10,7 +10,6 @@ import           Test.Dates               (parseTime)
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
 import           Timely.Advances          as Advance (Advance (..))
-import           Timely.Evaluate.Offer    (Projection (..))
 import qualified Timely.Evaluate.Offer    as Offer
 
 
@@ -49,28 +48,26 @@ tests = do
 
 
   group "isNeeded" $ do
+    let low  = Money.fromFloat (-100)
+    let high = Money.fromFloat 100
 
     test "should not advance with recent offer" $ do
-      let health = Projection {expenses = Money 20000, available = Money 11000}
-          offer = parseTime "2019-02-01T20:02:46"
+      let offer = parseTime "2019-02-01T20:02:46"
           now   = parseTime "2019-02-01T20:04:10"
-      Offer.isNeeded (Just $ advance offer) [] health now @?= False
+      Offer.isNeeded (Just $ advance offer) [] low now @?= False
 
     test "should not advance with old offer" $ do
-      let health = Projection {expenses = Money 20000, available = Money 11000}
-          now   = parseTime "2019-02-04T20:04:10"
+      let now   = parseTime "2019-02-04T20:04:10"
           offer = parseTime "2019-02-01T20:04:10"
-      Offer.isNeeded (Just $ advance offer) [] health now @?= False
+      Offer.isNeeded (Just $ advance offer) [] low now @?= False
 
     test "should advance with no offers" $ do
-      let health = Projection {expenses = Money 20000, available = Money 11000}
-          now = parseTime "2019-02-01T20:04:10"
-      Offer.isNeeded Nothing [] health now @?= True
+      let now = parseTime "2019-02-01T20:04:10"
+      Offer.isNeeded Nothing [] low now @?= True
 
     test "should not advance if sufficient funds" $ do
-      let health = Projection {expenses = Money 20000, available = Money 110000000}
-          now = parseTime "2019-02-01T20:04:10"
-      Offer.isNeeded Nothing [] health now @?= False
+      let now = parseTime "2019-02-01T20:04:10"
+      Offer.isNeeded Nothing [] high now @?= False
 
 
 
@@ -91,20 +88,19 @@ tests = do
 
 
   group "amount" $ do
+    let low = Money.fromFloat ( -100 )
+
     test "amount of difference needed" $ do
-      let health = Projection { expenses = Money.fromFloat 200, available = Money.fromFloat 100 }
-          credit = Money.fromFloat 10000000
-      Offer.amount credit [] health @?= absolute (Money.fromFloat 100)
+      let credit = Money.fromFloat 10000000
+      Offer.amount credit [] low @?= absolute low
 
     test "offers in multiples of 50" $ do
-      let health = Projection { expenses = Money.fromFloat 210, available = Money.fromFloat 15 }
-          credit = Money.fromFloat 10000000
-      Offer.amount credit [] health @?= absolute (Money.fromFloat 200)
+      let credit = Money.fromFloat 10000000
+      Offer.amount credit [] (Money.fromFloat (-195)) @?= absolute (Money.fromFloat 200)
 
     test "capped at credit" $ do
-      let health = Projection { expenses = Money.fromFloat 200, available = Money.fromFloat 100 }
-          credit = Money.fromFloat 20
-      Offer.amount credit [] health @?= absolute (Money.fromFloat 20)
+      let credit = Money.fromFloat 20
+      Offer.amount credit [] low @?= absolute credit
 
   where
     ago1m       = Time.addUTCTime (-60)

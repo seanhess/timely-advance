@@ -27,17 +27,24 @@ import           Timely.Bank                  (Item)
 
 accounts :: Table Account
 accounts = table "accounts"
-    [ #accountId :- primary
-    , #phone     :- index
-    , #phone     :- unique
-    ]
+  [ #accountId :- primary
+  , #phone     :- index
+  , #phone     :- unique
+  ]
 
 customers :: Table Customer
-customers = table "accounts_customers" [#id :- autoPrimary, #accountId :- foreignKey accounts #accountId ]
+customers = table "accounts_customers"
+  [ #accountId :- primary
+  , #accountId :- foreignKey accounts #accountId
+  ]
 
 
 banks :: Table BankAccount
-banks = table "accounts_banks" [#id :- autoPrimary, #accountId :- foreignKey accounts #accountId]
+banks = table "accounts_banks"
+  [ #bankAccountId :- primary
+  , #accountId :- foreignKey accounts #accountId
+  , #accountId :- index
+  ]
 
 
 allAccounts :: (Selda m) => m [AccountCustomer]

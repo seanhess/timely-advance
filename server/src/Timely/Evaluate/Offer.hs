@@ -8,7 +8,7 @@ import           Data.Model.Money as Money
 import           Data.Number.Abs  (Abs, absolute)
 import           Data.Time.Clock  (NominalDiffTime, UTCTime (..))
 import qualified Data.Time.Clock  as Time
-import           Timely.Advances  (Advance (..))
+import           Timely.Advances  (Advance)
 import qualified Timely.Advances  as Advances
 
 -- If they have any active advances, the trigger amount changes to 250.00
@@ -16,28 +16,33 @@ import qualified Timely.Advances  as Advances
 -- If they have any unclaimed offers at all, don't advance
 
 
-data Projection = Projection
-  { expenses  :: Money
-  , available :: Money
-  } deriving (Show, Eq)
+type LowestBalance = Money
 
 
-isNeeded :: Maybe Advance -> [Advance] -> Projection -> UTCTime -> Bool
-isNeeded offer active health today
-  | isAnyRecent today $ advanceTimes offer active = False
-  | Maybe.isJust offer = False
-  | available health > expenses health = False
-  | otherwise = True
+isNeeded :: Maybe Advance -> [Advance] -> LowestBalance -> UTCTime -> Bool
+isNeeded offer active lowest today =
+  Maybe.isJust $ check (Money.fromFloat 0) offer active lowest today
+
+
+check :: Money -> Maybe Advance -> [Advance] -> LowestBalance -> UTCTime -> Maybe (Abs Money)
+check credit offer active lowest today
+  | isAnyRecent today $ advanceTimes offer active = Nothing
+  | Maybe.isJust offer = Nothing
+  | lowest >= 0 = Nothing
+  | otherwise = Just $ amount credit active lowest
 
 
 
-amount :: Money -> [Advance] -> Projection -> Abs Money
-amount credit advances health =
+
+
+amount :: Money -> [Advance] -> LowestBalance -> Abs Money
+amount credit advances lowest =
   absolute $ min
     (creditRemaining credit advances)
-    (nearest50 $ abs $ expenses health - available health)
+    (nearest50 $ abs $ lowest)
   where
     nearest50 = nearestUp (Money.fromFloat 50)
+
 
 
 nearestUp :: Money -> Money -> Money
@@ -49,7 +54,7 @@ nearestUp amount m =
 
 advanceTimes :: Maybe Advance -> [Advance] -> [UTCTime]
 advanceTimes offer active =
-  Maybe.catMaybes $ (fmap offered offer : map activated active)
+  Maybe.catMaybes $ (fmap Advances.offered offer : map Advances.activated active)
 
 
 isAnyRecent :: UTCTime -> [UTCTime] -> Bool

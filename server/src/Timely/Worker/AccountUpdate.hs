@@ -5,7 +5,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Timely.Worker.AccountUpdate where
 
--- TODO real transaction analysis
 import           Control.Effects                    (MonadEffects)
 import           Control.Effects.Log                (Log)
 import qualified Control.Effects.Log                as Log
@@ -13,7 +12,6 @@ import           Control.Effects.Signal             (Throw, throwSignal)
 import qualified Control.Effects.Signal             as Signal
 import           Control.Effects.Time               (Time, UTCTime)
 import qualified Control.Effects.Time               as Time
--- import           Control.Monad                      (when)
 import           Control.Monad.Catch                (MonadThrow (..))
 import           Data.Function                      ((&))
 import qualified Data.List                          as List
@@ -23,6 +21,7 @@ import           Data.Model.Id                      (Id)
 import           Data.Model.Money                   (Money)
 import           Data.Model.Types                   (Phone)
 import           Data.Model.Valid                   as Valid
+import           Data.Number.Abs                    (Abs)
 import           Data.Time.Calendar                 (Day)
 import qualified Network.AMQP.Worker                as Worker (Queue, topic)
 import           Timely.Accounts                    (Accounts, TransactionRow (transactionId))
@@ -32,6 +31,7 @@ import qualified Timely.Accounts.Budgets            as Budgets
 import           Timely.Accounts.Types              (Account (..), BankAccount (bankAccountId))
 import qualified Timely.Accounts.Types.BankAccount  as BankAccount
 import qualified Timely.Accounts.Types.Transaction  as Transaction
+import           Timely.Actions.AccountHealth       (AccountHealth (..))
 import qualified Timely.Actions.AccountHealth       as AccountHealth
 import           Timely.Advances                    (Advance, Advances)
 import qualified Timely.Advances                    as Advances
@@ -39,15 +39,14 @@ import qualified Timely.App                         as App
 import           Timely.Bank                        (Access, Banks, Token)
 import qualified Timely.Bank                        as Bank
 import           Timely.Evaluate.Health.Budget      (Budget (..))
+import           Timely.Evaluate.Health.Projection  (Projection (..))
 import           Timely.Evaluate.Health.Transaction (Income)
-import           Timely.Evaluate.Offer              (Projection (..))
 import qualified Timely.Evaluate.Offer              as Offer
 import qualified Timely.Evaluate.Schedule           as Schedule
 import           Timely.Events                      as Events
 import           Timely.Notify                      (Notify)
 import qualified Timely.Notify                      as Notify
 import           Timely.Transfers.Account           (TransferAccount)
-import           Timely.Types.AccountHealth         (AccountHealth (..))
 import           Timely.Types.Update                (Error (..))
 
 
@@ -73,13 +72,12 @@ handler account = do
   where
     onError :: (MonadThrow m) => Error -> m ()
     onError err =
-      -- TODO mark the account as having an error?
+      -- Should we mark the account as having an error?
       -- no, we don't have a way of storing it right now, unlike onboarding
       throwM err
 
 
 
--- I don't have the budgets
 accountUpdate
   :: ( MonadEffects '[Time, Accounts, Log, Banks, Advances, Notify, Throw Error, Budgets] m)
   => Account -> m ()
@@ -97,7 +95,7 @@ accountUpdate account@(Account{ accountId, bankToken }) = do
     let health = AccountHealth.analyzeWith today check incs exps trans
 
     inc    <- require (NoIncome accountId) $ Maybe.listToMaybe incs
-    checkAdvance account health now today inc
+    checkAdvance account (projection health) now today inc
 
 
 
@@ -110,27 +108,25 @@ accountUpdate account@(Account{ accountId, bankToken }) = do
 checkAdvance
   :: ( MonadEffects '[Log, Advances, Notify] m
      )
-  => Account -> AccountHealth -> UTCTime -> Day -> Budget Income -> m ()
-checkAdvance Account {accountId, transferId, phone, credit} health now today inc = do
+  => Account -> Projection -> UTCTime -> Day -> Budget Income -> m ()
+checkAdvance Account {accountId, transferId, phone, credit} proj now today inc = do
     offer  <- Advances.findOffer  accountId
     active <- Advances.findActive accountId
-    error "TODO" transferId phone credit health now today inc offer active
 
---     let proj = Projection { expenses = budgeted health, available = balance health  }
---     Log.debug ("Offer?", proj, Maybe.isJust offer, List.length active)
+    case Offer.check credit offer active (lowest proj) now of
+      Nothing -> pure ()
+      Just amount -> do
+        offerAdvance today accountId transferId phone inc amount
+        pure ()
 
---     when (Offer.isNeeded offer active proj now) $ do
---       offerAdvance today accountId transferId phone inc credit proj active
---       pure ()
 
 
 
 offerAdvance
    :: ( MonadEffects '[Log, Advances, Notify] m)
-   => Day -> Guid Account -> Id TransferAccount -> Valid Phone -> Budget Income -> Money -> Projection -> [Advance] -> m Advance
-offerAdvance today accountId transferId phone income credit health advances = do
+   => Day -> Guid Account -> Id TransferAccount -> Valid Phone -> Budget Income -> Abs Money -> m Advance
+offerAdvance today accountId transferId phone income amount = do
     let dueNextPay = Schedule.next (schedule income)  today
-    let amount = Offer.amount credit advances health
     advance <- Advances.create accountId transferId amount dueNextPay
     Notify.send accountId phone (Notify.Message (Advances.advanceId advance) Notify.Advance message)
     Log.debug ("advance", advance)

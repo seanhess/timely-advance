@@ -39,7 +39,6 @@ generateCode p = do
   pure NoContent
 
 
--- TODO check to see if there's an account and set the account id
 authenticate
   :: ( MonadIO m
      , MonadEffects '[Throw ServantErr, Accounts, Auth] m

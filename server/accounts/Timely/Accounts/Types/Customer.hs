@@ -11,7 +11,7 @@ import           Data.Model.Valid              (Valid (..))
 import           Data.Text                     as Text
 import           Data.Time.Calendar            (Day)
 import           Data.Time.Clock               (UTCTime)
-import           Database.Selda                (ID, SqlRow (..))
+import           Database.Selda                (SqlRow (..))
 import           GHC.Generics                  (Generic)
 import           Timely.Accounts.Types.Account (Account)
 import           Timely.Accounts.Types.Api     ()
@@ -32,8 +32,7 @@ instance ToJSON AccountCustomer
 
 
 data Customer = Customer
-    { id          :: ID Customer
-    , accountId   :: Guid Account
+    { accountId   :: Guid Account
     , firstName   :: Text
     , middleName  :: Maybe Text
     , lastName    :: Text

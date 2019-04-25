@@ -30,6 +30,7 @@ import qualified Timely.Accounts.Application          as Application
 import           Timely.Accounts.Budgets              (BudgetRow)
 import qualified Timely.Accounts.Budgets              as Budgets
 import           Timely.Accounts.Types                (AppResult, Application, TransactionRow)
+import           Timely.Actions.AccountHealth         (AccountHealth)
 import qualified Timely.Actions.AccountHealth         as AccountHealth
 import           Timely.Actions.Transactions          (History)
 import qualified Timely.Actions.Transactions          as Transactions
@@ -50,7 +51,6 @@ import           Timely.Config                        (port, serveDir)
 import           Timely.Evaluate.Health.Budget        (Budget)
 import           Timely.Evaluate.Health.Transaction   (Expense, Income)
 import qualified Timely.Transfers                     as Transfers
-import           Timely.Types.AccountHealth           (AccountHealth)
 import           Timely.Types.Config
 import           Timely.Types.Result                  (Result)
 import qualified Timely.Types.Result                  as Result
@@ -280,7 +280,6 @@ initialize = do
     putStrLn "Done"
 
 
--- TODO use secret to generate key so sessions aren't invalidated
 start :: IO ()
 start = do
     -- Load state

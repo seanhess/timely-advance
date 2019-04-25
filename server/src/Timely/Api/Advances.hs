@@ -39,7 +39,6 @@ acceptAdvance a adv amt = do
   pure advance
 
 
--- TODO tests
 checkCredit
   :: ( MonadEffects '[Throw ServantErr, Accounts, Advances] m
      ) => Guid Account -> Money -> m ()
