@@ -10,6 +10,7 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
 import           Timely.Evaluate.Health.Needed as Needed
+import           Timely.Evaluate.Health.Transaction as Transaction
 import           Timely.Evaluate.Schedule      (DayOfMonth (..), DayOfWeek (..), Schedule (..))
 import qualified Timely.Evaluate.Schedule      as Schedule
 
@@ -190,5 +191,5 @@ testNeededForBill = do
 
 
 
-paychecks :: Money -> [Day] -> [Transaction a]
-paychecks amt ds = map (Transaction "" (absolute amt)) ds
+paychecks :: Money -> [Day] -> [Transaction Income]
+paychecks amt ds = map (\d -> Transaction.income "" d amt) ds

@@ -39,7 +39,7 @@ transAverage ts =
 
 transTotal :: [Transaction a] -> Abs Money
 transTotal =
-  absolute . sum . map (value . Transaction.amount)
+  absolute . sum . map (abs . Transaction.amount)
 
 
 

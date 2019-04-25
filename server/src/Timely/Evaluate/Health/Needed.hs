@@ -4,7 +4,7 @@
 {-# LANGUAGE NamedFieldPuns        #-}
 module Timely.Evaluate.Health.Needed
   ( Budget(Budget)
-  , Transaction(Transaction)
+  , Transaction
   , Expense, Income
   , neededForBill
   , dueDates
@@ -35,7 +35,7 @@ import qualified Timely.Evaluate.Schedule           as Schedule
 -- do we include the start date? Yes, be conservative
 incomeSince :: Day -> [Transaction Income] -> Money
 incomeSince start =
-  sum . map (value . Trans.amount) . filter (\t -> Trans.date t >= start)
+  sum . map (Trans.amount) . filter (\t -> Trans.date t >= start)
 
 
 -- where Day is the bill due date

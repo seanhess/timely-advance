@@ -39,18 +39,18 @@ tests = do
 
 
     test "biggest total group first" $ do
-      let ts = [ transaction { name = "small", amount = absolute $ Money.fromFloat (-100.00) }
-               , transaction { name = "small", amount = absolute $ Money.fromFloat (-100.00) }
-               , transaction { name = "big",     amount = absolute $ Money.fromFloat (-150.00) }
-               , transaction { name = "big",     amount = absolute $ Money.fromFloat (-150.00) }
+      let ts = [ transaction { name = "small", amount = Money.fromFloat (-100.00) }
+               , transaction { name = "small", amount = Money.fromFloat (-100.00) }
+               , transaction { name = "big",     amount = Money.fromFloat (-150.00) }
+               , transaction { name = "big",     amount = Money.fromFloat (-150.00) }
                ]
       (map History.name $ History.groups ts) @?= ["big", "small"]
 
 
     test "biggest total should be before large single" $ do
-      let ts = [ transaction { Trans.name = "regular", amount = absolute $ Money.fromFloat (-100.00) }
-               , transaction { Trans.name = "regular", amount = absolute $ Money.fromFloat (-100.00) }
-               , transaction { Trans.name = "big",     amount = absolute $ Money.fromFloat (-150.00) }
+      let ts = [ transaction { Trans.name = "regular", amount = Money.fromFloat (-100.00) }
+               , transaction { Trans.name = "regular", amount = Money.fromFloat (-100.00) }
+               , transaction { Trans.name = "big",     amount = Money.fromFloat (-150.00) }
                ]
       (map History.name $ History.groups ts) @?= ["regular", "big"]
 
@@ -77,9 +77,9 @@ tests = do
       History.average first @?= (absolute $ Money.fromFloat 89.40)
 
     test "biggest total should be before large single" $ do
-      let ts = [ transaction { name = "regular", amount = absolute $ Money.fromFloat (100.00) }
-               , transaction { name = "regular", amount = absolute $ Money.fromFloat (100.00) }
-               , transaction { name = "big",     amount = absolute $ Money.fromFloat (150.00) }
+      let ts = [ transaction { name = "regular", amount = Money.fromFloat (100.00) }
+               , transaction { name = "regular", amount = Money.fromFloat (100.00) }
+               , transaction { name = "big",     amount = Money.fromFloat (150.00) }
                ]
       (map History.name $ History.groups ts) @?= ["regular", "big"]
 

@@ -14,7 +14,7 @@ import qualified Data.List                          as List
 import qualified Data.Model.Money                   as Money
 import           Data.Maybe                         (mapMaybe, fromMaybe)
 import           GHC.Generics                       (Generic)
-import Data.Number.Abs (Abs(value), absolute)
+import           Data.Number.Abs                    (Abs(value))
 import           Timely.Accounts                    (Account, Accounts, TransactionRow(..))
 import qualified Timely.Accounts                    as Accounts
 import           Timely.Evaluate.Health.Transaction (Expense, Income, Transaction (..))
@@ -98,12 +98,12 @@ defaultBudget Group {name, average, schedule, transactions} =
 toIncome :: TransactionRow -> Maybe (Transaction Income)
 toIncome row@TransactionRow {name, date, amount} =
   if isIncome row
-    then Just $ Transaction name (absolute amount) date
+    then Just $ Trans.income name date amount
     else Nothing
 
 
 toExpense :: TransactionRow -> Maybe (Transaction Expense)
 toExpense row@TransactionRow {name, date, amount} =
   if isExpense row
-    then Just $ Transaction name (absolute amount) date
+    then Just $ Trans.expense name date amount
     else Nothing
