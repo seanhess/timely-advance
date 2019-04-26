@@ -55,7 +55,7 @@ data Accounts m = AccountsMethods
     , _findCustomer :: Guid Account -> m (Maybe Customer)
     , _findByPhone  :: Valid Phone -> m (Maybe Account)
     , _findByBankId :: Id Item -> m [Account]
-    , _create       :: Account -> Customer -> [BankAccount] -> [TransactionRow] -> m ()
+    , _create       :: Customer -> [BankAccount] -> [TransactionRow] -> Account -> m ()
     , _findBanks    :: Guid Account -> m [BankAccount]
     , _setBanks     :: Guid Account -> [BankAccount] -> m ()
 
@@ -81,7 +81,7 @@ findCustomer :: MonadEffect Accounts m => Guid Account -> m (Maybe Customer)
 findByPhone  :: MonadEffect Accounts m => Valid Phone -> m (Maybe Account)
 findByBankId :: MonadEffect Accounts m => Id Item     -> m [Account]
 findBanks    :: MonadEffect Accounts m => Guid Account -> m [BankAccount]
-create       :: MonadEffect Accounts m => Account -> Customer -> [BankAccount] -> [TransactionRow] -> m ()
+create       :: MonadEffect Accounts m => Customer -> [BankAccount] -> [TransactionRow] -> Account -> m ()
 setBanks     :: MonadEffect Accounts m => Guid Account -> [BankAccount] -> m ()
 transSave :: MonadEffect Accounts m => Guid Account -> [TransactionRow] -> m ()
 transList :: MonadEffect Accounts m => Guid Account -> Offset -> Count -> m [TransactionRow]
@@ -105,7 +105,7 @@ implementIO = implement $
     Transactions.list
     Transactions.since
   where
-    createAccount acc@Account{accountId} cust banks trans = do
+    createAccount cust banks trans acc@Account{accountId} = do
       Account.createAccount acc cust
       Account.setBankAccounts accountId banks
       Transactions.save accountId trans

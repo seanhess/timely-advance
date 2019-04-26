@@ -99,8 +99,7 @@ accountOnboard app accountId phone = do
 
     trans                    <- loadTransactions accountId bankToken appBankId checking now
 
-    let account = Account accountId phone transId bankToken bankItemId amount now
-    Accounts.create account customer bankAccounts trans
+    Accounts.create customer bankAccounts trans $ Account accountId phone transId bankToken bankItemId amount now
 
     createDefaultBudgets accountId
 
@@ -115,6 +114,7 @@ createDefaultBudgets
   => Guid Account -> m ()
 createDefaultBudgets accountId = do
   history <- Transactions.history accountId
+
   let incs = List.map Transactions.defaultBudget $ Transactions.income history
   let exps = List.map Transactions.defaultBudget $ Transactions.expenses history
 

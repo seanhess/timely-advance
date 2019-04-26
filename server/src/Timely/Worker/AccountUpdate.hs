@@ -21,7 +21,7 @@ import           Data.Model.Id                      (Id)
 import           Data.Model.Money                   (Money)
 import           Data.Model.Types                   (Phone)
 import           Data.Model.Valid                   as Valid
-import           Data.Number.Abs                    (Abs)
+import           Data.Number.Abs                    (Abs(value))
 import           Data.Time.Calendar                 (Day)
 import qualified Network.AMQP.Worker                as Worker (Queue, topic)
 import           Timely.Accounts                    (Accounts, TransactionRow (transactionId))
@@ -89,18 +89,27 @@ accountUpdate account@(Account{ accountId, bankToken }) = do
     trans  <- updateTransactions accountId bankToken (bankAccountId check) today
 
     Log.debug ("trans", length trans)
-    incs   <- Budgets.getIncomes accountId
-    exps   <- Budgets.getExpenses accountId
+    pays   <- Budgets.getIncomes accountId
+    bills  <- Budgets.getExpenses accountId
 
-    let health = AccountHealth.analyzeWith today check incs exps trans
+    let health = AccountHealth.analyzeWith today check pays bills trans
 
-    inc    <- require (NoIncome accountId) $ Maybe.listToMaybe incs
-    checkAdvance account (projection health) now today inc
-
-
+    pay    <- primaryIncome accountId pays
+    checkAdvance account (projection health) now today pay
 
 
 
+
+
+
+primaryIncome
+  :: ( MonadEffects '[Throw Error] m )
+  => Guid Account -> [Budget Income] -> m (Budget Income)
+primaryIncome accountId pays =
+  pays
+    & List.sortOn (value . amount)
+    & Maybe.listToMaybe
+    & require (NoIncome accountId)
 
 
 
@@ -109,14 +118,14 @@ checkAdvance
   :: ( MonadEffects '[Log, Advances, Notify] m
      )
   => Account -> Projection -> UTCTime -> Day -> Budget Income -> m ()
-checkAdvance Account {accountId, transferId, phone, credit} proj now today inc = do
+checkAdvance Account {accountId, transferId, phone, credit} proj now today pay = do
     offer  <- Advances.findOffer  accountId
     active <- Advances.findActive accountId
 
     case Offer.check credit offer active (lowest proj) now of
       Nothing -> pure ()
       Just amount -> do
-        offerAdvance today accountId transferId phone inc amount
+        offerAdvance today accountId transferId phone pay amount
         pure ()
 
 
