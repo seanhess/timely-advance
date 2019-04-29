@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountCustomer, AccountId(..), AccountInfo, Advance, AdvanceId(..), Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Id(..), Onboarding(..), Phone, SSN(..), Session, Token, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getCustomers, getExpenses, getIncome, getTransactionHistory, getTransactions, idValue, postAdvanceAccept, postApplications, putSetExpenses, putSetIncome, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
+module Timely.Api exposing (Account, AccountCustomer, AccountId(..), AccountInfo, Advance, AdvanceId(..), Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Onboarding(..), Phone, SSN(..), Session, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, createExpense, createIncome, delBudget, delExpense, delIncome, editExpense, editIncome, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getCustomers, getExpenses, getIncomes, getTransactionHistory, getTransactions, postAdvanceAccept, postApplications, putBudget, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
 
 import Http exposing (Error, Expect)
 import Json.Decode as Decode exposing (Decoder, bool, int, list, nullable, string)
@@ -7,10 +7,12 @@ import Json.Encode as Encode
 import String
 import Task
 import Time exposing (Month(..))
-import Timely.Types.AccountHealth exposing (AccountHealth, Budget, decodeAccountHealth, decodeBudget, encodeBudget)
+import Timely.Types exposing (Id(..), Token, decodeId, encodeId, idValue)
+import Timely.Types.AccountHealth exposing (AccountHealth, decodeAccountHealth)
+import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..), decodeBudget, decodeBudgetId, encodeBudget)
 import Timely.Types.Date exposing (Date, decodeDate)
 import Timely.Types.Money exposing (Money, decodeMoney, encodeMoney, fromCents, toCents)
-import Timely.Types.Transactions exposing (History, TransRow, Transaction, decodeHistory, decodeTransRow, decodeTransaction)
+import Timely.Types.Transactions exposing (History, Schedule, TransRow, Transaction, decodeHistory, decodeSchedule, decodeTransRow, decodeTransaction, encodeSchedule)
 
 
 type Bank
@@ -129,6 +131,10 @@ type alias Advance =
 type alias Amount =
     { amount : Money
     }
+
+
+
+-- |> required "budgetId" decodeId
 
 
 encodeAccountInfo : AccountInfo -> Encode.Value
@@ -333,6 +339,11 @@ requestPUT onMsg path body decode =
     request "PUT" (Http.jsonBody body) onMsg path decode
 
 
+requestDEL : (Result Error a -> msg) -> List String -> Decoder a -> Cmd msg
+requestDEL =
+    request "DELETE" Http.emptyBody
+
+
 postApplications : (Result Error Application -> msg) -> AccountInfo -> Cmd msg
 postApplications toMsg body =
     requestPOST toMsg [ "", "v1", "applications" ] (encodeAccountInfo body) decodeApplication
@@ -388,29 +399,75 @@ getTransactionHistory toMsg (Id a) =
     requestGET toMsg [ "", "v1", "accounts", a, "transactions", "history" ] decodeHistory
 
 
-putSetIncome : (Result Error String -> msg) -> Id AccountId -> Budget -> Cmd msg
-putSetIncome toMsg (Id a) b =
-    requestPUT toMsg [ "", "v1", "accounts", a, "income" ] (encodeBudget b) string
-
-
-getIncome : (Result Error Budget -> msg) -> Id AccountId -> Cmd msg
-getIncome toMsg (Id a) =
-    requestGET toMsg [ "", "v1", "accounts", a, "income" ] decodeBudget
-
-
-putSetExpenses : (Result Error String -> msg) -> Id AccountId -> List Budget -> Cmd msg
-putSetExpenses toMsg (Id a) bs =
-    requestPUT toMsg [ "", "v1", "accounts", a, "expenses" ] (Encode.list encodeBudget bs) string
-
-
-getExpenses : (Result Error (List Budget) -> msg) -> Id AccountId -> Cmd msg
-getExpenses toMsg (Id a) =
-    requestGET toMsg [ "", "v1", "accounts", a, "expenses" ] (list decodeBudget)
-
-
 postAdvanceAccept : (Result Error Advance -> msg) -> Id AccountId -> Id AdvanceId -> Money -> Cmd msg
 postAdvanceAccept toMsg (Id a) (Id adv) amt =
     requestPOST toMsg [ "", "v1", "accounts", a, "advances", adv, "accept" ] (encodeAmount { amount = amt }) decodeAdvance
+
+
+
+-- Budgets ----------------------------
+
+
+putBudget : BudgetType -> (Result Error String -> msg) -> Id AccountId -> Id Budget -> Budget -> Cmd msg
+putBudget bt toMsg (Id ai) (Id bi) b =
+    requestPUT toMsg [ "", "v1", "accounts", ai, budgetTypePath bt, bi ] (encodeBudget b) string
+
+
+delBudget : BudgetType -> (Result Error String -> msg) -> Id AccountId -> Id Budget -> Cmd msg
+delBudget bt toMsg (Id ai) (Id bi) =
+    requestDEL toMsg [ "", "v1", "accounts", ai, budgetTypePath bt, bi ] string
+
+
+getBudgets : BudgetType -> (Result Error (List (BudgetId Budget)) -> msg) -> Id AccountId -> Cmd msg
+getBudgets bt toMsg (Id ai) =
+    requestGET toMsg [ "", "v1", "accounts", ai, budgetTypePath bt ] (list decodeBudgetId)
+
+
+postBudget : BudgetType -> (Result Error (Id Budget) -> msg) -> Id AccountId -> Budget -> Cmd msg
+postBudget bt toMsg (Id a) b =
+    requestPOST toMsg [ "", "v1", "accounts", a, budgetTypePath bt ] (encodeBudget b) decodeId
+
+
+budgetTypePath : BudgetType -> String
+budgetTypePath bt =
+    case bt of
+        Income ->
+            "incomes"
+
+        Expense ->
+            "expenses"
+
+
+editIncome =
+    putBudget Income
+
+
+editExpense =
+    putBudget Expense
+
+
+delIncome =
+    delBudget Income
+
+
+delExpense =
+    delBudget Expense
+
+
+getIncomes =
+    getBudgets Income
+
+
+getExpenses =
+    getBudgets Expense
+
+
+createIncome =
+    postBudget Income
+
+
+createExpense =
+    postBudget Expense
 
 
 
@@ -436,29 +493,6 @@ type AuthCode
 
 type Auth
     = Auth
-
-
-type Id a
-    = Id String
-
-
-type alias Token a =
-    Id a
-
-
-idValue : Id a -> String
-idValue (Id a) =
-    a
-
-
-encodeId : Id a -> Encode.Value
-encodeId (Id s) =
-    Encode.string s
-
-
-decodeId : Decoder (Id a)
-decodeId =
-    Decode.map Id Decode.string
 
 
 

@@ -8,8 +8,9 @@ import Element.Input as Input
 import Element.Region as Region
 import Http
 import Route exposing (Onboard(..), Route(..))
-import Timely.Api as Api exposing (AccountId, Id)
+import Timely.Api as Api exposing (AccountId)
 import Timely.Style as Style
+import Timely.Types exposing (Id)
 
 
 type alias Model =

@@ -18,15 +18,16 @@ import qualified Data.List                          as List
 import qualified Data.Maybe                         as Maybe
 import           Data.Model.Guid                    as Guid
 import           Data.Model.Id                      (Id)
+import qualified Data.Model.Meta                    as Meta
 import           Data.Model.Money                   (Money)
 import           Data.Model.Types                   (Phone)
 import           Data.Model.Valid                   as Valid
-import           Data.Number.Abs                    (Abs(value))
+import           Data.Number.Abs                    (Abs (value))
 import           Data.Time.Calendar                 (Day)
 import qualified Network.AMQP.Worker                as Worker (Queue, topic)
 import           Timely.Accounts                    (Accounts, TransactionRow (transactionId))
 import qualified Timely.Accounts                    as Accounts
-import           Timely.Accounts.Budgets            (Budgets)
+import           Timely.Accounts.Budgets            (BudgetMeta, Budgets)
 import qualified Timely.Accounts.Budgets            as Budgets
 import           Timely.Accounts.Types              (Account (..), BankAccount (bankAccountId))
 import qualified Timely.Accounts.Types.BankAccount  as BankAccount
@@ -104,9 +105,10 @@ accountUpdate account@(Account{ accountId, bankToken }) = do
 
 primaryIncome
   :: ( MonadEffects '[Throw Error] m )
-  => Guid Account -> [Budget Income] -> m (Budget Income)
+  => Guid Account -> [BudgetMeta Income] -> m (Budget Income)
 primaryIncome accountId pays =
   pays
+    & List.map Meta.value
     & List.sortOn (value . amount)
     & Maybe.listToMaybe
     & require (NoIncome accountId)

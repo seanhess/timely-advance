@@ -1,8 +1,13 @@
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 import Data.Aeson       as Aeson
 import Data.Model.Guid  as Guid
+import Data.Model.Meta  as Meta
 import Data.Model.Money as Money
+import Data.Text        (Text)
 import Data.Typeable    (Typeable)
+import GHC.Generics     (Generic)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Web.HttpApiData  as Http
@@ -17,6 +22,23 @@ guid = "asdf"
 data SomethingElse
 instance GuidPrefix SomethingElse where
   guidPrefix _ = "se"
+
+
+
+data Info = Info
+  { info :: Text
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON Info
+instance FromJSON Info
+
+data User = User
+  { name :: Text
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON User
+instance FromJSON User
+
 
 
 main :: IO ()
@@ -59,4 +81,24 @@ main = defaultMain $
           g @?= fromText "se-1234"
           toText g @?= "se-1234"
       ]
+
+
+    , testGroup "meta"
+        [ testCase "serialize" $ do
+            let meta = Meta (Info "info") (User "user") :: Meta "" Info User
+            (encode meta) @?= "{\"name\":\"user\",\"info\":\"info\"}"
+
+        , testCase "decode" $ do
+            let meta = Meta (Info "info") (User "user") :: Meta "" Info User
+            (eitherDecode $ encode meta) @?= (Right meta)
+
+        , testCase "non-object" $ do
+            let meta = Meta "hi" (User "user") :: Meta "id" Text User
+            (encode meta) @?= "{\"name\":\"user\",\"id\":\"hi\"}"
+
+        , testCase "non-object decode" $ do
+            let meta = Meta "hi" (User "user") :: Meta "id" Text User
+            (eitherDecode $ encode meta) @?= (Right $ meta)
+
+        ]
     ]

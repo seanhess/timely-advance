@@ -1,5 +1,5 @@
 name:                datamodel
-version:             0.2.3
+version:             0.2.4
 github:              "seanhess/types"
 license:             BSD3
 author:              "Sean Hess"
@@ -27,6 +27,8 @@ dependencies:
 - text
 - uuid
 - random
+- unordered-containers
+- mtl
 
 library:
   source-dirs: src

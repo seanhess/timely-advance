@@ -6,7 +6,9 @@ module Route exposing (Account(..), Admin(..), Onboard(..), Route(..), fromUrl, 
 import Browser.Navigation as Nav
 import Html exposing (Attribute)
 import Html.Attributes as Attr
-import Timely.Api as Api exposing (Account, AccountId, AdvanceId, Id(..))
+import Timely.Api as Api exposing (Account, AccountId, AdvanceId)
+import Timely.Types exposing (Id(..))
+import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..))
 import Url exposing (Url)
 import Url.Parser as Parser exposing ((</>), Parser, oneOf, s, string)
 
@@ -20,7 +22,6 @@ type Onboard
     | Signup
     | Login
     | Approval (Id AccountId)
-    | Budget (Id AccountId)
 
 
 type Admin
@@ -38,7 +39,7 @@ type Route
 type Account
     = AccountMain
     | Advance (Id AdvanceId)
-    | Budgets
+    | Budget BudgetType (Id Budget)
     | Breakdown
 
 
@@ -59,7 +60,6 @@ parserOnboard =
         , Parser.map Signup (s "signup")
         , Parser.map Login (s "login")
         , Parser.map Approval (s "approval" </> Parser.map Id string)
-        , Parser.map Budget (s "budget" </> Parser.map Id string)
         ]
 
 
@@ -77,7 +77,8 @@ parserAccount =
     oneOf
         [ Parser.map Advance (s "advances" </> Parser.map Id string)
         , Parser.map AccountMain Parser.top
-        , Parser.map Budgets (s "budgets")
+        , Parser.map (Budget Income) (s "paychecks" </> Parser.map Id string)
+        , Parser.map (Budget Expense) (s "bills" </> Parser.map Id string)
         , Parser.map Breakdown (s "breakdown")
         ]
 
@@ -131,9 +132,6 @@ url page =
                 Onboard (Approval (Id s)) ->
                     [ "onboard", "approval", s ]
 
-                Onboard (Budget (Id s)) ->
-                    [ "onboard", "budget", s ]
-
                 Admin Sudo ->
                     [ "admin", "sudo" ]
 
@@ -143,8 +141,11 @@ url page =
                 Account (Id s) AccountMain ->
                     [ "accounts", s ]
 
-                Account (Id s) Budgets ->
-                    [ "accounts", s, "budgets" ]
+                Account (Id s) (Budget Income (Id b)) ->
+                    [ "accounts", s, "paychecks", b ]
+
+                Account (Id s) (Budget Expense (Id b)) ->
+                    [ "accounts", s, "bills", b ]
 
                 Account (Id s) Breakdown ->
                     [ "accounts", s, "breakdown" ]

@@ -1,12 +1,14 @@
-module Timely.Components exposing (Spinner(..), back, close, loadingButton, spinner, spinnerDots, spinnerRing, spinnerRipple)
+module Timely.Components exposing (Spinner(..), back, close, loadingButton, option, selectBox, spinner, spinnerDots, spinnerRing, spinnerRipple)
 
 import Element exposing (..)
+import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 import Html
 import Html.Attributes as Html
 import Http exposing (Error)
 import Route exposing (Route)
+import Timely.Style as Style
 
 
 type Spinner
@@ -81,4 +83,66 @@ close onBack =
             Element.el
                 [ rotate pi, Font.size 32 ]
                 (text "x")
+        }
+
+
+
+-- Select -------------------------------
+
+
+selectBox : (Bool -> msg) -> Bool -> Element msg
+selectBox onSelect selected =
+    let
+        color =
+            if selected then
+                Style.darkBlue
+
+            else
+                Style.gray
+    in
+    Input.button
+        [ width (px 20), height (px 20), Background.color color ]
+        { onPress = Just (onSelect (not selected))
+        , label = none
+        }
+
+
+option : msg -> Bool -> Element msg -> Element msg
+option onSelect selected label =
+    let
+        style =
+            if selected then
+                Style.primary
+
+            else
+                Style.secondary
+    in
+    Input.button (Style.button style ++ Style.option)
+        { onPress = Just onSelect, label = label }
+
+
+
+-- Disabled Button -------------------------------
+
+
+submitButton : msg -> Bool -> Element msg -> Element msg
+submitButton onMsg enabled label =
+    let
+        style =
+            if enabled then
+                Style.primary
+
+            else
+                Style.secondary
+
+        action =
+            if enabled then
+                Just onMsg
+
+            else
+                Nothing
+    in
+    Input.button (Style.button style)
+        { onPress = action
+        , label = label
         }

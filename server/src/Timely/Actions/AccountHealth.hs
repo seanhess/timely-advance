@@ -13,18 +13,18 @@ import           Data.Aeson                         (ToJSON)
 import           Data.Function                      ((&))
 import qualified Data.List                          as List
 import           Data.Model.Guid                    (Guid)
+import qualified Data.Model.Meta                    as Meta
 import           Data.Time.Calendar                 (Day)
 import           GHC.Generics                       (Generic)
 import           Timely.Accounts                    (Accounts)
 import qualified Timely.Accounts                    as Accounts
-import           Timely.Accounts.Budgets            (Budgets)
+import           Timely.Accounts.Budgets            (Budgets, BudgetMeta)
 import qualified Timely.Accounts.Budgets            as Budgets
 import           Timely.Accounts.Types              (Account, BankAccount (..), TransactionRow)
 import qualified Timely.Accounts.Types.BankAccount  as BankAccount
 import qualified Timely.Actions.Transactions        as Transactions
 import           Timely.Evaluate.Health             (Projection)
 import qualified Timely.Evaluate.Health             as Health
-import           Timely.Evaluate.Health.Budget      (Budget (..))
 import           Timely.Evaluate.Health.Transaction (Expense, Income)
 import           Timely.Types.Update                (Error (..))
 
@@ -63,12 +63,15 @@ analyze i = do
 
 
 
-analyzeWith :: Day -> BankAccount -> [Budget Income] -> [Budget Expense] -> [TransactionRow] -> AccountHealth
+analyzeWith :: Day -> BankAccount -> [BudgetMeta Income] -> [BudgetMeta Expense] -> [TransactionRow] -> AccountHealth
 analyzeWith now BankAccount {balance} pays bills _ = do
     -- Not using transactions for now, simplify because we can't actually
     -- take any action if things are settling today. We can only move
     -- one day out
-    AccountHealth $ Health.projection now balance pays bills
+    AccountHealth $
+       Health.projection now balance
+         (map Meta.value pays)
+         (map Meta.value bills)
 
 
 

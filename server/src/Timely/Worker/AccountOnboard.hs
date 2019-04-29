@@ -110,7 +110,7 @@ accountOnboard app accountId phone = do
 
 
 createDefaultBudgets
-  :: ( MonadEffects '[Time, Accounts, Budgets] m )
+  :: ( MonadEffects '[Time, Accounts, Budgets, Log] m )
   => Guid Account -> m ()
 createDefaultBudgets accountId = do
   history <- Transactions.history accountId
@@ -120,6 +120,8 @@ createDefaultBudgets accountId = do
 
   Budgets.saveIncomes accountId incs
   Budgets.saveExpenses accountId exps
+
+  Log.debug ("BUDGETS", incs, exps)
   pure ()
 
 

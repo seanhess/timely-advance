@@ -13,6 +13,7 @@ module Timely.Accounts.Budgets
   ( BudgetType(..)
   , Budgets(..)
   , BudgetRow
+  , BudgetMeta
   , edit
   , delete
   , saveIncomes
@@ -25,7 +26,8 @@ module Timely.Accounts.Budgets
 
 import Control.Effects                    (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
 import Control.Monad.Selda                (Selda, deleteFrom, insert, query, tryCreateTable, update_)
-import Data.Model.Guid                    (Guid, GuidPrefix (..))
+import Data.Model.Guid                    as Guid (Guid, GuidPrefix (..), randomId)
+import Data.Model.Meta                    (Meta (Meta))
 import Data.Model.Money                   (Money)
 import Data.Number.Abs                    (Abs (value), absolute)
 import Database.Selda                     hiding (deleteFrom, insert, query, tryCreateTable, update, update_)
@@ -40,11 +42,18 @@ import Timely.Evaluate.Schedule           (Schedule)
 
 
 
+-- type BudgetWithId = Meta (Guid BudgetRow) (Budget ())
+
+
 data BudgetType
   = Income
   | Expense
   deriving (Show, Read, Bounded, Enum, Eq, Generic)
 instance SqlType BudgetType
+
+
+
+type BudgetMeta a = Meta "budgetId" (Guid BudgetRow) (Budget a)
 
 
 data BudgetRow = BudgetRow
@@ -70,8 +79,8 @@ instance GuidPrefix BudgetRow where
 data Budgets m = BudgetsMethods
   { _edit    :: Guid Account -> Guid BudgetRow -> Budget () -> m ()
   , _delete  :: Guid Account -> Guid BudgetRow -> m ()
-  , _create  :: BudgetType -> Guid Account -> [Budget ()] -> m ()
-  , _budgets :: BudgetType -> Guid Account -> m [Budget ()]
+  , _create  :: BudgetType -> Guid Account -> [Budget ()] -> m [Guid BudgetRow]
+  , _budgets :: BudgetType -> Guid Account -> m [BudgetMeta ()]
   } deriving (Generic)
 
 instance Effect Budgets
@@ -79,8 +88,8 @@ instance Effect Budgets
 
 edit'    :: MonadEffect Budgets m => Guid Account -> Guid BudgetRow -> Budget () -> m ()
 delete'  :: MonadEffect Budgets m => Guid Account -> Guid BudgetRow -> m ()
-create'  :: MonadEffect Budgets m => BudgetType -> Guid Account -> [Budget ()] -> m ()
-budgets' :: MonadEffect Budgets m => BudgetType -> Guid Account -> m [Budget ()]
+create'  :: MonadEffect Budgets m => BudgetType -> Guid Account -> [Budget ()] -> m [Guid BudgetRow]
+budgets' :: MonadEffect Budgets m => BudgetType -> Guid Account -> m [BudgetMeta ()]
 BudgetsMethods edit' delete' create' budgets' = effect
 
 
@@ -94,23 +103,23 @@ delete :: MonadEffect Budgets m => Guid Account -> Guid BudgetRow -> m ()
 delete = delete'
 
 
-saveIncomes :: MonadEffect Budgets m => Guid Account -> [Budget Income] -> m ()
+saveIncomes :: MonadEffect Budgets m => Guid Account -> [Budget Income] -> m [Guid BudgetRow]
 saveIncomes accountId incomes =
   create' Income accountId (map convert incomes)
 
-saveExpenses :: MonadEffect Budgets m => Guid Account -> [Budget Expense] -> m ()
+saveExpenses :: MonadEffect Budgets m => Guid Account -> [Budget Expense] -> m [Guid BudgetRow]
 saveExpenses accountId expenses =
   create' Expense accountId (map convert expenses)
 
 
-getIncomes :: MonadEffect Budgets m => Guid Account -> m [Budget Income]
+getIncomes :: MonadEffect Budgets m => Guid Account -> m [BudgetMeta Income]
 getIncomes accountId =
-  map convert <$> budgets' Income accountId
+  map (fmap convert) <$> budgets' Income accountId
 
 
-getExpenses :: MonadEffect Budgets m => Guid Account -> m [Budget Expense]
+getExpenses :: MonadEffect Budgets m => Guid Account -> m [BudgetMeta Expense]
 getExpenses accountId =
-  map convert <$> budgets' Expense accountId
+  map (fmap convert) <$> budgets' Expense accountId
 
 
 implementIO :: Selda m => RuntimeImplemented Budgets m a -> m a
@@ -167,13 +176,14 @@ updateRow ai bi Budget {name, schedule, amount} = do
 
 
 
-createRows :: Selda m => BudgetType -> Guid Account -> [Budget a] -> m ()
+createRows :: Selda m => BudgetType -> Guid Account -> [Budget a] -> m [Guid BudgetRow]
 createRows typ a bs = do
-  insert budget $ map (budgetRow a typ) bs
-  pure ()
+  rows <- mapM (budgetRow a typ) bs
+  insert budget rows
+  pure $ map budgetId rows
 
 
-getRows :: Selda m => BudgetType -> Guid Account -> m [Budget a]
+getRows :: Selda m => BudgetType -> Guid Account -> m [BudgetMeta a]
 getRows typ a = do
   is <- query $ do
     i <- select budget
@@ -198,10 +208,11 @@ initialize = do
 -- More Types ---------------------------------------------
 
 
-budgetRow :: Guid Account -> BudgetType -> Budget a -> BudgetRow
-budgetRow accountId budgetType Budget {name, amount, schedule} =
-  BudgetRow
-    { budgetId = def
+budgetRow :: MonadIO m => Guid Account -> BudgetType -> Budget a -> m BudgetRow
+budgetRow accountId budgetType Budget {name, amount, schedule} = do
+  budgetId <- Guid.randomId
+  pure $ BudgetRow
+    { budgetId
     , accountId
     , budgetType
     , name
@@ -209,8 +220,9 @@ budgetRow accountId budgetType Budget {name, amount, schedule} =
     , schedule = Field schedule
     }
 
-fromBudgetRow :: BudgetRow -> Budget a
-fromBudgetRow BudgetRow {name, amount, schedule} =
+fromBudgetRow :: BudgetRow -> BudgetMeta a
+fromBudgetRow BudgetRow {budgetId, name, amount, schedule} =
+  Meta budgetId $
   Budget
     { name
     , amount = absolute amount

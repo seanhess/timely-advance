@@ -1,4 +1,4 @@
-module Timely.Types.Transactions exposing (Group, History, Schedule(..), TransRow, Transaction, decodeGroup, decodeHistory, decodeSchedule, decodeTransRow, decodeTransaction, encodeSchedule, formatBiweek, formatDay, formatDaySuffix, formatWeekday)
+module Timely.Types.Transactions exposing (Group, History, Schedule(..), TransRow, Transaction, decodeGroup, decodeHistory, decodeSchedule, decodeTransRow, decodeTransaction, encodeSchedule, formatBiweek, formatDay, formatDaySuffix, formatWeekday, isMonthly, isWeekly)
 
 import Json.Decode as Decode exposing (Decoder, at, bool, fail, field, int, list, nullable, string, succeed)
 import Json.Decode.Pipeline exposing (..)
@@ -306,3 +306,23 @@ formatDaySuffix n =
 
         _ ->
             "th"
+
+
+isMonthly : Schedule -> Bool
+isMonthly s =
+    case s of
+        Monthly _ ->
+            True
+
+        _ ->
+            False
+
+
+isWeekly : Schedule -> Bool
+isWeekly s =
+    case s of
+        Weekly _ ->
+            True
+
+        _ ->
+            False

@@ -52,21 +52,26 @@ lowestBalance bal es = minimum $ bal : List.map Event.balance es
 
 
 
-allTransactions :: Day -> [Budget Income] -> [Budget Expense] -> [Transaction Any]
+allTransactions :: Day -> [Budget Income] -> [Budget Expense] -> [(Budget Any, Transaction Any)]
 allTransactions now pays bills =
-  let creds = List.concatMap (credits now) pays
-      debs = List.concatMap (debits now) bills
-  in List.sortOn date $ debs ++ creds
+  let creds = List.concatMap (budgetTransactions (credits now)) pays
+      debs  = List.concatMap (budgetTransactions (debits now)) bills
+  in List.sortOn (date . snd) $ debs ++ creds
 
 
-allEvents :: Money -> [Transaction Any] -> [Event]
+budgetTransactions :: (Budget a -> [Transaction Any]) -> Budget a -> [(Budget Any, Transaction Any)]
+budgetTransactions findTransactions b@(Budget n s a) =
+  zip (repeat (Budget n s a)) (findTransactions b)
+
+
+allEvents :: Money -> [(Budget Any, Transaction Any)] -> [Event]
 allEvents balance =
   snd . List.mapAccumL addEvent balance
   where
-    addEvent :: Money -> Transaction Any -> (Money, Event)
-    addEvent b t =
-      let b' = b + (Trans.amount t)
-      in (b', Event t b')
+    addEvent :: Money -> (Budget Any, Transaction Any) -> (Money, Event)
+    addEvent bal (bgt, trans) =
+      let bal' = bal + (Trans.amount trans)
+      in (bal', Event trans bal' bgt)
 
 
 credits :: Day -> Budget Income -> [Transaction Any]

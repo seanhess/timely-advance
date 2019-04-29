@@ -1,4 +1,4 @@
-module Timely.Types.Money exposing (Money(..), decodeMoney, encodeMoney, formatCents, formatDollars, formatMoney, fromCents, fromDollars, toCents, toDollars, total)
+module Timely.Types.Money exposing (Money(..), decodeMoney, encodeMoney, formatCents, formatDollars, formatMoney, formatMoneyNoSign, fromCents, fromDollars, toCents, toDollars, total)
 
 import Json.Decode as Decode exposing (Decoder, int)
 import Json.Encode as Encode
@@ -47,6 +47,11 @@ encodeMoney (Money c) =
 formatMoney : Money -> String
 formatMoney m =
     formatSign m ++ formatDollars m ++ "." ++ formatCents m
+
+
+formatMoneyNoSign : Money -> String
+formatMoneyNoSign m =
+    formatDollars m ++ "." ++ formatCents m
 
 
 formatDollars : Money -> String

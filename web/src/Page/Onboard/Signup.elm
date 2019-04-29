@@ -16,9 +16,10 @@ import Platform.Updates exposing (Updates, command, set, updates)
 import Route exposing (Route)
 import Task
 import Time
-import Timely.Api as Api exposing (AccountInfo, Application, Auth, AuthCode, Bank, Id(..), Phone, SSN, Session, Token, Valid(..), idValue)
+import Timely.Api as Api exposing (AccountInfo, Application, Auth, AuthCode, Bank, Phone, SSN, Session, Valid(..))
 import Timely.Components as Components exposing (loadingButton)
 import Timely.Style as Style
+import Timely.Types exposing (Id(..), Token, idValue)
 
 
 port plaidLinkOpen : Encode.Value -> Cmd msg

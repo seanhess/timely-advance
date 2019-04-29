@@ -12,10 +12,11 @@ import Process
 import Route
 import Task
 import Time
-import Timely.Api as Api exposing (Account, AccountId, Advance, AdvanceId, Application, ApprovalResult(..), Id(..), advanceIsActive, idValue)
+import Timely.Api as Api exposing (Account, AccountId, Advance, AdvanceId, Application, ApprovalResult(..), advanceIsActive)
 import Timely.Components as Components
 import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
+import Timely.Types exposing (Id(..), idValue)
 import Timely.Types.Date as Date exposing (formatDate)
 import Timely.Types.Money exposing (Money, formatDollars, fromCents, fromDollars, toCents)
 import Validate exposing (Validator)

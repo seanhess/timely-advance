@@ -27,7 +27,7 @@ import           Servant.Server.Generic               (AsServerT, genericServerT
 -- import           Servant.Server.StaticFiles           (serveDirectoryFileServer)
 import           Timely.Accounts                      as Accounts
 import qualified Timely.Accounts.Application          as Application
-import           Timely.Accounts.Budgets              (BudgetRow)
+import           Timely.Accounts.Budgets              (BudgetRow, BudgetMeta)
 import qualified Timely.Accounts.Budgets              as Budgets
 import           Timely.Accounts.Types                (AppResult, Application, TransactionRow)
 import           Timely.Actions.AccountHealth         (AccountHealth)
@@ -105,8 +105,8 @@ data AccountApi route = AccountApi
 data BudgetsApi a route = BudgetsApi
     { _edit   :: route :- Capture "id" (Guid BudgetRow) :> ReqBody '[JSON] (Budget a) :> Put '[JSON] NoContent
     , _delete :: route :- Capture "id" (Guid BudgetRow) :> Delete '[JSON] NoContent
-    , _get    :: route :- Get '[JSON] [Budget a]
-    , _create :: route :- ReqBody '[JSON] (Budget a) :> Post '[JSON] NoContent
+    , _get    :: route :- Get '[JSON] [BudgetMeta a]
+    , _create :: route :- ReqBody '[JSON] (Budget a) :> Post '[JSON] (Guid BudgetRow)
     } deriving (Generic)
 
 
@@ -166,7 +166,7 @@ incomesApi :: Guid Account -> ToServant (BudgetsApi Income) (AsServerT AppM)
 incomesApi i = genericServerT BudgetsApi
    { _edit   = \bi b -> Budgets.edit i bi b    >> pure NoContent
    , _delete = \bi -> Budgets.delete i bi      >> pure NoContent
-   , _create = \b -> Budgets.saveIncomes i [b] >> pure NoContent
+   , _create = \b -> head <$> Budgets.saveIncomes i [b]
    , _get    = Budgets.getIncomes i
    }
 
@@ -175,7 +175,7 @@ expensesApi :: Guid Account -> ToServant (BudgetsApi Expense) (AsServerT AppM)
 expensesApi i = genericServerT BudgetsApi
    { _edit   = \bi b -> Budgets.edit i bi b     >> pure NoContent
    , _delete = \bi -> Budgets.delete i bi       >> pure NoContent
-   , _create = \b -> Budgets.saveExpenses i [b] >> pure NoContent
+   , _create = \b -> head <$> Budgets.saveExpenses i [b]
    , _get    = Budgets.getExpenses i
    }
 

@@ -8,9 +8,10 @@ import Element.Input as Input exposing (button)
 import Http exposing (Error)
 import Page.Account.Breakdown as Breakdown
 import Route
-import Timely.Api as Api exposing (Account, AccountId, Advance, BankAccount, BankAccountType(..), Customer, Id, advanceIsActive, advanceIsCollected, advanceIsOffer, idValue)
+import Timely.Api as Api exposing (Account, AccountId, Advance, BankAccount, BankAccountType(..), Customer, advanceIsActive, advanceIsCollected, advanceIsOffer)
 import Timely.Resource as Resource exposing (Resource(..), resource, resource_)
 import Timely.Style as Style
+import Timely.Types exposing (Id, idValue)
 import Timely.Types.AccountHealth exposing (AccountHealth)
 import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money as Money exposing (formatMoney, fromCents, toCents)
@@ -120,7 +121,7 @@ viewMain model =
             , resource (offersView model.accountId) offers
             ]
         , column Style.section
-            [ resource_ (accountHealthMissing model.accountId) (accountHealth model.accountId) model.health
+            [ resource (accountHealth model.accountId) model.health
             , resource_
                 (\_ -> Element.none)
                 identity
@@ -144,7 +145,7 @@ accountHealth : Id AccountId -> AccountHealth -> Element Msg
 accountHealth accountId health =
     let
         isHealthy =
-            toCents health.spending >= 0
+            toCents health.projection.lowest >= 0
 
         healthyColor =
             if isHealthy then
@@ -164,20 +165,8 @@ accountHealth accountId health =
                 , Font.color Style.white
                 , Style.box
                 ]
-                [ el [ Font.bold, centerX ] (text "Safe to Spend")
-                , el [ Font.bold, Font.size 40, centerX ] (text <| formatMoney health.spending)
-                ]
-        }
-
-
-accountHealthMissing : Id AccountId -> Http.Error -> Element Msg
-accountHealthMissing id _ =
-    link (Style.button Style.primary)
-        { url = Route.url (Route.Account id Route.Budgets)
-        , label =
-            Element.column [ spacing 10 ]
-                [ el [ Font.bold ] (text "Finish Setup")
-                , paragraph [] [ text "Tap here to add your income and identify your bills" ]
+                [ el [ Font.bold, centerX ] (text "Lowest Balance")
+                , el [ Font.bold, Font.size 40, centerX ] (text <| formatMoney health.projection.lowest)
                 ]
         }
 
@@ -188,11 +177,11 @@ accountInfo account health advances =
         [ wrappedRow [ spacing 20 ]
             [ column [ spacing 4 ]
                 [ el [ Font.bold ] (text "Balance")
-                , el [ Font.color Style.darkGreen ] (text <| formatMoney health.balance)
+                , el [] (text <| formatMoney health.projection.balance)
                 ]
             , column [ spacing 4 ]
-                [ el [ Font.bold ] (text "Future Expenses")
-                , el [ Font.color Style.red ] (text <| formatMoney health.budgeted)
+                [ el [ Font.bold ] (text "Lowest Balance")
+                , el [] (text <| formatMoney health.projection.lowest)
                 ]
             , column [ spacing 4 ]
                 [ el [ Font.bold ] (text "Advances")

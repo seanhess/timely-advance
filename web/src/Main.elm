@@ -11,13 +11,12 @@ import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Page.Account as Account
 import Page.Account.Breakdown as Breakdown
-import Page.Account.Budgets as Budgets
+import Page.Account.Budget as Budget
 import Page.Admin.Customer as Customer
 import Page.Admin.Sudo as Sudo
 import Page.Advance as Advance
 import Page.Init as Init
 import Page.Onboard.Approval as Approval
-import Page.Onboard.Budget as Budget
 import Page.Onboard.Landing as Landing
 import Page.Onboard.Signup as Signup
 import Platform.Updates exposing (Updates)
@@ -53,7 +52,6 @@ type PageModel
     | Advance Advance.Model
     | Sudo Sudo.Model
     | Customer Customer.Model
-    | Budgets Budgets.Model
     | Breakdown Breakdown.Model
 
 
@@ -88,7 +86,6 @@ type Msg
     | OnAccount Account.Msg
     | OnSudo Sudo.Msg
     | OnCustomer Customer.Msg
-    | OnBudgets Budgets.Msg
     | OnBreakdown Breakdown.Msg
 
 
@@ -119,10 +116,6 @@ update msg model =
             Landing.update mg m
                 |> updateWith Landing OnLanding model
 
-        ( OnBudget mg, Budget m ) ->
-            Budget.update mg m
-                |> updateWith Budget OnBudget model
-
         ( OnSignup sub, Signup m ) ->
             Signup.update sub m
                 |> runUpdates (always Cmd.none) Signup OnSignup model
@@ -139,13 +132,13 @@ update msg model =
             Advance.update adv m
                 |> runUpdates (always Cmd.none) Advance OnAdvance model
 
-        ( OnBudgets set, Budgets m ) ->
-            Budgets.update set m
-                |> runUpdates (always Cmd.none) Budgets OnBudgets model
+        ( OnBudget set, Budget m ) ->
+            Budget.update set m
+                |> runUpdates (always Cmd.none) Budget OnBudget model
 
         ( OnBreakdown mg, Breakdown m ) ->
             Breakdown.update mg m
-                |> updateWith Breakdown OnBreakdown model
+                |> runUpdates (always Cmd.none) Breakdown OnBreakdown model
 
         ( OnSudo mg, Sudo m ) ->
             Sudo.update mg m
@@ -182,10 +175,6 @@ changeRouteTo key maybeRoute =
             Approval.init key i
                 |> initWith Approval OnApproval
 
-        Just (Route.Onboard (Route.Budget i)) ->
-            Budget.init i
-                |> initWith Budget OnBudget
-
         Just (Route.Admin Route.Sudo) ->
             Sudo.init key
                 |> initWith Sudo OnSudo
@@ -203,9 +192,9 @@ changeRouteTo key maybeRoute =
             Advance.init key a adv
                 |> initWith Advance OnAdvance
 
-        Just (Route.Account i Route.Budgets) ->
-            Budgets.init key i
-                |> initWith Budgets OnBudgets
+        Just (Route.Account i (Route.Budget t b)) ->
+            Budget.init key i t b
+                |> initWith Budget OnBudget
 
         Just (Route.Account i Route.Breakdown) ->
             Breakdown.init key i
@@ -253,9 +242,6 @@ view model =
 
                 Customer m ->
                     Element.map OnCustomer <| Customer.view m
-
-                Budgets m ->
-                    Element.map OnBudgets <| Budgets.view m
 
                 Breakdown m ->
                     Element.map OnBreakdown <| Breakdown.view m

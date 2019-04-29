@@ -160,6 +160,47 @@ testEvents = do
       (List.map Event.balance es) @?= [bal - rentAmt, bal - rentAmt + payAmt]
 
 
+  group "same day" $ do
+    let ts = evnts zero (day "2019-03-01") [pay5] [rent5]
+
+    test "should be on date" $ do
+      List.map (Trans.date . Event.transaction) ts @?= [day "2019-03-05", day "2019-03-05"]
+
+    test "expense first" $ do
+      List.map (Trans.name . Event.transaction) ts @?= ["rent", "paycheck"]
+
+    test "should have amounts" $ do
+      List.map (Trans.amount . Event.transaction) ts @?= [-rentAmt, payAmt]
+
+  group "between pay and rent" $ do
+    let ts = evnts zero (day "2019-03-02") [pay1] [rent5]
+
+    test "dates" $ do
+      List.map (Trans.date . Event.transaction) ts @?= [day "2019-03-05", day "2019-04-01"]
+
+    test "rent, then pay" $ do
+      List.map (Trans.name . Event.transaction) ts @?= ["rent", "paycheck"]
+
+
+  group "after both" $ do
+    let ts = evnts zero (day "2019-03-05") [pay1] [rent5]
+
+    test "dates" $ do
+      List.map (Trans.date . Event.transaction) ts @?= [day "2019-04-01", day "2019-04-05"]
+
+    test "pay, then rent" $ do
+      List.map (Trans.name . Event.transaction) ts @?= ["paycheck","rent"]
+
+
+  group "happens today" $ do
+    let ts = evnts zero (day "2019-03-05") [rent5] [rent5]
+
+    -- Scenario: today is rent day, we just bought a hamburger, but rent hasn't hit yet. We can't issue an advance in time to help them out with rent, so we won't include it the calculation.
+    -- Scenario: today is rent day, and rent just hit. It's factored into the balance. 
+    test "should be next month" $ do
+      List.map (Trans.date . Event.transaction) ts @?= [day "2019-04-05", day "2019-04-05"]
+
+
 
 
 
@@ -169,7 +210,7 @@ testTrans :: Tests ()
 testTrans = do
 
   group "monthly income" $ do
-    let ts = allTransactions (day "2019-03-01") [pay5] []
+    let ts = credits (day "2019-03-01") pay5
 
     test "should include one paycheck" $ do
       length ts @?= 1
@@ -179,7 +220,7 @@ testTrans = do
       Trans.amount (head ts) @?= payAmt
 
   group "next month's income" $ do
-    let ts = allTransactions (day "2019-03-05") [pay5] []
+    let ts = credits (day "2019-03-05") pay5
 
     test "should include one paycheck" $ do
       length ts @?= 1
@@ -189,7 +230,7 @@ testTrans = do
       Trans.amount (head ts) @?= payAmt
 
   group "monthly bill" $ do
-    let ts = allTransactions (day "2019-03-01") [] [rent5]
+    let ts = debits (day "2019-03-01") rent5
 
     test "should include one paycheck" $ do
       length ts @?= 1
@@ -200,46 +241,6 @@ testTrans = do
     test "should be the amount" $ do
       Trans.amount (head ts) @?= (-rentAmt)
 
-
-  group "same day" $ do
-    let ts = allTransactions (day "2019-03-01") [pay5] [rent5]
-
-    test "should be on date" $ do
-      List.map Trans.date ts @?= [day "2019-03-05", day "2019-03-05"]
-
-    test "expense first" $ do
-      List.map Trans.name ts @?= ["rent", "paycheck"]
-
-    test "should have amounts" $ do
-      List.map Trans.amount ts @?= [-rentAmt, payAmt]
-
-  group "between pay and rent" $ do
-    let ts = allTransactions (day "2019-03-02") [pay1] [rent5]
-
-    test "dates" $ do
-      List.map Trans.date ts @?= [day "2019-03-05", day "2019-04-01"]
-
-    test "rent, then pay" $ do
-      List.map Trans.name ts @?= ["rent", "paycheck"]
-
-
-  group "after both" $ do
-    let ts = allTransactions (day "2019-03-05") [pay1] [rent5]
-
-    test "dates" $ do
-      List.map Trans.date ts @?= [day "2019-04-01", day "2019-04-05"]
-
-    test "pay, then rent" $ do
-      List.map Trans.name ts @?= ["paycheck","rent"]
-
-
-  group "happens today" $ do
-    let ts = allTransactions (day "2019-03-05") [rent5] [rent5]
-
-    -- Scenario: today is rent day, we just bought a hamburger, but rent hasn't hit yet. We can't issue an advance in time to help them out with rent, so we won't include it the calculation.
-    -- Scenario: today is rent day, and rent just hit. It's factored into the balance. 
-    test "should be next month" $ do
-      List.map Trans.date ts @?= [day "2019-04-05", day "2019-04-05"]
 
 
 

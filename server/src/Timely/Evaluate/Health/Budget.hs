@@ -11,7 +11,6 @@ import           Timely.Evaluate.Schedule (Schedule)
 
 
 
-
 data Budget a = Budget
   { name     :: Text
   , schedule :: Schedule

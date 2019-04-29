@@ -1,4 +1,4 @@
-module Timely.Resource exposing (Resource(..), apply, error, fromResult, map, map2, map3, pure, resource, resource_)
+module Timely.Resource exposing (Resource(..), apply, error, fromResult, map, map2, map3, pure, resource, resource_, toMaybe)
 
 import Element exposing (Element, el, text)
 import Http exposing (Error)
@@ -20,6 +20,16 @@ fromResult res =
 
         Ok a ->
             Ready a
+
+
+toMaybe : Resource a -> Maybe a
+toMaybe res =
+    case res of
+        Ready a ->
+            Just a
+
+        _ ->
+            Nothing
 
 
 resource_ : (Error -> Element msg) -> (a -> Element msg) -> Resource a -> Element msg

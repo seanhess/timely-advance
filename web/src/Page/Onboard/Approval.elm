@@ -10,10 +10,11 @@ import Platform.Updates exposing (Updates, command, set, updates)
 import Process
 import Route
 import Task
-import Timely.Api as Api exposing (Account, AccountId, Application, ApprovalResult(..), Id(..), Onboarding(..))
+import Timely.Api as Api exposing (Account, AccountId, Application, ApprovalResult(..), Onboarding(..))
 import Timely.Components as Components exposing (spinnerRipple)
 import Timely.Resource as Resource exposing (Resource(..))
 import Timely.Style as Style
+import Timely.Types exposing (Id(..))
 
 
 type alias Model =
