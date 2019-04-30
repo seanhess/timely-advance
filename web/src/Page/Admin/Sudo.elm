@@ -195,7 +195,7 @@ viewCustomer : AccountCustomer -> Element Msg
 viewCustomer ac =
     column [ spacing 10, Background.color Style.gray, padding 10 ]
         [ link []
-            { url = Route.url (Route.Account ac.account.accountId Route.AccountMain)
+            { url = Route.url (Route.Admin (Route.Customer ac.account.accountId))
             , label =
                 row [ spacing 5, Font.bold ]
                     [ text ac.customer.firstName

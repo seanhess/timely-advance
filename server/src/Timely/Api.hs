@@ -27,7 +27,7 @@ import           Servant.Server.Generic               (AsServerT, genericServerT
 -- import           Servant.Server.StaticFiles           (serveDirectoryFileServer)
 import           Timely.Accounts                      as Accounts
 import qualified Timely.Accounts.Application          as Application
-import           Timely.Accounts.Budgets              (BudgetRow, BudgetMeta)
+import           Timely.Accounts.Budgets              (BudgetMeta, BudgetRow)
 import qualified Timely.Accounts.Budgets              as Budgets
 import           Timely.Accounts.Types                (AppResult, Application, TransactionRow)
 import           Timely.Actions.AccountHealth         (AccountHealth)
@@ -36,6 +36,7 @@ import           Timely.Actions.Transactions          (History)
 import qualified Timely.Actions.Transactions          as Transactions
 import           Timely.Advances                      (Advance)
 import qualified Timely.Advances                      as Advances
+import qualified Timely.Api.Admin                     as Admin
 import           Timely.Api.Advances                  as Advances
 import qualified Timely.Api.Applications              as Applications
 import           Timely.Api.Combinators               (notFound)
@@ -97,7 +98,7 @@ data AccountApi route = AccountApi
     , _app      :: route :- "application" :> Get '[JSON] Application
     , _result   :: route :- "application" :> "result" :> Get '[JSON] AppResult
     , _advances :: route :- "advances" :> ToServantApi AdvanceApi
-    , _incomes  :: route :- "incomes" :> ToServantApi (BudgetsApi Income)
+    , _incomes  :: route :- "incomes"  :> ToServantApi (BudgetsApi Income)
     , _expenses :: route :- "expenses" :> ToServantApi (BudgetsApi Expense)
     } deriving (Generic)
 
@@ -140,8 +141,9 @@ data WebhooksApi route = WebhooksApi
 
 
 data AdminApi route = AdminApi
-    { _test      :: route :- Get '[JSON] Text
-    , _customers :: route :- "customers" :> Get '[JSON] [AccountCustomer]
+    { _test          :: route :- Get '[JSON] Text
+    , _customers     :: route :- "customers" :> Get '[JSON] [AccountCustomer]
+    , _deleteAccount :: route :- "accounts" :> Capture "id" (Guid Account) :> Delete '[JSON] NoContent
     } deriving (Generic)
 
 
@@ -214,8 +216,9 @@ webhooksApi = genericServerT WebhooksApi
 
 adminApi :: ToServant AdminApi (AsServerT AppM)
 adminApi = genericServerT AdminApi
-    { _test = pure "Hello"
+    { _test = pure "Admin!"
     , _customers = Accounts.all
+    , _deleteAccount = \i -> Admin.deleteAccount i >> pure NoContent
     }
 
 

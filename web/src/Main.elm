@@ -145,6 +145,10 @@ update msg model =
             Sudo.update mg m
                 |> runUpdates (always Cmd.none) Sudo OnSudo model
 
+        ( OnCustomer mg, Customer m ) ->
+            Customer.update model.key mg m
+                |> runUpdates (always Cmd.none) Customer OnCustomer model
+
         ( OnInit ini, Init m ) ->
             Init.update ini m
                 |> updateWith Init OnInit model

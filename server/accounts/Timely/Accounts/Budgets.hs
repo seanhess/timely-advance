@@ -10,8 +10,7 @@
 {-# LANGUAGE OverloadedLabels           #-}
 {-# LANGUAGE OverloadedStrings          #-}
 module Timely.Accounts.Budgets
-  ( BudgetType(..)
-  , Budgets(..)
+  ( BudgetType(..) , Budgets(..)
   , BudgetRow
   , BudgetMeta
   , edit
@@ -21,6 +20,7 @@ module Timely.Accounts.Budgets
   , getIncomes
   , getExpenses
   , implementIO
+  , deleteAccount
   , initialize
   ) where
 
@@ -200,6 +200,11 @@ initialize :: (Selda m, MonadIO m) => m ()
 initialize = do
     tryCreateTable budget
 
+
+deleteAccount :: (Selda m, MonadIO m) => Guid Account -> m ()
+deleteAccount i = do
+  deleteFrom budget (\b -> b ! #accountId .== literal i)
+  pure ()
 
 
 

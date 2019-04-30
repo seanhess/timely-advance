@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountCustomer, AccountId(..), AccountInfo, Advance, AdvanceId(..), Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Onboarding(..), Phone, SSN(..), Session, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, createExpense, createIncome, delBudget, delExpense, delIncome, editExpense, editIncome, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getCustomers, getExpenses, getIncomes, getTransactionHistory, getTransactions, postAdvanceAccept, postApplications, putBudget, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
+module Timely.Api exposing (Account, AccountCustomer, AccountId(..), AccountInfo, Advance, AdvanceId(..), Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Onboarding(..), Phone, SSN(..), Session, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, createExpense, createIncome, delBudget, delExpense, delIncome, deleteAccount, editExpense, editIncome, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getCustomers, getExpenses, getIncomes, getTransactionHistory, getTransactions, postAdvanceAccept, postApplications, putBudget, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
 
 import Http exposing (Error, Expect)
 import Json.Decode as Decode exposing (Decoder, bool, int, list, nullable, string)
@@ -67,7 +67,7 @@ type BankAccountType
 
 
 type alias Customer =
-    { accountId : String
+    { accountId : Id AccountId
     , firstName : String
     , middleName : Maybe String
     , lastName : String
@@ -221,7 +221,7 @@ decodeAccountCustomer =
 decodeCustomer : Decoder Customer
 decodeCustomer =
     Decode.succeed Customer
-        |> required "accountId" string
+        |> required "accountId" decodeId
         |> required "firstName" string
         |> required "middleName" (nullable string)
         |> required "lastName" string
@@ -477,6 +477,11 @@ createExpense =
 getCustomers : (Result Error (List AccountCustomer) -> msg) -> Cmd msg
 getCustomers toMsg =
     requestGET toMsg [ "", "v1", "admin", "customers" ] (list decodeAccountCustomer)
+
+
+deleteAccount : (Result Error String -> msg) -> Id AccountId -> Cmd msg
+deleteAccount toMsg (Id a) =
+    requestDEL toMsg [ "", "v1", "admin", "accounts", a ] string
 
 
 

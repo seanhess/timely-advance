@@ -9,11 +9,11 @@ module Timely.Accounts.Transactions where
 
 
 
-import           Control.Monad.Selda     (Selda, insert, query, tryCreateTable)
-import           Data.Model.Guid         (Guid)
-import           Database.Selda          hiding (deleteFrom, insert, query, tryCreateTable)
-import           Timely.Accounts.Account (accounts)
-import           Timely.Accounts.Types   (Account, TransactionRow(..))
+import Control.Monad.Selda     (Selda, deleteFrom, insert, query, tryCreateTable)
+import Data.Model.Guid         (Guid)
+import Database.Selda          hiding (deleteFrom, insert, query, tryCreateTable)
+import Timely.Accounts.Account (accounts)
+import Timely.Accounts.Types   (Account, TransactionRow (..))
 
 
 
@@ -73,6 +73,12 @@ initialize :: (Selda m, MonadIO m) => m ()
 initialize = do
     -- drop the table / db first to run migrations
     tryCreateTable transactions
+
+
+deleteAccount :: (Selda m, MonadIO m) => Guid Account -> m ()
+deleteAccount i = do
+  deleteFrom transactions (\x -> x ! #accountId .== literal i)
+  pure ()
 
 
 

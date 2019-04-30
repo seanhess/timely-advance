@@ -10,15 +10,15 @@
 module Timely.Accounts.Account where
 
 
-import           Control.Monad.Selda          (Selda, deleteFrom, insert, query)
-import           Data.Maybe                   (listToMaybe)
-import           Data.Model.Guid
-import           Data.Model.Id                (Id)
-import           Data.Model.Types             (Phone)
-import           Data.Model.Valid             (Valid)
-import           Database.Selda               hiding (deleteFrom, insert, query, tryCreateTable)
-import           Timely.Accounts.Types
-import           Timely.Bank                  (Item)
+import Control.Monad.Selda   (Selda, deleteFrom, insert, query)
+import Data.Maybe            (listToMaybe)
+import Data.Model.Guid
+import Data.Model.Id         (Id)
+import Data.Model.Types      (Phone)
+import Data.Model.Valid      (Valid)
+import Database.Selda        hiding (deleteFrom, insert, query, tryCreateTable)
+import Timely.Accounts.Types
+import Timely.Bank           (Item)
 
 
 
@@ -63,6 +63,9 @@ allAccounts = do
 allCustomers :: (Selda m) => m [Customer]
 allCustomers =
     query $ select customers
+
+
+
 
 
 
@@ -130,3 +133,10 @@ setBankAccounts i bs = do
     pure ()
 
 
+
+deleteAccount :: Selda m => Guid Account -> m ()
+deleteAccount i = do
+    deleteFrom banks     (\x -> x ! #accountId .== literal i)
+    deleteFrom customers (\x -> x ! #accountId .== literal i)
+    deleteFrom accounts  (\x -> x ! #accountId .== literal i)
+    pure ()
