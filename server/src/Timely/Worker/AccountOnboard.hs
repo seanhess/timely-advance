@@ -101,7 +101,7 @@ accountOnboard app accountId phone = do
 
     Accounts.create customer bankAccounts trans $ Account accountId phone transId bankToken bankItemId amount now
 
-    createDefaultBudgets accountId
+    createDefaultBudgets accountId trans
 
     Applications.markResultOnboarding accountId Complete
     Log.info "complete"
@@ -111,9 +111,9 @@ accountOnboard app accountId phone = do
 
 createDefaultBudgets
   :: ( MonadEffects '[Time, Accounts, Budgets, Log] m )
-  => Guid Account -> m ()
-createDefaultBudgets accountId = do
-  history <- Transactions.history accountId
+  => Guid Account -> [TransactionRow] -> m ()
+createDefaultBudgets accountId trans = do
+  let history = Transactions.history trans
 
   let incs = List.map Transactions.defaultBudget $ Transactions.income history
   let exps = List.map Transactions.defaultBudget $ Transactions.expenses history

@@ -47,8 +47,8 @@ isIncome TransactionRow {amount} =
   amount < 0
 
 
-rowsToHistory :: [TransactionRow] -> History
-rowsToHistory ts = History
+history :: [TransactionRow] -> History
+history ts = History
   (List.filter isValidIncome $ History.groups $ mapMaybe toIncome ts)
   (List.filter isValidBill $ History.groups $ mapMaybe toExpense ts)
 
@@ -71,13 +71,6 @@ recent :: MonadEffects '[Accounts, Time] m => Guid Account -> m [TransactionRow]
 recent i = do
   today <- Time.currentDate
   Accounts.transDays i 90 today
-
-
-history :: MonadEffects '[Accounts, Time] m => Guid Account -> m History
-history i = do
-  ts <- recent i
-  -- it should only show income over $200
-  pure $ rowsToHistory ts
 
 
 

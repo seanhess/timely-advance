@@ -155,7 +155,7 @@ accountApi i = genericServerT AccountApi
     , _result  = Application.findResult i  >>= notFound
     , _health  = Result.handle $ AccountHealth.analyze i
     , _trans   = Transactions.recent i
-    , _history  = Transactions.history i
+    , _history  = Transactions.history <$> Transactions.recent i
     , _advances = advanceApi i
     , _incomes = incomesApi i
     , _expenses = expensesApi i
