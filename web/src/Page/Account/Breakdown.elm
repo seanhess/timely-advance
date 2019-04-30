@@ -98,10 +98,11 @@ update msg model =
     case msg of
         OnBack ->
             updates model
-                |> command (Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain)
+                |> command (Route.goAccount model.key model.accountId)
 
         OnHealth re ->
             updates { model | health = Resource.fromResult re }
+                |> command (Route.checkUnauthorized model.key re)
 
         OnPaychecks pays ->
             updates { model | paychecks = Resource.fromResult pays }

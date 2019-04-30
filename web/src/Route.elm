@@ -1,4 +1,4 @@
-module Route exposing (Account(..), Admin(..), Onboard(..), Route(..), fromUrl, href, pushUrl, replaceUrl, url)
+module Route exposing (Account(..), Admin(..), Onboard(..), Route(..), checkUnauthorized, fromUrl, goAccount, goLanding, href, pushUrl, replaceUrl, url)
 
 -- import Article.Slug as Slug exposing (Slug)
 -- import Profile exposing (Profile)
@@ -6,6 +6,7 @@ module Route exposing (Account(..), Admin(..), Onboard(..), Route(..), fromUrl, 
 import Browser.Navigation as Nav
 import Html exposing (Attribute)
 import Html.Attributes as Attr
+import Http exposing (Error(..))
 import Timely.Api as Api exposing (Account, AccountId, AdvanceId)
 import Timely.Types exposing (Id(..))
 import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..))
@@ -157,3 +158,23 @@ url page =
                     []
     in
     "#/" ++ String.join "/" pieces
+
+
+goLanding : Nav.Key -> Cmd msg
+goLanding key =
+    Nav.pushUrl key (url (Onboard Landing))
+
+
+goAccount : Nav.Key -> Id AccountId -> Cmd msg
+goAccount key accountId =
+    pushUrl key <| Account accountId AccountMain
+
+
+checkUnauthorized : Nav.Key -> Result Http.Error a -> Cmd msg
+checkUnauthorized key res =
+    case res of
+        Err (BadStatus 401) ->
+            goLanding key
+
+        _ ->
+            Cmd.none

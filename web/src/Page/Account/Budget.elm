@@ -88,6 +88,7 @@ update msg model =
 
         OnBudgets (Err e) ->
             updates { model | budget = Failed e }
+                |> command (Route.checkUnauthorized model.key (Err e))
 
         OnBudgets (Ok bs) ->
             case List.filter isBudget bs of

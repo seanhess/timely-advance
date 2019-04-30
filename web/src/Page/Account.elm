@@ -70,7 +70,9 @@ update : Nav.Key -> Msg -> Model -> ( Model, Cmd Msg )
 update nav msg model =
     case msg of
         OnAccount ra ->
-            ( { model | account = Resource.fromResult ra }, Cmd.none )
+            ( { model | account = Resource.fromResult ra }
+            , Route.checkUnauthorized nav ra
+            )
 
         OnHealth rh ->
             ( { model | health = Resource.fromResult rh }, Cmd.none )
@@ -91,7 +93,7 @@ update nav msg model =
             ( model, Api.sessionsLogout LogoutDone )
 
         LogoutDone _ ->
-            ( model, Nav.pushUrl nav (Route.url (Route.Onboard Route.Landing)) )
+            ( model, Route.goLanding nav )
 
 
 view : Model -> Element Msg

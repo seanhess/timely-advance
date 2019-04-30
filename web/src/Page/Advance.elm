@@ -74,6 +74,7 @@ update msg model =
 
         OnAccount ra ->
             updates { model | account = Resource.fromResult ra }
+                |> command (Route.checkUnauthorized model.key ra)
 
         OnAdvances ra ->
             updates { model | advances = Resource.fromResult ra }
@@ -94,7 +95,7 @@ update msg model =
 
         OnBack ->
             updates model
-                |> command (Route.pushUrl model.key <| Route.Account model.accountId Route.AccountMain)
+                |> command (Route.goAccount model.key model.accountId)
 
 
 view : Model -> Element Msg
