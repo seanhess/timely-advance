@@ -7,6 +7,8 @@ module Timely.Api.Sessions where
 
 
 import           Control.Effects               (MonadEffects)
+import           Control.Effects.Log           (Log)
+import qualified Control.Effects.Log           as Log
 import           Control.Effects.Signal        (Throw, throwSignal)
 import           Control.Monad.Config
 import           Control.Monad.IO.Class        (MonadIO, liftIO)
@@ -17,8 +19,7 @@ import           Data.Model.Id                 (Token (..))
 import           Data.Model.Types              (Phone)
 import           Data.Model.Valid              as Valid
 import           Servant                       (Header, Headers, NoContent (..), ServantErr, err401)
-import           Servant.Auth.Server           (AuthResult (..), CookieSettings (..), IsSecure (..), JWTSettings,
-                                                SetCookie, ThrowAll (..), defaultCookieSettings, defaultJWTSettings)
+import           Servant.Auth.Server           (AuthResult (..), CookieSettings (..), IsSecure (..), JWTSettings, SetCookie, ThrowAll (..), defaultCookieSettings, defaultJWTSettings)
 import qualified Servant.Auth.Server           as Servant
 
 import           Timely.Accounts               (Account, Accounts)
@@ -41,11 +42,12 @@ generateCode p = do
 
 authenticate
   :: ( MonadIO m
-     , MonadEffects '[Throw ServantErr, Accounts, Auth] m
+     , MonadEffects '[Throw ServantErr, Accounts, Auth, Log] m
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
      ) => Valid Phone -> AuthCode -> m (SetSession Session)
 authenticate p c = do
+  Log.context "Authenticate"
   res <- Auth.codeCheck p c
   if not res
      then throwSignal err401
@@ -60,7 +62,6 @@ authAdmin
      , MonadConfig (Token Admin) m
      ) => Token Admin -> m (SetSession Session)
 authAdmin check = do
-  liftIO $ print ("HI", check)
   good <- config
   let session = Session (Valid "8012223333") Nothing True
   if check == good
@@ -70,14 +71,16 @@ authAdmin check = do
 
 session
   :: ( MonadIO m
-     , MonadEffects '[Throw ServantErr, Accounts] m
+     , MonadEffects '[Throw ServantErr, Accounts, Log] m
      , MonadConfig CookieSettings m
      , MonadConfig JWTSettings m
      ) => Valid Phone -> m (SetSession Session)
 session p = do
     -- they've already successfully validated the code. They're in!
     ma <- Accounts.findByPhone p
-    let s = Session p (Account.accountId <$> ma) False
+    let mai = Account.accountId <$> ma
+    let s = Session p mai False
+    Log.debug ("Session", mai)
     setSession s s
 
 
