@@ -15,14 +15,26 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
+        webView.uiDelegate = self
+        webView.navigationDelegate = self
+        print("viewDidLoad")
+        loadUI()
+    }
+    
+    public func loadUI() {
         let url = URL(string: "https://test.timelyadvance.com/")!
         let request = URLRequest(url: url)
         print("LOAD", request)
         webView.load(request)
-        webView.uiDelegate = self
-        webView.navigationDelegate = self
     }
+    
+// This doesn't really reload. Actually, re-running doesn't even reload
+//    public func reloadUI() {
+//        if (!webView.isLoading) {
+//            print("RELOAD")
+//            webView.reloadFromOrigin()
+//        }
+//    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
