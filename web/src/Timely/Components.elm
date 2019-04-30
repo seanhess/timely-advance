@@ -1,4 +1,4 @@
-module Timely.Components exposing (Spinner(..), back, close, loadingButton, option, selectBox, spinner, spinnerDots, spinnerRing, spinnerRipple)
+module Timely.Components exposing (Spinner(..), back, close, loadingButton, option, selectBox, spinner, spinnerDots, spinnerRing, spinnerRipple, version)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -9,6 +9,7 @@ import Html.Attributes as Html
 import Http exposing (Error)
 import Route exposing (Route)
 import Timely.Style as Style
+import Version
 
 
 type Spinner
@@ -146,3 +147,8 @@ submitButton onMsg enabled label =
         { onPress = action
         , label = label
         }
+
+
+version : Element msg
+version =
+    el [ padding 4, Font.size 12, Font.color (Element.rgb 0.7 0.7 0.7) ] (text <| "Version: " ++ Version.version)

@@ -9,6 +9,7 @@ import Http exposing (Error)
 import Page.Account.Breakdown as Breakdown
 import Route
 import Timely.Api as Api exposing (Account, AccountId, Advance, BankAccount, BankAccountType(..), Customer, advanceIsActive, advanceIsCollected, advanceIsOffer)
+import Timely.Components as Components
 import Timely.Resource as Resource exposing (Resource(..), resource, resource_)
 import Timely.Style as Style
 import Timely.Types exposing (Id, idValue)
@@ -117,8 +118,9 @@ viewMain model =
         [ column Style.info
             [ row [ width fill ]
                 [ el Style.header (text "Account")
-                , row [ width fill ] []
-                , Input.button [ Style.link ] { onPress = Just Logout, label = text "Logout" }
+                , column [ alignRight ]
+                    [ Input.button [ Style.link ] { onPress = Just Logout, label = text "Logout" }
+                    ]
                 ]
             , resource (offersView model.accountId) offers
             ]

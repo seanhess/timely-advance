@@ -22,6 +22,7 @@ import Page.Onboard.Signup as Signup
 import Platform.Updates exposing (Updates)
 import Route exposing (Route)
 import Timely.Api exposing (Account)
+import Timely.Components as Components
 import Timely.Style as Style
 import Url exposing (Url)
 import Version
@@ -247,7 +248,15 @@ view model =
                     Element.map OnBreakdown <| Breakdown.view m
     in
     { title = "Timely Advance"
-    , body = [ Element.layout [] (pageView model.page) ]
+    , body =
+        [ Element.layout []
+            (Element.column
+                [ Element.width Element.fill, Element.height Element.fill ]
+                [ pageView model.page
+                , Components.version
+                ]
+            )
+        ]
     }
 
 
