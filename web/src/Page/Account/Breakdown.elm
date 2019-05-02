@@ -80,12 +80,12 @@ update msg model =
         goBudgetId typ bid =
             Route.pushUrl model.key (Route.Account model.accountId (Route.Budget typ bid))
 
-        navBudget : Resource (List (BudgetId Budget)) -> Event -> Cmd Msg
-        navBudget rs event =
+        navBudget : BudgetType -> Resource (List (BudgetId Budget)) -> Event -> Cmd Msg
+        navBudget bt rs event =
             rs
                 |> Resource.toMaybe
                 |> Maybe.andThen (findBudget event.budget)
-                |> Maybe.map (goBudget (eventType event))
+                |> Maybe.map (goBudget bt)
                 |> Maybe.withDefault Cmd.none
 
         defaultBudget : String -> Budget
@@ -112,8 +112,8 @@ update msg model =
 
         Select e ->
             updates model
-                |> command (navBudget model.paychecks e)
-                |> command (navBudget model.bills e)
+                |> command (navBudget Income model.paychecks e)
+                |> command (navBudget Expense model.bills e)
 
         AddBill ->
             updates model

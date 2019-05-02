@@ -42,7 +42,7 @@ type alias Model =
 
 
 type Msg
-    = OnBack
+    = Close
     | OnBudgets (Result Http.Error (List (BudgetId Budget)))
     | OnDone (Result Http.Error String)
     | Save
@@ -82,7 +82,7 @@ update msg model =
             b.budgetId == model.budgetId
     in
     case msg of
-        OnBack ->
+        Close ->
             updates model
                 |> command goBack
 
@@ -131,20 +131,17 @@ update msg model =
 
 view : Model -> Element Msg
 view model =
-    column Style.page
-        [ column Style.info
-            [ row [ spacing 15 ]
-                [ Components.back OnBack
-                , el Style.header (text <| "Budget: " ++ formatBudgetType model.budgetType)
-                ]
+    -- column Style.page
+    column Style.section
+        [ row [ spacing 15, width fill ]
+            [ el [] (text <| "Edit your " ++ formatBudgetType model.budgetType)
+            , el [ alignRight ] (Components.close Close)
             ]
-        , column Style.section
-            [ resource (viewBudget model << toBudget) model.budget
-            , button (Style.button Style.primary)
-                { onPress = Just Save, label = el [] (text "Save") }
-            , button (Style.button Style.destroy)
-                { onPress = Just Delete, label = el [] (text "Delete") }
-            ]
+        , resource (viewBudget model << toBudget) model.budget
+        , button (Style.button Style.primary)
+            { onPress = Just Save, label = el [] (text "Save") }
+        , button (Style.button Style.destroy)
+            { onPress = Just Delete, label = el [] (text "Delete") }
         ]
 
 
@@ -222,10 +219,10 @@ formatBudgetType : BudgetType -> String
 formatBudgetType bt =
     case bt of
         Income ->
-            "Income"
+            "Paycheck"
 
         Expense ->
-            "Expense"
+            "Bill"
 
 
 
