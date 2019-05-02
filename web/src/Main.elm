@@ -10,11 +10,8 @@ import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Page.Account as Account
-import Page.Account.Breakdown as Breakdown
-import Page.Account.Budget as Budget
 import Page.Admin.Customer as Customer
 import Page.Admin.Sudo as Sudo
-import Page.Advance as Advance
 import Page.Init as Init
 import Page.Onboard.Approval as Approval
 import Page.Onboard.Landing as Landing
@@ -48,12 +45,9 @@ type PageModel
     | Landing Landing.Model
     | Signup Signup.Model
     | Approval Approval.Model
-    | Budget Budget.Model
     | Account Account.Model
-    | Advance Advance.Model
     | Sudo Sudo.Model
     | Customer Customer.Model
-    | Breakdown Breakdown.Model
 
 
 init : flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -82,12 +76,9 @@ type Msg
     | OnLanding Landing.Msg
     | OnSignup Signup.Msg
     | OnApproval Approval.Msg
-    | OnBudget Budget.Msg
-    | OnAdvance Advance.Msg
     | OnAccount Account.Msg
     | OnSudo Sudo.Msg
     | OnCustomer Customer.Msg
-    | OnBreakdown Breakdown.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -127,19 +118,7 @@ update msg model =
 
         ( OnAccount acc, Account m ) ->
             Account.update model.key acc m
-                |> updateWith Account OnAccount model
-
-        ( OnAdvance adv, Advance m ) ->
-            Advance.update adv m
-                |> runUpdates (always Cmd.none) Advance OnAdvance model
-
-        ( OnBudget set, Budget m ) ->
-            Budget.update set m
-                |> runUpdates (always Cmd.none) Budget OnBudget model
-
-        ( OnBreakdown mg, Breakdown m ) ->
-            Breakdown.update mg m
-                |> runUpdates (always Cmd.none) Breakdown OnBreakdown model
+                |> runUpdates (always Cmd.none) Account OnAccount model
 
         ( OnSudo mg, Sudo m ) ->
             Sudo.update mg m
@@ -188,22 +167,9 @@ changeRouteTo key maybeRoute =
             Customer.init i
                 |> initWith Customer OnCustomer
 
-        Just (Route.Account i Route.AccountMain) ->
-            Account.init i
+        Just (Route.Account i route) ->
+            Account.init i key route
                 |> initWith Account OnAccount
-
-        Just (Route.Account a (Route.Advance adv)) ->
-            -- Check session!
-            Advance.init key a adv
-                |> initWith Advance OnAdvance
-
-        Just (Route.Account i (Route.Budget t b)) ->
-            Budget.init key i t b
-                |> initWith Budget OnBudget
-
-        Just (Route.Account i Route.Breakdown) ->
-            Breakdown.init key i
-                |> initWith Breakdown OnBreakdown
 
         Just Route.Init ->
             Init.init key
@@ -230,14 +196,8 @@ view model =
                 Approval a ->
                     Element.map OnApproval <| Approval.view a
 
-                Budget a ->
-                    Element.map OnBudget <| Budget.view a
-
                 Account a ->
                     Element.map OnAccount <| Account.view a
-
-                Advance a ->
-                    Element.map OnAdvance <| Advance.view a
 
                 Init m ->
                     Element.map OnInit <| Init.view m
@@ -247,9 +207,6 @@ view model =
 
                 Customer m ->
                     Element.map OnCustomer <| Customer.view m
-
-                Breakdown m ->
-                    Element.map OnBreakdown <| Breakdown.view m
     in
     { title = "Timely Advance"
     , body =
@@ -269,9 +226,6 @@ subscriptions model =
     case model.page of
         Signup mod ->
             Sub.map OnSignup (Signup.subscriptions mod)
-
-        Advance mod ->
-            Sub.map OnAdvance (Advance.subscriptions mod)
 
         Account mod ->
             Sub.map OnAccount (Account.subscriptions mod)

@@ -105,9 +105,6 @@ pushUrl key route =
 
 fromUrl : Url -> Maybe Route
 fromUrl u =
-    -- The RealWorld spec treats the fragment like a path.
-    -- This makes it *literally* the path, so we can proceed
-    -- with parsing as if it had been a normal path all along.
     { u | path = Maybe.withDefault "" u.fragment, fragment = Nothing }
         |> Parser.parse parser
 

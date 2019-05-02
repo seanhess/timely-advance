@@ -1,4 +1,4 @@
-module Platform.Updates exposing (Event, Model(..), Msg(..), Updates, base, command, event, modify, set, updates)
+module Platform.Updates exposing (Event, Model(..), Msg(..), Updates, base, command, event, initWith, modify, set, updates)
 
 
 type Msg
@@ -45,3 +45,10 @@ command cmd2 ( mod, cmd1, ev ) =
 event : evt -> Updates model msg evt -> Updates model msg evt
 event evt ( mod, cmd, _ ) =
     ( mod, cmd, Just evt )
+
+
+initWith : (subModel -> parentModel) -> (subMsg -> parentMsg) -> ( subModel, Cmd subMsg ) -> ( parentModel, Cmd parentMsg )
+initWith toModel toMsg ( subModel, subCmd ) =
+    ( toModel subModel
+    , Cmd.map toMsg subCmd
+    )

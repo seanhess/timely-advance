@@ -127,3 +127,9 @@
     transform: translate(19px, 0);
   }
 }
+
+
+.active {
+      /* transform: rotate(90deg) scaleX(0.5) translate3d(-300px, -35px, 0); */
+}
+
