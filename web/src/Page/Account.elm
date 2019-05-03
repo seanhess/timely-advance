@@ -20,6 +20,7 @@ import Url exposing (Url)
 
 type alias Model =
     { page : Page
+    , oldPage : Maybe Page
     , loading : Bool
     }
 
@@ -43,23 +44,19 @@ init : Id AccountId -> Nav.Key -> Maybe Model -> Route.Account -> ( Model, Cmd M
 init i key oldModel route =
     -- I want the change to use my old page if it exists here
     let
+        oldPage =
+            Maybe.map .page oldModel
+
         ( page, cmd ) =
-            changeRouteTo i key (Maybe.map .page oldModel) route
+            changeRouteTo i key oldPage route
     in
     ( { page = page
       , loading = True
+      , oldPage = oldPage
       }
     , Cmd.batch
         [ Task.perform Loaded <| Process.sleep 1, cmd ]
     )
-
-
-
--- when we change route from Breakdown -> Budget, it's calling init on breakdown again, which we don't necessarily want to do
--- because we already have an old model
--- we can just reuse it
--- init is called again
--- we need some way to track history, no?
 
 
 changeRouteTo : Id AccountId -> Nav.Key -> Maybe Page -> Route.Account -> ( Page, Cmd Msg )
@@ -107,7 +104,9 @@ changeRouteTo i key oldPage route =
                 ( bkModel, bkMsg ) =
                     Breakdown.init key i
             in
-            ( Breakdown (oldBreakdown oldPage |> Maybe.withDefault bkModel), Cmd.map OnBreakdown bkMsg )
+            ( Breakdown (oldBreakdown oldPage |> Maybe.withDefault bkModel)
+            , Cmd.map OnBreakdown bkMsg
+            )
 
 
 
@@ -134,7 +133,20 @@ view model =
             Element.map OnAdvance <| Advance.view a
 
         Breakdown m ->
-            Element.map OnBreakdown <| Breakdown.view m
+            case model.oldPage of
+                Just (Budget _ a) ->
+                    Element.column
+                        [ width fill
+                        , height fill
+                        , Element.inFront
+                            -- same as normal budget, but direction is reversed
+                            (modal (not model.loading) (Element.map OnBudget <| Budget.view a))
+                        ]
+                        [ Element.map OnBreakdown <| Breakdown.view m
+                        ]
+
+                _ ->
+                    Element.map OnBreakdown <| Breakdown.view m
 
 
 
@@ -143,25 +155,28 @@ view model =
 
 
 modal : Bool -> Element msg -> Element msg
-modal loading content =
+modal offScreen content =
     Element.el
-        [ width fill
-        , height fill
-        , htmlAttribute (style "transition" "all 0.5s ease")
-        , htmlAttribute
-            (if loading then
-                style "background" "transparent"
+        ([ width fill
+         , height fill
+         , htmlAttribute (style "transition" "all 0.5s ease")
+         ]
+            ++ List.map htmlAttribute
+                (if offScreen then
+                    [ style "background" "transparent"
+                    , style "pointer-events" "none"
+                    ]
 
-             else
-                style "background" "rgba(0.3, 0.3, 0.3, 0.5)"
-            )
-        ]
+                 else
+                    [ style "background" "rgba(0.3, 0.3, 0.3, 0.5)" ]
+                )
+        )
         (Element.el
             [ padding 10
             , width fill
             , htmlAttribute (style "transition" "all 0.5s ease")
             , htmlAttribute
-                (if loading then
+                (if offScreen then
                     style "transform" "translate3d(0, -600px, 0)"
 
                  else
