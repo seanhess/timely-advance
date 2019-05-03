@@ -36,9 +36,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
-        let _ = self.window?.rootViewController as! ViewController
-//        print("appDidBecomeActive", vc)
-//         vc.reloadUI()
+        let vc = self.window?.rootViewController as! ViewController
+        print("appDidBecomeActive", vc)
+        vc.reloadUI()
+        
+        // TODO call the server, check the version.
+        // Does it match the one we have internally? (This might be a cold load of the app)
+        // I can store it in an defatul thing. Some stored thing.
+        // https://test.timelyadvance.com/health -- Timely 0.8.c97dbe9a
+        
+        // I need a way to DO a cold load of the app
+        // Download local files.
+        // https://test.timelyadvance.com/css/style.css
+        // <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+        // <script src="/v1/config.js" type="text/javascript"></script>
+        // <script src="js/main.js"></script>
+
+        // Is it just aggressive caching? Can't I fix this with HTTP headers?
+        // Probably!
+        // Yeah, that's what I should do.
     }
 
     func applicationWillTerminate(_ application: UIApplication) {

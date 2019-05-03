@@ -29,12 +29,12 @@ class ViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
     }
     
 // This doesn't really reload. Actually, re-running doesn't even reload
-//    public func reloadUI() {
-//        if (!webView.isLoading) {
-//            print("RELOAD")
-//            webView.reloadFromOrigin()
-//        }
-//    }
+    public func reloadUI() {
+        if (!webView.isLoading) {
+            print("RELOAD")
+            webView.reloadFromOrigin()
+        }
+    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
