@@ -63,9 +63,8 @@ type Api = ToServant BaseApi AsApi
 
 data BaseApi route = BaseApi
     { _versioned :: route :- "v1" :> ToServantApi VersionedApi
-    , _debug     :: route :- "debug" :> Get '[PlainText] Text
     , _health    :: route :- "health" :> Get '[PlainText] Text
-    -- , _files     :: route :- Raw
+    , _root      :: route :- Get '[PlainText] Text
     } deriving (Generic)
 
 
@@ -142,6 +141,7 @@ data WebhooksApi route = WebhooksApi
 
 data AdminApi route = AdminApi
     { _test          :: route :- Get '[JSON] Text
+    , _debug         :: route :- "debug" :> Get '[PlainText] Text
     , _customers     :: route :- "customers" :> Get '[JSON] [AccountCustomer]
     , _deleteAccount :: route :- "accounts" :> Capture "id" (Guid Account) :> Delete '[JSON] NoContent
     } deriving (Generic)
@@ -219,6 +219,7 @@ adminApi = genericServerT AdminApi
     { _test = pure "Admin!"
     , _customers = Accounts.all
     , _deleteAccount = \i -> Admin.deleteAccount i >> pure NoContent
+    , _debug = App.debug
     }
 
 
@@ -226,8 +227,7 @@ baseApi :: FilePath -> ToServant BaseApi (AsServerT AppM)
 baseApi _ = genericServerT BaseApi
     { _versioned = versionedApi
     , _health = ApiHealth.health
-    , _debug = App.debug
-    -- , _files = serveDirectoryFileServer p
+    , _root = ApiHealth.health
     }
 
 versionedApi :: ToServant VersionedApi (AsServerT AppM)

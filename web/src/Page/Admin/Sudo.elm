@@ -165,8 +165,10 @@ viewSuperuser model session =
         , paragraph [] [ text "You are as handsome as you are intelligent" ]
         , wrappedRow [ spacing 10 ]
             [ Input.button [ Style.link ] { onPress = Just GoCustomers, label = text "Customers" }
-            , Input.button [ Style.link ] { onPress = Just GoTransactions, label = text "Transactions" }
-            , Input.button [ Style.link ] { onPress = Just GoAdvances, label = text "Advances" }
+
+            -- , Input.button [ Style.link ] { onPress = Just GoTransactions, label = text "Transactions" }
+            -- , Input.button [ Style.link ] { onPress = Just GoAdvances, label = text "Advances" }
+            , newTabLink [ Style.link ] { url = "/v1/admin/debug", label = text "Config" }
             ]
         , resource viewCustomers model.customers
         ]
