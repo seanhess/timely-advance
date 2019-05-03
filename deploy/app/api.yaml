@@ -26,9 +26,13 @@ spec:
       imagePullSecrets:
         - name: gitlab-registry
       containers:
-      - args:
+      - name: api
+        image: registry.gitlab.com/timely-advance/timely:$VERSION
+        args:
         - /usr/local/bin/timely
         - api
+        ports:
+        - containerPort: 3002
         env:
         - name: AMQP
           value: amqp://guest:guest@amqp:5672
@@ -40,7 +44,9 @@ spec:
           value: https://test.timelyadvance.com
         - name: PLAID_WEBHOOK
           value: https://test.timelyadvance.com/v1/webhooks/plaid
-        image: registry.gitlab.com/timely-advance/timely:$VERSION
-        name: api
-        ports:
-        - containerPort: 3002
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3002
+          initialDelaySeconds: 15
+          periodSeconds: 15
