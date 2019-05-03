@@ -1,12 +1,15 @@
 
+// Config loaded?
+console.log("Javascript!", CONFIG)
+
 // Load Elm App
 var app = Elm.Main.init({
-  node: document.getElementById('elm')
+  node: document.getElementById('elm'),
+  flags: CONFIG.loaded
 });
 
 
-// Config loaded?
-console.log("Javascript!", CONFIG)
+
 
 // Plaid Link
 var handler = Plaid.create({

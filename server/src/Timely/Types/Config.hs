@@ -2,15 +2,17 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Timely.Types.Config where
 
-import           Data.Aeson          (ToJSON)
-import           Data.Model.Id       (Id)
-import           Data.Text           (Text)
-import           GHC.Generics        (Generic)
-import           Network.Plaid.Types (Public)
+import Data.Aeson          (ToJSON)
+import Data.Model.Id       (Id)
+import Data.Text           (Text)
+import Data.Time.Clock     (UTCTime)
+import GHC.Generics        (Generic)
+import Network.Plaid.Types (Public)
 
 data ClientConfig = ClientConfig
     { version :: String
-    , plaid :: PlaidConfig
+    , loaded  :: UTCTime
+    , plaid   :: PlaidConfig
     } deriving (Generic, Show, Eq)
 
 instance ToJSON ClientConfig

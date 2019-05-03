@@ -36,6 +36,7 @@ type alias Model =
     { key : Nav.Key
     , url : Url
     , page : Page
+    , loaded : String
     }
 
 
@@ -50,26 +51,8 @@ type Page
     | Customer Customer.Model
 
 
-init : flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
-init _ url key =
-    let
-        ( page, cmd ) =
-            changeRouteTo Nothing key (Route.fromUrl url)
-    in
-    ( { key = key
-      , url = url
-      , page = page
-      }
-    , Cmd.batch
-        [ cmd
-        , appInitialized Version.version
-        ]
-    )
-
-
 type Msg
     = Ignored
-      -- | ChangedRoute (Maybe Route)
     | ChangedUrl Url
     | ClickedLink Browser.UrlRequest
     | OnInit Init.Msg
@@ -79,6 +62,24 @@ type Msg
     | OnAccount Account.Msg
     | OnSudo Sudo.Msg
     | OnCustomer Customer.Msg
+
+
+init : String -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init loaded url key =
+    let
+        ( page, cmd ) =
+            changeRouteTo Nothing key (Route.fromUrl url)
+    in
+    ( { key = key
+      , url = url
+      , page = page
+      , loaded = loaded
+      }
+    , Cmd.batch
+        [ cmd
+        , appInitialized Version.version
+        ]
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -222,7 +223,7 @@ view model =
     , body =
         [ Element.layout []
             (Element.column
-                [ width fill, height fill, Element.inFront Components.version ]
+                [ width fill, height fill, Element.inFront (Components.version model.loaded) ]
                 [ pageView model.page ]
             )
         ]
@@ -242,7 +243,7 @@ subscriptions model =
             Sub.none
 
 
-main : Program Value Model Msg
+main : Program String Model Msg
 main =
     Browser.application
         { init = init

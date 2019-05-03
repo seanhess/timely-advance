@@ -1,4 +1,4 @@
-module Timely.Types.Date exposing (Date, decodeDate, formatDate)
+module Timely.Types.Date exposing (Date, decodeDate, formatDate, formatTime)
 
 import Iso8601
 import Task
@@ -77,7 +77,8 @@ formatDate time =
     formatMonth time ++ " " ++ formatDay time ++ ", " ++ formatYear time ++ " "
 
 
-
--- timezone : (TimeZone -> msg) -> Cmd msg
--- timezone toMsg =
---     Task.perform toMsg Time.here
+formatTime : Date -> String
+formatTime time =
+    [ Time.toHour Time.utc time, Time.toMinute Time.utc time, Time.toSecond Time.utc time ]
+        |> List.map (String.padLeft 2 '0' << String.fromInt)
+        |> String.join ":"

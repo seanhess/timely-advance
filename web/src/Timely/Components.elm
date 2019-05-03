@@ -149,8 +149,8 @@ submitButton onMsg enabled label =
         }
 
 
-version : Element msg
-version =
+version : String -> Element msg
+version loaded =
     el
         [ padding 4
         , Font.size 12
@@ -158,4 +158,4 @@ version =
         , moveUp 20
         , alignRight
         ]
-        (text <| "Version: " ++ Version.version)
+        (text <| "Loaded: " ++ loaded ++ " - Version: " ++ Version.version)
