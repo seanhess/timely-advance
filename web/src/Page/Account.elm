@@ -64,6 +64,18 @@ init i key oldModel route =
 
 changeRouteTo : Id AccountId -> Nav.Key -> Maybe Page -> Route.Account -> ( Page, Cmd Msg )
 changeRouteTo i key oldPage route =
+    let
+        oldBreakdown op =
+            case op of
+                Just (Breakdown brk) ->
+                    Just brk
+
+                Just (Budget brk _) ->
+                    Just brk
+
+                _ ->
+                    Nothing
+    in
     case route of
         Route.AccountMain ->
             Home.init i
@@ -76,14 +88,6 @@ changeRouteTo i key oldPage route =
 
         Route.Budget t b ->
             let
-                oldBreakdown op =
-                    case op of
-                        Just (Breakdown brk) ->
-                            Just brk
-
-                        _ ->
-                            Nothing
-
                 ( bkModel, bkMsg ) =
                     Breakdown.init key i
 
@@ -99,8 +103,11 @@ changeRouteTo i key oldPage route =
             )
 
         Route.Breakdown ->
-            Breakdown.init key i
-                |> initWith Breakdown OnBreakdown
+            let
+                ( bkModel, bkMsg ) =
+                    Breakdown.init key i
+            in
+            ( Breakdown (oldBreakdown oldPage |> Maybe.withDefault bkModel), Cmd.map OnBreakdown bkMsg )
 
 
 
