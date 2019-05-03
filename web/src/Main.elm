@@ -1,8 +1,8 @@
-port module Main exposing (Model, Msg(..), PageModel(..), changeRouteTo, init, main, subscriptions, update, view)
+port module Main exposing (Model, Msg(..), Page(..), changeRouteTo, init, main, subscriptions, update, view)
 
 import Browser exposing (Document)
 import Browser.Navigation as Nav
-import Element
+import Element exposing (fill, height, width)
 import Element.Background as Background
 import Html exposing (Html, a, b, button, div, li, text, ul)
 import Html.Attributes exposing (href)
@@ -35,11 +35,11 @@ port appInitialized : String -> Cmd msg
 type alias Model =
     { key : Nav.Key
     , url : Url
-    , page : PageModel
+    , page : Page
     }
 
 
-type PageModel
+type Page
     = NotFound
     | Init Init.Model
     | Landing Landing.Model
@@ -54,7 +54,7 @@ init : flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ url key =
     let
         ( page, cmd ) =
-            changeRouteTo key (Route.fromUrl url)
+            changeRouteTo Nothing key (Route.fromUrl url)
     in
     ( { key = key
       , url = url
@@ -91,7 +91,7 @@ update msg model =
         ( ChangedUrl url, _ ) ->
             let
                 ( page, cmd ) =
-                    changeRouteTo model.key (Route.fromUrl url)
+                    changeRouteTo (Just model.page) model.key (Route.fromUrl url)
             in
             ( { model | page = page, url = url }, cmd )
 
@@ -137,8 +137,17 @@ update msg model =
             ( model, Cmd.none )
 
 
-changeRouteTo : Nav.Key -> Maybe Route -> ( PageModel, Cmd Msg )
-changeRouteTo key maybeRoute =
+changeRouteTo : Maybe Page -> Nav.Key -> Maybe Route -> ( Page, Cmd Msg )
+changeRouteTo maybePage key maybeRoute =
+    let
+        accountPage mp =
+            case mp of
+                Just (Account am) ->
+                    Just am
+
+                _ ->
+                    Nothing
+    in
     case maybeRoute of
         Nothing ->
             ( NotFound, Cmd.none )
@@ -167,8 +176,9 @@ changeRouteTo key maybeRoute =
             Customer.init i
                 |> initWith Customer OnCustomer
 
+        -- if it's account, I want to send the old one
         Just (Route.Account i route) ->
-            Account.init i key route
+            Account.init i key (accountPage maybePage) route
                 |> initWith Account OnAccount
 
         Just Route.Init ->
@@ -212,10 +222,8 @@ view model =
     , body =
         [ Element.layout []
             (Element.column
-                [ Element.width Element.fill, Element.height Element.fill ]
-                [ pageView model.page
-                , Components.version
-                ]
+                [ width fill, height fill, Element.inFront Components.version ]
+                [ pageView model.page ]
             )
         ]
     }
@@ -250,7 +258,7 @@ main =
 -- when we have Updates in this format:
 
 
-runUpdates : (event -> Cmd Msg) -> (model -> PageModel) -> (msg -> Msg) -> Model -> Updates model msg event -> ( Model, Cmd Msg )
+runUpdates : (event -> Cmd Msg) -> (model -> Page) -> (msg -> Msg) -> Model -> Updates model msg event -> ( Model, Cmd Msg )
 runUpdates eventToMessage toModel toMsg model ( subModel, subCmd, subEvent ) =
     ( { model | page = toModel subModel }
     , Cmd.batch
@@ -260,14 +268,14 @@ runUpdates eventToMessage toModel toMsg model ( subModel, subCmd, subEvent ) =
     )
 
 
-updateWith : (subModel -> PageModel) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
+updateWith : (subModel -> Page) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
 updateWith toModel toMsg model ( subModel, subCmd ) =
     ( { model | page = toModel subModel }
     , Cmd.map toMsg subCmd
     )
 
 
-initWith : (subModel -> PageModel) -> (subMsg -> Msg) -> ( subModel, Cmd subMsg ) -> ( PageModel, Cmd Msg )
+initWith : (subModel -> Page) -> (subMsg -> Msg) -> ( subModel, Cmd subMsg ) -> ( Page, Cmd Msg )
 initWith toModel toMsg ( subModel, subCmd ) =
     ( toModel subModel
     , Cmd.map toMsg subCmd

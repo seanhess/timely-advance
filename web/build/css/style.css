@@ -128,19 +128,3 @@
   }
 }
 
-
-.popup .content {
-  transition: all 0.5s ease;
-}
-
-.popup {
-  transition: all 0.5s ease;
-}
-
-.popup.animate .content {
-  transform: translate3d(0, -600px, 0);
-}
-
-.popup.animate.background {
-  background: transparent
-}

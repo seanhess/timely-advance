@@ -151,4 +151,11 @@ submitButton onMsg enabled label =
 
 version : Element msg
 version =
-    el [ padding 4, Font.size 12, Font.color (Element.rgb 0.7 0.7 0.7) ] (text <| "Version: " ++ Version.version)
+    el
+        [ padding 4
+        , Font.size 12
+        , Font.color (Element.rgb 0.7 0.7 0.7)
+        , moveUp 20
+        , alignRight
+        ]
+        (text <| "Version: " ++ Version.version)

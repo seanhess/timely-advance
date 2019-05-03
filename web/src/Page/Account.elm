@@ -3,7 +3,7 @@ module Page.Account exposing (Model, Msg(..), Page(..), changeRouteTo, init, sub
 import Browser.Navigation as Nav
 import Element exposing (Element, centerY, fill, height, htmlAttribute, padding, width)
 import Element.Background as Background
-import Html.Attributes exposing (class)
+import Html.Attributes exposing (style)
 import Page.Account.Breakdown as Breakdown
 import Page.Account.Budget as Budget
 import Page.Account.Home as Home
@@ -39,12 +39,12 @@ type Msg
     | Loaded ()
 
 
-init : Id AccountId -> Nav.Key -> Route.Account -> ( Model, Cmd Msg )
-init i key route =
+init : Id AccountId -> Nav.Key -> Maybe Model -> Route.Account -> ( Model, Cmd Msg )
+init i key oldModel route =
     -- I want the change to use my old page if it exists here
     let
         ( page, cmd ) =
-            changeRouteTo i key route
+            changeRouteTo i key (Maybe.map .page oldModel) route
     in
     ( { page = page
       , loading = True
@@ -54,8 +54,16 @@ init i key route =
     )
 
 
-changeRouteTo : Id AccountId -> Nav.Key -> Route.Account -> ( Page, Cmd Msg )
-changeRouteTo i key route =
+
+-- when we change route from Breakdown -> Budget, it's calling init on breakdown again, which we don't necessarily want to do
+-- because we already have an old model
+-- we can just reuse it
+-- init is called again
+-- we need some way to track history, no?
+
+
+changeRouteTo : Id AccountId -> Nav.Key -> Maybe Page -> Route.Account -> ( Page, Cmd Msg )
+changeRouteTo i key oldPage route =
     case route of
         Route.AccountMain ->
             Home.init i
@@ -68,13 +76,22 @@ changeRouteTo i key route =
 
         Route.Budget t b ->
             let
+                oldBreakdown op =
+                    case op of
+                        Just (Breakdown brk) ->
+                            Just brk
+
+                        _ ->
+                            Nothing
+
                 ( bkModel, bkMsg ) =
                     Breakdown.init key i
 
                 ( bdModel, bdMsg ) =
+                    -- use the old budget if it exists
                     Budget.init key i t b
             in
-            ( Budget bkModel bdModel
+            ( Budget (oldBreakdown oldPage |> Maybe.withDefault bkModel) bdModel
             , Cmd.batch
                 [ Cmd.map OnBudget bdMsg
                 , Cmd.map OnBreakdown bkMsg
@@ -84,6 +101,10 @@ changeRouteTo i key route =
         Route.Breakdown ->
             Breakdown.init key i
                 |> initWith Breakdown OnBreakdown
+
+
+
+-- maybe I should ALWAYS have an offscreen modal ready to go
 
 
 view : Model -> Element Msg
@@ -99,8 +120,6 @@ view model =
                 [ Element.map OnBreakdown <| Breakdown.view b
                 ]
 
-        -- ,
-        -- ]
         Home a ->
             Element.map OnHome <| Home.view a
 
@@ -121,21 +140,26 @@ modal loading content =
     Element.el
         [ width fill
         , height fill
-        , Background.color Style.dim
-        , htmlAttribute (class "popup")
-        , htmlAttribute (class "background")
+        , htmlAttribute (style "transition" "all 0.5s ease")
         , htmlAttribute
             (if loading then
-                class "animate"
+                style "background" "transparent"
 
              else
-                class ""
+                style "background" "rgba(0.3, 0.3, 0.3, 0.5)"
             )
         ]
         (Element.el
             [ padding 10
             , width fill
-            , htmlAttribute (class "content")
+            , htmlAttribute (style "transition" "all 0.5s ease")
+            , htmlAttribute
+                (if loading then
+                    style "transform" "translate3d(0, -600px, 0)"
+
+                 else
+                    style "transform" "translate3d(0, 0, 0)"
+                )
             ]
             content
         )
