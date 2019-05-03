@@ -57,7 +57,7 @@ build-web:
     - echo "version = \"$RELEASE\""      >> src/Version.elm
     - cat src/Version.elm
 
-    - elm make src/Main.elm --optimize --output=build/elm.js
+    - ./optimize.sh src/Main.elm
     - docker build -t $IMAGE_WEB:$RELEASE .
 
 
