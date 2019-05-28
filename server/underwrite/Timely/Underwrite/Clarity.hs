@@ -23,6 +23,7 @@ import           Text.XML.Parse          (Parser, content, element, find, float,
 
 
 -- TODO all fields are maybe?
+-- TODO move the main parsers into here instead of in Network.Clarity. It just returns a Document
 
 
 -- Bank Behavior ----------------------------------
@@ -69,6 +70,9 @@ parseBankBehavior = Clarity.bankBehavior $ do
     isAccountIndex n = do
       i <- element "account-index" $ content int
       pure $ i == n
+
+
+
 
 
 
@@ -125,15 +129,111 @@ parseFraud = Clarity.fraud $ do
    }
 
 
-  where
-    isName n1 = do
-      n2 <- element "name" $ content text
-      pure $ n1 == n2
+
+
+-- Credit Risk ---------------------------------------------
+
+data CreditRisk = CreditRisk
+  { denyCodes :: Text
+  }
+
+
+parseCreditRisk :: Parser CreditRisk
+parseCreditRisk = Clarity.creditRisk $ do
+  denyCodes <- element "deny-codes" $ content text
+  pure $ CreditRisk {denyCodes}
+
+
+-- Fraud Insight ------------------------------------
+-- fi_
+
+data FraudInsight = FraudInsight
+  { score                     :: Maybe Int
+  , ratio_1_min_90_days       :: Maybe Float
+  , ratio_10_mins_90_days     :: Maybe Float
+  , ratio_1_hr_365_days       :: Maybe Float
+  , ratio_15_day_90_days      :: Maybe Float
+  , ratio_30_days_365_days    :: Maybe Float
+  , ratio_90_days_365_days    :: Maybe Float
+  , xtab_pts_tot              :: Maybe Int
+  , xtab_multiple             :: Maybe Float
+  , xtab_cell_zip             :: Maybe Int
+  , xtab_dl_email             :: Maybe Int
+  , xtab_dl_zip               :: Maybe Int
+  , xtab_email_ssn            :: Maybe Int
+  , xtab_email_zip            :: Maybe Int
+  , xtab_hmphone_cell         :: Maybe Int
+  , xtab_hmphone_email        :: Maybe Int
+  , xtab_hmphone_zip          :: Maybe Int
+  , xtab_ssn_hmphone          :: Maybe Int
+  , xtab_ssn_home_addr        :: Maybe Int
+  , xtab_ssn_zip              :: Maybe Int
+  , stab_inq_30_days          :: Maybe Int
+  , stab_mthlyincome_365_days :: Maybe Int
+  , stab_mthlyincome_90_days  :: Maybe Int
+  , stab_zip_365_days         :: Maybe Int
+  }
+
+
+parseFraudInsight :: Parser FraudInsight
+parseFraudInsight = Clarity.fraudInsight $ do
+  score <- element "score" $ content $ optional int -- Nothing
+
+  ratio_1_min_90_days <- find "ratio" (isName "one_minute_ago") $ element "ninety-days-ago" $ content $ optional float
+  ratio_10_mins_90_days <- find "ratio" (isName "ten_minutes_ago") $ element "ninety-days-ago" $ content $ optional float
+  ratio_1_hr_365_days <- find "ratio" (isName "one_hour_ago") $ element "threesixtyfive-days-ago" $ content $ optional float
+  ratio_15_day_90_days <- find "ratio" (isName "fifteen_days_ago") $ element "ninety-days-ago" $ content $ optional float
+  ratio_30_days_365_days <- find "ratio" (isName "thirty_days_ago") $ element "threesixtyfive-days-ago" $ content $ optional float
+  ratio_90_days_365_days <- find "ratio" (isName "ninety_days_ago") $ element "threesixtyfive-days-ago" $ content $ optional float
+
+  xtab_pts_tot <- element "crosstab-points-total" $ content $ optional int
+  xtab_multiple <- element "crosstab-multiple" $ content $ optional float
+
+  xtab_cell_zip <- find "crosstab" (isName "cell_phone") $ element "zip-code" $ content $ optional int
+
+  (xtab_dl_email, xtab_dl_zip) <- find "crosstab" (isName "drivers_license") $ do
+    e <- element "email-address" $ content $ optional int
+    z <- element "zip-code" $ content $ optional int
+    pure (e, z)
+
+  (xtab_email_ssn, xtab_email_zip) <- find "crosstab" (isName "email_address") $ do
+    s <- element "ssn" $ content $ optional int
+    z <- element "zip-code" $ content $ optional int
+    pure (s, z)
+
+  (xtab_hmphone_cell, xtab_hmphone_email, xtab_hmphone_zip) <- find "crosstab" (isName "home_phone") $ do
+    c <- element "cell-phone" $ content $ optional int
+    e <- element "email-address" $ content $ optional int
+    z <- element "zip-code" $ content $ optional int
+    pure (c, e, z)
+
+  (xtab_ssn_hmphone, xtab_ssn_home_addr, xtab_ssn_zip) <- find "crosstab" (isName "ssn") $ do
+    p <- element "home-phone" $ content $ optional int
+    a <- element "home-address" $ content $ optional int
+    z <- element "zip-code" $ content $ optional int
+    pure (p, a, z)
+
+  stab_inq_30_days <- find "stability" (isName "inquiry") $ element "thirty-days-ago" $ content $ optional int
+
+  (stab_mthlyincome_90_days, stab_mthlyincome_365_days) <- find "stability" (isName "monthly_income") $ do
+    n <- element "ninety-days-ago" $ content $ optional int
+    t <- element "threesixtyfive-days-ago" $ content $ optional int
+    pure (n, t)
+
+  stab_zip_365_days <- find "stability" (isName "zip_code") $ element "threesixtyfive-days-ago" $ content $ optional int
+
+
+  pure $ FraudInsight { score , ratio_30_days_365_days , ratio_1_hr_365_days , xtab_pts_tot , ratio_90_days_365_days , ratio_15_day_90_days , xtab_ssn_home_addr , stab_mthlyincome_365_days , xtab_multiple , stab_inq_30_days , xtab_hmphone_email , xtab_ssn_hmphone , xtab_email_zip , xtab_hmphone_cell , ratio_10_mins_90_days , xtab_ssn_zip , xtab_cell_zip , xtab_hmphone_zip , ratio_1_min_90_days , xtab_dl_email , xtab_email_ssn , xtab_dl_zip , stab_zip_365_days , stab_mthlyincome_90_days }
 
 
 
 
--- Inquiry --------------------------------------------- clarity_inquiry_
+
+
+
+
+-- Inquiry ---------------------------------------------
+-- clarity_inquiry_
 
 data Inquiry = Inquiry
   { bankAccountNumberLength       :: Int
@@ -156,18 +256,6 @@ parseInquiry = Clarity.inquiry $ do
 
 
 
-
--- Credit Risk ---------------------------------------------
-
-data CreditRisk = CreditRisk
-  { denyCodes :: Text
-  }
-
-
-parseCreditRisk :: Parser CreditRisk
-parseCreditRisk = Clarity.creditRisk $ do
-  denyCodes <- element "deny-codes" $ content text
-  pure $ CreditRisk {denyCodes}
 
 
 
@@ -193,3 +281,9 @@ parseValid t =
 piped :: Text -> Parser [Text]
 piped t = pure $ Text.split (=='|') t
 
+
+
+isName :: Text -> Parser Bool
+isName n1 = do
+  n2 <- element "name" $ content text
+  pure $ n1 == n2
