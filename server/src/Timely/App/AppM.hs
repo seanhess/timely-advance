@@ -75,8 +75,8 @@ import           Timely.Transfers            (Transfers)
 import qualified Timely.Transfers            as Transfers
 import           Timely.Types.Config         (ClientConfig (ClientConfig), PlaidConfig (PlaidConfig))
 import           Timely.Types.Session        (Admin)
-import           Timely.Underwriting         (Underwriting)
-import qualified Timely.Underwriting         as Underwriting
+import           Timely.Underwrite           (Underwrite)
+import qualified Timely.Underwrite           as Underwrite
 
 
 
@@ -186,7 +186,7 @@ instance MonadEffect (Signal ServantErr b) Handler where
 
 
 
-type AppT m = RuntimeImplemented Log (LogT (RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Applications (RuntimeImplemented Accounts (RuntimeImplemented Banks (RuntimeImplemented Advances (RuntimeImplemented Auth (RuntimeImplemented Transfers (RuntimeImplemented Notify (RuntimeImplemented Underwriting (RuntimeImplemented Async (RuntimeImplemented Budgets (ReaderT AppState m))))))))))))))
+type AppT m = RuntimeImplemented Log (LogT (RuntimeImplemented Time (RuntimeImplemented Publish (RuntimeImplemented Applications (RuntimeImplemented Accounts (RuntimeImplemented Banks (RuntimeImplemented Advances (RuntimeImplemented Auth (RuntimeImplemented Transfers (RuntimeImplemented Notify (RuntimeImplemented Underwrite (RuntimeImplemented Async (RuntimeImplemented Budgets (ReaderT AppState m))))))))))))))
 
 type AppM = AppT Handler
 
@@ -209,7 +209,7 @@ runApp s x =
         & Auth.implementIO
         & Transfers.implementIO
         & Notify.implementIO
-        & Underwriting.implementMock
+        & Underwrite.implementMock
         & Async.implementIO
         & Budgets.implementIO
   in runReaderT action s

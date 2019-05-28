@@ -10,7 +10,9 @@ import           Timely.Evaluate.Schedule.DayOfMonth (DayOfMonth (..))
 -- import           Timely.Evaluate.History          as History hiding (expenses, income)
 
 
-specSchedule = defaultMain $ testGroup "tests" $ runTests tests
+specSchedule = do
+  ts <- runTests tests
+  defaultMain $ testGroup "tests" ts
 
 tests :: Tests ()
 tests = do

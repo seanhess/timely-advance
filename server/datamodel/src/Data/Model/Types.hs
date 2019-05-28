@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE DataKinds #-}
 module Data.Model.Types
   ( SSN
   , Phone
@@ -18,21 +20,26 @@ import           GHC.Generics     (Generic)
 
 
 
+
+
+
+
+
 -- Personal Information -------------------
 
 data SSN
 instance Validate SSN where
   validate t = do
-    guard (Text.length t == 9)
-    guard (Text.all Char.isDigit t)
+    Valid.length 9 t
+    Valid.digits t
     pure $ Valid t
 
 
 data Phone
 instance Validate Phone where
   validate t = do
-    guard (Text.length t == 10)
-    guard (Text.all Char.isDigit t)
+    Valid.length 10 t
+    Valid.digits t
     pure $ Valid t
 
 
@@ -45,16 +52,16 @@ instance Validate Phone where
 data State
 instance Validate State where
   validate t = do
-    guard (Text.length t == 2)
-    guard (Text.all Char.isAlpha t)
+    Valid.length 2 t
+    Valid.alpha t
     pure $ Valid $ Text.toUpper t
 
 
 data PostalCode
 instance Validate PostalCode where
   validate t = do
-    guard (Text.length t == 5)
-    guard (Text.all Char.isDigit t)
+    Valid.length 5 t
+    Valid.digits t
     pure $ Valid t
 
 

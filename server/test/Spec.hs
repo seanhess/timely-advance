@@ -1,21 +1,24 @@
-import Test.Tasty
+import           Test.Tasty
 -- import Test.Tasty.HUnit
-import Test.Tasty.Monad
+import           Test.Tasty.Monad
 
+import qualified Test.Advances
+import qualified Test.Bank
+import qualified Test.Dwolla
+import qualified Test.Evaluate
+import qualified Test.Field
+import qualified Test.Notify
 import qualified Test.OnboardAccount
 import qualified Test.UpdateAccount
-import qualified Test.Evaluate
-import qualified Test.Advances
-import qualified Test.Dwolla
-import qualified Test.Notify
-import qualified Test.Bank
-import qualified Test.Field
+import qualified Test.Underwrite
+import qualified Test.XML
 
 
 
 main :: IO ()
-main =
-    defaultMain $ testGroup "tests" $ runTests allTests
+main = do
+    ts <- runTests allTests
+    defaultMain $ testGroup "tests" ts
 
 
 allTests :: Tests ()
@@ -28,5 +31,6 @@ allTests = do
     group "Notify"         Test.Notify.tests
     group "Bank"           Test.Bank.tests
     group "Field"          Test.Field.tests
-
+    group "XML"            Test.XML.tests
+    group "Underwrite"     Test.Underwrite.tests
 

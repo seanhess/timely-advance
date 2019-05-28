@@ -19,7 +19,7 @@ import           GHC.Generics                  (Generic)
 import           Timely.Accounts.Types.Account (Account)
 import           Timely.Accounts.Types.Api     ()
 import           Timely.Bank                   (Item, Public)
-import           Timely.Underwriting.Types     (DenialReason)
+import           Timely.Underwrite.Types     (DenialReason)
 
 
 -- Can we have more than one application per phone number? NO

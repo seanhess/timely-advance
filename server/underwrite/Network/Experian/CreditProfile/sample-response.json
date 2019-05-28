@@ -1,0 +1,129 @@
+{
+  "consumerPii": {
+    "primaryApplicant": {
+      "name": {
+        "lastName": "CONSUMER",
+        "firstName": "JONATHAN",
+        "middleName": "QUINCY",
+        "generationCode": "Sr"
+      },
+      "dob": {
+        "dob": "3021945.0"
+      },
+      "ssn": {
+        "ssn": "999999990"
+      },
+      "driverslicense": {
+        "number": "111111",
+        "state": "CA"
+      },
+      "phone": [
+        {
+          "number": "818.555.1111",
+          "type": "R"
+        }
+      ],
+      "employment": {
+        "employerName": "HARDWARE STORE",
+        "employerAddress": {
+          "line1": "10655 N BIRCH ST",
+          "line2": " ",
+          "city": "BURBANK",
+          "state": "CA",
+          "zipCode": "915021234"
+        }
+      },
+      "currentAddress": {
+        "line1": "10655 N BIRCH ST",
+        "line2": " ",
+        "city": "BURBANK",
+        "state": "CA",
+        "zipCode": "915021234"
+      },
+      "previousAddress": [
+        {
+          "line1": "10655 N BIRCH ST",
+          "line2": " ",
+          "city": "BURBANK",
+          "state": "CA",
+          "zipCode": "915021234"
+        }
+      ]
+    },
+    "secondaryApplicant": {
+      "name": {
+        "lastName": "",
+        "firstName": "JON",
+        "middleName": "Q",
+        "generationCode": "Sr"
+      },
+      "dob": {
+        "dob": "3021945.0"
+      },
+      "ssn": {
+        "ssn": "999999990"
+      },
+      "driverslicense": {
+        "number": "111111",
+        "state": "CA"
+      },
+      "phone": [
+        {
+          "number": "818.555.1111",
+          "type": "R"
+        }
+      ],
+      "employment": {
+        "employerName": "HARDWARE STORE",
+        "employerAddress": {
+          "line1": "10655 N BIRCH ST",
+          "line2": " ",
+          "city": "BURBANK",
+          "state": "CA",
+          "zipCode": "915021234"
+        }
+      }
+    }
+  },
+  "requestor": {
+    "subscriberCode": "5991764"
+  },
+  "permissiblePurpose": {
+    "type": "18",
+    "terms": "8",
+    "abbreviatedAmount": "100"
+  },
+  "resellerInfo": {
+    "endUserName": "ENDUSER"
+  },
+  "freezeOverride": {
+    "primaryApplFreezeOverrideCode": "",
+    "secondaryApplFreezeOverrideCode": ""
+  },
+  "addOns": {
+    "directCheck": "Y",
+    "demographics": "",
+    "riskModels": {
+      "modelIndicator": [
+        ""
+      ],
+      "scorePercentile": "Y"
+    },
+    "summaries": "object",
+    "fraudShield": "Y",
+    "mla": "Y",
+    "ofacmsg": "Y",
+    "consumerIdentCheck": {
+      "getUniqueConsumerIdentifier": "Y",
+      "verifyPrimaryConsumerIdentifier": "Y",
+      "verifySecondaryConsumerIdentifier": "Y"
+    },
+    "joint": "N",
+    "paymentHistory84": "Y"
+  },
+  "customOptions": {
+    "optionId": [
+      ""
+    ]
+  }
+}

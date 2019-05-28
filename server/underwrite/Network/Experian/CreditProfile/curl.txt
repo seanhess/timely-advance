@@ -1,0 +1,21 @@
+curl -X POST
+-d '{"username": "youremail@email.com", "password": "YOURPASSWORD"}'
+-H "Client_id: 3QC11Sm45ti8wXXxx9A5hma5XIlXXXXX"
+-H "Client_secret: ipu3WXXxTExxZDXW"
+-H "Cache-Control: no-cache"
+-H "Content-Type: application/json"
+"https://sandbox-us-api.experian.com/oauth2/v1/token"
+
+{
+    "issued_at": "1478405901908",
+    "expires_in": "7200",
+    "token_type": "Bearer",
+    "access_token": "TOKEN",
+    "refresh_token": "3Ib5SjC6AOUx5R47ffobFFi8DhGlC2GO"
+}
+
+
+curl -X GET
+ 'https://sandbox-us-api.experian.com/risk/businesses/v1/businesstargeter?name=Test'
+ -H 'accept: application/json'
+ -H 'authorization: Bearer TOKEN'

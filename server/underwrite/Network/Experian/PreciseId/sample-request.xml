@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Experian>
+    <FraudSolutions>
+        <Request>
+            <Products>
+                <PreciseIDServer>
+                    <PIDXMLVersion>06.00</PIDXMLVersion>
+                    <Subscriber>
+                        <Preamble>TBD3</Preamble>
+                        <OpInitials>AC</OpInitials>
+                        <SubCode>1198463</SubCode>
+                    </Subscriber>
+                    <PrimaryApplicant>
+                        <Name>
+                            <Surname>STANLEY</Surname>
+                            <First>ROGER</First>
+                            <Middle>D</Middle>
+                            <Gen/>
+                        </Name>
+                        <SSN>666542396</SSN>
+                        <CurrentAddress>
+                            <Street>100 50TH ST SW APT 125</Street>
+                            <City>GRAND RAPIDS</City>
+                            <State>MI</State>
+                            <Zip>49548</Zip>
+                        </CurrentAddress>
+                        <DriverLicense>
+                            <State>MI</State>
+                            <Number>S550792603937</Number>
+                        </DriverLicense>
+                        <Phones>
+                            <Phone>
+                                <Number>6165311574</Number>
+                                <Type/>
+                            </Phone>
+                        </Phones>
+                        <DOB>12091949</DOB>
+                    </PrimaryApplicant>
+                    <Verbose>Y</Verbose>
+                    <Options>
+                        <ReferenceNumber>12345</ReferenceNumber>
+                        <ProductOption>06</ProductOption>
+                        <DetailRequest>D</DetailRequest>
+                    </Options>
+                </PreciseIDServer>
+            </Products>
+        </Request>
+    </FraudSolutions>
+</Experian>

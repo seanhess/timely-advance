@@ -40,6 +40,7 @@ dependencies:
 - http-media
 - http-types
 - jose
+- lens
 - monad-control
 - monad-logger
 - monad-loops
@@ -71,6 +72,10 @@ dependencies:
 - wai-extra
 - warp
 - warp-tls
+- xml-conduit
+- xml-conduit-writer
+- xml-types
+- conduit
 
 
 # I'm not sure this is a good idea

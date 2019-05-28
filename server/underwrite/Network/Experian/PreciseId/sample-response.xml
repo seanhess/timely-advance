@@ -1,0 +1,327 @@
+<Experian xmlns="http://www.experian.com/NetConnectResponse">
+<FraudSolutions>
+    <Response>
+        <Products>
+            <PreciseIDServer>
+                <PIDXMLVersion>06.00</PIDXMLVersion>
+                <SessionID>CIDGC5CBZAJVKAIQ29ITAD6Z.pidd2v-1705081407300210009976241</SessionID>
+                <Header>
+                    <ReportDate>05082017</ReportDate>
+                    <ReportTime>140731</ReportTime>
+                    <ProductOption>06</ProductOption>
+                    <Subcode>1198463</Subcode>
+                    <ReferenceNumber>12345</ReferenceNumber>
+                </Header>
+                <Messages>
+                    <Message>
+                        <Number>57</Number>
+                        <Text>015000    0100</Text>
+                        <AddrMismatch>N</AddrMismatch>
+                    </Message>
+                </Messages>
+                <Summary>
+                    <TransactionID>18500625</TransactionID>
+                    <InitialDecision>ACC</InitialDecision>
+                    <FinalDecision>ACC</FinalDecision>
+                    <Scores>
+                        <PreciseIDScore>774</PreciseIDScore>
+                        <PreciseIDScorecard>AC OPEN V2</PreciseIDScorecard>
+                        <ValidationScore>000605</ValidationScore>
+                        <ValidationScorecard>AC OPEN VAL V2</ValidationScorecard>
+                        <VerificationScore>000825</VerificationScore>
+                        <VerificationScorecard>AC OPEN ID THEFT V2</VerificationScorecard>
+                        <FPDScore>000662</FPDScore>
+                        <FPDScorecard>AC OPEN FPD V2</FPDScorecard>
+                        <ComplianceDescription>No Compliance Code</ComplianceDescription>
+                        <Reasons>
+                            <Reason code="B110">Lack of public record information or collection trades indicative that file is susceptible to ID fraud</Reason>
+                            <Reason code="B105">High credit limits and balances on revolving trades</Reason>
+                            <Reason code="B122">Average age of revolving trades is too high indicative that file is susceptible of ID fraud</Reason>
+                            <Reason code="B218">Too many trades with high revolving credit balance to limit ratio</Reason>
+                            <Reason code="B405">No adverse factor observed</Reason>
+                        </Reasons>
+                    </Scores>
+                </Summary>
+                <FCRADetail>
+                    <FraudShield>
+                        <Indicator code="07">N</Indicator>
+                        <Indicator code="08">N</Indicator>
+                        <Indicator code="09">N</Indicator>
+                        <Indicator code="19">N</Indicator>
+                        <Indicator code="20">N</Indicator>
+                        <Indicator code="22">N</Indicator>
+                        <Indicator code="27">N</Indicator>
+                    </FraudShield>
+                    <FCRARules>
+                      <FCRARule code="1011">Test</FCRARule>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                      <FCRARule code="    "/>
+                    </FCRARules>
+                    <AdverseActions>
+                        <AdverseAction code=" "/>
+                        <AdverseAction code=" "/>
+                        <AdverseAction code=" "/>
+                        <AdverseAction code=" "/>
+                    </AdverseActions>
+                </FCRADetail>
+                <GLBDetail>
+                    <FraudShield>
+                        <Indicator code="01">Y</Indicator>
+                        <Indicator code="02">N</Indicator>
+                        <Indicator code="03">N</Indicator>
+                        <Indicator code="04">N</Indicator>
+                        <Indicator code="05">N</Indicator>
+                        <Indicator code="06">N</Indicator>
+                        <Indicator code="10">N</Indicator>
+                        <Indicator code="11">N</Indicator>
+                        <Indicator code="13">N</Indicator>
+                        <Indicator code="14">N</Indicator>
+                        <Indicator code="15">N</Indicator>
+                        <Indicator code="16">N</Indicator>
+                        <Indicator code="17">N</Indicator>
+                        <Indicator code="18">N</Indicator>
+                        <Indicator code="21">N</Indicator>
+                        <Indicator code="25">N</Indicator>
+                        <Indicator code="26">N</Indicator>
+                    </FraudShield>
+                    <GLBRules>
+                        <GLBRule code="3401">Additional Addresses (0 - 1)</GLBRule>
+                        <GLBRule code="3403">Additional Addresses (2 - 3)</GLBRule>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                        <GLBRule code="    "/>
+                    </GLBRules>
+                </GLBDetail>
+                <PreciseMatch>
+                    <Version>02.00</Version>
+                    <ResponseStatusCode code="00">Data found for search request</ResponseStatusCode>
+                    <PreciseMatchTransactionID>8a9f17c9-70c5-4987-a</PreciseMatchTransactionID>
+                    <PreciseMatchScore>749</PreciseMatchScore>
+                    <PreciseMatchDecision code=" "/>
+                    <Addresses>
+                        <Address>
+                            <Summary>
+                                <VerificationResult code="A1">Exact match on first and last name;Exact match on address</VerificationResult>
+                                <Type code="M ">Multi-family dwelling</Type>
+                                <UnitMismatchResult code="  "/>
+                                <HighRiskResult code="N ">No address high risk information found</HighRiskResult>
+                                <Counts>
+                                    <StandardizedAddressReturnCount>01</StandardizedAddressReturnCount>
+                                    <ResidentialAddressMatchCount>0001</ResidentialAddressMatchCount>
+                                    <ResidentialAddressReturnCount>01</ResidentialAddressReturnCount>
+                                    <HighRiskAddressReturnCount>00</HighRiskAddressReturnCount>
+                                    <BusinessAddressMatchCount>0000</BusinessAddressMatchCount>
+                                    <BusinessAddressReturnCount>00</BusinessAddressReturnCount>
+                                </Counts>
+                            </Summary>
+                            <Detail>
+                                <StandardizedAddressRcd>
+                                    <Surname>STANLEY</Surname>
+                                    <FirstName>ROGER</FirstName>
+                                    <Middle>D</Middle>
+                                    <Address>100 50TH ST SW APT 125</Address>
+                                    <City>GRAND RAPIDS</City>
+                                    <State>MI</State>
+                                    <ZipCode>49548</ZipCode>
+                                    <ZipPlus4>5670</ZipPlus4>
+                                </StandardizedAddressRcd>
+                                <ResidentialAddressRcd>
+                                    <Surname>STANLEY</Surname>
+                                    <FirstName>ROGER</FirstName>
+                                    <Middle>D</Middle>
+                                    <Address>100 50TH ST SW APT 125</Address>
+                                    <City>GRAND RAPIDS</City>
+                                    <State>MI</State>
+                                    <ZipCode>49548</ZipCode>
+                                    <ZipPlus4>5670</ZipPlus4>
+                                    <AreaCode>616</AreaCode>
+                                    <Phone>5311574</Phone>
+                                    <MonthsAtResidence>0126</MonthsAtResidence>
+                                    <LastUpdatedDate>19960514</LastUpdatedDate>
+                                </ResidentialAddressRcd>
+                                <HighRiskAddressDescription>
+                                    <HighRiskDescription>No high risk business at address/phone</HighRiskDescription>
+                                </HighRiskAddressDescription>
+                            </Detail>
+                        </Address>
+                    </Addresses>
+                    <Phones>
+                        <Phone>
+                            <Summary>
+                                <VerificationResult code="NX">No match to Phone</VerificationResult>
+                                <Classification code="L">Phone matches Landline</Classification>
+                                <HighRiskResult code="N">No phone high risk information found</HighRiskResult>
+                                <Counts>
+                                    <ResidentialPhoneMatchCount>0000</ResidentialPhoneMatchCount>
+                                    <ResidentialPhoneReturnCount>00</ResidentialPhoneReturnCount>
+                                    <HighRiskPhoneReturnCount>00</HighRiskPhoneReturnCount>
+                                    <BusinessPhoneMatchCount>0000</BusinessPhoneMatchCount>
+                                    <BusinessPhoneReturnCount>00</BusinessPhoneReturnCount>
+                                </Counts>
+                            </Summary>
+                        </Phone>
+                    </Phones>
+                    <ConsumerID>
+                        <Summary>
+                            <VerificationResult code="YA">Match to full name and address-Match performed using SSN</VerificationResult>
+                            <DeceasedResult code="N">No</DeceasedResult>
+                            <FormatResult code="V">Valid</FormatResult>
+                            <IssueResult code="I">SSN issued</IssueResult>
+                            <IssueState>MO</IssueState>
+                            <IssueStartRange>1975</IssueStartRange>
+                            <IssueEndRange>1977</IssueEndRange>
+                            <Counts>
+                                <ConsumerIDReturnCount>01</ConsumerIDReturnCount>
+                            </Counts>
+                        </Summary>
+                        <Detail>
+                            <ConsumerIDRcd>
+                                <Surname>STANLEY</Surname>
+                                <FirstName>ROGER</FirstName>
+                                <Middle>D</Middle>
+                                <Address>100 50TH ST SW APT 125</Address>
+                                <City>GRAND RAPIDS</City>
+                                <State>MI</State>
+                                <ZipCode>49548</ZipCode>
+                                <ZipPlus4>5670</ZipPlus4>
+                                <AreaCode>616</AreaCode>
+                                <Phone>5311574</Phone>
+                                <ReportedDate>19960514</ReportedDate>
+                                <LastUpdatedDate>20060628</LastUpdatedDate>
+                            </ConsumerIDRcd>
+                        </Detail>
+                    </ConsumerID>
+                    <DateOfBirth>
+                        <Summary>
+                            <MatchResult code="9">Day of Birth and Month of Birth exact match, Year of Birth exact match (no plus or minus one year logic accommodation)</MatchResult>
+                            <MonthOfBirth>12</MonthOfBirth>
+                            <DayOfBirth>09</DayOfBirth>
+                            <YearOfBirth>1949</YearOfBirth>
+                        </Summary>
+                    </DateOfBirth>
+                    <DriverLicense>
+                        <Summary>
+                            <VerificationResult code="YA">Match to full name and address</VerificationResult>
+                            <FormatValidation code="V">Valid format</FormatValidation>
+                        </Summary>
+                    </DriverLicense>
+                    <ChangeOfAddresses>
+                        <ChangeOfAddress>
+                            <Summary>
+                                <VerificationResult code="N ">No change of address information found</VerificationResult>
+                                <Counts>
+                                    <ChangeOfAddressReturnCount>00</ChangeOfAddressReturnCount>
+                                </Counts>
+                            </Summary>
+                        </ChangeOfAddress>
+                    </ChangeOfAddresses>
+                    <OFAC>
+                        <Summary>
+                            <VerificationResult code="1 ">No match</VerificationResult>
+                            <Counts>
+                                <OFACReturnCount>00</OFACReturnCount>
+                            </Counts>
+                        </Summary>
+                    </OFAC>
+                    <PreviousAddresses>
+                        <PreviousAddress>
+                            <Summary>
+                                <Counts>
+                                    <PreviousAddressReturnCount>02</PreviousAddressReturnCount>
+                                </Counts>
+                            </Summary>
+                            <Detail>
+                                <PreviousAddressRcd>
+                                    <Address>PO BOX 98D</Address>
+                                    <City>ONAWAY</City>
+                                    <State>MI</State>
+                                    <ZipCode>49765</ZipCode>
+                                    <ZipPlus4>0098</ZipPlus4>
+                                    <ReportedDate>20060320</ReportedDate>
+                                    <LastUpdatedDate>20060320</LastUpdatedDate>
+                                </PreviousAddressRcd>
+                                <PreviousAddressRcd>
+                                    <Address>25140 ROAD N</Address>
+                                    <City>CORTEZ</City>
+                                    <State>CO</State>
+                                    <ZipCode>81321</ZipCode>
+                                    <ZipPlus4>8865</ZipPlus4>
+                                    <ReportedDate>20040708</ReportedDate>
+                                    <LastUpdatedDate>20040708</LastUpdatedDate>
+                                </PreviousAddressRcd>
+                            </Detail>
+                        </PreviousAddress>
+                    </PreviousAddresses>
+                    <SSNFinder>
+                        <Summary>
+                            <Counts>
+                                <SSNFinderReturnCount>00</SSNFinderReturnCount>
+                            </Counts>
+                        </Summary>
+                    </SSNFinder>
+                </PreciseMatch>
+            </PreciseIDServer>
+            <CustomerManagement>
+                <Version>1.00</Version>
+                <ReportDate>05082017</ReportDate>
+                <ReportTime>140731</ReportTime>
+                <TransactionID>PIDCM0741531399557590848005759087222</TransactionID>
+                <ClientTrackingID>18500625</ClientTrackingID>
+                <PrimaryResponseCode>0000</PrimaryResponseCode>
+                <SecondaryResponseCode>1300</SecondaryResponseCode>
+                <ResponseCodeDesc>PID Cust Management v1 Scores/Attributes are calculated without SSN</ResponseCodeDesc>
+                <ReferenceText>12345</ReferenceText>
+                <ScoreResults>
+                    <Score>461</Score>
+                    <ScoreFactors>
+                        <ScoreFactor1 code="E014">Number of SSNs, phone numbers, name/address matches</ScoreFactor1>
+                        <ScoreFactor2 code="E009">Number of records with same name and address</ScoreFactor2>
+                        <ScoreFactor3 code="E010">Number of records with same name and address, and different phone numbers</ScoreFactor3>
+                        <ScoreFactor4 code="E017">No high risk activity</ScoreFactor4>
+                    </ScoreFactors>
+                </ScoreResults>
+                <Attributes>
+                    <Attributes01Day>0;1;2;3;4;5;6;7;8;9;10;11;</Attributes01Day>
+                    <Attributes03Day>0;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;48;49;50;51;52;53;54;55;56;57;58;59;60;61;62;63;64;65;</Attributes03Day>
+                    <Attributes07Day>0;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;48;49;50;51;52;53;54;55;56;57;58;59;60;61;62;63;64;65</Attributes07Day>
+                    <Attributes21Day>0;1;2;</Attributes21Day>
+                    <Attributes28Day>0;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;48;49;50;51;52;53;54;55;56;57;58;59;60;61;62;63;64;65</Attributes28Day>
+                    <Attributes90Day>0;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;48;49;50;51;52;53;54;55;56;57;58;59;60;61;62;63;64;65;66;67;68</Attributes90Day>
+                </Attributes>
+            </CustomerManagement>
+        </Products>
+    </Response>
+</FraudSolutions>
+</Experian>

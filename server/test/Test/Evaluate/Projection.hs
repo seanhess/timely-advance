@@ -15,7 +15,9 @@ import qualified Timely.Evaluate.Health.Transaction as Trans
 import           Timely.Evaluate.Schedule           (DayOfMonth (DayOfMonth), Schedule (Monthly, Weekly), DayOfWeek(..))
 
 
-specProjection = defaultMain $ testGroup "tests" $ runTests tests
+specProjection = do
+  ts <- runTests tests
+  defaultMain $ testGroup "tests" ts
 
 
 -- I want to do some high-level tests here

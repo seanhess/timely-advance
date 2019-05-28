@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<examples>
+<ns1:response xmlns:ns1="http://www.experian.com/ewacs/auth" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:n="http://schemas.xmlsoap.org/soap/envelope/">
+    <ns1:error>
+        <ns1:faultcode>Server</ns1:faultcode>
+        <ns1:faultstring>
+					Authentication Failure
+				</ns1:faultstring>
+        <ns1:detail>
+            <ns1:EWACSServiceFault>
+                <ns1:AuthResponse>
+                    <ns1:StatusCode>
+			2
+		</ns1:StatusCode>
+                    <ns1:StatusMessage>
+			Fault
+		</ns1:StatusMessage>
+                    <ns1:ErrorCode>
+					1
+				</ns1:ErrorCode>
+                    <ns1:ErrorMessage>
+					Authentication Failure
+				</ns1:ErrorMessage>
+                    <ns1:ErrorDescription>
+					Authentication Failure
+				</ns1:ErrorDescription>
+                </ns1:AuthResponse>
+                <ns1:ProductInfoResponse/>
+            </ns1:EWACSServiceFault>
+        </ns1:detail>
+    </ns1:error>
+</ns1:response>
+
+
+
+
+<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/">
+    <env:Body>
+        <env:Fault>
+            <faultcode>env:Client</faultcode>
+            <faultstring>Internal Error (from client)</faultstring>
+        </env:Fault>
+    </env:Body>
+</env:Envelope>
+
+
+</examples>

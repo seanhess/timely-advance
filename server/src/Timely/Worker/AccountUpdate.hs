@@ -21,7 +21,7 @@ import           Data.Model.Id                      (Id)
 import qualified Data.Model.Meta                    as Meta
 import           Data.Model.Money                   (Money)
 import           Data.Model.Types                   (Phone)
-import           Data.Model.Valid                   as Valid
+import           Data.Model.Valid                   (Valid)
 import           Data.Number.Abs                    (Abs (value))
 import           Data.Time.Calendar                 (Day)
 import qualified Network.AMQP.Worker                as Worker (Queue, topic)

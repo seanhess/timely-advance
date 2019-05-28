@@ -21,7 +21,7 @@ import           Database.Selda            hiding (Result, insert, query, tryCre
 
 import           Timely.Accounts.Types
 import qualified Timely.Bank               as Bank
-import           Timely.Underwriting.Types (Approval (..), Denial (..), Result (..))
+import           Timely.Underwrite.Types (Approval (..), Denial (..), Result (..))
 
 
 data Applications m = ApplicationsMethods

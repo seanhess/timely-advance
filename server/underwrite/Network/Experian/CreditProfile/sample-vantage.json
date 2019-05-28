@@ -1,0 +1,27 @@
+{
+  "riskModel":[
+    {
+      "evaluation":"P",
+      "modelIndicator":"V4",
+      "score":"0734",
+      "scoreFactors":[
+        {
+          "importance":"1",
+          "code":"12"
+        },
+        {
+          "importance":"2",
+          "code":"31"
+        },
+        {
+          "importance":"3",
+          "code":"04"
+        },
+        {
+          "importance":"4",
+          "code":"45"
+        }
+      ]
+    }
+  ]
+}

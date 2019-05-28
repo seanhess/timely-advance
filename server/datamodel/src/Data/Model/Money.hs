@@ -2,11 +2,13 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Data.Model.Money where
 
-import           Data.Aeson             (FromJSON, ToJSON)
-import           Data.Proxy             (Proxy (..))
-import           Data.Typeable          (Typeable)
-import           Database.Selda.SqlType (Lit (..), SqlType (..))
-import           GHC.Generics           (Generic)
+import Data.Aeson             (FromJSON, ToJSON)
+import Numeric           (showFFloat)
+import Data.Proxy             (Proxy (..))
+import Data.Text              (Text, pack)
+import Data.Typeable          (Typeable)
+import Database.Selda.SqlType (Lit (..), SqlType (..))
+import GHC.Generics           (Generic)
 
 newtype Money = Money Int
     deriving (Generic, Eq, Show, Typeable, Num, Ord, ToJSON, FromJSON)
@@ -34,3 +36,10 @@ instance SqlType Money where
     sqlType _ = sqlType (Proxy :: Proxy Int)
     fromSql v = Money $ fromSql v
     defaultValue = LCustom (defaultValue :: Lit Int)
+
+
+formatFloat :: Money -> Text
+formatFloat m = pack $ showFFloat (Just 2) (toFloat m) ""
+
+formatCents :: Money -> Text
+formatCents m = pack $ show (toCents m)

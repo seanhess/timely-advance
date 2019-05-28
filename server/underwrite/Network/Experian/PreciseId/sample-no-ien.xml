@@ -1,0 +1,1672 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Experian xmlns="http://www.experian.com/NetConnectResponse">
+<FraudSolutions>
+    <Response>
+        <Products>
+            <PreciseIDServer>
+                <PIDXMLVersion>06.00</PIDXMLVersion>
+                <SessionID>QMOPHJMZB855YZLULIIVQYVO.preciseId10-1711091500490181385433841</SessionID>
+                <Header>
+                    <ReportDate>11092017</ReportDate>
+                    <ReportTime>150050</ReportTime>
+                    <ProductOption>06</ProductOption>
+                    <Subcode>1198463</Subcode>
+                    <ReferenceNumber>12345</ReferenceNumber>
+                </Header>
+                <Messages>
+                    <Message>
+                        <Number>57</Number>
+                        <Text>015000Y Y0100</Text>
+                        <AddrMismatch>N</AddrMismatch>
+                    </Message>
+                    <ConsumerStatement>
+                        <Number>06</Number>
+                        <Text>06 03-10-17 0000000 ID FRAUD VICTIM ALERT FRAUDULENT APPLICATIONS MAY BE SUBMITTED IN MY NAME OR MY IDENTITY MAY HAVE BEEN USED WITHOUT MY CONSENT TO FRAUDULENTLY OBTAIN GOODS OR SERVICES. DO NOT EXTEND CREDIT WITHOUT FIRST CONTACTING ME PERSONALLY AND VERIFYING ALL APPLICATION INFORMATION AT DAY 301- 442- 6959. THIS VICTIM ALERT WILL BE MAINTAINED FOR SEVEN YEARS BEGINNING 03- 10- 17.</Text>
+                    </ConsumerStatement>
+                </Messages>
+                <Summary>
+                    <TransactionID>1151053324</TransactionID>
+                    <InitialDecision>R01</InitialDecision>
+                    <FinalDecision>R01</FinalDecision>
+                    <Scores>
+                        <PreciseIDScore>9012</PreciseIDScore>
+                        <PreciseIDScorecard>9012 Default</PreciseIDScorecard>
+                        <ValidationScore>009012</ValidationScore>
+                        <ValidationScorecard>9012 Default</ValidationScorecard>
+                        <VerificationScore>009012</VerificationScore>
+                        <VerificationScorecard>9012 Default</VerificationScorecard>
+                        <FPDScore>009012</FPDScore>
+                        <FPDScorecard>9012 Default</FPDScorecard>
+                        <ComplianceDescription>No Compliance Code</ComplianceDescription>
+                        <Reasons>
+                            <Reason code="B503"/>
+                            <Reason code=" "/>
+                            <Reason code=" "/>
+                            <Reason code=" "/>
+                            <Reason code=" "/>
+                        </Reasons>
+                    </Scores>
+                </Summary>
+                <FCRADetail>
+
+                    <FraudShield>
+                        <Indicator code="07">N</Indicator>
+                        <Indicator code="08">N</Indicator>
+                        <Indicator code="09">N</Indicator>
+                        <Indicator code="19">N</Indicator>
+                        <Indicator code="20"/>
+                        <Indicator code="22">N</Indicator>
+                        <Indicator code="27">N</Indicator>
+                    </FraudShield>
+                    <FCRARules>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                        <FCRARule code=" "/>
+                    </FCRARules>
+                    <AdverseActions>
+                        <AdverseAction code=" "/>
+                        <AdverseAction code=" "/>
+                        <AdverseAction code=" "/>
+                        <AdverseAction code=" "/>
+                    </AdverseActions>
+                </FCRADetail>
+                <GLBDetail>
+                    <FraudShield>
+                        <Indicator code="01"/>
+                        <Indicator code="02">Y</Indicator>
+                        <Indicator code="03">Y</Indicator>
+                        <Indicator code="04">N</Indicator>
+                        <Indicator code="05">N</Indicator>
+                        <Indicator code="06">N</Indicator>
+                        <Indicator code="10">N</Indicator>
+                        <Indicator code="11">N</Indicator>
+                        <Indicator code="13">N</Indicator>
+                        <Indicator code="14">N</Indicator>
+                        <Indicator code="15">N</Indicator>
+                        <Indicator code="16">N</Indicator>
+                        <Indicator code="17">N</Indicator>
+                        <Indicator code="18">N</Indicator>
+                        <Indicator code="21">N</Indicator>
+                        <Indicator code="25">N</Indicator>
+                        <Indicator code="26">N</Indicator>
+                    </FraudShield>
+                    <GLBRules>
+                        <GLBRule code="1010"/>
+                        <GLBRule code="1011"/>
+                        <GLBRule code="3403"/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                        <GLBRule code=" "/>
+                    </GLBRules>
+                </GLBDetail>
+                <PreciseMatch>
+                    <Version>02.00</Version>
+                    <ResponseStatusCode code="00"/>
+                    <PreciseMatchTransactionID>dbb5baf9-fb6a-4b09-9</PreciseMatchTransactionID>
+                    <PreciseMatchScore>508</PreciseMatchScore>
+                    <PreciseMatchDecision code=" "/>
+                    <Addresses>
+                        <Address>
+                            <Summary>
+                                <VerificationResult code="A1"/>
+                                <Type code="S "/>
+                                <UnitMismatchResult code=" "/>
+                                <HighRiskResult code="N "/>
+                                <Counts>
+                                    <StandardizedAddressReturnCount>01</StandardizedAddressReturnCount>
+                                    <ResidentialAddressMatchCount>0002</ResidentialAddressMatchCount>
+                                    <ResidentialAddressReturnCount>02</ResidentialAddressReturnCount>
+                                    <HighRiskAddressReturnCount>00</HighRiskAddressReturnCount>
+                                    <BusinessAddressMatchCount>0000</BusinessAddressMatchCount>
+                                    <BusinessAddressReturnCount>00</BusinessAddressReturnCount>
+                                </Counts>
+                            </Summary>
+                            <Detail>
+                                <StandardizedAddressRcd>
+                                    <Surname>ANANA</Surname>
+                                    <FirstName>COMMIE</FirstName>
+                                    <Address>11513 SEQUOIA LN</Address>
+                                    <City>BELTSVILLE</City>
+                                    <State>MD</State>
+                                    <ZipCode>20705</ZipCode>
+                                </StandardizedAddressRcd>
+                                <ResidentialAddressRcd>
+                                    <Surname>ANANA</Surname>
+                                    <FirstName>COMMIE</FirstName>
+                                    <Address>11513 SEQUOIA LN</Address>
+                                    <City>BELTSVILLE</City>
+                                    <State>MD</State>
+                                    <ZipCode>20705</ZipCode>
+                                    <ZipPlus4>1469</ZipPlus4>
+                                </ResidentialAddressRcd>
+                                <ResidentialAddressRcd>
+                                    <Surname>ANANAH</Surname>
+                                    <FirstName>COMMIE</FirstName>
+                                    <Address>11513 SEQUOIA LN</Address>
+                                    <City>BELTSVILLE</City>
+                                    <State>MD</State>
+                                    <ZipCode>20705</ZipCode>
+                                    <ZipPlus4>1469</ZipPlus4>
+                                    <AreaCode>301</AreaCode>
+                                    <Phone>4992672</Phone>
+                                    <MonthsAtResidence>0004</MonthsAtResidence>
+                                    <LastUpdatedDate>20171030</LastUpdatedDate>
+                                </ResidentialAddressRcd>
+                                <HighRiskAddressDescription>
+                                    <HighRiskDescription>No high risk business at address/phone</HighRiskDescription>
+                                </HighRiskAddressDescription>
+                            </Detail>
+                        </Address>
+                    </Addresses>
+                    <Phones>
+                        <Phone>
+                            <Summary>
+                                <VerificationResult code="MX"/>
+                                <Classification code="X"/>
+                                <HighRiskResult code="N"/>
+                                <Counts>
+                                    <ResidentialPhoneMatchCount>0000</ResidentialPhoneMatchCount>
+                                    <ResidentialPhoneReturnCount>00</ResidentialPhoneReturnCount>
+                                    <HighRiskPhoneReturnCount>00</HighRiskPhoneReturnCount>
+                                    <BusinessPhoneMatchCount>0000</BusinessPhoneMatchCount>
+                                    <BusinessPhoneReturnCount>00</BusinessPhoneReturnCount>
+                                </Counts>
+                            </Summary>
+                            <Detail>
+                                <HighRiskPhoneDescription>
+                                    <HighRiskDescription>No high risk business at address/phone</HighRiskDescription>
+                                </HighRiskPhoneDescription>
+                            </Detail>
+                        </Phone>
+                    </Phones>
+                    <ConsumerID>
+                        <Summary>
+                            <VerificationResult code="V "/>
+                            <DeceasedResult code="N"/>
+                            <FormatResult code="V"/>
+                            <IssueResult code="I"/>
+                            <IssueState>IL</IssueState>
+                            <IssueStartRange>1990</IssueStartRange>
+                            <IssueEndRange>1993</IssueEndRange>
+                            <Counts>
+                                <ConsumerIDReturnCount>00</ConsumerIDReturnCount>
+                            </Counts>
+                        </Summary>
+                    </ConsumerID>
+                    <DateOfBirth>
+                        <Summary>
+                            <MatchResult code="5"/>
+                        </Summary>
+                    </DateOfBirth>
+                    <DriverLicense>
+                        <Summary>
+                            <VerificationResult code="NI"/>
+                            <FormatValidation code="V"/>
+                        </Summary>
+                    </DriverLicense>
+                    <ChangeOfAddresses>
+                        <ChangeOfAddress>
+                            <Summary>
+                                <VerificationResult code="N "/>
+                                <Counts>
+                                    <ChangeOfAddressReturnCount>00</ChangeOfAddressReturnCount>
+                                </Counts>
+                            </Summary>
+                        </ChangeOfAddress>
+                    </ChangeOfAddresses>
+                    <OFAC>
+                        <Summary>
+                            <VerificationResult code="1 "/>
+                            <Counts>
+                                <OFACReturnCount>00</OFACReturnCount>
+                            </Counts>
+                        </Summary>
+                    </OFAC>
+                    <PreviousAddresses>
+                        <PreviousAddress>
+                            <Summary>
+                                <Counts>
+                                    <PreviousAddressReturnCount>00</PreviousAddressReturnCount>
+                                </Counts>
+                            </Summary>
+                        </PreviousAddress>
+                    </PreviousAddresses>
+                    <SSNFinder>
+                        <Summary>
+                            <Counts>
+                                <SSNFinderReturnCount>00</SSNFinderReturnCount>
+                            </Counts>
+                        </Summary>
+                    </SSNFinder>
+                </PreciseMatch>
+            </PreciseIDServer>
+            <CreditProfile>
+                <Header>
+                    <ReportDate>11092017</ReportDate>
+                    <ReportTime>150049</ReportTime>
+                    <Preamble>TMD1</Preamble>
+                    <ARFVersion>07</ARFVersion>
+                    <ReferenceNumber>12345</ReferenceNumber>
+                </Header>
+                <SSN>
+                    <VariationIndicator code=" "/>
+                    <Number>340-86-5775</Number>
+                </SSN>
+                <SSN>
+                    <VariationIndicator code="*"/>
+                    <Number>354-80-6120</Number>
+                </SSN>
+                <ConsumerIdentity>
+                    <Name>
+                        <Surname>ANANA</Surname>
+                        <First>COMMIE</First>
+                    </Name>
+                    <YOB>1965</YOB>
+                    <DOB>11291965</DOB>
+                    <Phone>
+                        <Type code="R"/>
+                        <Number>3014992672</Number>
+                        <Source code="P"/>
+                    </Phone>
+                    <Phone>
+                        <Type code="C"/>
+                        <Number>3014426959</Number>
+                        <Source code="U"/>
+                    </Phone>
+                    <Phone>
+                        <Type code="R"/>
+                        <Number>2407886236</Number>
+                        <Source code="P"/>
+                    </Phone>
+                </ConsumerIdentity>
+                <ConsumerIdentity>
+                    <Name>
+                        <Type code="A"/>
+                        <Surname>PMTNA</Surname>
+                        <First>COMMIE</First>
+                    </Name>
+                </ConsumerIdentity>
+                <ConsumerIdentity>
+                    <Name>
+                        <Type code="N"/>
+                        <Surname>COMMIE</Surname>
+                        <First>ALANA</First>
+                    </Name>
+                </ConsumerIdentity>
+                <ConsumerIdentity>
+                    <Name>
+                        <Surname>ANANA</Surname>
+                        <First>CONNIE</First>
+                    </Name>
+                </ConsumerIdentity>
+                <AddressInformation>
+                    <FirstReportedDate>08242017</FirstReportedDate>
+                    <LastUpdatedDate>09052017</LastUpdatedDate>
+                    <Origination code="2"/>
+                    <TimesReported>02</TimesReported>
+                    <LastReportingSubcode>1270246</LastReportingSubcode>
+                    <DwellingType code="S"/>
+                    <HomeOwnership code=" "/>
+                    <StreetPrefix>11513</StreetPrefix>
+                    <StreetName>SEQUOIA</StreetName>
+                    <StreetSuffix>LN</StreetSuffix>
+                    <City>BELTSVILLE</City>
+                    <State>MD</State>
+                    <Zip>207051469</Zip>
+                </AddressInformation>
+                <AddressInformation>
+                    <FirstReportedDate>08202001</FirstReportedDate>
+                    <LastUpdatedDate>01312017</LastUpdatedDate>
+                    <Origination code="1"/>
+                    <TimesReported>17</TimesReported>
+                    <DwellingType code="A"/>
+                    <HomeOwnership code=" "/>
+                    <StreetPrefix>10242</StreetPrefix>
+                    <StreetName>PRINCE</StreetName>
+                    <StreetSuffix>PL</StreetSuffix>
+                    <UnitType>APT</UnitType>
+                    <UnitID>206</UnitID>
+                    <City>UPPER MARLBORO</City>
+                    <State>MD</State>
+                    <Zip>207741217</Zip>
+                </AddressInformation>
+                <AddressInformation>
+                    <FirstReportedDate>04032015</FirstReportedDate>
+                    <LastUpdatedDate>08062015</LastUpdatedDate>
+                    <Origination code="1"/>
+                    <TimesReported>01</TimesReported>
+                    <DwellingType code="A"/>
+                    <HomeOwnership code=" "/>
+                    <StreetPrefix>26895</StreetPrefix>
+                    <StreetName>ALISO CREEK</StreetName>
+                    <StreetSuffix>RD</StreetSuffix>
+                    <UnitType>#</UnitType>
+                    <UnitID>B-516</UnitID>
+                    <City>ALISO VIEJO</City>
+                    <State>CA</State>
+                    <Zip>926565301</Zip>
+                </AddressInformation>
+                <EmploymentInformation>
+                    <FirstReportedDate>10022006</FirstReportedDate>
+                    <LastUpdatedDate>10022006</LastUpdatedDate>
+                    <Origination code="2"/>
+                    <Name>RITE AIDE PHARMACY</Name>
+                </EmploymentInformation>
+                <EmploymentInformation>
+                    <FirstReportedDate>10021998</FirstReportedDate>
+                    <LastUpdatedDate>10021998</LastUpdatedDate>
+                    <Origination code="2"/>
+                    <Name>ECKARD PHARMACY</Name>
+                </EmploymentInformation>
+                <PublicRecord>
+                    <Status code="16"/>
+                    <StatusDate>12092013</StatusDate>
+                    <FilingDate>10212013</FilingDate>
+                    <Evaluation code="N"/>
+                    <Amount>00000000</Amount>
+                    <Court code="1000201" name="US BKPT CT GREENBELT"/>
+                    <ReferenceNumber>1327753WIL</ReferenceNumber>
+                    <ECOA code="1"/>
+                </PublicRecord>
+                <PublicRecord>
+                    <Status code="16"/>
+                    <StatusDate>07162013</StatusDate>
+                    <FilingDate>06172013</FilingDate>
+                    <Evaluation code="N"/>
+                    <Amount>00000000</Amount>
+                    <Court code="1000201" name="US BKPT CT GREENBELT"/>
+                    <ReferenceNumber>1320357WIL</ReferenceNumber>
+                    <ECOA code="1"/>
+                </PublicRecord>
+                <PublicRecord>
+                    <Status code="15"/>
+                    <StatusDate>08092012</StatusDate>
+                    <FilingDate>04272012</FilingDate>
+                    <Evaluation code="N"/>
+                    <Amount>00000000</Amount>
+                    <Court code="1000201" name="US BKPT CT GREENBELT"/>
+                    <ReferenceNumber>1217936WIL</ReferenceNumber>
+                    <ECOA code="1"/>
+                </PublicRecord>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="N"/>
+                    <OpenDate>06192017</OpenDate>
+                    <StatusDate>08012017</StatusDate>
+                    <AccountType code="48"/>
+                    <TermsDuration code="001"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="O"/>
+                        <Value>00001112</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code=" "/>
+                    </Amount>
+                    <BalanceDate>10222017</BalanceDate>
+                    <BalanceAmount>00001112</BalanceAmount>
+                    <Status code="93"/>
+                    <AmountPastDue>00001112</AmountPastDue>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="I"/>
+                    <AccountNumber>174277937</AccountNumber>
+                    <MonthsHistory>03</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>03</DerogCounter>
+                    <PaymentProfile>999</PaymentProfile>
+                    <Subcode>1984486</Subcode>
+                    <KOB code="YZ"/>
+                    <SubscriberDisplayName>ENHANCED RECOVERY CO L</SubscriberDisplayName>
+                    <OriginalCreditorName>AT T U-VERSE</OriginalCreditorName>
+                    <MaxPayment code=" "/>
+                    <FirstDelinquencyDate>10012017</FirstDelinquencyDate>
+                    <SecondDelinquencyDate>09012017</SecondDelinquencyDate>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>08012017</InitialPaymentLevelDate>
+                        <AccountCondition code=" "/>
+                        <PaymentStatus code="93"/>
+                        <AccountType code="48"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code="28"/>
+                    <Evaluation code="N"/>
+                    <OpenDate>09292000</OpenDate>
+                    <StatusDate>05012010</StatusDate>
+                    <AccountType code="18"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00005000</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00005204</Value>
+                    </Amount>
+                    <BalanceDate>05302010</BalanceDate>
+                    <Status code="05"/>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>4081135000001022</AccountNumber>
+                    <MonthsHistory>40</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>BCCCCCCCCCCCCCCCCCCCCCCCC</PaymentProfile>
+                    <MonthlyPaymentType code=" "/>
+                    <LastPaymentDate>04262010</LastPaymentDate>
+                    <Subcode>1739020</Subcode>
+                    <KOB code="FC"/>
+                    <SubscriberDisplayName>MID ATLANTIC FCU</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>05012010</InitialPaymentLevelDate>
+                        <AccountCondition code="05"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="18"/>
+                        <SpecialComment code="51">ACCOUNT CLOSED DUE TO TRANSFER</SpecialComment>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="N"/>
+                    <OpenDate>07222015</OpenDate>
+                    <StatusDate>09012016</StatusDate>
+                    <AccountType code="18"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00002500</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00002337</Value>
+                    </Amount>
+                    <BalanceDate>09182016</BalanceDate>
+                    <Status code="03"/>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>4613992120011308</AccountNumber>
+                    <MonthsHistory>14</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>B0000000000000</PaymentProfile>
+                    <MonthlyPaymentType code=" "/>
+                    <LastPaymentDate>08052016</LastPaymentDate>
+                    <Subcode>1210272</Subcode>
+                    <KOB code="NU"/>
+                    <SubscriberDisplayName>STATE EMP CU OF MARYLA</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>09012016</InitialPaymentLevelDate>
+                        <AccountCondition code="03"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="18"/>
+                        <SpecialComment code="69">CREDIT CARD LOST OR STOLEN</SpecialComment>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="N"/>
+                    <OpenDate>07222015</OpenDate>
+                    <StatusDate>11012015</StatusDate>
+                    <AccountType code="18"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00002500</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00002400</Value>
+                    </Amount>
+                    <BalanceDate>11172015</BalanceDate>
+                    <Status code="03"/>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>4613992120007363</AccountNumber>
+                    <MonthsHistory>04</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>BCCC</PaymentProfile>
+                    <MonthlyPaymentType code=" "/>
+                    <LastPaymentDate>10202015</LastPaymentDate>
+                    <Subcode>1210272</Subcode>
+                    <KOB code="NU"/>
+                    <SubscriberDisplayName>STATE EMP CU OF MARYLA</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>11012015</InitialPaymentLevelDate>
+                        <AccountCondition code="03"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="18"/>
+                        <SpecialComment code="69">CREDIT CARD LOST OR STOLEN</SpecialComment>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code="18"/>
+                    <Evaluation code="N"/>
+                    <OpenDate>05182005</OpenDate>
+                    <StatusDate>11012011</StatusDate>
+                    <AccountType code="07"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00001580</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00001580</Value>
+                    </Amount>
+                    <BalanceDate>11072011</BalanceDate>
+                    <BalanceAmount>00000000</BalanceAmount>
+                    <Status code="11"/>
+                    <AmountPastDue>00000000</AmountPastDue>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>3080527987</AccountNumber>
+                    <MonthsHistory>56</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>BCCCCCCCCCCCCCCCCCCCCCCCC</PaymentProfile>
+                    <MonthlyPaymentAmount>00000000</MonthlyPaymentAmount>
+                    <MonthlyPaymentType code="S"/>
+                    <LastPaymentDate>10212009</LastPaymentDate>
+                    <Subcode>2300360</Subcode>
+                    <KOB code="JA"/>
+                    <SubscriberDisplayName>KAY JEWELERS/GFS</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>11012011</InitialPaymentLevelDate>
+                        <AccountCondition code="A3"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="07"/>
+                        <SpecialComment code="91">CLOSED DUE TO INACTIVITY</SpecialComment>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="N"/>
+                    <OpenDate>07042003</OpenDate>
+                    <StatusDate>05012015</StatusDate>
+                    <MaxDelinquencyDate>08012011</MaxDelinquencyDate>
+                    <AccountType code="12"/>
+                    <TermsDuration code="300"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="O"/>
+                        <Value>00053394</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code=" "/>
+                    </Amount>
+                    <BalanceDate>05312015</BalanceDate>
+                    <Status code="58"/>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="I"/>
+                    <AccountNumber>92935311661000220030704</AccountNumber>
+                    <MonthsHistory>99</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>05</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>BC-CCCCCCCCCCCCCCCCCCCCCC</PaymentProfile>
+                    <MonthlyPaymentType code=" "/>
+                    <LastPaymentDate>05152015</LastPaymentDate>
+                    <Subcode>1997316</Subcode>
+                    <KOB code="EL"/>
+                    <SubscriberDisplayName>NAVIENT</SubscriberDisplayName>
+                    <MaxPayment code="4"/>
+                    <FirstDelinquencyDate>08012011</FirstDelinquencyDate>
+                    <SecondDelinquencyDate>07012011</SecondDelinquencyDate>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>05012015</InitialPaymentLevelDate>
+                        <AccountCondition code="A2"/>
+                        <PaymentStatus code="16"/>
+                        <AccountType code="12"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code="19"/>
+                    <Evaluation code="N"/>
+                    <OpenDate>12022013</OpenDate>
+                    <StatusDate>08012015</StatusDate>
+                    <AccountType code="47"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00000600</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00000461</Value>
+                    </Amount>
+                    <BalanceDate>08182015</BalanceDate>
+                    <Status code="12"/>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>4613990004930817</AccountNumber>
+                    <MonthsHistory>21</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>BCCCCCCCCCCCCCCCCCCC0</PaymentProfile>
+                    <MonthlyPaymentType code=" "/>
+                    <LastPaymentDate>07222015</LastPaymentDate>
+                    <Subcode>1210272</Subcode>
+                    <KOB code="NU"/>
+                    <SubscriberDisplayName>STATE EMP CU OF MARYLA</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>08012015</InitialPaymentLevelDate>
+                        <AccountCondition code="A2"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="2A"/>
+                        <SpecialComment code="19">ACCOUNT CLOSED AT CONSUMER'S REQUEST</SpecialComment>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>01092014</OpenDate>
+                    <StatusDate>01012015</StatusDate>
+                    <AccountType code="02"/>
+                    <TermsDuration code="012"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="O"/>
+                        <Value>00001000</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code=" "/>
+                    </Amount>
+                    <BalanceDate>01312015</BalanceDate>
+                    <Status code="12"/>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="I"/>
+                    <AccountNumber>8021344469</AccountNumber>
+                    <MonthsHistory>13</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>BCCCCCCCCCCCC</PaymentProfile>
+                    <MonthlyPaymentType code=" "/>
+                    <LastPaymentDate>01082015</LastPaymentDate>
+                    <Subcode>1767260</Subcode>
+                    <KOB code="FC"/>
+                    <SubscriberDisplayName>STATE EMP CU OF MARYLA</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>01012015</InitialPaymentLevelDate>
+                        <AccountCondition code="A2"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="02"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>03192014</OpenDate>
+                    <StatusDate>09012014</StatusDate>
+                    <AccountType code="29"/>
+                    <TermsDuration code="028"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="O"/>
+                        <Value>00003723</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code=" "/>
+                    </Amount>
+                    <BalanceDate>09302014</BalanceDate>
+                    <Status code="12"/>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="I"/>
+                    <AccountNumber>R090400000274R0904000504</AccountNumber>
+                    <MonthsHistory>07</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>BCCCCCC</PaymentProfile>
+                    <MonthlyPaymentType code=" "/>
+                    <LastPaymentDate>09212014</LastPaymentDate>
+                    <Subcode>9306706</Subcode>
+                    <KOB code="HR"/>
+                    <SubscriberDisplayName>ACCEPTANCE NOW</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>09012014</InitialPaymentLevelDate>
+                        <AccountCondition code="A2"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="29"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>12202013</OpenDate>
+                    <StatusDate>03012014</StatusDate>
+                    <AccountType code="29"/>
+                    <TermsDuration code="014"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="O"/>
+                        <Value>00001189</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code=" "/>
+                    </Amount>
+                    <BalanceDate>03312014</BalanceDate>
+                    <Status code="12"/>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="I"/>
+                    <AccountNumber>R090400000274R0904000444</AccountNumber>
+                    <MonthsHistory>04</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>BCCC</PaymentProfile>
+                    <MonthlyPaymentType code=" "/>
+                    <LastPaymentDate>03192014</LastPaymentDate>
+                    <Subcode>9306706</Subcode>
+                    <KOB code="HR"/>
+                    <SubscriberDisplayName>ACCEPTANCE NOW</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>03012014</InitialPaymentLevelDate>
+                        <AccountCondition code="A2"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="29"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>12062013</OpenDate>
+                    <StatusDate>01012014</StatusDate>
+                    <AccountType code="02"/>
+                    <TermsDuration code="060"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="O"/>
+                        <Value>00000300</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code=" "/>
+                    </Amount>
+                    <BalanceDate>01312014</BalanceDate>
+                    <Status code="12"/>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="I"/>
+                    <AccountNumber>8021252688</AccountNumber>
+                    <MonthsHistory>02</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>BC</PaymentProfile>
+                    <MonthlyPaymentType code=" "/>
+                    <LastPaymentDate>01092014</LastPaymentDate>
+                    <Subcode>1767260</Subcode>
+                    <KOB code="FC"/>
+                    <SubscriberDisplayName>STATE EMP CU OF MARYLA</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>01012014</InitialPaymentLevelDate>
+                        <AccountCondition code="A2"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="02"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>09072013</OpenDate>
+                    <StatusDate>12012013</StatusDate>
+                    <AccountType code="29"/>
+                    <TermsDuration code="030"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="O"/>
+                        <Value>00004199</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code=" "/>
+                    </Amount>
+                    <BalanceDate>12312013</BalanceDate>
+                    <Status code="12"/>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="I"/>
+                    <AccountNumber>R090400000274R0904000311</AccountNumber>
+                    <MonthsHistory>04</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>BCCC</PaymentProfile>
+                    <MonthlyPaymentType code=" "/>
+                    <LastPaymentDate>12202013</LastPaymentDate>
+                    <Subcode>9306706</Subcode>
+                    <KOB code="HR"/>
+                    <SubscriberDisplayName>ACCEPTANCE NOW</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>12012013</InitialPaymentLevelDate>
+                        <AccountCondition code="A2"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="29"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>12132006</OpenDate>
+                    <StatusDate>12012011</StatusDate>
+                    <AccountType code="00"/>
+                    <TermsDuration code="059"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="O"/>
+                        <Value>00030750</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code=" "/>
+                    </Amount>
+                    <BalanceDate>12312011</BalanceDate>
+                    <Status code="12"/>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="I"/>
+                    <AccountNumber>18472153</AccountNumber>
+                    <MonthsHistory>61</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>BCCCCCCCCCCCCCCCCCCCCCCCC</PaymentProfile>
+                    <Subcode>1780237</Subcode>
+                    <KOB code="FC"/>
+                    <SubscriberDisplayName>MID ATLANTIC FCU</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>12012011</InitialPaymentLevelDate>
+                        <AccountCondition code="A2"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="00"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>08122007</OpenDate>
+                    <StatusDate>12012008</StatusDate>
+                    <AccountType code="07"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00000000</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00000285</Value>
+                    </Amount>
+                    <BalanceDate>12222008</BalanceDate>
+                    <Status code="12"/>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>603632102760</AccountNumber>
+                    <MonthsHistory>17</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>B0000000000CCCCC0</PaymentProfile>
+                    <MonthlyPaymentType code=" "/>
+                    <LastPaymentDate>11252007</LastPaymentDate>
+                    <Subcode>2322690</Subcode>
+                    <KOB code="DV"/>
+                    <SubscriberDisplayName>SYNCB/LINEN N THINGS</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>12012008</InitialPaymentLevelDate>
+                        <AccountCondition code="A2"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="07"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>10252002</OpenDate>
+                    <StatusDate>12012008</StatusDate>
+                    <AccountType code="07"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00000205</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00000732</Value>
+                    </Amount>
+                    <BalanceDate>12112008</BalanceDate>
+                    <Status code="12"/>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>321103</AccountNumber>
+                    <MonthsHistory>75</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>BCCCCCCCCCCCCCCCCCCCCCCCC</PaymentProfile>
+                    <MonthlyPaymentType code=" "/>
+                    <LastPaymentDate>12052008</LastPaymentDate>
+                    <Subcode>1301420</Subcode>
+                    <KOB code="ZR"/>
+                    <SubscriberDisplayName>CAP1/VLCTY</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>12012008</InitialPaymentLevelDate>
+                        <AccountCondition code="A2"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="07"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>07232007</OpenDate>
+                    <StatusDate>01012008</StatusDate>
+                    <AccountType code="01"/>
+                    <TermsDuration code="060"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="O"/>
+                        <Value>00007500</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code=" "/>
+                    </Amount>
+                    <BalanceDate>01312008</BalanceDate>
+                    <Status code="12"/>
+                    <OpenOrClosed code="C"/>
+                    <RevolvingOrInstallment code="I"/>
+                    <AccountNumber>6072077737115915</AccountNumber>
+                    <MonthsHistory>07</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>BCCCCCC</PaymentProfile>
+                    <MonthlyPaymentType code=" "/>
+                    <LastPaymentDate>01152008</LastPaymentDate>
+                    <Subcode>1503320</Subcode>
+                    <KOB code="FP"/>
+                    <SubscriberDisplayName>CITIFINANCIAL</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>01012008</InitialPaymentLevelDate>
+                        <AccountCondition code="A2"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="01"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>11132014</OpenDate>
+                    <StatusDate>11012017</StatusDate>
+                    <AccountType code="18"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00007000</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00007018</Value>
+                    </Amount>
+                    <BalanceDate>11052017</BalanceDate>
+                    <BalanceAmount>00006923</BalanceAmount>
+                    <Status code="11"/>
+                    <OpenOrClosed code="O"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>000226590694471</AccountNumber>
+                    <MonthsHistory>37</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>CCCCCCCCCCCCCCCCCCCCCCCCC</PaymentProfile>
+                    <MonthlyPaymentAmount>00000221</MonthlyPaymentAmount>
+                    <MonthlyPaymentType code="S"/>
+                    <LastPaymentDate>10262017</LastPaymentDate>
+                    <Subcode>1223850</Subcode>
+                    <KOB code="BC"/>
+                    <SubscriberDisplayName>BARCLAYS BANK DELAWARE</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>11012017</InitialPaymentLevelDate>
+                        <AccountCondition code="A1"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="18"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>02062014</OpenDate>
+                    <StatusDate>11012017</StatusDate>
+                    <AccountType code="18"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00012000</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00012080</Value>
+                    </Amount>
+                    <BalanceDate>11022017</BalanceDate>
+                    <BalanceAmount>00012080</BalanceAmount>
+                    <Status code="11"/>
+                    <OpenOrClosed code="O"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>517805934067</AccountNumber>
+                    <MonthsHistory>45</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>CCCCCCCCCCCCCCCCCCCCCCCCC</PaymentProfile>
+                    <MonthlyPaymentAmount>00000367</MonthlyPaymentAmount>
+                    <MonthlyPaymentType code="S"/>
+                    <LastPaymentDate>10262017</LastPaymentDate>
+                    <Subcode>1270246</Subcode>
+                    <KOB code="BC"/>
+                    <SubscriberDisplayName>CAPITALONE</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>11012017</InitialPaymentLevelDate>
+                        <AccountCondition code="A1"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="18"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>05082015</OpenDate>
+                    <StatusDate>10012017</StatusDate>
+                    <AccountType code="12"/>
+                    <TermsDuration code="167"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="O"/>
+                        <Value>00038348</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code=" "/>
+                    </Amount>
+                    <BalanceDate>10312017</BalanceDate>
+                    <BalanceAmount>00041303</BalanceAmount>
+                    <Status code="11"/>
+                    <OpenOrClosed code="O"/>
+                    <RevolvingOrInstallment code="I"/>
+                    <AccountNumber>1501160707FD00002</AccountNumber>
+                    <MonthsHistory>28</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>CC--CCC-----C---CCCCCCCCC</PaymentProfile>
+                    <MonthlyPaymentAmount>00000393</MonthlyPaymentAmount>
+                    <MonthlyPaymentType code="S"/>
+                    <Subcode>1850180</Subcode>
+                    <KOB code="EL"/>
+                    <SubscriberDisplayName>FED LOAN SERV</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>10012017</InitialPaymentLevelDate>
+                        <AccountCondition code="A1"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="12"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>09052016</OpenDate>
+                    <StatusDate>10012017</StatusDate>
+                    <AccountType code="29"/>
+                    <TermsDuration code="030"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="O"/>
+                        <Value>00003989</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code=" "/>
+                    </Amount>
+                    <BalanceDate>10312017</BalanceDate>
+                    <BalanceAmount>00002114</BalanceAmount>
+                    <Status code="11"/>
+                    <OpenOrClosed code="O"/>
+                    <RevolvingOrInstallment code="I"/>
+                    <AccountNumber>R090400000274R0904002158</AccountNumber>
+                    <MonthsHistory>14</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>CCCCCCCCCCCCCC</PaymentProfile>
+                    <MonthlyPaymentAmount>00000132</MonthlyPaymentAmount>
+                    <MonthlyPaymentType code="S"/>
+                    <LastPaymentDate>10312017</LastPaymentDate>
+                    <Subcode>9306706</Subcode>
+                    <KOB code="HR"/>
+                    <SubscriberDisplayName>ACCEPTANCE NOW</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>10012017</InitialPaymentLevelDate>
+                        <AccountCondition code="A1"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="29"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>07262015</OpenDate>
+                    <StatusDate>10012017</StatusDate>
+                    <AccountType code="07"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00010400</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00010400</Value>
+                    </Amount>
+                    <BalanceDate>10232017</BalanceDate>
+                    <BalanceAmount>00002373</BalanceAmount>
+                    <Status code="11"/>
+                    <OpenOrClosed code="O"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>601918232537</AccountNumber>
+                    <MonthsHistory>28</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>CCCCCCCCCCCCCCC00000CCCCC</PaymentProfile>
+                    <MonthlyPaymentAmount>00000114</MonthlyPaymentAmount>
+                    <MonthlyPaymentType code="S"/>
+                    <LastPaymentDate>10172017</LastPaymentDate>
+                    <Subcode>1476770</Subcode>
+                    <KOB code="BB"/>
+                    <SubscriberDisplayName>SYNCB/CARE CREDIT</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>10012017</InitialPaymentLevelDate>
+                        <AccountCondition code="A1"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="07"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>07222015</OpenDate>
+                    <StatusDate>10012017</StatusDate>
+                    <AccountType code="18"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00002500</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00002567</Value>
+                    </Amount>
+                    <BalanceDate>10182017</BalanceDate>
+                    <BalanceAmount>00002564</BalanceAmount>
+                    <Status code="11"/>
+                    <OpenOrClosed code="O"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>4613992120027411</AccountNumber>
+                    <MonthsHistory>27</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>CCCCCCCCCCCCCCCCCCCCCCCCC</PaymentProfile>
+                    <MonthlyPaymentAmount>00000129</MonthlyPaymentAmount>
+                    <MonthlyPaymentType code="S"/>
+                    <LastPaymentDate>10132017</LastPaymentDate>
+                    <Subcode>1210272</Subcode>
+                    <KOB code="NU"/>
+                    <SubscriberDisplayName>STATE EMP CU OF MARYLA</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>10012017</InitialPaymentLevelDate>
+                        <AccountCondition code="A1"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="18"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>03152003</OpenDate>
+                    <StatusDate>10012017</StatusDate>
+                    <AccountType code="07"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00002500</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00001974</Value>
+                    </Amount>
+                    <BalanceDate>10182017</BalanceDate>
+                    <BalanceAmount>00001799</BalanceAmount>
+                    <Status code="11"/>
+                    <OpenOrClosed code="O"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>6035341166596845</AccountNumber>
+                    <MonthsHistory>99</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>CCCCCCCCCCCCCCCCCCCCCCC--</PaymentProfile>
+                    <MonthlyPaymentAmount>00000060</MonthlyPaymentAmount>
+                    <MonthlyPaymentType code="S"/>
+                    <LastPaymentDate>10132017</LastPaymentDate>
+                    <Subcode>1362830</Subcode>
+                    <KOB code="DZ"/>
+                    <SubscriberDisplayName>MCYDSNB</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>10012017</InitialPaymentLevelDate>
+                        <AccountCondition code="A1"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="07"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>10042015</OpenDate>
+                    <StatusDate>10012017</StatusDate>
+                    <AccountType code="07"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00001700</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00001735</Value>
+                    </Amount>
+                    <BalanceDate>10132017</BalanceDate>
+                    <BalanceAmount>00001599</BalanceAmount>
+                    <Status code="11"/>
+                    <OpenOrClosed code="O"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>604578107308</AccountNumber>
+                    <MonthsHistory>25</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>CC-CCCCCCCCCCCCCCCCCCCCCC</PaymentProfile>
+                    <MonthlyPaymentAmount>00000054</MonthlyPaymentAmount>
+                    <MonthlyPaymentType code="S"/>
+                    <LastPaymentDate>10052017</LastPaymentDate>
+                    <Subcode>1004694</Subcode>
+                    <KOB code="DV"/>
+                    <SubscriberDisplayName>SYNCB/AMAZON</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>10012017</InitialPaymentLevelDate>
+                        <AccountCondition code="A1"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="07"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>01132016</OpenDate>
+                    <StatusDate>09012017</StatusDate>
+                    <AccountType code="01"/>
+                    <TermsDuration code="036"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="O"/>
+                        <Value>00020000</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code=" "/>
+                    </Amount>
+                    <BalanceDate>09302017</BalanceDate>
+                    <BalanceAmount>00009675</BalanceAmount>
+                    <Status code="11"/>
+                    <OpenOrClosed code="O"/>
+                    <RevolvingOrInstallment code="I"/>
+                    <AccountNumber>550846</AccountNumber>
+                    <MonthsHistory>21</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>CCCCCCCCCCCCCCCCCCCCC</PaymentProfile>
+                    <MonthlyPaymentAmount>00000643</MonthlyPaymentAmount>
+                    <MonthlyPaymentType code="S"/>
+                    <LastPaymentDate>09142017</LastPaymentDate>
+                    <Subcode>1993025</Subcode>
+                    <KOB code="FZ"/>
+                    <SubscriberDisplayName>PROSPER MARKETPLACE IN</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>09012017</InitialPaymentLevelDate>
+                        <AccountCondition code="A1"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="01"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>12092014</OpenDate>
+                    <StatusDate>06012015</StatusDate>
+                    <AccountType code="07"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00003000</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00001183</Value>
+                    </Amount>
+                    <BalanceDate>06302015</BalanceDate>
+                    <BalanceAmount>00000000</BalanceAmount>
+                    <Status code="11"/>
+                    <OpenOrClosed code="O"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>6879450119056228194</AccountNumber>
+                    <MonthsHistory>07</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>00CCCCC</PaymentProfile>
+                    <MonthlyPaymentAmount>00000020</MonthlyPaymentAmount>
+                    <MonthlyPaymentType code="S"/>
+                    <LastPaymentDate>05032015</LastPaymentDate>
+                    <Subcode>1616760</Subcode>
+                    <KOB code="FF"/>
+                    <SubscriberDisplayName>WEBBANK/DFS</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>06012015</InitialPaymentLevelDate>
+                        <AccountCondition code="A1"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="07"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>03062003</OpenDate>
+                    <StatusDate>06012011</StatusDate>
+                    <AccountType code="07"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00000550</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00000319</Value>
+                    </Amount>
+                    <BalanceDate>06102011</BalanceDate>
+                    <BalanceAmount>00000000</BalanceAmount>
+                    <Status code="11"/>
+                    <OpenOrClosed code="O"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>95462</AccountNumber>
+                    <MonthsHistory>99</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>0CCCCCC000000CCCC00CCCCCC</PaymentProfile>
+                    <MonthlyPaymentAmount>00000020</MonthlyPaymentAmount>
+                    <MonthlyPaymentType code="S"/>
+                    <LastPaymentDate>04282011</LastPaymentDate>
+                    <Subcode>1365620</Subcode>
+                    <KOB code="CZ"/>
+                    <SubscriberDisplayName>COMENITYBK/METROSTYLE</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>06012011</InitialPaymentLevelDate>
+                        <AccountCondition code="A4"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="07"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>05292003</OpenDate>
+                    <StatusDate>10012009</StatusDate>
+                    <AccountType code="07"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00000500</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00000235</Value>
+                    </Amount>
+                    <BalanceDate>10082009</BalanceDate>
+                    <BalanceAmount>00000000</BalanceAmount>
+                    <Status code="11"/>
+                    <OpenOrClosed code="O"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>15255</AccountNumber>
+                    <MonthsHistory>77</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>0CCCCCC0000000000000CCCC0</PaymentProfile>
+                    <MonthlyPaymentAmount>00000010</MonthlyPaymentAmount>
+                    <MonthlyPaymentType code="S"/>
+                    <LastPaymentDate>08302009</LastPaymentDate>
+                    <Subcode>1348850</Subcode>
+                    <KOB code="CG"/>
+                    <SubscriberDisplayName>COMENITY BANK/CHADWCKS</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>10012009</InitialPaymentLevelDate>
+                        <AccountCondition code="A4"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="07"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <TradeLine>
+                    <SpecialComment code=" "/>
+                    <Evaluation code="P"/>
+                    <OpenDate>09132003</OpenDate>
+                    <StatusDate>08012008</StatusDate>
+                    <AccountType code="07"/>
+                    <TermsDuration code="REV"/>
+                    <ECOA code="1"/>
+                    <Amount>
+                        <Qualifier code="L"/>
+                        <Value>00002000</Value>
+                    </Amount>
+                    <Amount>
+                        <Qualifier code="H"/>
+                        <Value>00001498</Value>
+                    </Amount>
+                    <BalanceDate>08312008</BalanceDate>
+                    <BalanceAmount>00000000</BalanceAmount>
+                    <Status code="11"/>
+                    <OpenOrClosed code="O"/>
+                    <RevolvingOrInstallment code="R"/>
+                    <AccountNumber>6879450119011200999</AccountNumber>
+                    <MonthsHistory>61</MonthsHistory>
+                    <DelinquenciesOver30Days>00</DelinquenciesOver30Days>
+                    <DelinquenciesOver60Days>00</DelinquenciesOver60Days>
+                    <DelinquenciesOver90Days>00</DelinquenciesOver90Days>
+                    <DerogCounter>00</DerogCounter>
+                    <PaymentProfile>0CCCCCCCCCCCCCC--0-------</PaymentProfile>
+                    <MonthlyPaymentAmount>00000015</MonthlyPaymentAmount>
+                    <MonthlyPaymentType code="S"/>
+                    <LastPaymentDate>08272008</LastPaymentDate>
+                    <Subcode>1616760</Subcode>
+                    <KOB code="FF"/>
+                    <SubscriberDisplayName>WEBBANK/DFS</SubscriberDisplayName>
+                    <EnhancedPaymentData>
+                        <InitialPaymentLevelDate>08012008</InitialPaymentLevelDate>
+                        <AccountCondition code="A4"/>
+                        <PaymentStatus code="11"/>
+                        <AccountType code="07"/>
+                        <SpecialComment code=" "/>
+                    </EnhancedPaymentData>
+                </TradeLine>
+                <Inquiry>
+                    <Date>09142017</Date>
+                    <Amount>UNKNOWN</Amount>
+                    <Type code="31"/>
+                    <Terms code="UNK"/>
+                    <Subcode>1930901</Subcode>
+                    <KOB code="BC"/>
+                    <SubscriberDisplayName>SYNCB/TJX CO</SubscriberDisplayName>
+                </Inquiry>
+                <Inquiry>
+                    <Date>10132016</Date>
+                    <Amount>UNKNOWN</Amount>
+                    <Type code="31"/>
+                    <Terms code="UNK"/>
+                    <Subcode>2445670</Subcode>
+                    <KOB code="UW"/>
+                    <SubscriberDisplayName>SPRINT</SubscriberDisplayName>
+                </Inquiry>
+                <Inquiry>
+                    <Date>06082016</Date>
+                    <Amount>UNKNOWN</Amount>
+                    <Type code="31"/>
+                    <Terms code="UNK"/>
+                    <Subcode>1240750</Subcode>
+                    <KOB code="BC"/>
+                    <SubscriberDisplayName>CBNA</SubscriberDisplayName>
+                </Inquiry>
+                <Inquiry>
+                    <Date>02072016</Date>
+                    <Amount>UNKNOWN</Amount>
+                    <Type code="31"/>
+                    <Terms code="UNK"/>
+                    <Subcode>2445670</Subcode>
+                    <KOB code="UW"/>
+                    <SubscriberDisplayName>SPRINT</SubscriberDisplayName>
+                </Inquiry>
+                <Inquiry>
+                    <Date>01132016</Date>
+                    <Amount>00020000</Amount>
+                    <Type code="01"/>
+                    <Terms code="036"/>
+                    <Subcode>1530072</Subcode>
+                    <KOB code="FZ"/>
+                    <SubscriberDisplayName>PROSPER/WEBBANK</SubscriberDisplayName>
+                </Inquiry>
+                <Statement>
+                    <Type code="06"/>
+                    <DateReported>03102017</DateReported>
+                    <StatementText>06 03-10-17 0000000 ID FRAUD VICTIM ALERT FRAUDULENT APPLICATIONS MAY BE SUBMITTED IN MY NAME OR MY IDENTITY MAY HAVE BEEN USED WITHOUT MY CONSENT TO FRAUDULENTLY OBTAIN GOODS OR SERVICES. DO NOT EXTEND CREDIT WITHOUT FIRST CONTACTING ME PERSONALLY AND VERIFYING ALL APPLICATION INFORMATION AT DAY 301- 442- 6959. THIS VICTIM ALERT WILL BE MAINTAINED FOR SEVEN YEARS BEGINNING 03- 10- 17.</StatementText>
+                </Statement>
+                <FraudServices>
+                    <Type code="99"/>
+                    <SIC code=" "/>
+                    <SocialDate>08012017</SocialDate>
+                    <SocialCount>0001</SocialCount>
+                    <SocialErrorCode code="0"/>
+                    <AddressDate>08012017</AddressDate>
+                    <AddressCount>0001</AddressCount>
+                    <AddressErrorCode code="0"/>
+                    <SSNFirstPossibleIssuanceYear>1990</SSNFirstPossibleIssuanceYear>
+                    <SSNLastPossibleIssuanceYear>1993</SSNLastPossibleIssuanceYear>
+                    <Indicator>02</Indicator>
+                    <Indicator>12</Indicator>
+                </FraudServices>
+            </CreditProfile>
+        </Products>
+    </Response>
+</FraudSolutions>
+</Experian>

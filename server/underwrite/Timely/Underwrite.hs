@@ -3,44 +3,45 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-module Timely.Underwriting
-  ( Underwriting(..)
+module Timely.Underwrite
+  ( Underwrite(..)
   , newCustomer
   , implementMock
-  , module Timely.Underwriting.Types
+  , module Timely.Underwrite.Types
   ) where
 
 import           Control.Effects           (Effect (..), MonadEffect (..), RuntimeImplemented)
 import qualified Control.Effects           as Effects
 import qualified Data.Model.Money          as Money
 import           GHC.Generics              (Generic)
+import           Network.Experian          ()
 import           Timely.Accounts.Types     (Customer (..))
-import           Timely.Underwriting.Types
+import           Timely.Underwrite.Types
 
 
 
-data Underwriting m = UnderwritingMethods
+data Underwrite m = UnderwriteMethods
     -- we need a lot more information than this
     -- TODO storage? Save everything
     { _newCustomer :: Customer -> m Result
     } deriving (Generic)
 
-instance Effect Underwriting
+instance Effect Underwrite
 
 
-newCustomer :: MonadEffect Underwriting m => Customer -> m Result
+newCustomer :: MonadEffect Underwrite m => Customer -> m Result
 newCustomer = _newCustomer effect
 
 
 
 
-implementMock :: Monad m => RuntimeImplemented Underwriting m a -> m a
+implementMock :: Monad m => RuntimeImplemented Underwrite m a -> m a
 implementMock =
   Effects.implement $
-    UnderwritingMethods mockUnderwrite
+    UnderwriteMethods mockUnderwrite
 
 
--- instance Monad m => Service m Underwriting where
+-- instance Monad m => Service m Underwrite where
 --     run (New a) = underwrite a
 
 

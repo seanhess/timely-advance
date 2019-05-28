@@ -22,7 +22,7 @@ import           GHC.Generics                  (Generic)
 import           Servant.API.ContentTypes.HTML (Linkable (..))
 import           Timely.Accounts.Types
 import           Timely.Bank                   (Public, Token)
-import           Timely.Underwriting           (Approval, Denial, Result (..))
+import           Timely.Underwrite             (Approval, Denial, Result (..))
 
 
 instance ToJSON Result where

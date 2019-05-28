@@ -44,8 +44,8 @@ import qualified Timely.Bank                        as Bank
 import qualified Timely.Events                      as Events
 import           Timely.Transfers                   (AccountInfo (..), TransferAccount, Transfers)
 import qualified Timely.Transfers                   as Transfers
-import           Timely.Underwriting                (Approval (..), Underwriting (..))
-import qualified Timely.Underwriting                as Underwriting
+import           Timely.Underwrite                (Approval (..), Underwrite (..))
+import qualified Timely.Underwrite                as Underwrite
 
 
 
@@ -59,7 +59,7 @@ start = App.start queue handler
 
 
 handler
-  :: ( MonadEffects '[Time, Applications, Accounts, Log, Banks, Transfers, Underwriting, Async, Budgets] m
+  :: ( MonadEffects '[Time, Applications, Accounts, Log, Banks, Transfers, Underwrite, Async, Budgets] m
      , MonadThrow m, MonadCatch m
      )
   => Application -> m ()
@@ -86,7 +86,7 @@ handler app@(Application { accountId, phone }) = do
 
 -- | accountOnboard
 accountOnboard
-  :: ( MonadEffects '[Applications, Accounts, Log, Banks, Transfers, Underwriting, Throw OnboardError, Time, Early (), Async, Budgets] m)
+  :: ( MonadEffects '[Applications, Accounts, Log, Banks, Transfers, Underwrite, Throw OnboardError, Time, Early (), Async, Budgets] m)
   => Application -> Guid Account -> Valid Phone -> m ()
 accountOnboard app accountId phone = do
     now                      <- Time.currentTime
@@ -153,16 +153,16 @@ newCustomer app now bankToken = do
 
 
 underwriting
-  :: ( MonadEffects '[Underwriting, Log, Applications, Early ()] m )
+  :: ( MonadEffects '[Underwrite, Log, Applications, Early ()] m )
   => Guid Account -> Customer -> m Approval
 underwriting accountId cust = do
-    res <- Underwriting.newCustomer cust
+    res <- Underwrite.newCustomer cust
     Log.debug ("underwriting", res)
     Applications.saveResult accountId res
     case res of
-      Underwriting.Denied  _ ->
+      Underwrite.Denied  _ ->
         Early.earlyReturn ()
-      Underwriting.Approved approval ->
+      Underwrite.Approved approval ->
         pure approval
 
 

@@ -15,8 +15,9 @@ import           Timely.Evaluate.Schedule      (DayOfMonth (..), DayOfWeek (..),
 import qualified Timely.Evaluate.Schedule      as Schedule
 
 
-specHealth = defaultMain $ testGroup "tests" $ runTests testNeededForBill
--- specHealth = defaultMain $ testGroup "tests" $ runTests testDueDates
+specHealth = do
+  ts <- runTests tests
+  defaultMain $ testGroup "tests" ts
 
 
 tests :: Tests ()
