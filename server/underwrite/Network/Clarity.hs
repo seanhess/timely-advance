@@ -19,13 +19,6 @@ module Network.Clarity
   , validate
   , Address(..)
   , document
-  -- * Response Parsers
-  , inquiry
-  , bankBehavior
-  , creditRisk
-  , advancedAttributes
-  , fraud
-  , fraudInsight
   ) where
 
 
@@ -33,6 +26,5 @@ module Network.Clarity
 -- https://login.clarityservices.com/interactive_xmls/inquiry_response
 
 import Network.Clarity.Request
-import Network.Clarity.Response
 import Data.Model.Valid (Valid, validate)
 import Data.Model.Types (Address(..))

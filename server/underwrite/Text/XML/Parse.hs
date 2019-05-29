@@ -154,9 +154,9 @@ moveCursor :: [Cursor] -> Parser a -> Parser a
 moveCursor [c] p =
   local (setCursor c) p
 moveCursor [] _ =
-  parseError "Element - missing" ""
+  parseError "Element missing" ""
 moveCursor cs _ =
-  parseError "Element - expected only one" (pack $ show $ length cs)
+  parseError "Element found too many" (pack $ show $ length cs)
 
 
 

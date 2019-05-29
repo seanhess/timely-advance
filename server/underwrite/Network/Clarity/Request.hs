@@ -40,18 +40,20 @@ document r = XML.document "inquiry" $ do
   element "inquiry-tradeline-type" $ content $ itt $ inquiryTradelineType r
   element "first-name" $ content $ firstName r
   element "last-name" $ content $ lastName r
-  element "middle-initial" $ content $ middleInitial r
-  element "generation-code" $ content $ formatGenerationCode $ generationCode r
+  element "middle-initial" . content <?> middleInitial r
+  element "generation-code" . content . formatGenerationCode <?> generationCode r
+  element "email-address" $ content $ emailAddress r
   element "social-security-number" $ content $ valid $ socialSecurityNumber r
   element "date-of-birth" $ content $ formatDate $ dateOfBirth r
-  element "drivers-license-number" $ content $ driversLicenseNumber r
-  element "drivers-license-state" $ content $ valid $ driversLicenseState r
+  element "drivers-license-number" . content <?> driversLicenseNumber r
+  element "drivers-license-state" . content .valid <?> driversLicenseState r
   element "bank-routing-number" $ content $ valid $ bankRoutingNumber r
   element "bank-account-number" $ content $ valid $ bankAccountNumber r
+  element "bank-account-type" $ content $ formatBankAccountType $ bankAccountType r
   xmlAddress $ address (r :: Request)
   element "home-phone" $ content $ valid $ homePhone r
   element "cell-phone" $ content $ valid $ cellPhone r
-  mapM xmlEmployer $ employer r
+  mapM_ xmlEmployer $ employer r
   element "net-monthly-income" $ content $ Money.formatFloat $ netMonthlyIncome r
   element "date-of-next-payday" $ content $ formatDate $ dateOfNextPayday r
   element "pay-frequency" $ content $ formatFrequency $ payFrequency r
@@ -71,9 +73,9 @@ xmlAddress a = do
 xmlEmployer :: Employer -> XML
 xmlEmployer e = do
   element "employer-name" $ name e
-  element "employer-address" $ address (e :: Employer)
-  element "employer-city" $ city (e :: Employer)
-  element "employer-state" $ valid $ state (e :: Employer)
+  element "employer-address" <?> address (e :: Employer)
+  element "employer-city" <?> city (e :: Employer)
+  element "employer-state" . valid <?> state (e :: Employer)
 
 
 formatId :: Int -> Text
@@ -126,15 +128,15 @@ formatInquiryPurposeType = cs . show
 data BankAccountType
   = Checking
   | Savings
-  | DebitCard -- Space
-  | MoneyMarket -- Space
+  | DebitCard
+  | MoneyMarket
   | Other
 
 formatBankAccountType :: BankAccountType -> Text
 formatBankAccountType Checking    = "Checking"
 formatBankAccountType Savings     = "Savings"
-formatBankAccountType DebitCard   = "DebitCard"
-formatBankAccountType MoneyMarket = "MoneyMarket"
+formatBankAccountType DebitCard   = "Debit Card"
+formatBankAccountType MoneyMarket = "Money Market"
 formatBankAccountType Other       = "Other"
 
 
@@ -191,12 +193,12 @@ data Request = Request
     , inquiryTradelineType :: InquiryTradelineType
     , firstName            :: Text
     , lastName             :: Text
-    , middleInitial        :: Text
-    , generationCode       :: GenerationCode
+    , middleInitial        :: Maybe Text
+    , generationCode       :: Maybe GenerationCode
     , socialSecurityNumber :: Valid SSN
     , dateOfBirth          :: Day
-    , driversLicenseNumber :: Text -- 2-20 chars
-    , driversLicenseState  :: Valid State
+    , driversLicenseNumber :: Maybe Text
+    , driversLicenseState  :: Maybe (Valid State)
     , bankRoutingNumber    :: Valid RoutingNumber
     , bankAccountNumber    :: Valid AccountNumber
     , bankAccountType      :: BankAccountType
@@ -214,9 +216,9 @@ data Request = Request
 -- prefix employer
 data Employer = Employer
     { name    :: Text
-    , address :: Text
-    , city    :: Text
-    , state   :: Valid State
+    , address :: Maybe Text
+    , city    :: Maybe Text
+    , state   :: Maybe (Valid State)
     }
 
 
@@ -225,3 +227,11 @@ data Employer = Employer
 -- , city :: Text
 -- , state :: Text -- State
 -- , zipCode :: Text
+
+
+
+
+(<?>) :: Monad m => (a -> m ()) -> Maybe a -> m ()
+(<?>) = mapM_
+
+infixr 0 <?>

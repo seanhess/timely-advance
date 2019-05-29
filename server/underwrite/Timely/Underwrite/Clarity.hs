@@ -15,9 +15,15 @@ import           Data.Proxy              (Proxy (..))
 import           Data.String.Conversions (cs)
 import           Data.Text               (Text)
 import qualified Data.Text               as Text
-import qualified Network.Clarity         as Clarity
 import           Text.Read               (readMaybe)
 import           Text.XML.Parse          (Parser, content, element, find, float, int, optional, parseError, text)
+
+
+
+-- Request ------------------------------------------------
+
+
+
 
 
 
@@ -44,7 +50,7 @@ data BankBehavior = BankBehavior
 
 
 parseBankBehavior :: Parser BankBehavior
-parseBankBehavior = Clarity.bankBehavior $ do
+parseBankBehavior = element "clear-bank-behavior" $ do
 
   (account1DefaultRate60Days, account1DefaultRate61_365, account1DefaultRateRatio, account1InqAppState30Days) <- find "account" (isAccountIndex 1) $ do
     a <- element "default-rate-60-days-ago" $ content $ optional float
@@ -96,7 +102,7 @@ data Fraud = Fraud
 
 
 parseFraud :: Parser Fraud
-parseFraud = Clarity.fraud $ do
+parseFraud = element "clear-fraud" $ do
   i365  <- element "clear-fraud-inquiry"$ element "threesixtyfive-days-ago" $ content int
   p90   <- element "clear-fraud-points-total" $ element "ninety-days-ago" $ content int
   p7    <- element "clear-fraud-points-total" $ element "seven-days-ago" $ content int
@@ -139,7 +145,7 @@ data CreditRisk = CreditRisk
 
 
 parseCreditRisk :: Parser CreditRisk
-parseCreditRisk = Clarity.creditRisk $ do
+parseCreditRisk = element "clear-credit-risk" $ do
   denyCodes <- element "deny-codes" $ content text
   pure $ CreditRisk {denyCodes}
 
@@ -176,7 +182,7 @@ data FraudInsight = FraudInsight
 
 
 parseFraudInsight :: Parser FraudInsight
-parseFraudInsight = Clarity.fraudInsight $ do
+parseFraudInsight = element "clear-fraud-insight" $ do
   score <- element "score" $ content $ optional int -- Nothing
 
   ratio_1_min_90_days <- find "ratio" (isName "one_minute_ago") $ element "ninety-days-ago" $ content $ optional float
@@ -245,7 +251,7 @@ data Inquiry = Inquiry
 
 
 parseInquiry :: Parser Inquiry
-parseInquiry = Clarity.inquiry $ do
+parseInquiry = element "inquiry" $ do
   bankAccountNumberLength       <- Text.length <$> (element "bank-account-number" $ content text)
   ssnDistinctFirstLastNameCount <- element "ssn-distinct-first-last-name-count" $ content int
   ssnFirstLastNameCount         <- element "ssn-first-last-name-count" $ content int

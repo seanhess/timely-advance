@@ -3,8 +3,8 @@
     <group-id>101</group-id>
     <account-id>201</account-id>
     <location-id>8642</location-id>
-    <username>timelyadvancetestutility</username>
-    <password>Cbuckethead1!</password>
+    <username>username</username>
+    <password>password</password>
     <control-file-name>Test_TimelyAdvances</control-file-name>
     <control-file-version-number></control-file-version-number>
     <inquiry-purpose-type>AR</inquiry-purpose-type>
@@ -15,7 +15,8 @@
     <date-of-birth>1996-03-06</date-of-birth>
     <drivers-license-number>193444830</drivers-license-number>
     <drivers-license-state>UT</drivers-license-state>
-    <street-address-1>1234 W Avenue</street-address-1><street-address-2/>
+    <street-address-1>1234 W Avenue</street-address-1>
+    <street-address-2/>
     <city>Salt Lake City</city>
     <state>UT</state>
     <zip-code>84108</zip-code>
