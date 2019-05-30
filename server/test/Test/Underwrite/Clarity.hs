@@ -8,14 +8,14 @@ import           Control.Monad.IO.Class    (liftIO)
 import qualified Data.Model.Money          as Money
 import           Data.Model.Valid          (Valid (..))
 import           Data.String.Conversions   (cs)
-import           Network.Clarity           (Address (..), Employer (..), Frequency (..), Request (..), BankAccountType(..), InquiryTradelineType(..), InquiryPurposeType(..))
+import           Network.Clarity           (Address (..), Employer (..), Frequency (..), BankAccountType(..), InquiryTradelineType(..), InquiryPurposeType(..), Account(..), Consumer(..))
 import qualified Network.Clarity           as Clarity
 import           Test.Dates                (day)
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
 import           Text.XML.Parse
-import           Timely.Underwrite.Clarity (BankBehavior (..), CreditRisk (..), Fraud (..), FraudInsight (..), Inquiry (..), parseBankBehavior, parseCreditRisk, parseFraud, parseFraudInsight, parseInquiry)
+import           Timely.Underwrite.Clarity (BankBehavior (..), CreditRisk (..), Fraud (..), FraudInsight (..), Inquiry (..), parseBankBehavior, parseCreditRisk, parseFraud, parseFraudInsight, parseInquiry, clarity)
 
 specXML = do
   ts <- runTests tests
@@ -29,43 +29,15 @@ tests = do
   group "request" testRequest
 
 
+
+
+
+
 testRequest :: Tests ()
 testRequest = do
   group "matches input" $ do
-    let add = Address "1234 W Avenue" Nothing "Salt Lake City" (Valid "UT") (Valid "84108")
-    let emp = Employer "Everest Auto" Nothing Nothing Nothing
-    let request = Request
-          { groupId  = 101
-          , accountId = 201
-          , locationId = 8642
-          , username             = "username"
-          , password             = "password"
-          , controlFileName      = "Test_TimelyAdvances"
-          , inquiryPurposeType   = AR
-          , inquiryTradelineType = InquiryTradelineType "C7"
-          , firstName            = "John"
-          , lastName             = "Fence"
-          , middleInitial        = Nothing
-          , generationCode       = Nothing
-          , socialSecurityNumber = Valid "301001240"
-          , dateOfBirth          = day "1996-03-06"
-          , driversLicenseNumber = Just "193444830"
-          , driversLicenseState  = Just (Valid "UT")
-          , bankRoutingNumber    = Valid "314977188"
-          , bankAccountNumber    = Valid "1132243112544"
-          , bankAccountType      = Checking
-          , address              = add
-          , emailAddress         = "john.fence@gmail.com"
-          , homePhone            = Valid "8015551234"
-          , cellPhone            = Valid "8015551234"
-          , employer             = Just emp
-          , netMonthlyIncome     = Money.fromFloat 4200
-          , dateOfNextPayday     = day "2016-12-15"
-          , payFrequency         = Semimonthly
-          , loanAmount           = Money.fromFloat 1000
-          }
 
-    let doc = Clarity.document request
+    let doc = Clarity.document account consumer
 
     test "identification" $ do
       idt <- assertRight $ flip runParserDocument doc $ (,,,,)
@@ -214,3 +186,48 @@ testParsers = do
 assertRight :: Show e => Either e a -> IO a
 assertRight (Left e)  = assertFailure $ show e
 assertRight (Right a) = pure a
+
+
+
+sendTestRequest :: IO ()
+sendTestRequest = do
+  c <- clarity account { username = "timelyadvancetestutility", password = "Cbuckethead1!" } consumer
+  putStrLn "CLARITY"
+  print c
+
+
+
+add = Address "1234 W Avenue" Nothing "Salt Lake City" (Valid "UT") (Valid "84108")
+emp = Employer "Everest Auto" Nothing Nothing Nothing
+account = Account
+  { groupId  = 101
+  , accountId = 201
+  , locationId = 8642
+  , username             = "username"
+  , password             = "password"
+  , controlFileName      = "Test_TimelyAdvances"
+  , inquiryPurposeType   = AR
+  , inquiryTradelineType = InquiryTradelineType "C7"
+  }
+consumer = Consumer
+  { firstName            = "John"
+  , lastName             = "Fence"
+  , middleInitial        = Nothing
+  , generationCode       = Nothing
+  , socialSecurityNumber = Valid "301001240"
+  , dateOfBirth          = day "1996-03-06"
+  , driversLicenseNumber = Just "193444830"
+  , driversLicenseState  = Just (Valid "UT")
+  , bankRoutingNumber    = Valid "314977188"
+  , bankAccountNumber    = Valid "1132243112544"
+  , bankAccountType      = Checking
+  , address              = add
+  , emailAddress         = "john.fence@gmail.com"
+  , homePhone            = Valid "8015551234"
+  , cellPhone            = Valid "8015551234"
+  , employer             = Just emp
+  , netMonthlyIncome     = Money.fromFloat 4200
+  , dateOfNextPayday     = day "2016-12-15"
+  , payFrequency         = Semimonthly
+  , loanAmount           = Money.fromFloat 1000
+    }

@@ -6,7 +6,8 @@
 {-# LANGUAGE PolyKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Network.Clarity
-  ( Request(..)
+  ( Account(..)
+  , Consumer(..)
   , Frequency(..)
   , InquiryPurposeType(..)
   , BankAccountType(..)
@@ -14,11 +15,12 @@ module Network.Clarity
   , RoutingNumber
   , AccountNumber
   , GenerationCode
-  , Employer(..)
+  , Employer(Employer)
   , Valid
   , validate
-  , Address(..)
+  , Address(Address)
   , document
+  , inquiry
   ) where
 
 
@@ -26,5 +28,8 @@ module Network.Clarity
 -- https://login.clarityservices.com/interactive_xmls/inquiry_response
 
 import Network.Clarity.Request
+import Network.Clarity.Consumer
+import Network.Clarity.Employer
+import Network.Clarity.Account
 import Data.Model.Valid (Valid, validate)
 import Data.Model.Types (Address(..))

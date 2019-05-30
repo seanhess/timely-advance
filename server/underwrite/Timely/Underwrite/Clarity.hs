@@ -5,9 +5,10 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 module Timely.Underwrite.Clarity where
 
--- import Network.Clarity
 import           Control.Lens            ((^?))
 import qualified Control.Lens            as Lens
+import           Control.Monad.Catch     (MonadThrow, throwM, MonadCatch)
+import           Control.Monad.IO.Class  (MonadIO)
 import           Data.Model.Money        (Money, fromFloat)
 import           Data.Model.Types        (State)
 import           Data.Model.Valid        (Valid, Validate (..))
@@ -15,15 +16,41 @@ import           Data.Proxy              (Proxy (..))
 import           Data.String.Conversions (cs)
 import           Data.Text               (Text)
 import qualified Data.Text               as Text
+import           Network.Clarity         as Clarity (Account (..), Consumer (..), inquiry, document)
 import           Text.Read               (readMaybe)
-import           Text.XML.Parse          (Parser, content, element, find, float, int, optional, parseError, text)
+import           Text.XML.Parse          (Parser, content, element, find, float, int, optional, parseError, runParserDocument, text)
 
 
 
 -- Request ------------------------------------------------
 
 
+-- TODO map from our consumer type to theirs
+-- TODO send in credentials
+-- TODO warehouse the request and response somewhere?
+-- TODO log a bunch of errors
 
+clarity :: (MonadIO m, MonadThrow m, MonadCatch m) => Account -> Consumer -> m Clarity
+clarity a c = do
+  doc <- Clarity.inquiry $ Clarity.document a c
+  case runParserDocument parse doc of
+    Left err -> throwM err
+    Right c  -> pure c
+
+
+
+data Clarity = Clarity
+  { bankBehavior :: BankBehavior
+  , creditRisk   :: CreditRisk
+  , fraud        :: Fraud
+  , fraudInsight :: FraudInsight
+  , inquiry      :: Inquiry
+  } deriving (Show)
+
+
+parse :: Parser Clarity
+parse = do
+  Clarity <$> parseBankBehavior <*> parseCreditRisk <*> parseFraud <*> parseFraudInsight <*> parseInquiry
 
 
 
@@ -46,7 +73,7 @@ data BankBehavior = BankBehavior
   , cbbReasonCode3            :: Maybe Text
   , cbbReasonCode4            :: Maybe Text
   , cbbScore                  :: Int
-  }
+  } deriving (Show)
 
 
 parseBankBehavior :: Parser BankBehavior
@@ -98,7 +125,7 @@ data Fraud = Fraud
   , ssn_bankAccount                              :: Int
   , ssn_homePhone                                :: Int
   , totalNumberOfFraudIndicators                 :: Int
-  }
+  } deriving (Show)
 
 
 parseFraud :: Parser Fraud
@@ -141,7 +168,7 @@ parseFraud = element "clear-fraud" $ do
 
 data CreditRisk = CreditRisk
   { denyCodes :: Text
-  }
+  } deriving (Show)
 
 
 parseCreditRisk :: Parser CreditRisk
@@ -178,7 +205,7 @@ data FraudInsight = FraudInsight
   , stab_mthlyincome_365_days :: Maybe Int
   , stab_mthlyincome_90_days  :: Maybe Int
   , stab_zip_365_days         :: Maybe Int
-  }
+  } deriving (Show)
 
 
 parseFraudInsight :: Parser FraudInsight
@@ -247,7 +274,7 @@ data Inquiry = Inquiry
   , ssnFirstLastNameCount         :: Int
   , ssnLastNameCount              :: Int
   , totalHistoricalInquiries      :: Int
-  }
+  } deriving (Show)
 
 
 parseInquiry :: Parser Inquiry

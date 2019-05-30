@@ -25,13 +25,13 @@ dependencies:
 - aeson-pretty
 - amqp
 - amqp-worker
-- async-timer
 - async
+- async-timer
 - base64-bytestring
 - bytestring
 - containers
-- datamodel
 - data-default
+- datamodel
 - envy
 - exceptions
 - http-api-data
@@ -63,8 +63,8 @@ dependencies:
 - string-conversions
 - text
 - time
-- transformers-base
 - transformers
+- transformers-base
 - twilio
 - unix
 - uuid
@@ -72,10 +72,10 @@ dependencies:
 - wai-extra
 - warp
 - warp-tls
+- wreq
 - xml-conduit
 - xml-conduit-writer
 - xml-types
-- conduit
 
 
 # I'm not sure this is a good idea
