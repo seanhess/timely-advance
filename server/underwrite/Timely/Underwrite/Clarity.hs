@@ -7,8 +7,9 @@ module Timely.Underwrite.Clarity where
 
 import           Control.Lens            ((^?))
 import qualified Control.Lens            as Lens
-import           Control.Monad.Catch     (MonadThrow, throwM, MonadCatch)
+import           Control.Monad.Catch     (Exception, MonadCatch, MonadThrow, throwM)
 import           Control.Monad.IO.Class  (MonadIO)
+import           Data.ByteString.Lazy    (ByteString)
 import           Data.Model.Money        (Money, fromFloat)
 import           Data.Model.Types        (State)
 import           Data.Model.Valid        (Valid, Validate (..))
@@ -16,9 +17,9 @@ import           Data.Proxy              (Proxy (..))
 import           Data.String.Conversions (cs)
 import           Data.Text               (Text)
 import qualified Data.Text               as Text
-import           Network.Clarity         as Clarity (Account (..), Consumer (..), inquiry, document)
+import           Network.Clarity         as Clarity (Config (..), Consumer (..), document, inquiry, renderXML)
 import           Text.Read               (readMaybe)
-import           Text.XML.Parse          (Parser, content, element, find, float, int, optional, parseError, runParserDocument, text)
+import           Text.XML.Parse          (Parser, content, element, find, float, int, optional, parseError, runParserDocument, text, ParseError)
 
 
 
@@ -29,12 +30,20 @@ import           Text.XML.Parse          (Parser, content, element, find, float,
 -- TODO send in credentials
 -- TODO warehouse the request and response somewhere?
 -- TODO log a bunch of errors
+-- TODO catch errors and encrypt PII
 
-clarity :: (MonadIO m, MonadThrow m, MonadCatch m) => Account -> Consumer -> m Clarity
+data Error = Error ByteString ByteString ParseError
+  deriving (Show)
+instance Exception Error
+
+clarity :: (MonadIO m, MonadThrow m, MonadCatch m) => Config -> Consumer -> m Clarity
 clarity a c = do
-  doc <- Clarity.inquiry $ Clarity.document a c
-  case runParserDocument parse doc of
-    Left err -> throwM err
+  let req = Clarity.document a c
+  res <- Clarity.inquiry req
+
+  -- we need to throw an error with more context!
+  case runParserDocument parse res of
+    Left err -> throwM $ Error (renderXML req) (renderXML res) err
     Right c  -> pure c
 
 

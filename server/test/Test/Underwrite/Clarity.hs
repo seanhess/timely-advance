@@ -8,14 +8,14 @@ import           Control.Monad.IO.Class    (liftIO)
 import qualified Data.Model.Money          as Money
 import           Data.Model.Valid          (Valid (..))
 import           Data.String.Conversions   (cs)
-import           Network.Clarity           (Address (..), Employer (..), Frequency (..), BankAccountType(..), InquiryTradelineType(..), InquiryPurposeType(..), Account(..), Consumer(..))
+import           Network.Clarity           (Address (..), Employer (..), Frequency (..), BankAccountType(..), InquiryPurposeType(..), Config(..), Consumer(..))
 import qualified Network.Clarity           as Clarity
 import           Test.Dates                (day)
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
 import           Text.XML.Parse
-import           Timely.Underwrite.Clarity (BankBehavior (..), CreditRisk (..), Fraud (..), FraudInsight (..), Inquiry (..), parseBankBehavior, parseCreditRisk, parseFraud, parseFraudInsight, parseInquiry, clarity)
+import           Timely.Underwrite.Clarity (BankBehavior (..), CreditRisk (..), Fraud (..), FraudInsight (..), Inquiry (..), parseBankBehavior, parseCreditRisk, parseFraud, parseFraudInsight, parseInquiry)
 
 specXML = do
   ts <- runTests tests
@@ -37,7 +37,7 @@ testRequest :: Tests ()
 testRequest = do
   group "matches input" $ do
 
-    let doc = Clarity.document account consumer
+    let doc = Clarity.document config consumer
 
     test "identification" $ do
       idt <- assertRight $ flip runParserDocument doc $ (,,,,)
@@ -189,17 +189,11 @@ assertRight (Right a) = pure a
 
 
 
-sendTestRequest :: IO ()
-sendTestRequest = do
-  c <- clarity account { username = "timelyadvancetestutility", password = "Cbuckethead1!" } consumer
-  putStrLn "CLARITY"
-  print c
-
 
 
 add = Address "1234 W Avenue" Nothing "Salt Lake City" (Valid "UT") (Valid "84108")
 emp = Employer "Everest Auto" Nothing Nothing Nothing
-account = Account
+config = Config
   { groupId  = 101
   , accountId = 201
   , locationId = 8642
@@ -207,7 +201,7 @@ account = Account
   , password             = "password"
   , controlFileName      = "Test_TimelyAdvances"
   , inquiryPurposeType   = AR
-  , inquiryTradelineType = InquiryTradelineType "C7"
+  , inquiryTradelineType = "C7"
   }
 consumer = Consumer
   { firstName            = "John"

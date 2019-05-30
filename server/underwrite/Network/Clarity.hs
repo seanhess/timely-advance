@@ -6,12 +6,12 @@
 {-# LANGUAGE PolyKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Network.Clarity
-  ( Account(..)
+  ( Config(..)
   , Consumer(..)
   , Frequency(..)
   , InquiryPurposeType(..)
   , BankAccountType(..)
-  , InquiryTradelineType(..)
+  , InquiryTradelineType
   , RoutingNumber
   , AccountNumber
   , GenerationCode
@@ -21,6 +21,7 @@ module Network.Clarity
   , Address(Address)
   , document
   , inquiry
+  , renderXML
   ) where
 
 
@@ -30,6 +31,6 @@ module Network.Clarity
 import Network.Clarity.Request
 import Network.Clarity.Consumer
 import Network.Clarity.Employer
-import Network.Clarity.Account
+import Network.Clarity.Config
 import Data.Model.Valid (Valid, validate)
 import Data.Model.Types (Address(..))

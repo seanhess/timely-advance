@@ -21,13 +21,13 @@ import           Data.String.Conversions  (cs)
 import           Data.Text                (Text, pack)
 import           Data.Time.Calendar       (Day)
 import           Data.Time.Format         (defaultTimeLocale, formatTime)
-import           Network.Clarity.Account  (Account (..), InquiryPurposeType (..), InquiryTradelineType (..))
+import           Network.Clarity.Config  (Config (..), InquiryPurposeType (..), InquiryTradelineType (..))
 import           Network.Clarity.Consumer (BankAccountType (..), Consumer (..), Frequency (..), GenerationCode (..))
 import           Network.Clarity.Employer (Employer (..))
 import           Network.HTTP.Client      as HTTP (HttpException (..), RequestBody (..))
 import           Network.Wreq             as Wreq (post, responseBody, Payload(Raw))
 import           Prelude                  hiding (length)
-import           Text.XML                 as XML (Document, def, parseLBS_, renderLBS)
+import           Text.XML                 as XML (Document, def, parseLBS, renderLBS)
 import           Text.XML.Writer          (XML, content, element)
 import qualified Text.XML.Writer          as XML
 
@@ -35,7 +35,6 @@ import qualified Text.XML.Writer          as XML
 
 
 -- TODO check for errors, surface them instead of just a parse error
-
 
 -- data Endpoint
 --   = Test
@@ -49,6 +48,7 @@ test = "https://secure.clarityservices.com/test_inquiries"
 
 data Error
   = HttpError ByteString HttpException
+  | ParseError ByteString ByteString
   deriving (Show)
 instance Exception Error
 
@@ -58,26 +58,37 @@ newtype Body = Body Document
 
 inquiry :: (MonadIO m, MonadThrow m, MonadCatch m) => Document -> m Document
 inquiry doc = do
-  let body = XML.renderLBS def doc
+  let body = renderXML doc
   let payload = Raw "text/xml" (RequestBodyLBS body)
   res <- (liftIO $ Wreq.post test payload) `catch` (onHttpException body)
-  pure $ XML.parseLBS_ def (res ^. responseBody)
+  let resBody = res ^. responseBody
+  case XML.parseLBS def resBody of
+    Left _ -> throwM $ ParseError body resBody
+    Right doc -> pure doc
+
 
 onHttpException :: MonadThrow m => ByteString -> HttpException -> m a
 onHttpException body ex = throwM $ HttpError body ex
 
+onParseException :: MonadThrow m => ByteString -> ByteString -> m a
+onParseException body resBody = throwM $ ParseError body resBody
 
+
+
+
+renderXML :: Document -> ByteString
+renderXML = XML.renderLBS def
 
 
 -- TODO check for errors
 
-document :: Account -> Consumer -> Document
+document :: Config -> Consumer -> Document
 document a c = XML.document "inquiry" $ do
-  xmlAccount a
+  xmlConfig a
   xmlConsumer c
 
-xmlAccount :: Account -> XML
-xmlAccount r = do
+xmlConfig :: Config -> XML
+xmlConfig r = do
   element "group-id" $ content $ formatId $ groupId r
   element "account-id" $ content $ formatId $ accountId r
   element "location-id" $ content $ formatId $ locationId r
@@ -85,7 +96,7 @@ xmlAccount r = do
   element "password" $ content $ password r
   element "control-file-name" $ content $ controlFileName r
   element "inquiry-purpose-type" $ content $ formatInquiryPurposeType $ inquiryPurposeType r
-  element "inquiry-tradeline-type" $ content $ itt $ inquiryTradelineType r
+  element "inquiry-tradeline-type" $ content $ inquiryTradelineType r
 
 xmlConsumer :: Consumer -> XML
 xmlConsumer r = do

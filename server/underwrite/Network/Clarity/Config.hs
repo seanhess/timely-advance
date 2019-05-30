@@ -1,8 +1,8 @@
-module Network.Clarity.Account where
+module Network.Clarity.Config where
 
 import Data.Text (Text)
 
-data Account = Account
+data Config = Config
     { groupId              :: Int
     , accountId            :: Int
     , locationId           :: Int
@@ -32,8 +32,8 @@ data InquiryPurposeType
   | LH -- ^ Lease
   | LS -- ^ Lease Soft
   | WS -- ^ Written Authorization Soft
-  deriving (Show)
+  deriving (Show, Read)
 
 
 -- Tons of options, see docs
-newtype InquiryTradelineType = InquiryTradelineType { itt :: Text }
+type InquiryTradelineType = Text
