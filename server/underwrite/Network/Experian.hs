@@ -1,6 +1,6 @@
-module Network.Experian (Request, creditProfile, authenticate) where
+module Network.Experian where
 
 
-import Network.Experian.CreditProfile.Request
-import Network.Experian.CreditProfile
+import Network.Experian.CreditProfile.Request ()
+import Network.Experian.CreditProfile ()
 

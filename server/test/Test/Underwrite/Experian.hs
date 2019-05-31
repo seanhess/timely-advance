@@ -9,6 +9,7 @@ module Test.Underwrite.Experian where
 import Network.Experian.Address               (Address (Address), State (..), ZipCode (..))
 import Network.Experian.CreditProfile.Request (AddOns (..), Applicant (..), Dob (..), Names (..), PermissiblePurpose (..), Request (..), Requestor (..), RiskModels (..), SSN (..), YN (..), ConsumerPii(..))
 import Test.Tasty.Monad
+import Timely.Underwrite.Experian ()
 
 
 tests :: Tests ()

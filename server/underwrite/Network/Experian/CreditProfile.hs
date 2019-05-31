@@ -1,23 +1,36 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Network.Experian.CreditProfile where
+module Network.Experian.CreditProfile
+  ( Endpoint
+  , AccessToken(..)
+  , Login(..)
+  , Credentials(..)
+  , AuthError(..)
+  , authenticate
+  , load
+  , checkUnauthorized
+  ) where
 
 
 import Control.Lens                            ((?~), (^.), (.~))
 import Control.Monad.IO.Class                  (MonadIO, liftIO)
-import Data.Aeson                              (FromJSON, ToJSON (toJSON))
+import Control.Exception (throwIO, catch, try, SomeException, Exception)
+import Data.Aeson                              (FromJSON, ToJSON (toJSON), Value)
 import Data.Function                           ((&))
+import Data.ByteString (ByteString)
 import Data.String.Conversions                 (cs)
 import Data.Text                               (Text)
 import GHC.Generics                            (Generic)
 import Network.Experian.CreditProfile.Request  (Request)
-import Network.Experian.CreditProfile.Response
-import Network.Wreq                            as Wreq (asJSON, auth, defaults, oauth2Bearer, postWith, responseBody, header)
+import Network.Wreq                            as Wreq (asJSON, auth, defaults, oauth2Bearer, postWith, responseBody, header, responseStatus)
+import Network.HTTP.Client (HttpExceptionContent(..), HttpException(..))
 import System.FilePath                         ((</>))
+import Network.HTTP.Types.Status (status401)
 
 
 
+-- TODO - I need a way to log the full response, like with the other one. So parse as Value and parse again later, no?
 
 
 -- https://uat-us-api.experian.com/oauth2/v1/token
@@ -60,11 +73,35 @@ authenticate endpoint creds = do
   pure $ AccessToken $ access_token $ res ^. responseBody
 
 
-creditProfile :: MonadIO m => Endpoint -> AccessToken -> Request -> m Response
-creditProfile endpoint (AccessToken tok) req = do
+-- TODO return something different when we get an authentication failure 
+-- rather than just blowing up.
+-- 401 access token is invalid
+
+
+data AuthError = Unauthorized ByteString
+  deriving (Show)
+instance Exception AuthError
+
+
+
+load :: MonadIO m => Endpoint -> AccessToken -> Request -> m (Either AuthError Value)
+load endpoint tok req = do
+  liftIO $ try (load' endpoint tok req `catch` checkUnauthorized)
+
+
+load' :: Endpoint -> AccessToken -> Request -> IO Value
+load' endpoint (AccessToken tok) req = do
   let url = endpoint </> "consumerservices/credit-profile/v2/credit-report"
 
   let opts = defaults & auth ?~ (oauth2Bearer $ cs tok)
 
-  res <- liftIO $ Wreq.postWith opts url (toJSON req) >>= asJSON
+  res <- Wreq.postWith opts url (toJSON req) >>= asJSON
   pure $ res ^. responseBody
+
+
+checkUnauthorized :: HttpException -> IO Value
+checkUnauthorized e@(HttpExceptionRequest _ (StatusCodeException r b)) =
+  if r ^. responseStatus == status401
+    then throwIO $ Unauthorized b
+    else throwIO e
+checkUnauthorized e = throwIO e

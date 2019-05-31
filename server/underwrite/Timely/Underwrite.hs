@@ -14,7 +14,6 @@ import           Control.Effects           (Effect (..), MonadEffect (..), Runti
 import qualified Control.Effects           as Effects
 import qualified Data.Model.Money          as Money
 import           GHC.Generics              (Generic)
-import           Network.Experian          ()
 import           Timely.Accounts.Types     (Customer (..))
 import           Timely.Underwrite.Types
 
