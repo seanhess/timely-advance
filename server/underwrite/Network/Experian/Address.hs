@@ -1,6 +1,10 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Network.Experian.Address where
 
-import Data.Text (Text)
+import Data.Aeson   (ToJSON)
+import Data.Text    (Text)
+import GHC.Generics (Generic)
 
 data Address = Address
   { line1   :: Text
@@ -8,10 +12,13 @@ data Address = Address
   , city    :: Text
   , state   :: State
   , zipCode :: ZipCode
-  }
+  } deriving (Show, Generic)
+instance ToJSON Address
+
 
 newtype State = State Text
-  -- "CA"
+  deriving (Show, Generic, ToJSON)
+
 
 newtype ZipCode = ZipCode Text
-  --  "915021234"
+  deriving (Show, Generic, ToJSON)

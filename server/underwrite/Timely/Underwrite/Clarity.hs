@@ -29,7 +29,6 @@ import           Text.XML.Parse          (Parser, content, element, find, float,
 -- TODO map from our consumer type to theirs
 -- TODO send in credentials
 -- TODO warehouse the request and response somewhere?
--- TODO log a bunch of errors
 -- TODO catch errors and encrypt PII
 
 data Error = Error ByteString ByteString ParseError
@@ -41,7 +40,6 @@ clarity a c = do
   let req = Clarity.document a c
   res <- Clarity.inquiry req
 
-  -- we need to throw an error with more context!
   case runParserDocument parse res of
     Left err -> throwM $ Error (renderXML req) (renderXML res) err
     Right c  -> pure c

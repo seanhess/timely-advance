@@ -1,5 +1,7 @@
-module Timely.Underwite.Config where
-import Network.Clarity.Config as Clarity (Config(..))
+{-# LANGUAGE OverloadedStrings #-}
+module Timely.Underwrite.Config where
+
+import Network.Clarity.Config as Clarity (Config(..), InquiryPurposeType(..))
 
 
 -- default (test) clarity settings

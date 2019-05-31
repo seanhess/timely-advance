@@ -34,6 +34,7 @@ dependencies:
 - datamodel
 - envy
 - exceptions
+- filepath
 - http-api-data
 - http-client
 - http-client-tls

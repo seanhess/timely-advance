@@ -1,0 +1,33 @@
+{
+    "errors": [
+        {
+            "errorCode": "1002",
+            "message": "PrimaryApplicant lastName is invalid"
+        },
+        {
+            "errorCode": "1002",
+            "message": "Requestor subscriberCode is invalid"
+        }
+    ]
+}
+
+
+{
+    "creditProfile": [
+        {
+            "informationalMessage": [
+                {
+                    "messageNumber": "92",
+                    "messageNumberDetailed": "0092",
+                    "messageText": "REQUESTED PRODUCT OPTION NOT ALLOWED"
+                },
+                {
+                    "messageNumber": "07",
+                    "messageNumberDetailed": "0007",
+                    "messageText": "*****  NO RECORD FOUND  *****"
+                }
+            ]
+        }
+    ]
+}
+

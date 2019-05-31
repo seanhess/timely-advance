@@ -1,129 +1,557 @@
 {
-  "consumerPii": {
-    "primaryApplicant": {
-      "name": {
-        "lastName": "CONSUMER",
-        "firstName": "JONATHAN",
-        "middleName": "QUINCY",
-        "generationCode": "Sr"
-      },
-      "dob": {
-        "dob": "3021945.0"
-      },
-      "ssn": {
-        "ssn": "999999990"
-      },
-      "driverslicense": {
-        "number": "111111",
-        "state": "CA"
-      },
-      "phone": [
+    "creditProfile": [
         {
-          "number": "818.555.1111",
-          "type": "R"
+            "addressInformation": [
+                {
+                    "censusGeoCode": "4567890",
+                    "city": "BURBANK",
+                    "countyCode": "123",
+                    "dwellingType": "S",
+                    "lastReportingSubscriberCode": "1220855",
+                    "source": "2",
+                    "state": "CA",
+                    "streetName": "N",
+                    "streetPrefix": "10655",
+                    "streetSuffix": "BIRCH",
+                    "timesReported": "03",
+                    "zipCode": "91502-1234"
+                },
+                {
+                    "city": "SANTAANA",
+                    "dwellingType": "A",
+                    "lastReportingSubscriberCode": "2390446",
+                    "source": "1",
+                    "state": "CA",
+                    "streetName": "SOPHIA",
+                    "streetPrefix": "1314",
+                    "streetSuffix": "LN",
+                    "timesReported": "01",
+                    "zipCode": "92708-5678"
+                },
+                {
+                    "city": "LOSANGELES",
+                    "dwellingType": "A",
+                    "lastReportingSubscriberCode": "2390446",
+                    "source": "6",
+                    "state": "CA",
+                    "streetName": "BOWSER",
+                    "streetPrefix": "2600",
+                    "streetSuffix": "ST",
+                    "zipCode": "90017-9876"
+                }
+            ],
+            "consumerAssistanceReferralAddress": {
+                "cityStateZip": "ALLEN, TX 75013",
+                "officeName": "EXPERIAN",
+                "phone": "8883973742",
+                "poBox": "PO BOX 2002",
+                "streetName": "701 EXPERIAN PARKWAY"
+            },
+            "consumerIdentity": {
+                "name": [
+                    {
+                        "firstName": "JONATHAN",
+                        "middleName": "CONSUMER",
+                        "surname": "QUINCY"
+                    },
+                    {
+                        "firstName": "JACK",
+                        "surname": "CONSUMER",
+                        "type": "N"
+                    },
+                    {
+                        "firstName": "JOHN",
+                        "surname": "SMITH",
+                        "type": "A"
+                    },
+                    {
+                        "firstName": "JONATHAN",
+                        "generationCode": "JR",
+                        "middleName": "JONES",
+                        "surname": "SMITH",
+                        "type": "A"
+                    }
+                ]
+            },
+            "employmentInformation": [
+                {
+                    "addressFirstLine": "2035 BROADWAY SUITE 300",
+                    "addressSecondLine": "LOS ANGELES CA",
+                    "name": "AJAX HARDWARE",
+                    "source": "2",
+                    "zipCode": "90019"
+                },
+                {
+                    "addressFirstLine": "111 MAIN STREET",
+                    "addressSecondLine": "BURBANK CA",
+                    "name": "BELL AUTOMOTIVE",
+                    "source": "2",
+                    "zipCode": "91503"
+                }
+            ],
+            "fraudShield": [
+                {
+                    "addressCount": "0015",
+                    "addressErrorCode": "0",
+                    "sic": "73890300",
+                    "socialCount": "0008",
+                    "socialErrorCode": "0",
+                    "ssnFirstPossibleIssuanceYear": "1965",
+                    "ssnLastPossibleIssuanceYear": "1966",
+                    "text": "PHONE ANSWERING SERVICE:/ABC ANSWER-ALL/10655 N BIRCH ST/BURBANK CA 91502/818.555.1212",
+                    "type": "01"
+                },
+                {
+                    "sic": "99000000",
+                    "text": "COMMERCIAL BUSINESS ADDRESS:/J&J INVESTMENTS/2600 BOWSER ST #312/LOS ANGELES CA 90017/213.111.2222",
+                    "type": "04"
+                },
+                {
+                    "dateOfBirth": "01101951",
+                    "dateOfDeath": "03301996",
+                    "text": "CKPT: INPUT SSN RECORDED AS DECEASED",
+                    "type": "02"
+                }
+            ],
+            "inquiry": [
+                {
+                    "amount": "UNKNOWN",
+                    "kob": "DC",
+                    "subscriberCode": "2313849",
+                    "subscriberName": "HEMLOCKS",
+                    "terms": "UNK",
+                    "type": "31"
+                },
+                {
+                    "amount": "00001500",
+                    "kob": "DC",
+                    "subscriberCode": "2390446",
+                    "subscriberName": "BAY COMPANY",
+                    "terms": "REV",
+                    "type": "07"
+                },
+                {
+                    "amount": "UNKNOWN",
+                    "kob": "BC",
+                    "subscriberCode": "2240679",
+                    "subscriberName": "HILLSIDE BANK",
+                    "terms": "UNK",
+                    "type": "31"
+                }
+            ],
+            "summaries": [
+                {
+                    "summaryType": "Profile Summary",
+                    "attributes": [
+                        {
+                            "id": "disputedAccountsExcluded",
+                            "value": "001"
+                        },
+                        {
+                            "id": "publicRecordsCount",
+                            "value": "003"
+                        },
+                        {
+                            "id": "installmentBalance",
+                            "value": "00045037"
+                        },
+                        {
+                            "id": "realEstateBalance",
+                            "value": "00234000"
+                        },
+                        {
+                            "id": "revolvingBalance",
+                            "value": "00014657"
+                        },
+                        {
+                            "id": "pastDueAmount",
+                            "value": "00001421"
+                        },
+                        {
+                            "id": "monthlyPayment",
+                            "value": "00001865"
+                        },
+                        {
+                            "id": "monthlyPaymentPartialFlag"
+                        },
+                        {
+                            "id": "realEstatePayment",
+                            "value": "00003128"
+                        },
+                        {
+                            "id": "realEstatePaymentPartialFlag"
+                        },
+                        {
+                            "id": "revolvingAvailablePercent",
+                            "value": "027"
+                        },
+                        {
+                            "id": "revolvingAvailablePartialFlag"
+                        },
+                        {
+                            "id": "totalInquiries",
+                            "value": "003"
+                        },
+                        {
+                            "id": "inquiriesDuringLast6Months",
+                            "value": "000"
+                        },
+                        {
+                            "id": "totalTradeItems",
+                            "value": "010"
+                        },
+                        {
+                            "id": "paidAccounts",
+                            "value": "002"
+                        },
+                        {
+                            "id": "satisfactoryAccounts",
+                            "value": "006"
+                        },
+                        {
+                            "id": "nowDelinquentDerog",
+                            "value": "003"
+                        },
+                        {
+                            "id": "wasDelinquentDerog",
+                            "value": "000"
+                        },
+                        {
+                            "id": "delinquencies30Days"
+                        },
+                        {
+                            "id": "delinquencies60Days"
+                        },
+                        {
+                            "id": "delinquencies90to180Days"
+                        },
+                        {
+                            "id": "derogCounter"
+                        }
+                    ]
+                }
+            ],
+            "publicRecord": [
+                {
+                    "amount": "00012450",
+                    "bookPageSequence": "B476P2109",
+                    "courtCode": "3051111",
+                    "courtName": "SO CALIF DISTRICT COURT",
+                    "ecoa": "1",
+                    "evaluation": "N",
+                    "referenceNumber": "45078321",
+                    "status": "35"
+                },
+                {
+                    "amount": "00001200",
+                    "bookPageSequence": "B1234P50987",
+                    "courtCode": "3019999",
+                    "courtName": "COUNTY SPR CT SANTA ANA",
+                    "ecoa": "1",
+                    "evaluation": "N",
+                    "plaintiffName": "ALLIED COMPANY",
+                    "referenceNumber": "7505853",
+                    "status": "08"
+                },
+                {
+                    "amount": "00100000",
+                    "bankruptcyAssetAmount": "00008500",
+                    "bankruptcyVoluntaryIndicator": "V",
+                    "courtCode": "3009999",
+                    "courtName": "U S BANKRUPTCY COURT",
+                    "ecoa": "2",
+                    "evaluation": "N",
+                    "referenceNumber": "35054539906234561",
+                    "status": "13"
+                }
+            ],
+            "ssn": [
+                {
+                    "number": "999999990"
+                },
+                {
+                    "number": "234567891",
+                    "variationIndicator": "*"
+                },
+                {
+                    "number": "123456789",
+                    "variationIndicator": "*"
+                }
+            ],
+            "statement": [
+                {
+                    "statementText": "**#HK# ID SECURITY ALERT: FRAUDULENT APPLICATIONS MAY BE SUBMITTED IN MY NAME OR MY IDENTITY MAY HAVE BEEN USED WITHOUT MY CONSENT TO FRAUDULENTLY OBTAIN GOODS OR SERVICES.  DO NOT EXTEND CREDIT WITHOUT FIRST CONTACTING ME PERSONALLY AND VERIFYING ALL APPLICANT INFORMATION.  THIS SECURITY ALERT WILL BE MAINTAINED FOR 90 DAYS BEGINNING 05-01-02.",
+                    "type": "06"
+                }
+            ],
+            "tradeline": [
+                {
+                    "accountNumber": "98E543182136",
+                    "accountType": "31",
+                    "amount1": "00000500",
+                    "amount1Qualifier": "O",
+                    "balanceAmount": "00000250",
+                    "delinquencies30Days": "00",
+                    "delinquencies60Days": "00",
+                    "delinquencies90to180Days": "00",
+                    "derogCounter": "20",
+                    "ecoa": "2",
+                    "enhancedPaymentData": {
+                        "enhancedAccountType": "31",
+                        "enhancedSpecialComment": "78",
+                        "maxDelinquencyCode": "9"
+                    },
+                    "evaluation": "N",
+                    "kob": "YC",
+                    "monthsHistory": "20",
+                    "openOrClosed": "O",
+                    "originalCreditorName": "DR. JOHN KILDARE",
+                    "paymentHistory": "99999999999999999999",
+                    "specialComment": "78",
+                    "status": "93",
+                    "subscriberCode": "3980999",
+                    "subscriberName": "CREDIT AND COLLECTION",
+                    "terms": "UNK"
+                },
+                {
+                    "accountNumber": "405855254820",
+                    "accountType": "18",
+                    "amount1": "00007000",
+                    "amount1Qualifier": "L",
+                    "amount2": "00005700",
+                    "amount2Qualifier": "H",
+                    "balanceAmount": "00000000",
+                    "delinquencies30Days": "00",
+                    "delinquencies60Days": "00",
+                    "delinquencies90to180Days": "00",
+                    "ecoa": "2",
+                    "enhancedPaymentData": {
+                        "enhancedAccountType": "18",
+                        "enhancedSpecialComment": "19"
+                    },
+                    "evaluation": "P",
+                    "kob": "BC",
+                    "monthsHistory": "18",
+                    "openOrClosed": "C",
+                    "paymentHistory": "B0CCCCCCCCCCCCCCCC",
+                    "revolvingOrInstallment": "R",
+                    "specialComment": "19",
+                    "status": "11",
+                    "subscriberCode": "1211248",
+                    "subscriberName": "ISLAND SAVINGS",
+                    "terms": "REV"
+                },
+                {
+                    "accountNumber": "8285103111261",
+                    "accountType": "06",
+                    "amount1": "00001000",
+                    "amount1Qualifier": "L",
+                    "balanceAmount": "00001000",
+                    "delinquencies30Days": "00",
+                    "delinquencies60Days": "00",
+                    "delinquencies90to180Days": "00",
+                    "ecoa": "3",
+                    "enhancedPaymentData": {
+                        "enhancedAccountType": "06"
+                    },
+                    "evaluation": "P",
+                    "kob": "DC",
+                    "monthsHistory": "17",
+                    "openOrClosed": "O",
+                    "paymentHistory": "NNNNNNNNNNNNNNNNN",
+                    "revolvingOrInstallment": "I",
+                    "status": "11",
+                    "subscriberCode": "2313849",
+                    "subscriberName": "HEMLOCKS",
+                    "terms": "024"
+                },
+                {
+                    "accountNumber": "23802654388",
+                    "accountType": "00",
+                    "amount1": "00022350",
+                    "amount1Qualifier": "O",
+                    "amountPastDue": "00000465",
+                    "balanceAmount": "00011050",
+                    "delinquencies30Days": "01",
+                    "delinquencies60Days": "00",
+                    "delinquencies90to180Days": "00",
+                    "ecoa": "1",
+                    "enhancedPaymentData": {
+                        "enhancedAccountType": "00",
+                        "maxDelinquencyCode": "1"
+                    },
+                    "evaluation": "N",
+                    "kob": "BI",
+                    "monthlyPaymentAmount": "00000465",
+                    "monthsHistory": "31",
+                    "openOrClosed": "O",
+                    "paymentHistory": "1CCCCCCCCCCCCCCCCCCCCCCCC",
+                    "revolvingOrInstallment": "I",
+                    "status": "71",
+                    "subscriberCode": "1132912",
+                    "subscriberName": "CENTRAL BANK",
+                    "terms": "048"
+                },
+                {
+                    "accountNumber": "3562A0197325346R12345",
+                    "accountType": "02",
+                    "amount1": "00043225",
+                    "amount1Qualifier": "O",
+                    "amountPastDue": "00000956",
+                    "balanceAmount": "00019330",
+                    "delinquencies30Days": "03",
+                    "delinquencies60Days": "00",
+                    "delinquencies90to180Days": "00",
+                    "ecoa": "2",
+                    "enhancedPaymentData": {
+                        "enhancedAccountType": "02",
+                        "maxDelinquencyCode": "1"
+                    },
+                    "evaluation": "N",
+                    "kob": "BI",
+                    "monthlyPaymentAmount": "00000956",
+                    "monthsHistory": "39",
+                    "openOrClosed": "O",
+                    "paymentHistory": "1CCCCCC1CCCCCCCCCCCCCCCCC",
+                    "revolvingOrInstallment": "I",
+                    "status": "73",
+                    "subscriberCode": "1119999",
+                    "subscriberName": "MOUNTAIN BK",
+                    "terms": "060"
+                },
+                {
+                    "accountNumber": "525556601",
+                    "accountType": "07",
+                    "amount1": "00001400",
+                    "amount1Qualifier": "L",
+                    "balanceAmount": "00000000",
+                    "delinquencies30Days": "01",
+                    "delinquencies60Days": "01",
+                    "delinquencies90to180Days": "04",
+                    "ecoa": "2",
+                    "enhancedPaymentData": {
+                        "enhancedAccountType": "07",
+                        "enhancedSpecialComment": "13",
+                        "maxDelinquencyCode": "7"
+                    },
+                    "evaluation": "N",
+                    "kob": "DC",
+                    "monthsHistory": "99",
+                    "openOrClosed": "C",
+                    "paymentHistory": "7654321CCCC00CCCCCCCCCCCC",
+                    "revolvingOrInstallment": "R",
+                    "specialComment": "13",
+                    "status": "84",
+                    "subscriberCode": "2390446",
+                    "subscriberName": "BAY COMPANY",
+                    "terms": "REV"
+                },
+                {
+                    "accountNumber": "525556601",
+                    "accountType": "18",
+                    "amount1": "00010000",
+                    "amount1Qualifier": "L",
+                    "amount2": "00007108",
+                    "amount2Qualifier": "H",
+                    "balanceAmount": "00006029",
+                    "delinquencies30Days": "00",
+                    "delinquencies60Days": "00",
+                    "delinquencies90to180Days": "00",
+                    "ecoa": "2",
+                    "enhancedPaymentData": {
+                        "enhancedAccountType": "18"
+                    },
+                    "evaluation": "P",
+                    "kob": "BC",
+                    "monthlyPaymentAmount": "00000180",
+                    "monthsHistory": "99",
+                    "openOrClosed": "O",
+                    "paymentHistory": " CCCCCCCCCCCC00000000CCCC",
+                    "revolvingOrInstallment": "R",
+                    "status": "11",
+                    "subscriberCode": "1220855",
+                    "subscriberName": "EMPLOYEES CREDIT UNION",
+                    "terms": "REV"
+                },
+                {
+                    "accountNumber": "24000098500012",
+                    "accountType": "08",
+                    "amount1": "00400000",
+                    "amount1Qualifier": "O",
+                    "balanceAmount": "00234000",
+                    "delinquencies30Days": "00",
+                    "delinquencies60Days": "00",
+                    "delinquencies90to180Days": "00",
+                    "ecoa": "2",
+                    "enhancedPaymentData": {
+                        "enhancedAccountType": "08"
+                    },
+                    "evaluation": "P",
+                    "kob": "FM",
+                    "monthlyPaymentAmount": "00003128",
+                    "monthlyPaymentType": "S",
+                    "monthsHistory": "92",
+                    "openOrClosed": "O",
+                    "paymentHistory": " CCCCCCCCCCCCCCCCC000CCCC",
+                    "revolvingOrInstallment": "I",
+                    "status": "11",
+                    "subscriberCode": "5935250",
+                    "subscriberName": "HOME FINANCIAL",
+                    "terms": "360"
+                },
+                {
+                    "accountNumber": "4271008232",
+                    "accountType": "18",
+                    "amount1": "00010000",
+                    "amount1Qualifier": "L",
+                    "amount2": "00009612",
+                    "amount2Qualifier": "H",
+                    "balanceAmount": "00008628",
+                    "delinquencies30Days": "00",
+                    "delinquencies60Days": "00",
+                    "delinquencies90to180Days": "00",
+                    "ecoa": "1",
+                    "enhancedPaymentData": {
+                        "enhancedAccountType": "18"
+                    },
+                    "evaluation": "P",
+                    "kob": "BC",
+                    "monthlyPaymentAmount": "00000255",
+                    "monthsHistory": "85",
+                    "openOrClosed": "O",
+                    "paymentHistory": " CCCCCCCCCCCCCCCCC000CCCC",
+                    "revolvingOrInstallment": "R",
+                    "status": "11",
+                    "subscriberCode": "1299987",
+                    "subscriberName": "STATE BANK",
+                    "terms": "REV"
+                },
+                {
+                    "accountNumber": "4271008232",
+                    "accountType": "18",
+                    "amount1": "00004000",
+                    "amount1Qualifier": "L",
+                    "amount2": "00003612",
+                    "amount2Qualifier": "H",
+                    "balanceAmount": "00000000",
+                    "delinquencies30Days": "00",
+                    "delinquencies60Days": "00",
+                    "delinquencies90to180Days": "00",
+                    "ecoa": "1",
+                    "enhancedPaymentData": {
+                        "enhancedAccountType": "18"
+                    },
+                    "evaluation": "P",
+                    "kob": "N",
+                    "monthsHistory": "34",
+                    "openOrClosed": "C",
+                    "paymentHistory": " CCCCCCCCCCCCCCCCC000CCCC",
+                    "status": "12",
+                    "subscriberCode": "3488520",
+                    "subscriberName": "TRAVEL CHARGE USA",
+                    "terms": "001"
+                }
+            ]
         }
-      ],
-      "employment": {
-        "employerName": "HARDWARE STORE",
-        "employerAddress": {
-          "line1": "10655 N BIRCH ST",
-          "line2": " ",
-          "city": "BURBANK",
-          "state": "CA",
-          "zipCode": "915021234"
-        }
-      },
-      "currentAddress": {
-        "line1": "10655 N BIRCH ST",
-        "line2": " ",
-        "city": "BURBANK",
-        "state": "CA",
-        "zipCode": "915021234"
-      },
-      "previousAddress": [
-        {
-          "line1": "10655 N BIRCH ST",
-          "line2": " ",
-          "city": "BURBANK",
-          "state": "CA",
-          "zipCode": "915021234"
-        }
-      ]
-    },
-    "secondaryApplicant": {
-      "name": {
-        "lastName": "",
-        "firstName": "JON",
-        "middleName": "Q",
-        "generationCode": "Sr"
-      },
-      "dob": {
-        "dob": "3021945.0"
-      },
-      "ssn": {
-        "ssn": "999999990"
-      },
-      "driverslicense": {
-        "number": "111111",
-        "state": "CA"
-      },
-      "phone": [
-        {
-          "number": "818.555.1111",
-          "type": "R"
-        }
-      ],
-      "employment": {
-        "employerName": "HARDWARE STORE",
-        "employerAddress": {
-          "line1": "10655 N BIRCH ST",
-          "line2": " ",
-          "city": "BURBANK",
-          "state": "CA",
-          "zipCode": "915021234"
-        }
-      }
-    }
-  },
-  "requestor": {
-    "subscriberCode": "5991764"
-  },
-  "permissiblePurpose": {
-    "type": "18",
-    "terms": "8",
-    "abbreviatedAmount": "100"
-  },
-  "resellerInfo": {
-    "endUserName": "ENDUSER"
-  },
-  "freezeOverride": {
-    "primaryApplFreezeOverrideCode": "",
-    "secondaryApplFreezeOverrideCode": ""
-  },
-  "addOns": {
-    "directCheck": "Y",
-    "demographics": "",
-    "riskModels": {
-      "modelIndicator": [
-        ""
-      ],
-      "scorePercentile": "Y"
-    },
-    "summaries": "object",
-    "fraudShield": "Y",
-    "mla": "Y",
-    "ofacmsg": "Y",
-    "consumerIdentCheck": {
-      "getUniqueConsumerIdentifier": "Y",
-      "verifyPrimaryConsumerIdentifier": "Y",
-      "verifySecondaryConsumerIdentifier": "Y"
-    },
-    "joint": "N",
-    "paymentHistory84": "Y"
-  },
-  "customOptions": {
-    "optionId": [
-      ""
     ]
-  }
 }
