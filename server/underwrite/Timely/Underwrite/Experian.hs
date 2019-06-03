@@ -1,19 +1,30 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE NamedFieldPuns        #-}
 module Timely.Underwrite.Experian
-  where
+  ( VantageScore(..)
+  , Config(..)
+  , Error(..)
+  , Credentials(..)
+  , accessPool
+  , vantageScore
+  , toRequest
+  ) where
 
 
-import Control.Concurrent.MVar                 (MVar, putMVar, takeMVar)
-import Control.Exception                       (Exception, throwIO, catch)
+import Control.Exception                       (Exception, throwIO)
 import Control.Monad.IO.Class                  (MonadIO, liftIO)
 import Data.Aeson                              as Aeson (Result (..), Value, encode, fromJSON)
 import Data.ByteString.Lazy                    (ByteString)
 import Data.List                               as List (find)
 import Data.Maybe                              (listToMaybe)
+import Data.Model.Types                        as Model (valid, Address(..))
+import Data.Pool                               as Pool (Pool, createPool, withResource)
 import Data.Text                               (Text)
-import Network.Experian.CreditProfile          as CreditProfile (AccessToken, Credentials, authenticate, load, checkUnauthorized, AuthError(..))
-import Network.Experian.CreditProfile.Request  (Request (..))
+import Network.Experian.Address                as Exp (Address (Address), State (..), ZipCode (..))
+import Network.Experian.CreditProfile          as CreditProfile (AccessToken, Credentials(..), authenticate, load)
+import Network.Experian.CreditProfile.Request  as Request (AddOns (AddOns), Applicant (..), ConsumerPii (..), Dob (..), Names (..), PermissiblePurpose (..), Phone (..), PhoneType (..), Request (..), Requestor (Requestor), RiskModels (RiskModels), SSN (..), YN (..))
 import Network.Experian.CreditProfile.Response (CreditProfile (..), Response (..), RiskModel (..))
-import Timely.Accounts.Types.Customer          (Customer)
+import Timely.Underwrite.Types                 (Application (..))
 
 
 -- TODO warehouse full data set
@@ -23,9 +34,11 @@ newtype VantageScore = VantageScore Text
 
 
 data Config = Config
-  { endpoint    :: String
-  , credentials :: Credentials
-  }
+  { endpoint       :: String
+  , subscriberCode :: Text
+  , purposeType    :: Text
+  , credentials    :: Credentials
+  } deriving (Show)
 
 
 
@@ -36,26 +49,58 @@ data Error
 instance Exception Error
 
 
--- 0. Authenticate on startup, setting the mvar
--- 1. takeMVar - blocks until loaded
--- 2. attempt to load
--- 3. on auth failure, authenticate and repeat the request once (the inner function that actually loads without re-authenticating)
--- 4. putMVar - return the token that works to the mvar
-vantageScore :: MonadIO m => Config -> MVar AccessToken -> Customer -> m VantageScore
-vantageScore (Config endpoint _) tokVar customer = do
-  tok <- liftIO $ takeMVar tokVar
 
-  eval <- CreditProfile.load endpoint tok (toRequest customer)
-  case eval of
-    Left (Unauthorized _) -> error "NEED TO REAUTH"
-    Right val -> do
-      liftIO $ putMVar tokVar tok
-      parseVantageScore val
+-- TODO, test what happens if one expires!
+
+-- | A pool of access tokens, automatically created on demand
+accessPool :: Config -> IO (Pool AccessToken)
+accessPool Config {endpoint, credentials} =
+    Pool.createPool create destroy numStripes time numTokens
+  where
+    create = authenticate endpoint credentials
+    destroy _ = pure ()
+    numStripes = 1
+    time = 30*60 -- idle time: before we throw them away
+    numTokens = 2
 
 
 
-toRequest :: Customer -> Request
-toRequest = undefined
+
+vantageScore :: (MonadIO m) => Config -> Pool AccessToken -> Application -> m VantageScore
+vantageScore c@Config {endpoint} tokens app =
+  liftIO $ Pool.withResource tokens $ \tok -> do
+    val <- CreditProfile.load endpoint tok (toRequest c app)
+    parseVantageScore val
+
+
+
+toRequest :: Config -> Application -> Request
+toRequest Config { subscriberCode, purposeType } Application { phone, firstName, middleName, lastName, ssn, dateOfBirth, address } =
+  Request { consumerPii , requestor , permissiblePurpose , addOns , customOptions = Nothing, freezeOverride = Nothing, resellerInfo = Nothing }
+  where
+
+    consumerPii = ConsumerPii { primaryApplicant = applicant address, secondaryApplicant = Nothing }
+
+    applicant Model.Address {street1, street2, city, state, postalCode } = Applicant
+      { name = Names { firstName, lastName, middleName, generationCode = Nothing }
+      , dob = Just (Dob dateOfBirth)
+      , ssn = Just (SSN $ valid ssn)
+      , currentAddress = Exp.Address street1 street2 city (State $ valid state) (ZipCode $ valid postalCode)
+      , previousAddress = []
+      , driverslicense = Nothing
+      , phone = [ Phone (valid phone) C ]
+      , employment = Nothing
+      }
+
+    requestor = Requestor subscriberCode
+
+    permissiblePurpose = PermissiblePurpose purposeType Nothing Nothing
+
+    no = YN False
+    yes = YN True
+
+    addOns = AddOns (RiskModels ["V4"] yes) no no no no no no Nothing
+
 
 
 

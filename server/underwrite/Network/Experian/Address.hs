@@ -8,7 +8,7 @@ import GHC.Generics (Generic)
 
 data Address = Address
   { line1   :: Text
-  , line2   :: Text
+  , line2   :: Maybe Text
   , city    :: Text
   , state   :: State
   , zipCode :: ZipCode

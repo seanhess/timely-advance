@@ -4,8 +4,11 @@
 module Network.Experian.CreditProfile.Request where
 
 
-import Data.Aeson               (Options (..), ToJSON (..), Value (String), defaultOptions, genericToJSON)
+import Data.Aeson               (Options (..), ToJSON (..), Value (String), defaultOptions, genericToJSON, object, (.=))
 import Data.Text                (Text)
+import Data.Text                (pack)
+import Data.Time.Calendar       (Day)
+import Data.Time.Format         (defaultTimeLocale, formatTime)
 import GHC.Generics             (Generic)
 import Network.Experian.Address (Address, State)
 
@@ -54,9 +57,11 @@ data Names = Names
 instance ToJSON Names
 
 
-newtype Dob = Dob { dob :: Text }
+newtype Dob = Dob Day
   deriving (Show, Generic)
-instance ToJSON Dob
+instance ToJSON Dob where
+  toJSON (Dob d) =
+    object ["dob" .= (String $ pack $ formatTime defaultTimeLocale "%m%d%Y" d) ]
 
 
 newtype SSN = SSN { ssn :: Text }
@@ -130,14 +135,14 @@ instance ToJSON FreezeOverride
 
 
 data AddOns = AddOns
-  { directCheck        :: YN
-  , riskModels         :: RiskModels
+  { riskModels         :: RiskModels
+  , directCheck        :: YN
   , fraudShield        :: YN
   , mla                :: YN
   , ofacmsg            :: YN
-  , consumerIdentCheck :: Maybe ConsumerIdentCheck -- {}
   , joint              :: YN
   , paymentHistory84   :: YN
+  , consumerIdentCheck :: Maybe ConsumerIdentCheck -- {}
   -- , demographics       :: Text -- Empty
   -- , summaries          :: Text -- "object"
   } deriving (Show, Generic)

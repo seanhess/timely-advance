@@ -1,10 +1,9 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings          #-}
 module Network.Experian.CreditProfile
   ( Endpoint
   , AccessToken(..)
-  , Login(..)
   , Credentials(..)
   , AuthError(..)
   , authenticate
@@ -13,20 +12,20 @@ module Network.Experian.CreditProfile
   ) where
 
 
-import Control.Lens                            ((?~), (^.), (.~))
-import Control.Monad.IO.Class                  (MonadIO, liftIO)
-import Control.Exception (throwIO, catch, try, SomeException, Exception)
-import Data.Aeson                              (FromJSON, ToJSON (toJSON), Value)
-import Data.Function                           ((&))
-import Data.ByteString (ByteString)
-import Data.String.Conversions                 (cs)
-import Data.Text                               (Text)
-import GHC.Generics                            (Generic)
-import Network.Experian.CreditProfile.Request  (Request)
-import Network.Wreq                            as Wreq (asJSON, auth, defaults, oauth2Bearer, postWith, responseBody, header, responseStatus)
-import Network.HTTP.Client (HttpExceptionContent(..), HttpException(..))
-import System.FilePath                         ((</>))
-import Network.HTTP.Types.Status (status401)
+import Control.Exception                      (Exception, catch, throwIO)
+import Control.Lens                           ((.~), (?~), (^.))
+import Control.Monad.IO.Class                 (MonadIO, liftIO)
+import Data.Aeson                             as Aeson (FromJSON, ToJSON (toJSON), Value, object, (.=))
+import Data.ByteString                        (ByteString)
+import Data.Function                          ((&))
+import Data.String.Conversions                (cs)
+import Data.Text                              (Text)
+import GHC.Generics                           (Generic)
+import Network.Experian.CreditProfile.Request (Request)
+import Network.HTTP.Client                    (HttpException (..), HttpExceptionContent (..))
+import Network.HTTP.Types.Status              (status401)
+import Network.Wreq                           as Wreq (asJSON, auth, defaults, header, oauth2Bearer, postWith, responseBody, responseStatus)
+import System.FilePath                        ((</>))
 
 
 
@@ -42,17 +41,11 @@ newtype AccessToken = AccessToken Text
   deriving (Show, Eq, FromJSON)
 
 
-data Login = Login
-  { username :: Text
-  , password :: Text
-  } deriving (Show, Generic)
-instance ToJSON Login
-
-
 data Credentials = Credentials
-  { clientId :: Text
+  { clientId     :: Text
   , clientSecret :: Text
-  , login :: Login
+  , username     :: Text
+  , password     :: Text
   } deriving (Show)
 
 
@@ -68,14 +61,11 @@ authenticate endpoint creds = do
 
   let opts = defaults & header "client_id" .~ [cs $ clientId creds]
                       & header "client_secret" .~ [cs $ clientSecret creds]
+  let body = object ["username" .= username creds, "password" .= password creds]
 
-  res <- liftIO $ Wreq.postWith opts url (toJSON (login creds)) >>= asJSON
-  pure $ AccessToken $ access_token $ res ^. responseBody
-
-
--- TODO return something different when we get an authentication failure 
--- rather than just blowing up.
--- 401 access token is invalid
+  res <- liftIO $ Wreq.postWith opts url body >>= asJSON
+  let tok = AccessToken $ access_token $ res ^. responseBody
+  pure tok
 
 
 data AuthError = Unauthorized ByteString
@@ -83,10 +73,9 @@ data AuthError = Unauthorized ByteString
 instance Exception AuthError
 
 
-
-load :: MonadIO m => Endpoint -> AccessToken -> Request -> m (Either AuthError Value)
+load :: MonadIO m => Endpoint -> AccessToken -> Request -> m Value
 load endpoint tok req = do
-  liftIO $ try (load' endpoint tok req `catch` checkUnauthorized)
+  liftIO $ load' endpoint tok req `catch` checkUnauthorized
 
 
 load' :: Endpoint -> AccessToken -> Request -> IO Value

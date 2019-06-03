@@ -2,7 +2,10 @@
 module Timely.Underwrite.Types where
 
 import Data.Model.Money
-import GHC.Generics     (Generic)
+import Data.Model.Types   (Address (..), Phone, SSN, Valid)
+import Data.Text          (Text)
+import Data.Time.Calendar (Day)
+import GHC.Generics       (Generic)
 
 
 data Result
@@ -22,3 +25,15 @@ data Denial = Denial
     { denial :: DenialReason
     } deriving (Generic, Show, Eq)
 
+
+
+data Application = Application
+    { phone       :: Valid Phone
+    , firstName   :: Text
+    , middleName  :: Maybe Text
+    , lastName    :: Text
+    , email       :: Text
+    , ssn         :: Valid SSN
+    , dateOfBirth :: Day
+    , address     :: Address
+    }

@@ -8,44 +8,44 @@
 module Timely.Worker.AccountOnboard where
 
 
-import           Control.Effects                    (MonadEffects)
-import           Control.Effects.Async              (Async)
-import qualified Control.Effects.Async              as Async
-import           Control.Effects.Early              (Early)
-import qualified Control.Effects.Early              as Early
-import           Control.Effects.Log                (Log)
-import qualified Control.Effects.Log                as Log
-import           Control.Effects.Signal             (Throw, throwSignal)
-import qualified Control.Effects.Signal             as Signal
-import           Control.Effects.Time               (Time, UTCTime (..))
-import qualified Control.Effects.Time               as Time
-import           Control.Exception                  (Exception)
-import           Control.Monad.Catch                (MonadCatch, MonadThrow (..), SomeException (..), catch)
-import           Data.Function                      ((&))
-import qualified Data.List                          as List
-import           Data.Model.Guid                    as Guid
-import           Data.Model.Id                      (Id, Token)
-import           Data.Model.Types                   (Address (..), Phone, Valid)
-import           Data.Text                          as Text
-import           Network.AMQP.Worker                (Queue)
-import qualified Network.AMQP.Worker                as Worker hiding (bindQueue, publish, worker)
-import           Timely.Accounts                    (Accounts, TransactionRow)
-import qualified Timely.Accounts                    as Accounts
-import           Timely.Accounts.Application        (Applications)
-import qualified Timely.Accounts.Application        as Applications
-import           Timely.Accounts.Budgets            (Budgets)
-import qualified Timely.Accounts.Budgets            as Budgets
-import           Timely.Accounts.Types              (Account (..), AppBank, Application (..), BankAccount (bankAccountId), Customer (..), Onboarding (..), isChecking, toBankAccount)
-import qualified Timely.Accounts.Types.Transaction  as Transaction
-import qualified Timely.Actions.Transactions        as Transactions
-import qualified Timely.App                         as App
-import           Timely.Bank                        (Banks, Dwolla, Identity (..), Names (..))
-import qualified Timely.Bank                        as Bank
-import qualified Timely.Events                      as Events
-import           Timely.Transfers                   (AccountInfo (..), TransferAccount, Transfers)
-import qualified Timely.Transfers                   as Transfers
-import           Timely.Underwrite                (Approval (..), Underwrite (..))
-import qualified Timely.Underwrite                as Underwrite
+import           Control.Effects                   (MonadEffects)
+import           Control.Effects.Async             (Async)
+import qualified Control.Effects.Async             as Async
+import           Control.Effects.Early             (Early)
+import qualified Control.Effects.Early             as Early
+import           Control.Effects.Log               (Log)
+import qualified Control.Effects.Log               as Log
+import           Control.Effects.Signal            (Throw, throwSignal)
+import qualified Control.Effects.Signal            as Signal
+import           Control.Effects.Time              (Time, UTCTime (..))
+import qualified Control.Effects.Time              as Time
+import           Control.Exception                 (Exception)
+import           Control.Monad.Catch               (MonadCatch, MonadThrow (..), SomeException (..), catch)
+import           Data.Function                     ((&))
+import qualified Data.List                         as List
+import           Data.Model.Guid                   as Guid
+import           Data.Model.Id                     (Id, Token)
+import           Data.Model.Types                  as Model (Address (..), Phone, Valid)
+import           Data.Text                         as Text
+import           Network.AMQP.Worker               (Queue)
+import qualified Network.AMQP.Worker               as Worker hiding (bindQueue, publish, worker)
+import           Timely.Accounts                   (Accounts, TransactionRow)
+import qualified Timely.Accounts                   as Accounts
+import           Timely.Accounts.Application       (Applications)
+import qualified Timely.Accounts.Application       as Apps
+import           Timely.Accounts.Budgets           (Budgets)
+import qualified Timely.Accounts.Budgets           as Budgets
+import           Timely.Accounts.Types             as Accounts (Account (..), AppBank, Application (..), BankAccount (bankAccountId), Customer (..), Onboarding (..), isChecking, toBankAccount)
+import qualified Timely.Accounts.Types.Transaction as Transaction
+import qualified Timely.Actions.Transactions       as Transactions
+import qualified Timely.App                        as App
+import           Timely.Bank                       (Banks, Dwolla, Identity (..), Names (..))
+import qualified Timely.Bank                       as Bank
+import qualified Timely.Events                     as Events
+import           Timely.Transfers                  (AccountInfo (..), TransferAccount, Transfers)
+import qualified Timely.Transfers                  as Transfers
+import           Timely.Underwrite                 (Approval (..), Underwrite (..))
+import qualified Timely.Underwrite                 as Underwrite
 
 
 
@@ -79,7 +79,7 @@ handler app@(Application { accountId, phone }) = do
 
     onException :: (MonadEffects '[Applications] m, MonadThrow m) => SomeException -> m ()
     onException err = do
-      Applications.markResultOnboarding accountId Error
+      Apps.markResultOnboarding accountId Error
       throwM err
 
 
@@ -91,9 +91,9 @@ accountOnboard
 accountOnboard app accountId phone = do
     now                      <- Time.currentTime
     (bankToken, bankItemId)  <- Bank.authenticate (publicBankToken app)
-    appBankId                <- Applications.saveBank accountId bankItemId
+    appBankId                <- Apps.saveBank accountId bankItemId
     customer                 <- newCustomer app now bankToken
-    (Approval amount)        <- underwriting accountId customer
+    (Approval amount)        <- underwriting accountId phone customer
     (checking, bankAccounts) <- loadBankAccounts accountId bankToken now
     transId                  <- initTransfers customer bankToken checking
 
@@ -103,7 +103,7 @@ accountOnboard app accountId phone = do
 
     createDefaultBudgets accountId trans
 
-    Applications.markResultOnboarding accountId Complete
+    Apps.markResultOnboarding accountId Complete
     Log.info "complete"
 
 
@@ -154,16 +154,29 @@ newCustomer app now bankToken = do
 
 underwriting
   :: ( MonadEffects '[Underwrite, Log, Applications, Early ()] m )
-  => Guid Account -> Customer -> m Approval
-underwriting accountId cust = do
-    res <- Underwrite.newCustomer cust
+  => Guid Account -> Valid Phone -> Customer -> m Approval
+underwriting accountId phone cust = do
+    res <- Underwrite.new $ toApplication phone cust
     Log.debug ("underwriting", res)
-    Applications.saveResult accountId res
+    Apps.saveResult accountId res
     case res of
       Underwrite.Denied  _ ->
         Early.earlyReturn ()
       Underwrite.Approved approval ->
         pure approval
+  where
+
+    toApplication phone Customer { firstName, middleName, lastName, email, ssn, dateOfBirth, street1, street2, city, state, postalCode } =
+      Underwrite.Application
+        { Underwrite.phone = phone
+        , Underwrite.firstName = firstName
+        , Underwrite.middleName = middleName
+        , Underwrite.lastName = lastName
+        , Underwrite.email = email
+        , Underwrite.ssn = ssn
+        , Underwrite.dateOfBirth = dateOfBirth
+        , Underwrite.address = Address street1 street2 city state postalCode
+        }
 
 
 
@@ -196,7 +209,7 @@ loadTransactions
 loadTransactions accountId bankToken appBankId checking (UTCTime today _) = do
     Log.info "load transactions"
     -- Waits for the webhook to update the transactions before continuing
-    Async.poll second $ Applications.findTransactions appBankId
+    Async.poll second $ Apps.findTransactions appBankId
 
     ts <- Bank.loadTransactionsDays bankToken (bankAccountId checking) year today
     Log.debug ("transactions", List.length ts)

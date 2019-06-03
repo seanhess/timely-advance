@@ -4,56 +4,43 @@
 module Test.Underwrite.Experian where
 
 
--- import           Test.Tasty
--- import           Test.Tasty.HUnit
-import Network.Experian.Address               (Address (Address), State (..), ZipCode (..))
-import Network.Experian.CreditProfile.Request (AddOns (..), Applicant (..), Dob (..), Names (..), PermissiblePurpose (..), Request (..), Requestor (..), RiskModels (..), SSN (..), YN (..), ConsumerPii(..))
+import Data.Aeson                             (Value (String), toJSON, object, (.=))
+import Data.Model.Types                       (Address (..))
+import Data.Model.Valid                       (Valid (..))
+import Network.Experian.CreditProfile.Request (Dob (..))
+import Test.Dates                             (day)
+-- import Test.Tasty
+import Test.Tasty.HUnit
 import Test.Tasty.Monad
-import Timely.Underwrite.Experian ()
+import Timely.Underwrite                      (Application (..))
+import Timely.Underwrite.Experian             (Config (..), Credentials)
 
 
 tests :: Tests ()
 tests = do
-  group "TODO" $ test "TODO" $ pure ()
---     group "clarity"  Test.Underwrite.Clarity.tests
---     group "experian" Test.Underwrite.Experian.tests
+  group "applicant" $
+    test "dob should serialize" $ do
+      toJSON (Dob (day "1937-11-01")) @?= object ["dob" .= String "11011937"]
 
 
+config :: Credentials -> Config
+config = Config "https://uat-us-api.experian.com/" "2912775" "0B"
 
 
-request :: Request
-request = Request {consumerPii, requestor, permissiblePurpose, addOns, customOptions, freezeOverride, resellerInfo}
- where
-    consumerPii = ConsumerPii applicant Nothing
-
-    applicant = Applicant
-      { name = Names "Applegate" "Timothy" (Just "A") Nothing
-      , ssn = Just (SSN "666204234")
-      , dob = Just (Dob "11101937")
-      , currentAddress = Address "2209 KINGSTON DR" "" "LAWRENCE" (State "KS") (ZipCode "660491614")
-      , previousAddress = []
-      , driverslicense = Nothing
-      , phone = []
-      , employment = Nothing
+application :: Application
+application = Application
+  { phone = Valid "8014139377"
+  , firstName = "Timothy"
+  , middleName = Just "A"
+  , lastName = "Applegate"
+  , email = "tim@apples.com"
+  , ssn = Valid "666204234"
+  , dateOfBirth = day "1937-11-01"
+  , address = Address
+      { street1 = "2209 KINGSTON DR"
+      , street2 = Nothing
+      , city = "LAWRENCE"
+      , state = Valid "KS"
+      , postalCode = Valid "660491614"
       }
-
-    requestor = Requestor "2912775"
-
-    permissiblePurpose = PermissiblePurpose "0B" Nothing Nothing
-
-    addOns = AddOns
-      { directCheck        = YN False
-      , riskModels         = RiskModels ["V4"] (YN True)
-      , fraudShield        = YN False
-      , mla                = YN False
-      , ofacmsg            = YN False
-      , consumerIdentCheck = Nothing
-      , joint              = YN False
-      , paymentHistory84   = YN False
-      }
-
-    customOptions = Nothing
-
-    freezeOverride = Nothing
-
-    resellerInfo = Nothing
+  }

@@ -5,7 +5,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 module Timely.Underwrite
   ( Underwrite(..)
-  , newCustomer
+  , new
   , implementMock
   , module Timely.Underwrite.Types
   ) where
@@ -14,7 +14,6 @@ import           Control.Effects           (Effect (..), MonadEffect (..), Runti
 import qualified Control.Effects           as Effects
 import qualified Data.Model.Money          as Money
 import           GHC.Generics              (Generic)
-import           Timely.Accounts.Types     (Customer (..))
 import           Timely.Underwrite.Types
 
 
@@ -22,14 +21,14 @@ import           Timely.Underwrite.Types
 data Underwrite m = UnderwriteMethods
     -- we need a lot more information than this
     -- TODO storage? Save everything
-    { _newCustomer :: Customer -> m Result
+    { _new :: Application -> m Result
     } deriving (Generic)
 
 instance Effect Underwrite
 
 
-newCustomer :: MonadEffect Underwrite m => Customer -> m Result
-newCustomer = _newCustomer effect
+new :: MonadEffect Underwrite m => Application -> m Result
+new = _new effect
 
 
 
@@ -44,7 +43,7 @@ implementMock =
 --     run (New a) = underwrite a
 
 
-mockUnderwrite :: Monad m => Customer -> m Result
+mockUnderwrite :: Monad m => Application -> m Result
 mockUnderwrite app = pure $ mock $ email app
   where
     mock "100"    = Approved $ Approval $ Money.fromFloat 100.00
