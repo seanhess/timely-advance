@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE NamedFieldPuns        #-}
 module Timely.Underwrite.Experian
   ( VantageScore(..)
