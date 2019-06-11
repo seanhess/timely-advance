@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Test.Evaluate.Projection where
+module Test.Evaluate.Timeline where
 
 import qualified Data.List                          as List
 import qualified Data.Model.Money                   as Money
@@ -10,12 +10,12 @@ import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
 import           Timely.Evaluate.Health.Budget      (Budget (Budget))
 import qualified Timely.Evaluate.Health.Event       as Event
-import           Timely.Evaluate.Health.Projection  as Projection
+import           Timely.Evaluate.Health.Timeline    as Timeline
 import qualified Timely.Evaluate.Health.Transaction as Trans
-import           Timely.Evaluate.Schedule           (DayOfMonth (DayOfMonth), Schedule (Monthly, Weekly), DayOfWeek(..))
+import           Timely.Evaluate.Schedule           (DayOfMonth (DayOfMonth), DayOfWeek (..), Schedule (Monthly, Weekly))
 
 
-specProjection = do
+specTimeline = do
   ts <- runTests tests
   defaultMain $ testGroup "tests" ts
 
@@ -198,7 +198,7 @@ testEvents = do
     let ts = evnts zero (day "2019-03-05") [rent5] [rent5]
 
     -- Scenario: today is rent day, we just bought a hamburger, but rent hasn't hit yet. We can't issue an advance in time to help them out with rent, so we won't include it the calculation.
-    -- Scenario: today is rent day, and rent just hit. It's factored into the balance. 
+    -- Scenario: today is rent day, and rent just hit. It's factored into the balance.
     test "should be next month" $ do
       List.map (Trans.date . Event.transaction) ts @?= [day "2019-04-05", day "2019-04-05"]
 

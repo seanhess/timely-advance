@@ -2,7 +2,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE TypeApplications      #-}
-module Timely.Evaluate.Health.Projection where
+module Timely.Evaluate.Health.Timeline where
 
 import           Data.Aeson                         (ToJSON)
 import           Data.Function                      ((&))
@@ -21,22 +21,22 @@ import qualified Timely.Evaluate.Schedule           as Schedule
 
 
 
-data Projection = Projection
+data Timeline = Timeline
   { balance :: Money
   , lowest  :: Money
   , events  :: [Event]
   } deriving (Show, Eq, Generic)
 
-instance ToJSON Projection
+instance ToJSON Timeline
 
 
 
 
 
-projection :: Day -> Money -> [Budget Income] -> [Budget Expense] -> Projection
-projection now balance pays bills =
+timeline :: Day -> Money -> [Budget Income] -> [Budget Expense] -> Timeline
+timeline now balance pays bills =
   let evs = allEvents balance $ allTransactions now pays bills
-  in Projection
+  in Timeline
       { balance = balance
       , lowest = lowestBalance balance evs
       , events = evs

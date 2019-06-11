@@ -23,7 +23,7 @@ import qualified Timely.Accounts.Budgets            as Budgets
 import           Timely.Accounts.Types              (Account, BankAccount (..), TransactionRow)
 import qualified Timely.Accounts.Types.BankAccount  as BankAccount
 import qualified Timely.Actions.Transactions        as Transactions
-import           Timely.Evaluate.Health             (Projection)
+import           Timely.Evaluate.Health             (Timeline)
 import qualified Timely.Evaluate.Health             as Health
 import           Timely.Evaluate.Health.Transaction (Expense, Income)
 import           Timely.Types.Update                (Error (..))
@@ -37,7 +37,7 @@ import           Timely.Types.Update                (Error (..))
 
 
 data AccountHealth = AccountHealth
-  { projection :: Projection
+  { timeline :: Timeline
   } deriving (Show, Eq, Generic)
 
 instance ToJSON AccountHealth
@@ -69,7 +69,7 @@ analyzeWith now BankAccount {balance} pays bills _ = do
     -- take any action if things are settling today. We can only move
     -- one day out
     AccountHealth $
-       Health.projection now balance
+       Health.timeline now balance
          (map Meta.value pays)
          (map Meta.value bills)
 

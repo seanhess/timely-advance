@@ -1,8 +1,8 @@
 module Timely.Evaluate.Health
-  ( Projection(..)
+  ( Timeline(..)
   , Event(..)
-  , projection
+  , timeline
   ) where
 
-import Timely.Evaluate.Health.Projection
+import Timely.Evaluate.Health.Timeline
 import Timely.Evaluate.Health.Event

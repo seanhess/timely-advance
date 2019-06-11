@@ -10,7 +10,7 @@ import           Test.Dates                        (parseDay, parseTime)
 import qualified Test.Evaluate.History             as History
 import qualified Test.Evaluate.Needed              as Needed
 import qualified Test.Evaluate.Schedule            as Schedule
-import qualified Test.Evaluate.Projection          as Projection
+import qualified Test.Evaluate.Timeline            as Timeline
 import qualified Test.Evaluate.Offer               as Offer
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
@@ -27,7 +27,7 @@ tests = do
     group "history" History.tests
     group "schedule" Schedule.tests
     group "needed" Needed.tests
-    group "projection" Projection.tests
+    group "timeline" Timeline.tests
 
 
 

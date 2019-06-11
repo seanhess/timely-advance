@@ -40,7 +40,7 @@ import qualified Timely.App                         as App
 import           Timely.Bank                        (Access, Banks, Token)
 import qualified Timely.Bank                        as Bank
 import           Timely.Evaluate.Health.Budget      (Budget (..))
-import           Timely.Evaluate.Health.Projection  (Projection (..))
+import           Timely.Evaluate.Health.Timeline    (Timeline (..))
 import           Timely.Evaluate.Health.Transaction (Income)
 import qualified Timely.Evaluate.Offer              as Offer
 import qualified Timely.Evaluate.Schedule           as Schedule
@@ -96,7 +96,7 @@ accountUpdate account@(Account{ accountId, bankToken }) = do
     let health = AccountHealth.analyzeWith today check pays bills trans
 
     pay    <- primaryIncome accountId pays
-    checkAdvance account (projection health) now today pay
+    checkAdvance account (timeline health) now today pay
 
 
 
@@ -119,12 +119,12 @@ primaryIncome accountId pays =
 checkAdvance
   :: ( MonadEffects '[Log, Advances, Notify] m
      )
-  => Account -> Projection -> UTCTime -> Day -> Budget Income -> m ()
-checkAdvance Account {accountId, transferId, phone, credit} proj now today pay = do
+  => Account -> Timeline -> UTCTime -> Day -> Budget Income -> m ()
+checkAdvance Account {accountId, transferId, phone, credit} timeline now today pay = do
     offer  <- Advances.findOffer  accountId
     active <- Advances.findActive accountId
 
-    case Offer.check credit offer active (lowest proj) now of
+    case Offer.check credit offer active (lowest timeline) now of
       Nothing -> pure ()
       Just amount -> do
         offerAdvance today accountId transferId phone pay amount
