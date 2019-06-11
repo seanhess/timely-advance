@@ -96,3 +96,6 @@ allTransactions =
   , TransactionRow {transactionId = Id "oBPpMEgndKTrV5LP5WV4SbVM6glKbJCRMRqdx", accountId = "acc-DgKodQpnuLMOgkRgoR4d", date = parseDay "2018-03-24", category = Category "Food and Drink | Restaurants | Coffee Shop", pending = False, amount = Money 433, name = "Starbucks"}
   , TransactionRow {transactionId = Id "L51ELl7DxdS5PgZNgoPwskRAKlLXk9HPQPjXd", accountId = "acc-DgKodQpnuLMOgkRgoR4d", date = parseDay "2018-03-23", category = Category "Food and Drink | Restaurants", pending = False, amount = Money 8940, name = "SparkFun"}
   ]
+
+
+

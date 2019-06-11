@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE OverloadedStrings     #-}
 module Timely.Evaluate.History where
 
@@ -7,14 +8,15 @@ module Timely.Evaluate.History where
 import           Data.Aeson                         (ToJSON)
 import           Data.Function                      ((&))
 import qualified Data.List                          as List
-import           Data.Model.Money                   (Money, fromCents, toCents)
+import           Data.Maybe                         (mapMaybe)
+import           Data.Model.Money                   as Money (Money, fromCents, toCents, toFloat, fromFloat)
 import           Data.Number.Abs                    (Abs (value), absolute)
 import           Data.Text                          (Text)
 import           GHC.Generics                       (Generic)
+import           Timely.Evaluate.Health             (Budget, Expense, Transaction, isBudget)
+import qualified Timely.Evaluate.Health.Transaction as Trans
 import           Timely.Evaluate.Schedule           (Schedule)
 import qualified Timely.Evaluate.Schedule           as Schedule
-import           Timely.Evaluate.Health.Transaction (Transaction)
-import qualified Timely.Evaluate.Health.Transaction as Transaction
 
 
 
@@ -39,14 +41,14 @@ transAverage ts =
 
 transTotal :: [Transaction a] -> Abs Money
 transTotal =
-  absolute . sum . map (abs . Transaction.amount)
+  absolute . sum . map (abs . Trans.amount)
 
 
 
 
 groups :: [Transaction a] -> [Group a]
 groups ts =
-  ts & List.sortOn Transaction.name
+  ts & List.sortOn Trans.name
      & List.groupBy nameEq
      & List.map toGroup
      & List.sortOn (value . total)
@@ -54,19 +56,53 @@ groups ts =
 
   where
     nameEq :: Transaction a -> Transaction a -> Bool
-    nameEq t1 t2 = Transaction.name t1 == Transaction.name t2
+    nameEq t1 t2 = Trans.name t1 == Trans.name t2
 
 
     toGroup :: [Transaction a] -> Group a
     toGroup ts@(t:_) =
       Group
-        (Transaction.name t)
+        (Trans.name t)
         (transAverage ts)
         (transTotal ts)
-        (Schedule.schedule $ map Transaction.date ts)
+        (Schedule.schedule $ map Trans.date ts)
         ts
     -- this shouldn't happen
     toGroup []       = Group "" (absolute $ fromCents 0) (absolute $ fromCents 0) Nothing []
 
 
 
+
+
+-- | only transactions that are discretionary
+
+
+data Spending
+
+
+isSpending :: [Budget Expense] -> Transaction Expense -> Bool
+isSpending bs t =
+  not $ any (\b -> isBudget b t) bs
+
+
+toSpending :: Transaction Expense -> Transaction Spending
+toSpending t =
+  Trans.any (Trans.name t) (Trans.amount t) (Trans.date t)
+
+
+
+spending :: [Budget Expense] -> [Transaction Expense] -> [Transaction Spending]
+spending bs ts =
+  mapMaybe ifSpending ts
+  where
+    ifSpending :: Transaction Expense -> Maybe (Transaction Spending)
+    ifSpending t =
+      if isSpending bs t
+        then Just (toSpending t)
+        else Nothing
+
+
+dailySpending :: Int -> [Transaction Spending] -> Money
+dailySpending n ts =
+  let total = sum $ List.map Trans.amount ts
+  in Money.fromFloat $ (Money.toFloat total) / (fromIntegral n)

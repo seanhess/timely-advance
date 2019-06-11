@@ -32,5 +32,6 @@ expense n a d = Transaction n d (abs a)
 income :: Text -> Money -> Day -> Transaction Income
 income n a d = Transaction n d (abs a)
 
-any :: Text -> Money -> Day -> Transaction Any
+any :: Text -> Money -> Day -> Transaction a
 any n a d = Transaction n d a
+
