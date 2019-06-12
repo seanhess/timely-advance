@@ -19,3 +19,9 @@ data Budget a = Budget
 
 instance ToJSON (Budget a)
 instance FromJSON (Budget a)
+
+
+-- Event?
+-- Transaction?
+-- Transaction = Scheduled Budget
+-- Event
