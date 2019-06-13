@@ -1,18 +1,19 @@
+{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Evaluate.Timeline where
 
-import qualified Data.List                          as List
-import qualified Data.Model.Money                   as Money
-import           Data.Number.Abs                    (absolute)
-import           Test.Dates                         (day)
-import           Test.Tasty
-import           Test.Tasty.HUnit
-import           Test.Tasty.Monad
-import           Timely.Evaluate.Health.Budget      (Budget (Budget))
-import qualified Timely.Evaluate.Health.Event       as Event
-import           Timely.Evaluate.Health.Timeline    as Timeline
-import qualified Timely.Evaluate.Health.Transaction as Trans
-import           Timely.Evaluate.Schedule           (DayOfMonth (DayOfMonth), DayOfWeek (..), Schedule (Monthly, Weekly))
+import Data.Function                   ((&))
+import Data.Model.Money                as Money (money)
+import Data.Number.Abs                 (Abs (value), absolute)
+import Data.Time.Calendar              (Day)
+import Test.Dates                      (day)
+import Test.Tasty
+import Test.Tasty.HUnit
+import Test.Tasty.Monad
+import Timely.Evaluate.Health.Budget   (Budget (Budget))
+import Timely.Evaluate.Health.Daily    as Daily (Daily (..), DailyBalance (..))
+import Timely.Evaluate.Health.Timeline as Timeline
+import Timely.Evaluate.Schedule        (DayOfMonth (DayOfMonth), DayOfWeek (..), Schedule (Monthly, Weekly))
 
 
 specTimeline = do
@@ -23,234 +24,148 @@ specTimeline = do
 -- I want to do some high-level tests here
 tests :: Tests ()
 tests = do
-  group "trans" testTrans
-  group "events" testEvents
+  -- group "trans" testTrans
+  -- group "events" testEvents
+  group "timeline" testTimeline
+  group "daily balance" testDailyBalance
   group "lowestBalance" testLowestBalance
+
+
+
+testTimeline :: Tests ()
+testTimeline = do
+  group "dates" $ do
+    test "one day if the same" $ do
+      let ![d] = timeline day1 day1 spend0 []
+      date d @?= day1
+
+    test "no days if end < start" $ do
+      timeline day2 day1 spend0 [] @?= []
+
+    test "two days" $ do
+      fmap date (timeline day1 day2 spend0 []) @?= [day1, day2]
+
+  group "bills" $ do
+    test "bill tomorrow" $ do
+      let ![_, d5] = timeline day4 day5 spend0 [rent5]
+      date d5     @?= day5
+      spending d5 @?= spend0
+      bills d5    @?= [rent5]
+      dailyTotal d5 @?= absolute rentAmt
+
+    test "two bills on the 5th" $ do
+      -- 3-05 is Tuesday
+      let billT = Budget "bill" (Weekly Tuesday) (absolute billAmtWeek)
+      let ![_, d5] = timeline day4 day5 spend0 [rent5, billT]
+      date d5     @?= day5
+      bills d5    @?= [rent5, billT]
+      dailyTotal d5 @?= (absolute $ billAmtWeek + rentAmt)
+
+    test "two bills, week and 5th" $ do
+      -- 3-04 is Monday
+      let billM = Budget "bill" (Weekly Monday) (absolute billAmtWeek)
+      let ![_, d4, d5] = timeline day3 day5 spend0 [rent5, billM]
+      date d4 @?= day4
+      date d5 @?= day5
+      dailyTotal d4 @?= absolute billAmtWeek
+      dailyTotal d5 @?= absolute rentAmt
+
+
+  group "totals" $ do
+    test "daily spending, no bills" $ do
+      fmap spending (timeline day2 day3 spend30 []) @?= [spend30, spend30]
+
+    test "daily spending, with bills" $ do
+      fmap spending (timeline day4 day5 spend30 [rent5]) @?= [spend30, spend30]
+
+    test "daily total, no bills" $ do
+      fmap dailyTotal (timeline day4 day5 spend30 [rent5]) @?= [spend30, absolute (value spend30 + rentAmt)]
+
+    test "daily total, no spend" $ do
+      fmap dailyTotal (timeline day4 day5 spend0 [rent5]) @?= [absolute $ money 0, absolute rentAmt]
+
+
+
+testDailyBalance :: Tests ()
+testDailyBalance = do
+  let bal = money 100
+
+  test "empty" $ do
+    dailyBalances (money 100) [] @?= []
+
+  test "no spend, no bills" $ do
+    fmap balance (dailyBalances bal [Daily day1 spend0 []]) @?= [bal]
+
+  test "spending" $ do
+    fmap balance (dailyBalances bal [Daily day1 spend30 []]) @?= [bal - value spend30]
+
+  test "bill" $ do
+    fmap balance (dailyBalances bal [Daily day5 spend0 [billMon]]) @?= [bal - billAmtWeek]
+
+  test "spending + bill" $ do
+    fmap balance (dailyBalances bal [Daily day5 spend30 [billMon]]) @?= [bal - billAmtWeek - value spend30]
+
+  test "multiple days" $ do
+    let ds = [ Daily day4 spend30 [billMon]
+             , Daily day5 spend30 [rent5]
+             , Daily day6 spend30 []
+             ]
+        b1 = bal - billAmtWeek - value spend30
+        b2 = b1 - rentAmt - value spend30
+        b3 = b2 - value spend30
+    fmap balance (dailyBalances bal ds) @?= [b1, b2, b3]
+
 
 
 
 testLowestBalance :: Tests ()
 testLowestBalance = do
-  let bal = Money.fromFloat 100
-  let evnts = \bal d ps bs -> allEvents bal $ allTransactions d ps bs
-  let zero = Money.fromFloat 0
-  let lowest = \b d ps bs -> lowestBalance b (evnts b d ps bs)
+  let bal = money 100.00
+  let minbal = \start end spend bills balance -> timeline start end spend bills & dailyBalances balance & minimumBalance balance
 
-  group "single event" $ do
-    test "should be bal - rentAmt" $ do
-      lowest bal (day "2019-03-02") [] [rent5] @?= bal - rentAmt
+  -- let evnts = \bal d ps bs -> allEvents bal $ allTransactions d ps bs
+  -- let lowest = \b d ps bs -> lowestBalance b (evnts b d ps bs)
 
-    test "should be bal" $ do
-      lowest bal (day "2019-03-02") [pay5] [] @?= bal
+  test "empty daily balance" $ do
+    minimumBalance bal [] @?= bal
 
-  group "rent, then pay" $ do
-    test "should be low" $ do
-      lowest bal (day "2019-03-02") [pay1] [rent5] @?= bal - rentAmt
+  test "high daily balance" $ do
+    minimumBalance bal [DailyBalance undefined (money 200)] @?= bal
 
+  test "small daily balance" $ do
+    minimumBalance bal [DailyBalance undefined (money 50)] @?= money 50
 
-  group "pay, then rent" $ do
-    test "bills are bigger than pay, lowest after bills" $ do
-      lowest bal (day "2019-03-06") [pay1] [rent5, rent5, rent5] @?= sum [bal, payAmt, -rentAmt, -rentAmt, -rentAmt]
+  test "single bill, no spending" $ do
+    minbal day1 day10 spend0 [rent5] bal @?= bal - rentAmt
 
+  test "no bills, no spending" $ do
+    minbal day1 day10 spend0 [] bal @?= bal
 
-  group "pay is bigger than bills, lowest is balance" $ do
-    test "should be ok" $ do
-      let low = Money.fromFloat 100
-      lowest low (day "2019-03-06") [pay1] [rent5] @?= low
+  test "no bills, spending" $ do
+    minbal day1 day2 spend30 [] bal @?= bal - (value spend30 * 2)
 
+  test "bills and spending" $ do
+    minbal day4 day5 spend30 [rent5] bal @?= bal - (value spend30 * 2) - rentAmt
 
-  group "monthly rent, montly pay" $ do
+  test "multipe bills and spending" $ do
+    minbal day1 day5 spend30 [rent5, billMon] bal @?= bal - (value spend30 * 5) - rentAmt - billAmtWeek
 
-    test "just paid, due soon" $ do
-      lowest payAmt (day "2019-03-02") [pay1] [rent5] @?= sum [payAmt, -rentAmt]
+  test "same day skips due date" $ do
+    minbal day5 day6 spend30 [rent5] bal @?= bal - (value spend30 * 2)
 
-    test "payday, due soon, paycheck landed" $ do
-      lowest payAmt (day "2019-03-01") [pay1] [rent5] @?= sum [payAmt, -rentAmt]
 
-    test "payday, due soon, paycheck not landed" $ do
-      lowest zero (day "2019-03-01") [pay1] [rent5] @?= -rentAmt
 
-    test "just before payday" $ do
-      lowest bal (day "2019-02-28") [pay1] [rent5] @?= bal
+day1 = day "2019-03-01" :: Day
+day2 = day "2019-03-02" :: Day
+day3 = day "2019-03-03" :: Day
+day4 = day "2019-03-04" :: Day
+day5 = day "2019-03-05" :: Day
+day6 = day "2019-03-06" :: Day
+day10 = day "2019-03-10" :: Day
 
 
-  group "monthly rent, weekly paychecks" $ do
-    test "one more paycheck" $ do
-      -- 03-01 = Friday, 03-04 = Monday
-      lowest bal (day "2019-03-01") [payMon] [rent5] @?= sum [bal, payAmtWeek, -rentAmt]
-
-    test "no more paychecks" $ do
-      -- 03-04 = Monday
-      lowest bal (day "2019-03-04") [payMon] [rent5] @?= sum [bal, -rentAmt]
-
-    test "mid month" $ do
-      -- 3 more paychecks but balance is lowest
-      lowest bal (day "2019-02-15") [payMon] [rent5] @?= bal
-
-    test "just paid it" $ do
-      -- 4 paychecks before rent, balance is lowest
-      lowest bal (day "2019-02-06") [payMon] [rent5] @?= bal
-
-    test "due today" $ do
-      -- We ignore the next bill, since it's today
-      lowest bal (day "2019-03-05") [payMon] [rent5] @?= bal
-
-
-  group "weekly bill, monthly paycheck" $ do
-    test "just paid" $ do
-      -- there are 4 bills until the next paycheck + same day = 5
-      lowest payAmt (day "2019-03-02") [pay1] [billMon] @?= payAmt - (5*billAmtWeek)
-
-    test "week later" $ do
-      lowest payAmt (day "2019-03-09") [pay1] [billMon] @?= payAmt - (4*billAmtWeek)
-
-    test "one bill, then paycheck" $ do
-      lowest bal (day "2019-03-30") [pay1] [billMon] @?= bal - billAmtWeek
-
-
-
-
-testEvents :: Tests ()
-testEvents = do
-  let zero = Money.fromFloat 0
-  let evnts = \bal d ps bs -> allEvents bal $ allTransactions d ps bs
-  let balances = \bal d ps bs -> List.map Event.balance $ evnts bal d ps bs
-
-  group "single event" $ do
-    test "balance should be pay amount" $ do
-      (balances zero (day "2019-03-01") [pay5] []) @?= [payAmt]
-
-    test "balance should be debt amount" $ do
-      (balances zero (day "2019-03-01") [] [rent5]) @?= [-rentAmt]
-
-
-  group "rent, then pay" $ do
-    let es = evnts zero (day "2019-03-02") [pay1] [rent5]
-
-    test "order correct" $ do
-      (List.map (Trans.name . Event.transaction) es) @?= ["rent", "paycheck"]
-
-    test "balances" $ do
-      (List.map Event.balance es) @?= [-rentAmt, -rentAmt + payAmt]
-
-
-  group "pay, then rent" $ do
-    let es = evnts zero (day "2019-03-06") [pay1] [rent5]
-
-    test "order correct" $ do
-      (List.map (Trans.name . Event.transaction) es) @?= ["paycheck", "rent"]
-
-    test "balances" $ do
-      (List.map Event.balance es) @?= [payAmt, payAmt - rentAmt]
-
-
-  group "same day means bills happen first" $ do
-    let es = evnts zero (day "2019-03-01") [pay5] [rent5]
-
-    test "order correct" $ do
-      (List.map (Trans.name . Event.transaction) es) @?= ["rent", "paycheck"]
-
-    test "balances" $ do
-      (List.map Event.balance es) @?= [-rentAmt, -rentAmt + payAmt]
-
-
-  group "uses initial balance" $ do
-    let bal = Money.fromFloat 1000
-    let es = evnts bal (day "2019-03-02") [pay1] [rent5]
-
-    test "balances" $ do
-      (List.map Event.balance es) @?= [bal - rentAmt, bal - rentAmt + payAmt]
-
-
-  group "same day" $ do
-    let ts = evnts zero (day "2019-03-01") [pay5] [rent5]
-
-    test "should be on date" $ do
-      List.map (Trans.date . Event.transaction) ts @?= [day "2019-03-05", day "2019-03-05"]
-
-    test "expense first" $ do
-      List.map (Trans.name . Event.transaction) ts @?= ["rent", "paycheck"]
-
-    test "should have amounts" $ do
-      List.map (Trans.amount . Event.transaction) ts @?= [-rentAmt, payAmt]
-
-  group "between pay and rent" $ do
-    let ts = evnts zero (day "2019-03-02") [pay1] [rent5]
-
-    test "dates" $ do
-      List.map (Trans.date . Event.transaction) ts @?= [day "2019-03-05", day "2019-04-01"]
-
-    test "rent, then pay" $ do
-      List.map (Trans.name . Event.transaction) ts @?= ["rent", "paycheck"]
-
-
-  group "after both" $ do
-    let ts = evnts zero (day "2019-03-05") [pay1] [rent5]
-
-    test "dates" $ do
-      List.map (Trans.date . Event.transaction) ts @?= [day "2019-04-01", day "2019-04-05"]
-
-    test "pay, then rent" $ do
-      List.map (Trans.name . Event.transaction) ts @?= ["paycheck","rent"]
-
-
-  group "happens today" $ do
-    let ts = evnts zero (day "2019-03-05") [rent5] [rent5]
-
-    -- Scenario: today is rent day, we just bought a hamburger, but rent hasn't hit yet. We can't issue an advance in time to help them out with rent, so we won't include it the calculation.
-    -- Scenario: today is rent day, and rent just hit. It's factored into the balance.
-    test "should be next month" $ do
-      List.map (Trans.date . Event.transaction) ts @?= [day "2019-04-05", day "2019-04-05"]
-
-
-
-
-
-
-
-testTrans :: Tests ()
-testTrans = do
-
-  group "monthly income" $ do
-    let ts = credits (day "2019-03-01") pay5
-
-    test "should include one paycheck" $ do
-      length ts @?= 1
-    test "should be on paydate" $ do
-      Trans.date (head ts) @?= day "2019-03-05"
-    test "should be the amount" $ do
-      Trans.amount (head ts) @?= payAmt
-
-  group "next month's income" $ do
-    let ts = credits (day "2019-03-05") pay5
-
-    test "should include one paycheck" $ do
-      length ts @?= 1
-    test "should be on paydate" $ do
-      Trans.date (head ts) @?= day "2019-04-05"
-    test "should be the amount" $ do
-      Trans.amount (head ts) @?= payAmt
-
-  group "monthly bill" $ do
-    let ts = debits (day "2019-03-01") rent5
-
-    test "should include one paycheck" $ do
-      length ts @?= 1
-
-    test "should be on paydate" $ do
-      Trans.date (head ts) @?= day "2019-03-05"
-
-    test "should be the amount" $ do
-      Trans.amount (head ts) @?= (-rentAmt)
-
-
-
-
-
-
-
-
-
+spend0  = absolute $ money 0.00
+spend30 = absolute $ money 30.00
 
 rent5 = Budget "rent" (Monthly (DayOfMonth 5)) (absolute rentAmt)
 pay5 = Budget "paycheck" (Monthly (DayOfMonth 5)) (absolute payAmt)
@@ -258,7 +173,10 @@ pay1 = Budget "paycheck" (Monthly (DayOfMonth 1)) (absolute payAmt)
 payMon = Budget "paycheck mon" (Weekly Monday) (absolute payAmtWeek)
 billMon = Budget "bill mon" (Weekly Monday) (absolute billAmtWeek)
 
-rentAmt = Money.fromFloat 1000
-payAmt = Money.fromFloat 2000
-payAmtWeek = Money.fromFloat 500
-billAmtWeek = Money.fromFloat 100
+-- Tuesday, Mar 5th
+billTue = Budget "bill tue" (Weekly Tuesday) (absolute billAmtWeek)
+
+rentAmt = money 1000
+payAmt = money 2000
+payAmtWeek = money 500
+billAmtWeek = money 100

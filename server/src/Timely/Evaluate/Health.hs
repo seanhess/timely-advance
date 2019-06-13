@@ -1,17 +1,20 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 module Timely.Evaluate.Health
-  ( Timeline(..)
-  , Event(..)
-  , timeline
+  ( timeline
+  , dailyBalances
+  , minimumBalance
   , isBudget
+  , Daily
+  , DailyBalance
   , Budget
+  , Scheduled
   , Transaction
   , Income, Expense
   ) where
 
 import Timely.Evaluate.Health.Budget
-import Timely.Evaluate.Health.Event
+import Timely.Evaluate.Health.Daily
 import Timely.Evaluate.Health.Timeline
 import Timely.Evaluate.Health.Transaction
 

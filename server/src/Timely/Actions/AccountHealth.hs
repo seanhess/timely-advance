@@ -12,20 +12,24 @@ import qualified Control.Effects.Time               as Time
 import           Data.Aeson                         (ToJSON)
 import           Data.Function                      ((&))
 import qualified Data.List                          as List
+import           Data.Maybe                         (listToMaybe)
 import           Data.Model.Guid                    (Guid)
 import qualified Data.Model.Meta                    as Meta
+import           Data.Model.Money                   as Money (Money, fromFloat)
+import           Data.Number.Abs                    (Abs (value), absolute)
 import           Data.Time.Calendar                 (Day)
 import           GHC.Generics                       (Generic)
 import           Timely.Accounts                    (Accounts)
 import qualified Timely.Accounts                    as Accounts
-import           Timely.Accounts.Budgets            (Budgets, BudgetMeta)
+import           Timely.Accounts.Budgets            (BudgetMeta, Budgets)
 import qualified Timely.Accounts.Budgets            as Budgets
 import           Timely.Accounts.Types              (Account, BankAccount (..), TransactionRow)
 import qualified Timely.Accounts.Types.BankAccount  as BankAccount
 import qualified Timely.Actions.Transactions        as Transactions
-import           Timely.Evaluate.Health             (Timeline)
-import qualified Timely.Evaluate.Health             as Health
-import           Timely.Evaluate.Health.Transaction (Expense, Income)
+import           Timely.Evaluate.Health             as Health (DailyBalance, Expense, Income)
+import           Timely.Evaluate.Health.Budget      as Budget (Budget (..), Scheduled (..))
+import           Timely.Evaluate.Health.Timeline    as Health
+import           Timely.Evaluate.Schedule           as Schedule (next)
 import           Timely.Types.Update                (Error (..))
 
 
@@ -37,7 +41,17 @@ import           Timely.Types.Update                (Error (..))
 
 
 data AccountHealth = AccountHealth
-  { timeline :: Timeline
+  { balance       :: Money
+  , minimum       :: Money
+  , spendingDaily :: Abs Money
+  , spendingTotal :: Abs Money
+  , dailyBalances :: [DailyBalance]
+
+  -- TODO maybe advance, so we can show the date
+  , advance       :: Maybe (Abs Money)
+
+  , paycheck      :: Scheduled Income
+  , bills         :: [Scheduled Expense]
   } deriving (Show, Eq, Generic)
 
 instance ToJSON AccountHealth
@@ -50,10 +64,11 @@ analyze :: (MonadEffects '[Budgets, Accounts, Throw Error, Time] m) => Guid Acco
 analyze i = do
     now   <- Time.currentDate
     pays  <- Budgets.getIncomes i
+    pay   <- primaryIncome i pays
     bills <- Budgets.getExpenses i
     trans <- Transactions.recent i
     check <- loadChecking i
-    pure $ analyzeWith now check pays bills trans
+    pure $ analyzeWith now check pay bills trans
 
   where
     loadChecking i = do
@@ -63,17 +78,48 @@ analyze i = do
 
 
 
-analyzeWith :: Day -> BankAccount -> [BudgetMeta Income] -> [BudgetMeta Expense] -> [TransactionRow] -> AccountHealth
-analyzeWith now BankAccount {balance} pays bills _ = do
+analyzeWith :: Day -> BankAccount -> Budget Income -> [BudgetMeta Expense] -> [TransactionRow] -> AccountHealth
+analyzeWith now BankAccount {balance} pay bms _ =
+
+    let payday   = Schedule.next (schedule pay) now
+        paycheck = Scheduled pay payday
+        bills    = List.map Meta.value bms
+
+    -- TODO calculate this from their transactions, store it somewhere!
+        spendingDaily = absolute $ Money.fromFloat 30.00
+
+        dailys = Health.timeline now payday spendingDaily bills
+        dailyBalances = Health.dailyBalances balance dailys
+        minimum = Health.minimumBalance balance dailyBalances
+
+        spendingTotal = Health.totalSpending dailys
+
+
     -- Not using transactions for now, simplify because we can't actually
     -- take any action if things are settling today. We can only move
     -- one day out
-    AccountHealth $
-       Health.timeline now balance
-         (map Meta.value pays)
-         (map Meta.value bills)
+    in AccountHealth
+        { balance
+        , minimum
+        , spendingDaily
+        , spendingTotal
+        , dailyBalances
+        , advance = Nothing
+        , paycheck
+        , bills = Health.billsDue dailys
+        }
 
 
+
+primaryIncome
+  :: ( MonadEffects '[Throw Error] m )
+  => Guid Account -> [BudgetMeta Income] -> m (Budget Income)
+primaryIncome accountId pays =
+  pays
+    & List.map Meta.value
+    & List.sortOn (value . amount)
+    & listToMaybe
+    & required (NoIncome accountId)
 
 
 

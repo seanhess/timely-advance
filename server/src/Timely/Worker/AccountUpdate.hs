@@ -15,24 +15,21 @@ import qualified Control.Effects.Time               as Time
 import           Control.Monad.Catch                (MonadThrow (..))
 import           Data.Function                      ((&))
 import qualified Data.List                          as List
-import qualified Data.Maybe                         as Maybe
 import           Data.Model.Guid                    as Guid
 import           Data.Model.Id                      (Id)
-import qualified Data.Model.Meta                    as Meta
 import           Data.Model.Money                   (Money)
 import           Data.Model.Types                   (Phone)
 import           Data.Model.Valid                   (Valid)
-import           Data.Number.Abs                    (Abs (value))
+import           Data.Number.Abs                    (Abs)
 import           Data.Time.Calendar                 (Day)
 import qualified Network.AMQP.Worker                as Worker (Queue, topic)
 import           Timely.Accounts                    (Accounts, TransactionRow (transactionId))
 import qualified Timely.Accounts                    as Accounts
-import           Timely.Accounts.Budgets            (BudgetMeta, Budgets)
+import           Timely.Accounts.Budgets            (Budgets)
 import qualified Timely.Accounts.Budgets            as Budgets
 import           Timely.Accounts.Types              (Account (..), BankAccount (bankAccountId))
 import qualified Timely.Accounts.Types.BankAccount  as BankAccount
 import qualified Timely.Accounts.Types.Transaction  as Transaction
-import           Timely.Actions.AccountHealth       (AccountHealth (..))
 import qualified Timely.Actions.AccountHealth       as AccountHealth
 import           Timely.Advances                    (Advance, Advances)
 import qualified Timely.Advances                    as Advances
@@ -40,7 +37,6 @@ import qualified Timely.App                         as App
 import           Timely.Bank                        (Access, Banks, Token)
 import qualified Timely.Bank                        as Bank
 import           Timely.Evaluate.Health.Budget      (Budget (..))
-import           Timely.Evaluate.Health.Timeline    (Timeline (..))
 import           Timely.Evaluate.Health.Transaction (Income)
 import qualified Timely.Evaluate.Offer              as Offer
 import qualified Timely.Evaluate.Schedule           as Schedule
@@ -92,26 +88,17 @@ accountUpdate account@(Account{ accountId, bankToken }) = do
     Log.debug ("trans", length trans)
     pays   <- Budgets.getIncomes accountId
     bills  <- Budgets.getExpenses accountId
+    pay    <- AccountHealth.primaryIncome accountId pays
 
-    let health = AccountHealth.analyzeWith today check pays bills trans
+    let health = AccountHealth.analyzeWith today check pay bills trans
 
-    pay    <- primaryIncome accountId pays
-    checkAdvance account (timeline health) now today pay
-
-
+    checkAdvance account (AccountHealth.minimum health) now today pay
 
 
 
 
-primaryIncome
-  :: ( MonadEffects '[Throw Error] m )
-  => Guid Account -> [BudgetMeta Income] -> m (Budget Income)
-primaryIncome accountId pays =
-  pays
-    & List.map Meta.value
-    & List.sortOn (value . amount)
-    & Maybe.listToMaybe
-    & require (NoIncome accountId)
+
+
 
 
 
@@ -119,12 +106,12 @@ primaryIncome accountId pays =
 checkAdvance
   :: ( MonadEffects '[Log, Advances, Notify] m
      )
-  => Account -> Timeline -> UTCTime -> Day -> Budget Income -> m ()
-checkAdvance Account {accountId, transferId, phone, credit} timeline now today pay = do
+  => Account -> Money -> UTCTime -> Day -> Budget Income -> m ()
+checkAdvance Account {accountId, transferId, phone, credit} minimum now today pay = do
     offer  <- Advances.findOffer  accountId
     active <- Advances.findActive accountId
 
-    case Offer.check credit offer active (lowest timeline) now of
+    case Offer.check credit offer active minimum now of
       Nothing -> pure ()
       Just amount -> do
         offerAdvance today accountId transferId phone pay amount

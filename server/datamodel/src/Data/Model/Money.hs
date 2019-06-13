@@ -19,6 +19,10 @@ newtype Money = Money Int
 --   a / b = fromFloat (toFloat a / toFloat b)
 
 
+money :: Float -> Money
+money = fromFloat
+
+
 fromFloat :: Float -> Money
 fromFloat f = Money $ round (f * 100)
 
