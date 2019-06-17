@@ -4,18 +4,18 @@ module Test.Underwrite.Clarity where
 
 
 
-import           Control.Monad.IO.Class    (liftIO)
-import qualified Data.Model.Money          as Money
-import           Data.Model.Valid          (Valid (..))
-import           Data.String.Conversions   (cs)
-import           Network.Clarity           (Address (..), Employer (..), Frequency (..), BankAccountType(..), InquiryPurposeType(..), Config(..), Consumer(..))
-import qualified Network.Clarity           as Clarity
-import           Test.Dates                (day)
+import           Control.Monad.IO.Class          (liftIO)
+import Data.Model.Money                as Money (fromFloat)
+import           Data.Model.Valid                (Valid (..))
+import           Network.Clarity                 (Address (..), BankAccountType (..), Config (..), Consumer (..), Employer (..), Frequency (..), InquiryPurposeType (..))
+import Network.Clarity                 as Clarity (document)
+import           Test.Dates                      (day)
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
+import           Test.Underwrite.Clarity.Samples as Samples (response)
 import           Text.XML.Parse
-import           Timely.Underwrite.Clarity (BankBehavior (..), CreditRisk (..), Fraud (..), FraudInsight (..), Inquiry (..), parseBankBehavior, parseCreditRisk, parseFraud, parseFraudInsight, parseInquiry)
+import           Timely.Underwrite.Clarity       (BankBehavior (..), CreditRisk (..), Fraud (..), FraudInsight (..), Inquiry (..), parseBankBehavior, parseCreditRisk, parseFraud, parseFraudInsight, parseInquiry)
 
 specXML = do
   ts <- runTests tests
@@ -100,8 +100,8 @@ testRequest = do
 
 testParsers :: Tests ()
 testParsers = do
-  inputXml <- liftIO $ readFile "test/Test/Underwrite/Clarity/sample-response.xml" :: Tests String
-  doc <- liftIO $ assertRight $ parseLBS def $ cs inputXml
+  -- inputXml <- liftIO $ readFile "test/Test/Underwrite/Clarity/sample-response.xml" :: Tests String
+  doc <- liftIO $ assertRight $ parseLBS def $ Samples.response
   let cur = fromDocument doc
 
   test "inquiry" $ do

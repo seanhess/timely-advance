@@ -136,18 +136,4 @@ executables:
     - tasty
     - tasty-hunit
     - random-strings
-
-tests:
-  test:
-    main:                Spec.hs
-    source-dirs:
-    - test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - timely
-    - tasty
-    - tasty-hunit
-    - random-strings
+    - here
