@@ -45,6 +45,7 @@ data AccountHealth = AccountHealth
   , minimum       :: Money
   , spendingDaily :: Abs Money
   , spendingTotal :: Abs Money
+  , billsTotal    :: Abs Money
   , dailyBalances :: [DailyBalance]
 
   -- TODO maybe advance, so we can show the date
@@ -83,15 +84,17 @@ analyzeWith now BankAccount {balance} pay bms _ =
 
     let payday   = Schedule.next (schedule pay) now
         paycheck = Scheduled pay payday
-        bills    = List.map Meta.value bms
+        bs    = List.map Meta.value bms
 
     -- TODO calculate this from their transactions, store it somewhere!
         spendingDaily = absolute $ Money.fromFloat 30.00
 
-        dailys = Health.timeline now payday spendingDaily bills
+        dailys = Health.timeline now payday spendingDaily bs
         dailyBalances = Health.dailyBalances balance dailys
         minimum = Health.minimumBalance balance dailyBalances
 
+        bills = Health.billsDue dailys
+        billsTotal = absolute $ List.sum $ List.map (value . amount . budget) bills
         spendingTotal = Health.totalSpending dailys
 
 
@@ -106,7 +109,8 @@ analyzeWith now BankAccount {balance} pay bms _ =
         , dailyBalances
         , advance = Nothing
         , paycheck
-        , bills = Health.billsDue dailys
+        , bills
+        , billsTotal
         }
 
 

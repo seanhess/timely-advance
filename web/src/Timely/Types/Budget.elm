@@ -1,9 +1,10 @@
-module Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..), decodeBudget, decodeBudgetId, encodeBudget, toBudget)
+module Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..), Scheduled, decodeBudget, decodeBudgetId, decodeScheduled, encodeBudget, toBudget)
 
 import Json.Decode as Decode exposing (Decoder, bool, field, int, list, nullable, string)
 import Json.Decode.Pipeline exposing (..)
 import Json.Encode as Encode
 import Timely.Types exposing (Id, decodeId, encodeId)
+import Timely.Types.Date exposing (Date, decodeDate)
 import Timely.Types.Money exposing (Money, decodeMoney, encodeMoney)
 import Timely.Types.Transactions exposing (Schedule, decodeSchedule, encodeSchedule)
 
@@ -16,6 +17,12 @@ type alias Budget =
     { name : String
     , schedule : Schedule
     , amount : Money
+    }
+
+
+type alias Scheduled =
+    { date : Date
+    , budget : Budget
     }
 
 
@@ -37,6 +44,13 @@ decodeBudgetId =
     Decode.map2 budgetWithId
         (field "budgetId" decodeId)
         decodeBudget
+
+
+decodeScheduled : Decoder Scheduled
+decodeScheduled =
+    Decode.succeed Scheduled
+        |> required "date" decodeDate
+        |> required "budget" decodeBudget
 
 
 budgetWithId : Id Budget -> Budget -> BudgetId Budget

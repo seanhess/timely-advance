@@ -10,7 +10,7 @@ import Test.Dates                      (day)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.Monad
-import Timely.Evaluate.Health.Budget   (Budget (Budget))
+import Timely.Evaluate.Health.Budget   (Budget (Budget), Scheduled(Scheduled))
 import Timely.Evaluate.Health.Daily    as Daily (Daily (..), DailyBalance (..))
 import Timely.Evaluate.Health.Timeline as Timeline
 import Timely.Evaluate.Schedule        (DayOfMonth (DayOfMonth), DayOfWeek (..), Schedule (Monthly, Weekly))
@@ -24,8 +24,6 @@ specTimeline = do
 -- I want to do some high-level tests here
 tests :: Tests ()
 tests = do
-  -- group "trans" testTrans
-  -- group "events" testEvents
   group "timeline" testTimeline
   group "daily balance" testDailyBalance
   group "lowestBalance" testLowestBalance
@@ -83,6 +81,35 @@ testTimeline = do
 
     test "daily total, no spend" $ do
       fmap dailyTotal (timeline day4 day5 spend0 [rent5]) @?= [absolute $ money 0, absolute rentAmt]
+
+
+  group "totalSpending" $ do
+    test "multiple days of spending, no bills" $ do
+      totalSpending (timeline day1 day5 spend30 []) @?= absolute ((value spend30) * 5)
+
+    test "single bill" $ do
+      totalSpending (timeline day1 day5 spend0 [rent5]) @?= spend0
+
+    test "multiple bills" $ do
+      totalSpending (timeline day1 day5 spend0 [billMon, rent5]) @?= spend0
+
+    test "multiple bills and spending" $ do
+      totalSpending (timeline day1 day5 spend30 [billMon, rent5]) @?= (absolute $ (value spend30) * 5)
+
+  group "billsDue" $ do
+    test "no bills" $ do
+      billsDue (timeline day1 day5 spend0 []) @?= []
+
+    test "one bill" $ do
+      billsDue (timeline day1 day5 spend0 [rent5]) @?= [Scheduled rent5 day5]
+
+    test "two bills" $ do
+      billsDue (timeline day1 day5 spend0 [rent5, billMon]) @?=
+         [ Scheduled billMon day4
+         , Scheduled rent5 day5
+         ]
+
+
 
 
 

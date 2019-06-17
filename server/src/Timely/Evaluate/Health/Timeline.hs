@@ -31,13 +31,20 @@ minimumBalance bal es = minimum $ bal : fmap balance es
 
 
 
--- | Calculate the spending total
+-- | Calculate the total discretionary spending
 totalSpending :: [Daily] -> Abs Money
-totalSpending = undefined
+totalSpending =
+  absolute . List.sum . fmap (value.spending)
 
 
 billsDue :: [Daily] -> [Scheduled Expense]
-billsDue = undefined
+billsDue = List.concatMap scheduledBills
+  where
+    scheduledBills Daily {date, bills} =
+      fmap (scheduledBill date) bills
+
+    scheduledBill date bill =
+      Scheduled bill date
 
 
 

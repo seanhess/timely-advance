@@ -149,7 +149,7 @@ accountHealth : Id AccountId -> AccountHealth -> Element Msg
 accountHealth accountId health =
     let
         isHealthy =
-            toCents health.projection.lowest >= 0
+            toCents health.minimum >= 0
 
         healthyColor =
             if isHealthy then
@@ -170,7 +170,7 @@ accountHealth accountId health =
                 , Style.box
                 ]
                 [ el [ Font.bold, centerX ] (text "Lowest Balance")
-                , el [ Font.bold, Font.size 40, centerX ] (text <| formatMoney health.projection.lowest)
+                , el [ Font.bold, Font.size 40, centerX ] (text <| formatMoney health.minimum)
                 ]
         }
 
@@ -181,11 +181,11 @@ accountInfo account health advances =
         [ wrappedRow [ spacing 20 ]
             [ column [ spacing 4 ]
                 [ el [ Font.bold ] (text "Balance")
-                , el [] (text <| formatMoney health.projection.balance)
+                , el [] (text <| formatMoney health.balance)
                 ]
             , column [ spacing 4 ]
                 [ el [ Font.bold ] (text "Lowest Balance")
-                , el [] (text <| formatMoney health.projection.lowest)
+                , el [] (text <| formatMoney health.minimum)
                 ]
             , column [ spacing 4 ]
                 [ el [ Font.bold ] (text "Advances")

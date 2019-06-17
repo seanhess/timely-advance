@@ -14,10 +14,10 @@ import Timely.Components as Components
 import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types exposing (Id(..))
-import Timely.Types.AccountHealth exposing (AccountHealth, Event, Projection, eventType)
+import Timely.Types.AccountHealth exposing (AccountHealth)
 import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..))
 import Timely.Types.Date as Date exposing (Date, formatDate)
-import Timely.Types.Money as Money exposing (formatMoney)
+import Timely.Types.Money as Money exposing (Money, formatMoney)
 import Timely.Types.Transactions exposing (Schedule(..))
 
 
@@ -35,7 +35,7 @@ type Msg
     | OnHealth (Result Http.Error AccountHealth)
     | OnPaychecks (Result Http.Error (List (BudgetId Budget)))
     | OnBills (Result Http.Error (List (BudgetId Budget)))
-    | Select Event
+      -- | Select Event
     | AddBill
     | AddPaycheck
     | OnCreated BudgetType (Result Http.Error (Id Budget))
@@ -80,14 +80,13 @@ update msg model =
         goBudgetId typ bid =
             Route.pushUrl model.key (Route.Account model.accountId (Route.Budget typ bid))
 
-        navBudget : BudgetType -> Resource (List (BudgetId Budget)) -> Event -> Cmd Msg
-        navBudget bt rs event =
-            rs
-                |> Resource.toMaybe
-                |> Maybe.andThen (findBudget event.budget)
-                |> Maybe.map (goBudget bt)
-                |> Maybe.withDefault Cmd.none
-
+        -- navBudget : BudgetType -> Resource (List (BudgetId Budget)) -> Event -> Cmd Msg
+        -- navBudget bt rs event =
+        --     rs
+        --         |> Resource.toMaybe
+        --         |> Maybe.andThen (findBudget event.budget)
+        --         |> Maybe.map (goBudget bt)
+        --         |> Maybe.withDefault Cmd.none
         defaultBudget : String -> Budget
         defaultBudget name =
             { name = name
@@ -110,11 +109,10 @@ update msg model =
         OnBills bs ->
             updates { model | bills = Resource.fromResult bs }
 
-        Select e ->
-            updates model
-                |> command (navBudget Income model.paychecks e)
-                |> command (navBudget Expense model.bills e)
-
+        -- Select e ->
+        --     updates model
+        --         |> command (navBudget Income model.paychecks e)
+        --         |> command (navBudget Expense model.bills e)
         AddBill ->
             updates model
                 |> command (Api.createExpense (OnCreated Expense) model.accountId (defaultBudget "New Bill"))
@@ -141,29 +139,37 @@ view model =
                 ]
             ]
         , column Style.section
-            [ resource (viewBreakdown model.accountId) (Resource.map .projection model.health)
+            [ resource (viewBreakdown model.accountId) model.health
             ]
         ]
 
 
-viewBreakdown : Id AccountId -> Projection -> Element Msg
+viewBreakdown : Id AccountId -> AccountHealth -> Element Msg
 viewBreakdown accountId health =
     column [ spacing 20, width fill ]
         [ row Style.banner
             [ el [] (text "Balance")
             , el [ alignRight, Font.color (healthy health.balance) ] (text <| formatMoney health.balance)
             ]
-        , row Style.banner
-            [ el [] (text "Coming up") ]
-        , column [ spacing 10, width fill ]
-            (List.map (viewEvent accountId) health.events)
-        , row [ spacing 10 ]
-            [ button (Style.button Style.secondary) { onPress = Just AddBill, label = text "Add Bill" }
-            , button (Style.button Style.secondary) { onPress = Just AddPaycheck, label = text "Add Paycheck" }
-            ]
+        , summaryLine "Bills Total" health.billsTotal
+        , summaryLine ("Spending " ++ formatMoney health.spendingDaily ++ "/day") health.spendingTotal
+
+        -- , row Style.banner
+        --     [ el [] (text "Coming up") ]
+        -- , column [ spacing 10, width fill ]
+        --     (List.map (viewEvent accountId) health.events)
+        -- , row [ spacing 10 ]
+        --     [ button (Style.button Style.secondary) { onPress = Just AddBill, label = text "Add Bill" }
+        --     , button (Style.button Style.secondary) { onPress = Just AddPaycheck, label = text "Add Paycheck" }
+        --     ]
         , row Style.banner
             [ el [] (text "Lowest Balance")
-            , el [ alignRight, Font.color (healthy health.lowest) ] (text <| formatMoney health.lowest)
+            , el [ alignRight, Font.color (healthy health.minimum) ] (text <| formatMoney health.minimum)
+            ]
+        , wrappedRow [ spacing 10, width fill ]
+            [ el [] (text "Paycheck")
+            , el [ width (px 125) ] (text <| formatDate health.paycheck.date)
+            , el [ alignRight ] (text <| formatMoney health.paycheck.budget.amount)
             ]
         , row [] []
         ]
@@ -182,21 +188,27 @@ healthy val =
         Style.lightRed
 
 
-viewEvent : Id AccountId -> Event -> Element Msg
-viewEvent accountId event =
-    button [ width fill ]
-        { onPress = Just (Select event)
-        , label =
-            wrappedRow [ spacing 10, width fill ]
-                [ el [ width (px 125) ] (text <| formatDate event.transaction.date)
-                , row [ width (px 80) ] [ el [ alignRight ] (text <| formatMoney event.transaction.amount) ]
-                , el [] (text <| event.transaction.name)
-                , el [ alignRight, Font.color (healthy event.balance) ] (text <| formatMoney event.balance)
-                ]
-        }
+summaryLine : String -> Money -> Element Msg
+summaryLine label amount =
+    wrappedRow [ spacing 10, width fill ]
+        [ el [] (text <| label)
+        , el [ alignRight ] (text <| formatMoney amount)
+        ]
 
 
 
+-- viewEvent : Id AccountId -> Event -> Element Msg
+-- viewEvent accountId event =
+--     button [ width fill ]
+--         { onPress = Just (Select event)
+--         , label =
+--             wrappedRow [ spacing 10, width fill ]
+--                 [ el [ width (px 125) ] (text <| formatDate event.transaction.date)
+--                 , row [ width (px 80) ] [ el [ alignRight ] (text <| formatMoney event.transaction.amount) ]
+--                 , el [] (text <| event.transaction.name)
+--                 , el [ alignRight, Font.color (healthy event.balance) ] (text <| formatMoney event.balance)
+--                 ]
+--         }
 -- viewEdit : Id AccountId -> Element msg
 -- viewEdit accountId =
 --     link [ Style.link ]
