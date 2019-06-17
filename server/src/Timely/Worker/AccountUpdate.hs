@@ -47,7 +47,7 @@ import           Timely.Transfers.Account           (TransferAccount)
 import           Timely.Types.Update                (Error (..))
 
 
-queue :: Worker.Queue Account
+queue :: Worker.Queue (Guid Account)
 queue = Worker.topic Events.transactionsUpdate "app.account.update"
 
 
@@ -59,11 +59,11 @@ handler
   :: ( MonadEffects '[Time, Accounts, Log, Banks, Advances, Notify, Budgets] m
      , MonadThrow m
      )
-  => Account -> m ()
-handler account = do
-    Log.context $ Guid.toText (accountId account)
+  => Guid Account -> m ()
+handler accountId = do
+    Log.context $ Guid.toText accountId
     Log.info "AccountUpdate"
-    accountUpdate account
+    accountUpdate accountId
       & Signal.handleException onError
 
   where
@@ -77,8 +77,10 @@ handler account = do
 
 accountUpdate
   :: ( MonadEffects '[Time, Accounts, Log, Banks, Advances, Notify, Throw Error, Budgets] m)
-  => Account -> m ()
-accountUpdate account@(Account{ accountId, bankToken }) = do
+  => Guid Account -> m ()
+accountUpdate accountId = do
+    account@Account {bankToken} <- Accounts.find accountId >>= require (NoAccount accountId)
+
     now    <- Time.currentTime
     today  <- Time.currentDate
 
@@ -89,8 +91,9 @@ accountUpdate account@(Account{ accountId, bankToken }) = do
     pays   <- Budgets.getIncomes accountId
     bills  <- Budgets.getExpenses accountId
     pay    <- AccountHealth.primaryIncome accountId pays
+    active <- Advances.findActive accountId
 
-    let health = AccountHealth.analyzeWith today check pay bills trans
+    let health = AccountHealth.analyzeWith today check pay bills trans active
 
     checkAdvance account (AccountHealth.minimum health) now today pay
 

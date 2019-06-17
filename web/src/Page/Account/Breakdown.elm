@@ -151,8 +151,14 @@ viewBreakdown accountId health =
             [ el [] (text "Balance")
             , el [ alignRight, Font.color (healthy health.balance) ] (text <| formatMoney health.balance)
             ]
-        , summaryLine "Bills Total" health.billsTotal
-        , summaryLine ("Spending " ++ formatMoney health.spendingDaily ++ "/day") health.spendingTotal
+        , summaryLine "Bills Total" "-" health.billsTotal
+        , summaryLine ("Spending " ++ formatMoney health.spendingDaily ++ "/day") "-" health.spendingTotal
+        , case health.advance of
+            Nothing ->
+                Element.none
+
+            Just a ->
+                summaryLine "Advance" "+" a.amount
 
         -- , row Style.banner
         --     [ el [] (text "Coming up") ]
@@ -188,11 +194,14 @@ healthy val =
         Style.lightRed
 
 
-summaryLine : String -> Money -> Element Msg
-summaryLine label amount =
+summaryLine : String -> String -> Money -> Element Msg
+summaryLine label sign amount =
     wrappedRow [ spacing 10, width fill ]
         [ el [] (text <| label)
-        , el [ alignRight ] (text <| formatMoney amount)
+        , row [ alignRight, spacing 5 ]
+            [ el [] (text sign)
+            , el [] (text <| formatMoney amount)
+            ]
         ]
 
 

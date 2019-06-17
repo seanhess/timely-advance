@@ -7,8 +7,9 @@ import Browser.Navigation as Nav
 import Html exposing (Attribute)
 import Html.Attributes as Attr
 import Http exposing (Error(..))
-import Timely.Api as Api exposing (Account, AccountId, AdvanceId)
+import Timely.Api as Api exposing (Account, AccountId)
 import Timely.Types exposing (Id(..))
+import Timely.Types.Advance exposing (AdvanceId)
 import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..))
 import Url exposing (Url)
 import Url.Parser as Parser exposing ((</>), Parser, oneOf, s, string)

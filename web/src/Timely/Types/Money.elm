@@ -71,3 +71,8 @@ formatSign (Money c) =
 formatCents : Money -> String
 formatCents (Money c) =
     String.padLeft 2 '0' <| String.fromInt (modBy 100 (abs c))
+
+
+negate : Money -> Money
+negate (Money c) =
+    Money -c

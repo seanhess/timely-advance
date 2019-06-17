@@ -9,12 +9,13 @@ import Http exposing (Error)
 import Page.Account.Breakdown as Breakdown
 import Platform.Updates exposing (Updates, command, updates)
 import Route
-import Timely.Api as Api exposing (Account, AccountId, Advance, BankAccount, BankAccountType(..), Customer, advanceIsActive, advanceIsCollected, advanceIsOffer)
+import Timely.Api as Api exposing (Account, AccountId, BankAccount, BankAccountType(..), Customer, advanceIsActive, advanceIsCollected, advanceIsOffer)
 import Timely.Components as Components
 import Timely.Resource as Resource exposing (Resource(..), resource, resource_)
 import Timely.Style as Style
 import Timely.Types exposing (Id, idValue)
 import Timely.Types.AccountHealth exposing (AccountHealth)
+import Timely.Types.Advance exposing (Advance)
 import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money as Money exposing (formatMoney, fromCents, toCents)
 import Timely.Types.Transactions exposing (TransRow)

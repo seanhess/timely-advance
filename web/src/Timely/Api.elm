@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountCustomer, AccountId(..), AccountInfo, Advance, AdvanceId(..), Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Onboarding(..), Phone, SSN(..), Session, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, createExpense, createIncome, delBudget, delExpense, delIncome, deleteAccount, editExpense, editIncome, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getCustomers, getExpenses, getIncomes, getTransactionHistory, getTransactions, postAdvanceAccept, postApplications, putBudget, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
+module Timely.Api exposing (Account, AccountCustomer, AccountId(..), AccountInfo, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Onboarding(..), Phone, SSN(..), Session, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, createExpense, createIncome, delBudget, delExpense, delIncome, deleteAccount, editExpense, editIncome, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getCustomers, getExpenses, getIncomes, getTransactionHistory, getTransactions, postAdvanceAccept, postApplications, putBudget, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
 
 import Http exposing (Error, Expect)
 import Json.Decode as Decode exposing (Decoder, bool, int, list, nullable, string)
@@ -9,6 +9,7 @@ import Task
 import Time exposing (Month(..))
 import Timely.Types exposing (Id(..), Token, decodeId, encodeId, idValue)
 import Timely.Types.AccountHealth exposing (AccountHealth, decodeAccountHealth)
+import Timely.Types.Advance exposing (Advance, AdvanceId, decodeAdvance)
 import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..), decodeBudget, decodeBudgetId, encodeBudget)
 import Timely.Types.Date exposing (Date, decodeDate)
 import Timely.Types.Money exposing (Money, decodeMoney, encodeMoney, fromCents, toCents)
@@ -109,22 +110,6 @@ type alias Approval =
 
 type alias Denial =
     { denial : String
-    }
-
-
-type AdvanceId
-    = AdvanceId
-
-
-type alias Advance =
-    { advanceId : Id AdvanceId
-    , accountId : Id AccountId
-    , amount : Money
-    , offer : Money
-    , due : Date
-    , offered : Date
-    , activated : Maybe Date
-    , collected : Maybe Date
     }
 
 
@@ -296,19 +281,6 @@ decodeValid =
 encodeValid : Valid a -> Encode.Value
 encodeValid (Valid t) =
     Encode.string t
-
-
-decodeAdvance : Decoder Advance
-decodeAdvance =
-    Decode.succeed Advance
-        |> required "advanceId" decodeId
-        |> required "accountId" decodeId
-        |> required "amount" decodeMoney
-        |> required "offer" decodeMoney
-        |> required "due" decodeDate
-        |> required "offered" decodeDate
-        |> required "activated" (nullable decodeDate)
-        |> required "collected" (nullable decodeDate)
 
 
 request : String -> Http.Body -> (Result Error a -> msg) -> List String -> Decoder a -> Cmd msg

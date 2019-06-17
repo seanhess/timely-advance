@@ -11,6 +11,7 @@ import           Timely.Accounts.Types (Account)
 data Error
   = NoIncome   (Guid Account)
   | NoChecking (Guid Account)
+  | NoAccount  (Guid Account)
   deriving (Show, Eq, Generic)
 
 instance ToJSON Error where

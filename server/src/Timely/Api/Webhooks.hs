@@ -17,7 +17,7 @@ import qualified Data.Aeson                  as Aeson
 import           Data.String.Conversions     (cs)
 import qualified Network.Plaid.Webhooks      as Plaid
 import           Servant                     (NoContent (..))
-import           Timely.Accounts             (Accounts)
+import           Timely.Accounts             (Accounts, Account(..))
 import qualified Timely.Accounts             as Accounts
 import           Timely.Accounts.Application (Applications)
 import qualified Timely.Accounts.Application as Applications
@@ -67,4 +67,4 @@ transactions info = do
     Plaid.DEFAULT_UPDATE -> do
       Log.info "default_update"
       accounts <- Accounts.findByBankId itemId
-      mapM_ (Worker.publish Events.transactionsUpdate) accounts
+      mapM_ (Worker.publish Events.transactionsUpdate . accountId) accounts
