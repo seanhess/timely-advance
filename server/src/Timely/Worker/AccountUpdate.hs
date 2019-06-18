@@ -90,10 +90,11 @@ accountUpdate accountId = do
     Log.debug ("trans", length trans)
     pays   <- Budgets.getIncomes accountId
     bills  <- Budgets.getExpenses accountId
+    spend  <- Budgets.spending accountId >>= require (NoSpending accountId)
     pay    <- AccountHealth.primaryIncome accountId pays
     active <- Advances.findActive accountId
 
-    let health = AccountHealth.analyzeWith today check pay bills trans active
+    let health = AccountHealth.analyzeWith today check pay bills spend trans active
 
     checkAdvance account (AccountHealth.minimum health) now today pay
 

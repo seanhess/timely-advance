@@ -76,7 +76,14 @@ update : Msg -> Model -> Updates Model Msg ()
 update msg model =
     let
         goBack =
-            Route.pushUrl model.key <| Route.Account model.accountId Route.Breakdown
+            Route.pushUrl model.key <|
+                Route.Account model.accountId <|
+                    case model.budgetType of
+                        Income ->
+                            Route.AccountMain
+
+                        Expense ->
+                            Route.Bills
 
         isBudget b =
             b.budgetId == model.budgetId
@@ -131,18 +138,46 @@ update msg model =
 
 view : Model -> Element Msg
 view model =
+    column Style.page
+        [ column Style.info
+            [ row [ spacing 15 ]
+                [ Components.back Close
+                , paragraph [] [ viewEditMessage model.budgetType ]
+                ]
+            ]
+        , column Style.section
+            [ resource (viewBudget model << toBudget) model.budget
+            , viewActions
+            ]
+        ]
+
+
+viewPopup : Model -> Element Msg
+viewPopup model =
     -- column Style.page
     column Style.section
         [ row [ spacing 15, width fill ]
-            [ el [] (text <| "Edit your " ++ formatBudgetType model.budgetType)
+            [ viewEditMessage model.budgetType
             , el [ alignRight ] (Components.close Close)
             ]
         , resource (viewBudget model << toBudget) model.budget
-        , button (Style.button Style.primary)
+        , viewActions
+        ]
+
+
+viewActions : Element Msg
+viewActions =
+    row [ spacing 10, width fill ]
+        [ button (Style.button Style.primary)
             { onPress = Just Save, label = el [] (text "Save") }
         , button (Style.button Style.destroy)
             { onPress = Just Delete, label = el [] (text "Delete") }
         ]
+
+
+viewEditMessage : BudgetType -> Element msg
+viewEditMessage typ =
+    text <| "Edit your " ++ formatBudgetType typ
 
 
 viewBudget : Model -> Budget -> Element Msg

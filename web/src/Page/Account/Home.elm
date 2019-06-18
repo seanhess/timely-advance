@@ -16,6 +16,7 @@ import Timely.Style as Style
 import Timely.Types exposing (Id, idValue)
 import Timely.Types.AccountHealth exposing (AccountHealth)
 import Timely.Types.Advance exposing (Advance)
+import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..))
 import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money as Money exposing (formatMoney, fromCents, toCents)
 import Timely.Types.Transactions exposing (TransRow)
@@ -29,6 +30,7 @@ type alias Model =
     , transactions : Resource (List TransRow)
     , banks : Resource (List BankAccount)
     , advances : Resource (List Advance)
+    , paycheck : Resource (BudgetId Budget)
     }
 
 
@@ -39,12 +41,13 @@ type Msg
     | OnBanks (Result Error (List BankAccount))
     | OnTransactions (Result Error (List TransRow))
     | OnAdvances (Result Error (List Advance))
+    | OnIncomes (Result Http.Error (List (BudgetId Budget)))
     | Logout
     | LogoutDone (Result Error ())
 
 
-init : Id AccountId -> ( Model, Cmd Msg )
-init id =
+init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
+init key id =
     ( { accountId = id
       , customer = Loading
       , account = Loading
@@ -52,6 +55,7 @@ init id =
       , banks = Loading
       , advances = Loading
       , transactions = Loading
+      , paycheck = Loading
       }
     , Cmd.batch
         [ Api.getAccount OnAccount id
@@ -60,6 +64,7 @@ init id =
         , Api.getAccountBanks OnBanks id
         , Api.getAdvances OnAdvances id
         , Api.getTransactions OnTransactions id
+        , Api.getIncomes OnIncomes id
         ]
     )
 
@@ -90,6 +95,15 @@ update nav msg model =
 
         OnAdvances ra ->
             updates { model | advances = Resource.fromResult ra }
+
+        OnIncomes (Err e) ->
+            updates { model | paycheck = Failed e }
+
+        OnIncomes (Ok (i :: _)) ->
+            updates { model | paycheck = Ready i }
+
+        OnIncomes (Ok _) ->
+            updates { model | paycheck = Failed (Http.BadBody "Missing income") }
 
         Logout ->
             updates model |> command (Api.sessionsLogout LogoutDone)
@@ -127,6 +141,17 @@ viewMain model =
             ]
         , column Style.section
             [ resource (accountHealth model.accountId) model.health
+            , resource (advancesView model.accountId) collected
+            , resource_
+                (\_ -> Element.none)
+                identity
+                (Resource.pure (Breakdown.viewBreakdown model.accountId)
+                    |> Resource.apply model.health
+                    |> Resource.apply model.paycheck
+                )
+            , row [ Font.italic ]
+                [ el [] (text "Do we want to show any of the below information?")
+                ]
             , resource_
                 (\_ -> Element.none)
                 identity
@@ -135,12 +160,11 @@ viewMain model =
                     |> Resource.apply model.health
                     |> Resource.apply active
                 )
-            , resource (advancesView model.accountId) active
             , resource customerView <| model.customer
-            , resource banksTable model.banks
-            , resource transTable model.transactions
-            , resource (advancesView model.accountId) collected
 
+            -- , resource banksTable model.banks
+            -- , resource transTable model.transactions
+            -- , resource (advancesView model.accountId) active
             -- , el Style.header (text "Advances")
             ]
         ]
@@ -160,7 +184,8 @@ accountHealth accountId health =
                 Style.lightRed
     in
     link [ width fill ]
-        { url = Route.url (Route.Account accountId Route.Breakdown)
+        -- TODO should this do anything?
+        { url = Route.url (Route.Account accountId Route.AccountMain)
         , label =
             column
                 [ spacing 4

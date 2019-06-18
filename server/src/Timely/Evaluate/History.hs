@@ -102,7 +102,7 @@ spending bs ts =
         else Nothing
 
 
-dailySpending :: Int -> [Transaction Spending] -> Money
+dailySpending :: Integer -> [Transaction Spending] -> Money
 dailySpending n ts =
   let total = sum $ List.map Trans.amount ts
   in Money.fromFloat $ (Money.toFloat total) / (fromIntegral n)

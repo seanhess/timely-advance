@@ -117,11 +117,13 @@ createDefaultBudgets accountId trans = do
 
   let incs = List.map Transactions.defaultBudget $ Transactions.income history
   let exps = List.map Transactions.defaultBudget $ Transactions.expenses history
+  let spend = Transactions.discretionarySpending numDaysHistory exps trans
 
   Budgets.saveIncomes accountId incs
   Budgets.saveExpenses accountId exps
+  Budgets.saveSpending accountId spend
 
-  Log.debug ("BUDGETS", incs, exps)
+  Log.debug ("BUDGETS", incs, exps, spend)
   pure ()
 
 
@@ -216,12 +218,15 @@ loadTransactions accountId bankToken appBankId checking (UTCTime today _) = do
     pure $ List.map (Transaction.fromBank accountId) ts
   where
     days = 1
-    year = 365 * days
+    year = numDaysHistory * days
     us   = 1
     ms   = 1000*us
     second = 1000*ms
 
 
+
+numDaysHistory :: Integer
+numDaysHistory = 365
 
 
 

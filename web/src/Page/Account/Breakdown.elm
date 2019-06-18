@@ -1,4 +1,4 @@
-module Page.Account.Breakdown exposing (Model, Msg, init, update, view, viewBreakdown)
+module Page.Account.Breakdown exposing (viewBreakdown)
 
 import Browser.Navigation as Nav
 import Element exposing (..)
@@ -15,175 +15,209 @@ import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types exposing (Id(..))
 import Timely.Types.AccountHealth exposing (AccountHealth)
+import Timely.Types.Advance exposing (Advance)
 import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..))
 import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money as Money exposing (Money, formatMoney)
 import Timely.Types.Transactions exposing (Schedule(..))
 
 
-type alias Model =
-    { key : Nav.Key
-    , accountId : Id AccountId
-    , health : Resource AccountHealth
-    , paychecks : Resource (List (BudgetId Budget))
-    , bills : Resource (List (BudgetId Budget))
-    }
+
+-- type alias Model =
+--     { key : Nav.Key
+--     , accountId : Id AccountId
+--     , health : Resource AccountHealth
+--     , paychecks : Resource (List (BudgetId Budget))
+--     , bills : Resource (List (BudgetId Budget))
+--     }
+-- type Msg
+--     = Close
+--     | OnHealth (Result Http.Error AccountHealth)
+--     | OnPaychecks (Result Http.Error (List (BudgetId Budget)))
+--     | OnBills (Result Http.Error (List (BudgetId Budget)))
+--       -- | Select Event
+--     | AddBill
+--     | AddPaycheck
+--     | OnCreated BudgetType (Result Http.Error (Id Budget))
+-- init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
+-- init key accountId =
+--     ( { key = key
+--       , accountId = accountId
+--       , health = Loading
+--       , paychecks = Loading
+--       , bills = Loading
+--       }
+--     , Cmd.batch
+--         [ Api.getAccountHealth OnHealth accountId
+--         , Api.getIncomes OnPaychecks accountId
+--         , Api.getExpenses OnBills accountId
+--         ]
+--     )
+-- update : Msg -> Model -> Updates Model Msg ()
+-- update msg model =
+--     let
+--         isBudget : Budget -> BudgetId Budget -> Bool
+--         isBudget b bi =
+--             (b.name == bi.name)
+--                 && (b.schedule == bi.schedule)
+--                 && (b.amount == bi.amount)
+--         findBudget : Budget -> List (BudgetId Budget) -> Maybe (BudgetId Budget)
+--         findBudget bud bs =
+--             bs
+--                 |> List.filter (isBudget bud)
+--                 |> List.head
+--         goBudget : BudgetType -> BudgetId Budget -> Cmd Msg
+--         goBudget typ b =
+--             goBudgetId typ b.budgetId
+--         goBudgetId : BudgetType -> Id Budget -> Cmd Msg
+--         goBudgetId typ bid =
+--             Route.pushUrl model.key (Route.Account model.accountId (Route.Budget typ bid))
+--         -- navBudget : BudgetType -> Resource (List (BudgetId Budget)) -> Event -> Cmd Msg
+--         -- navBudget bt rs event =
+--         --     rs
+--         --         |> Resource.toMaybe
+--         --         |> Maybe.andThen (findBudget event.budget)
+--         --         |> Maybe.map (goBudget bt)
+--         --         |> Maybe.withDefault Cmd.none
+--         defaultBudget : String -> Budget
+--         defaultBudget name =
+--             { name = name
+--             , schedule = Monthly { date = 1 }
+--             , amount = Money.fromCents 0
+--             }
+--     in
+--     case msg of
+--         Close ->
+--             updates model
+--                 |> command (Route.goAccount model.key model.accountId)
+--         OnHealth re ->
+--             updates { model | health = Resource.fromResult re }
+--                 |> command (Route.checkUnauthorized model.key re)
+--         OnPaychecks pays ->
+--             updates { model | paychecks = Resource.fromResult pays }
+--         OnBills bs ->
+--             updates { model | bills = Resource.fromResult bs }
+--         -- Select e ->
+--         --     updates model
+--         --         |> command (navBudget Income model.paychecks e)
+--         --         |> command (navBudget Expense model.bills e)
+--         AddBill ->
+--             updates model
+--                 |> command (Api.createExpense (OnCreated Expense) model.accountId (defaultBudget "New Bill"))
+--         AddPaycheck ->
+--             updates model
+--                 |> command (Api.createIncome (OnCreated Income) model.accountId (defaultBudget "New Paycheck"))
+--         OnCreated budgetType (Ok budgetId) ->
+--             updates model
+--                 |> command (goBudgetId budgetType budgetId)
+--         OnCreated _ _ ->
+--             updates model
+-- view : Model -> Element Msg
+-- view model =
+--     column Style.page
+--         [ column Style.info
+--             [ row [ spacing 15 ]
+--                 [ Components.back Close
+--                 , paragraph [] [ text "Here's how we calculated your lowest balance" ]
+--                 ]
+--             ]
+--         , column Style.section
+--             [ resource (viewBreakdown model.accountId) model.health
+--             ]
+--         ]
 
 
-type Msg
-    = OnBack
-    | OnHealth (Result Http.Error AccountHealth)
-    | OnPaychecks (Result Http.Error (List (BudgetId Budget)))
-    | OnBills (Result Http.Error (List (BudgetId Budget)))
-      -- | Select Event
-    | AddBill
-    | AddPaycheck
-    | OnCreated BudgetType (Result Http.Error (Id Budget))
-
-
-init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
-init key accountId =
-    ( { key = key
-      , accountId = accountId
-      , health = Loading
-      , paychecks = Loading
-      , bills = Loading
-      }
-    , Cmd.batch
-        [ Api.getAccountHealth OnHealth accountId
-        , Api.getIncomes OnPaychecks accountId
-        , Api.getExpenses OnBills accountId
-        ]
-    )
-
-
-update : Msg -> Model -> Updates Model Msg ()
-update msg model =
-    let
-        isBudget : Budget -> BudgetId Budget -> Bool
-        isBudget b bi =
-            (b.name == bi.name)
-                && (b.schedule == bi.schedule)
-                && (b.amount == bi.amount)
-
-        findBudget : Budget -> List (BudgetId Budget) -> Maybe (BudgetId Budget)
-        findBudget bud bs =
-            bs
-                |> List.filter (isBudget bud)
-                |> List.head
-
-        goBudget : BudgetType -> BudgetId Budget -> Cmd Msg
-        goBudget typ b =
-            goBudgetId typ b.budgetId
-
-        goBudgetId : BudgetType -> Id Budget -> Cmd Msg
-        goBudgetId typ bid =
-            Route.pushUrl model.key (Route.Account model.accountId (Route.Budget typ bid))
-
-        -- navBudget : BudgetType -> Resource (List (BudgetId Budget)) -> Event -> Cmd Msg
-        -- navBudget bt rs event =
-        --     rs
-        --         |> Resource.toMaybe
-        --         |> Maybe.andThen (findBudget event.budget)
-        --         |> Maybe.map (goBudget bt)
-        --         |> Maybe.withDefault Cmd.none
-        defaultBudget : String -> Budget
-        defaultBudget name =
-            { name = name
-            , schedule = Monthly { date = 1 }
-            , amount = Money.fromCents 0
-            }
-    in
-    case msg of
-        OnBack ->
-            updates model
-                |> command (Route.goAccount model.key model.accountId)
-
-        OnHealth re ->
-            updates { model | health = Resource.fromResult re }
-                |> command (Route.checkUnauthorized model.key re)
-
-        OnPaychecks pays ->
-            updates { model | paychecks = Resource.fromResult pays }
-
-        OnBills bs ->
-            updates { model | bills = Resource.fromResult bs }
-
-        -- Select e ->
-        --     updates model
-        --         |> command (navBudget Income model.paychecks e)
-        --         |> command (navBudget Expense model.bills e)
-        AddBill ->
-            updates model
-                |> command (Api.createExpense (OnCreated Expense) model.accountId (defaultBudget "New Bill"))
-
-        AddPaycheck ->
-            updates model
-                |> command (Api.createIncome (OnCreated Income) model.accountId (defaultBudget "New Paycheck"))
-
-        OnCreated budgetType (Ok budgetId) ->
-            updates model
-                |> command (goBudgetId budgetType budgetId)
-
-        OnCreated _ _ ->
-            updates model
-
-
-view : Model -> Element Msg
-view model =
-    column Style.page
-        [ column Style.info
-            [ row [ spacing 15 ]
-                [ Components.back OnBack
-                , paragraph [] [ text "Here's how we calculated your lowest balance" ]
-                ]
-            ]
-        , column Style.section
-            [ resource (viewBreakdown model.accountId) model.health
-            ]
-        ]
-
-
-viewBreakdown : Id AccountId -> AccountHealth -> Element Msg
-viewBreakdown accountId health =
+viewBreakdown : Id AccountId -> AccountHealth -> BudgetId Budget -> Element msg
+viewBreakdown accountId health paycheck =
     column [ spacing 20, width fill ]
         [ row Style.banner
-            [ el [] (text "Balance")
+            [ el [] (text "Current Balance")
             , el [ alignRight, Font.color (healthy health.balance) ] (text <| formatMoney health.balance)
             ]
-        , summaryLine "Bills Total" "-" health.billsTotal
-        , summaryLine ("Spending " ++ formatMoney health.spendingDaily ++ "/day") "-" health.spendingTotal
-        , case health.advance of
-            Nothing ->
-                Element.none
-
-            Just a ->
-                summaryLine "Advance" "+" a.amount
-
-        -- , row Style.banner
-        --     [ el [] (text "Coming up") ]
-        -- , column [ spacing 10, width fill ]
-        --     (List.map (viewEvent accountId) health.events)
-        -- , row [ spacing 10 ]
-        --     [ button (Style.button Style.secondary) { onPress = Just AddBill, label = text "Add Bill" }
-        --     , button (Style.button Style.secondary) { onPress = Just AddPaycheck, label = text "Add Paycheck" }
-        --     ]
+        , wrappedRow summaryLine
+            [ link [ Style.link ]
+                { url = Route.url (Route.Account accountId Route.Bills)
+                , label = text "Bills Total"
+                }
+            , row summaryDetail
+                [ text "-", text <| formatMoney health.billsTotal ]
+            ]
+        , wrappedRow summaryLine
+            [ link [ Style.link ]
+                { url = Route.url (Route.Account accountId Route.Spending)
+                , label = text <| "Spending"
+                }
+            , el [] (text <| formatMoney health.spendingDaily ++ "/day")
+            , row summaryDetail
+                [ text "-", text <| formatMoney health.spendingTotal ]
+            ]
+        , Components.maybe (advanceLine accountId "+") health.advance
         , row Style.banner
             [ el [] (text "Lowest Balance")
             , el [ alignRight, Font.color (healthy health.minimum) ] (text <| formatMoney health.minimum)
             ]
+
+        -- load their actual income, so you have the ID
         , wrappedRow [ spacing 10, width fill ]
-            [ el [] (text "Paycheck")
+            [ link [ Style.link ]
+                { url = Route.url <| Route.Account accountId <| Route.Budget Income paycheck.budgetId
+                , label = text <| "Paycheck"
+                }
             , el [ width (px 125) ] (text <| formatDate health.paycheck.date)
-            , el [ alignRight ] (text <| formatMoney health.paycheck.budget.amount)
+            , el [ alignRight ] (text <| formatMoney paycheck.amount)
+            ]
+        , Components.maybe (advanceLine accountId "-") health.advance
+        , row Style.banner
+            [ el [] (text "Balance after paycheck")
+            , el [ alignRight, Font.color (healthy health.afterPaycheck) ] (text <| formatMoney health.afterPaycheck)
             ]
         , row [] []
         ]
 
 
-budgets : Model -> Resource (List (BudgetId Budget))
-budgets model =
-    Resource.map2 (\ps bs -> ps ++ bs) model.paychecks model.bills
+advanceLine : Id AccountId -> String -> Advance -> Element msg
+advanceLine accountId sign adv =
+    wrappedRow summaryLine
+        [ link [ Style.link ]
+            { url = Route.url (Route.Account accountId (Route.Advance adv.advanceId))
+            , label = text "Advance"
+            }
+        , row summaryDetail
+            [ text sign, text <| formatMoney adv.amount ]
+        ]
+
+
+summaryLine : List (Attribute msg)
+summaryLine =
+    [ spacing 10, width fill ]
+
+
+summaryDetail : List (Attribute msg)
+summaryDetail =
+    [ alignRight, spacing 5 ]
+
+
+
+-- summaryLine : String -> String -> Money -> Element msg
+-- summaryLine label sign amount =
+--     wrappedRow
+--         [ el [] (text <| label)
+--         , row
+--             [ el [] (text sign)
+--             , el [] (text <| formatMoney amount)
+--             ]
+--         ]
+-- , row Style.banner
+--     [ el [] (text "Coming up") ]
+-- , column [ spacing 10, width fill ]
+--     (List.map (viewEvent accountId) health.events)
+-- , row [ spacing 10 ]
+--     [ button (Style.button Style.secondary) { onPress = Just AddBill, label = text "Add Bill" }
+--     , button (Style.button Style.secondary) { onPress = Just AddPaycheck, label = text "Add Paycheck" }
+--     ]
+-- budgets : Model -> Resource (List (BudgetId Budget))
+-- budgets model =
+--     Resource.map2 (\ps bs -> ps ++ bs) model.paychecks model.bills
 
 
 healthy val =
@@ -192,17 +226,6 @@ healthy val =
 
     else
         Style.lightRed
-
-
-summaryLine : String -> String -> Money -> Element Msg
-summaryLine label sign amount =
-    wrappedRow [ spacing 10, width fill ]
-        [ el [] (text <| label)
-        , row [ alignRight, spacing 5 ]
-            [ el [] (text sign)
-            , el [] (text <| formatMoney amount)
-            ]
-        ]
 
 
 

@@ -11,10 +11,10 @@ import           Data.Model.Guid                    (Guid)
 import qualified Control.Effects.Time               as Time
 import           Control.Effects.Time               (Time)
 import qualified Data.List                          as List
-import qualified Data.Model.Money                   as Money
+import Data.Model.Money                   as Money (Money, fromFloat)
 import           Data.Maybe                         (mapMaybe, fromMaybe)
 import           GHC.Generics                       (Generic)
-import           Data.Number.Abs                    (Abs(value))
+import           Data.Number.Abs                    (Abs(value), absolute)
 import           Timely.Accounts                    (Account, Accounts, TransactionRow(..))
 import qualified Timely.Accounts                    as Accounts
 import           Timely.Evaluate.Health.Transaction (Expense, Income, Transaction (..))
@@ -23,6 +23,7 @@ import           Timely.Evaluate.Health.Budget (Budget(..))
 import           Timely.Evaluate.History            (Group(..))
 import           Timely.Evaluate.Schedule (scheduleDate, Schedule(Monthly))
 import qualified Timely.Evaluate.History            as History
+import Data.Function ((&))
 
 
 
@@ -85,6 +86,11 @@ defaultBudget Group {name, average, schedule, transactions} =
     }
 
 
+discretionarySpending :: Integer -> [Budget Expense] -> [TransactionRow] -> Abs Money
+discretionarySpending numDays bs ts =
+  History.spending bs (mapMaybe toExpense ts)
+    & History.dailySpending numDays
+    & absolute
 
 
 

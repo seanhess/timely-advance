@@ -11,7 +11,9 @@ module Timely.Api where
 
 import           Data.Model.Guid                      as Guid
 import           Data.Model.Id                        (Token)
+import           Data.Model.Money                     (Money)
 import           Data.Model.Types                     (Phone, Valid)
+import           Data.Number.Abs                      (Abs)
 import           Data.Proxy                           (Proxy (..))
 import           Data.Text                            (Text)
 import           GHC.Generics                         (Generic)
@@ -99,6 +101,7 @@ data AccountApi route = AccountApi
     , _advances :: route :- "advances" :> ToServantApi AdvanceApi
     , _incomes  :: route :- "incomes"  :> ToServantApi (BudgetsApi Income)
     , _expenses :: route :- "expenses" :> ToServantApi (BudgetsApi Expense)
+    , _spending :: route :- "spending" :> ReqBody '[JSON] (Abs Money) :> Put '[JSON] NoContent
     } deriving (Generic)
 
 
@@ -161,6 +164,7 @@ accountApi i = genericServerT AccountApi
     , _advances = advanceApi i
     , _incomes = incomesApi i
     , _expenses = expensesApi i
+    , _spending = \amt -> Budgets.saveSpending i amt >> pure NoContent
     }
 
 

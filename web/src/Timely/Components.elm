@@ -1,4 +1,4 @@
-module Timely.Components exposing (Spinner(..), back, close, loadingButton, option, selectBox, spinner, spinnerDots, spinnerRing, spinnerRipple, version)
+module Timely.Components exposing (Spinner(..), back, close, loadingButton, maybe, option, selectBox, spinner, spinnerDots, spinnerRing, spinnerRipple, version)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -159,3 +159,13 @@ version loaded =
         , alignRight
         ]
         (text <| "Loaded: " ++ loaded ++ " - Version: " ++ Version.version)
+
+
+maybe : (a -> Element msg) -> Maybe a -> Element msg
+maybe view ma =
+    case ma of
+        Nothing ->
+            Element.none
+
+        Just a ->
+            view a

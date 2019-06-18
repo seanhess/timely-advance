@@ -46,6 +46,7 @@ data AccountHealth = AccountHealth
   , minimum       :: Money
   , spendingDaily :: Abs Money
   , spendingTotal :: Abs Money
+  , afterPaycheck :: Money
   , billsTotal    :: Abs Money
   , dailyBalances :: [DailyBalance]
   , advance       :: Maybe Advance
@@ -67,8 +68,9 @@ analyze i = do
     bills <- Budgets.getExpenses i
     trans <- Transactions.recent i
     advs  <- Advances.findActive i
+    spend <- Budgets.spending i >>= required (NoSpending i)
     check <- loadChecking i
-    pure $ analyzeWith now check pay bills trans advs
+    pure $ analyzeWith now check pay bills spend trans advs
 
   where
     loadChecking i = do
@@ -78,29 +80,29 @@ analyze i = do
 
 
 
-analyzeWith :: Day -> BankAccount -> Budget Income -> [BudgetMeta Expense] -> [TransactionRow] -> [Advance] -> AccountHealth
-analyzeWith now BankAccount {balance} pay bms _ advs =
+analyzeWith :: Day -> BankAccount -> Budget Income -> [BudgetMeta Expense] -> Abs Money -> [TransactionRow] -> [Advance] -> AccountHealth
+analyzeWith now BankAccount {balance} pay bms spend _ advs =
 
     let payday   = Schedule.next (schedule pay) now
         paycheck = Scheduled pay payday
         bs    = List.map Meta.value bms
 
         -- TODO calculate this from their transactions, store it somewhere!
-        spendingDaily = absolute $ Money.fromFloat 30.00
 
-        dailys = Health.timeline now payday spendingDaily bs
+        dailys = Health.timeline now payday spend bs
         dailyBalances = Health.dailyBalances balance dailys
 
 
         advance = listToMaybe advs
-        advanceAmount = fmap Advances.amount advance
+        advanceAmount = fromMaybe (Money.fromFloat 0) $ fmap Advances.amount advance
 
         -- TODO how do we handle advances in the calculation? Let's assume we haven't sent it yet. It's promised, but not sent. But the minute we sent it we need to mark it as sent and calculate it differently, because their accoutn isn't in jeopardy yet. Or we need some way to tell if it's actually hit (Using their transactions!)
-        minimum = Health.minimumBalance balance dailyBalances + (fromMaybe (Money.fromFloat 0) advanceAmount)
+        minimum = Health.minimumBalance balance dailyBalances + advanceAmount
 
         bills = Health.billsDue dailys
         billsTotal = absolute $ List.sum $ List.map (value . Budget.amount . budget) bills
         spendingTotal = Health.totalSpending dailys
+        afterPaycheck = minimum + (value $ Budget.amount pay) - advanceAmount
 
 
     -- Not using transactions for now, simplify because we can't actually
@@ -109,13 +111,14 @@ analyzeWith now BankAccount {balance} pay bms _ advs =
     in AccountHealth
         { balance
         , minimum
-        , spendingDaily
+        , spendingDaily = spend
         , spendingTotal
         , dailyBalances
         , advance
         , paycheck
         , bills
         , billsTotal
+        , afterPaycheck
         }
 
 

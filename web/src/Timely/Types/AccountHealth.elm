@@ -22,6 +22,7 @@ type alias AccountHealth =
     , paycheck : Scheduled
     , bills : List Scheduled
     , billsTotal : Money
+    , afterPaycheck : Money
     }
 
 
@@ -37,3 +38,4 @@ decodeAccountHealth =
         |> required "paycheck" decodeScheduled
         |> required "bills" (list decodeScheduled)
         |> required "billsTotal" decodeMoney
+        |> required "afterPaycheck" decodeMoney

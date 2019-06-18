@@ -4,9 +4,11 @@ import Browser.Navigation as Nav
 import Element exposing (Element, centerY, fill, height, htmlAttribute, padding, width)
 import Element.Background as Background
 import Html.Attributes exposing (style)
+import Page.Account.Bills as Bills
 import Page.Account.Breakdown as Breakdown
 import Page.Account.Budget as Budget
 import Page.Account.Home as Home
+import Page.Account.Spending as Spending
 import Page.Advance as Advance
 import Platform.Updates exposing (Updates, command, initWith, updates)
 import Process
@@ -27,16 +29,20 @@ type alias Model =
 
 type Page
     = Home Home.Model
-    | Breakdown Breakdown.Model
-    | Budget Breakdown.Model Budget.Model
+      -- | Breakdown Breakdown.Model
+    | Budget Budget.Model
+    | Bills Bills.Model
+    | Spending Home.Model Spending.Model
     | Advance Advance.Model
 
 
 type Msg
     = OnHome Home.Msg
-    | OnBreakdown Breakdown.Msg
+      -- | OnBreakdown Breakdown.Msg
     | OnBudget Budget.Msg
     | OnAdvance Advance.Msg
+    | OnBills Bills.Msg
+    | OnSpending Spending.Msg
     | Loaded ()
 
 
@@ -62,50 +68,54 @@ init i key oldModel route =
 changeRouteTo : Id AccountId -> Nav.Key -> Maybe Page -> Route.Account -> ( Page, Cmd Msg )
 changeRouteTo i key oldPage route =
     let
-        oldBreakdown op =
+        oldHome op =
             case op of
-                Just (Breakdown brk) ->
-                    Just brk
+                Just (Home hm) ->
+                    Just hm
 
-                Just (Budget brk _) ->
-                    Just brk
+                Just (Spending sp _) ->
+                    Just sp
 
                 _ ->
                     Nothing
     in
     case route of
         Route.AccountMain ->
-            Home.init i
-                |> initWith Home OnHome
+            let
+                ( hMod, mMsg ) =
+                    Home.init key i
+            in
+            ( Home (oldHome oldPage |> Maybe.withDefault hMod)
+            , Cmd.map OnHome mMsg
+            )
 
         Route.Advance adv ->
             -- Check session!
             Advance.init key i adv
                 |> initWith Advance OnAdvance
 
-        Route.Budget t b ->
-            let
-                ( bkModel, bkMsg ) =
-                    Breakdown.init key i
+        Route.Bills ->
+            Bills.init key i
+                |> initWith Bills OnBills
 
-                ( bdModel, bdMsg ) =
+        Route.Budget t bi ->
+            Budget.init key i t bi
+                |> initWith Budget OnBudget
+
+        Route.Spending ->
+            let
+                ( hmModel, hmMsg ) =
+                    Home.init key i
+
+                ( aModel, aMsg ) =
                     -- use the old budget if it exists
-                    Budget.init key i t b
+                    Spending.init key i
             in
-            ( Budget (oldBreakdown oldPage |> Maybe.withDefault bkModel) bdModel
+            ( Spending (oldHome oldPage |> Maybe.withDefault hmModel) aModel
             , Cmd.batch
-                [ Cmd.map OnBudget bdMsg
-                , Cmd.map OnBreakdown bkMsg
+                [ Cmd.map OnSpending aMsg
+                , Cmd.map OnHome hmMsg
                 ]
-            )
-
-        Route.Breakdown ->
-            let
-                ( bkModel, bkMsg ) =
-                    Breakdown.init key i
-            in
-            ( Breakdown (oldBreakdown oldPage |> Maybe.withDefault bkModel)
-            , Cmd.map OnBreakdown bkMsg
             )
 
 
@@ -116,37 +126,40 @@ changeRouteTo i key oldPage route =
 view : Model -> Element Msg
 view model =
     case model.page of
-        Budget b a ->
+        Spending h a ->
             Element.column
                 [ width fill
                 , height fill
                 , Element.inFront
-                    (modal model.loading (Element.map OnBudget <| Budget.view a))
+                    (modal model.loading (Element.map OnSpending <| Spending.view a))
                 ]
-                [ Element.map OnBreakdown <| Breakdown.view b
+                [ Element.map OnHome <| Home.view h
                 ]
 
         Home a ->
-            Element.map OnHome <| Home.view a
-
-        Advance a ->
-            Element.map OnAdvance <| Advance.view a
-
-        Breakdown m ->
             case model.oldPage of
-                Just (Budget _ a) ->
+                Just (Spending _ s) ->
                     Element.column
                         [ width fill
                         , height fill
                         , Element.inFront
                             -- same as normal budget, but direction is reversed
-                            (modal (not model.loading) (Element.map OnBudget <| Budget.view a))
+                            (modal (not model.loading) (Element.map OnSpending <| Spending.view s))
                         ]
-                        [ Element.map OnBreakdown <| Breakdown.view m
+                        [ Element.map OnHome <| Home.view a
                         ]
 
                 _ ->
-                    Element.map OnBreakdown <| Breakdown.view m
+                    Element.map OnHome <| Home.view a
+
+        Bills a ->
+            Element.map OnBills <| Bills.view a
+
+        Budget a ->
+            Element.map OnBudget <| Budget.view a
+
+        Advance a ->
+            Element.map OnAdvance <| Advance.view a
 
 
 
@@ -198,19 +211,26 @@ update key msg model =
             Advance.update adv m
                 |> runUpdates Advance OnAdvance model
 
+        ( OnBills mg, Bills m ) ->
+            Bills.update mg m
+                |> runUpdates Bills OnBills model
+
+        ( OnBudget mg, Budget m ) ->
+            Budget.update mg m
+                |> runUpdates Budget OnBudget model
+
         -- We have to handle messages from both budget and breakdown
-        ( OnBudget set, Budget bm m ) ->
-            Budget.update set m
-                |> runUpdates (Budget bm) OnBudget model
+        ( OnSpending set, Spending bm m ) ->
+            Spending.update set m
+                |> runUpdates (Spending bm) OnSpending model
 
-        ( OnBreakdown mg, Budget bm m ) ->
-            Breakdown.update mg bm
-                |> runUpdates (\bm2 -> Budget bm2 m) OnBreakdown model
+        ( OnHome mg, Spending hm m ) ->
+            Home.update key mg hm
+                |> runUpdates (\bm2 -> Spending bm2 m) OnHome model
 
-        ( OnBreakdown mg, Breakdown m ) ->
-            Breakdown.update mg m
-                |> runUpdates Breakdown OnBreakdown model
-
+        -- ( OnBreakdown mg, Breakdown m ) ->
+        --     Breakdown.update mg m
+        --         |> runUpdates Breakdown OnBreakdown model
         ( Loaded _, _ ) ->
             updates { model | loading = False }
 
