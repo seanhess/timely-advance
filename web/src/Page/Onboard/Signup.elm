@@ -236,9 +236,10 @@ viewSignupForm model =
             ]
         , column Style.section
             [ viewPhoneInput model
-            , Input.button (Style.button Style.primary)
-                { onPress = Just SubmitForm
+            , Components.loadingButton (Style.button Style.primary)
+                { onPress = SubmitForm
                 , label = Element.text "Join Timely"
+                , isLoading = model.status == Loading
                 }
             , viewProblems model.status
             ]
@@ -254,11 +255,14 @@ viewLoginForm model =
                 , paragraph [] [ text "Welcome back! Please enter your phone number" ]
                 ]
             ]
+
+        -- only clickable if they aren't loading
         , column Style.section
             [ viewPhoneInput model
-            , Input.button (Style.button Style.primary)
-                { onPress = Just SubmitForm
+            , Components.loadingButton (Style.button Style.primary)
+                { onPress = SubmitForm
                 , label = Element.text "Login"
+                , isLoading = model.status == Loading
                 }
             , viewProblems model.status
             ]
@@ -301,9 +305,10 @@ viewPhoneCode model =
                 , onChange = EditCode
                 , label = Input.labelHidden "Code"
                 }
-            , Input.button (Style.button Style.primary)
-                { onPress = Just SubmitCode
+            , Components.loadingButton (Style.button Style.primary)
+                { onPress = SubmitCode
                 , label = Element.text "Check code"
+                , isLoading = model.status == Loading
                 }
             , viewProblems model.status
             ]
@@ -361,9 +366,10 @@ viewIdentityForm model =
             [ viewEmailInput model
             , viewSSNInput model
             , viewDobInput model
-            , Input.button (Style.button Style.primary)
-                { onPress = Just SubmitIdentity
+            , Components.loadingButton (Style.button Style.primary)
+                { onPress = SubmitIdentity
                 , label = Element.text "Finish"
+                , isLoading = model.status == Loading
                 }
             , viewProblems model.status
             ]

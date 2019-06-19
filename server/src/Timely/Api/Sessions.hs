@@ -48,18 +48,21 @@ authenticate
      ) => Valid Phone -> AuthCode -> m (SetSession Session)
 authenticate p c = do
   Log.context "Authenticate"
-  res <- Auth.codeCheck p c
-  hack <- hackPassAuth p c
-  if hack || res
-     then session p
-     else throwSignal err401
+  liftIO $ print ("Authenticate", p, c)
+
+  -- check hacked pass first
+  if hackPassAuth p c
+    then session p
+    else do
+      res <- Auth.codeCheck p c
+      if res
+        then session p
+        else throwSignal err401
 
 
-hackPassAuth
-  :: Monad m
-  => Valid Phone -> AuthCode -> m Bool
-hackPassAuth _ (AuthCode t) =
-  pure $ t == "9999"
+hackPassAuth :: Valid Phone -> AuthCode -> Bool
+hackPassAuth _ (AuthCode t) = do
+  t == "9999"
 
 
 
