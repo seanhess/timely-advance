@@ -1,19 +1,24 @@
 {-# LANGUAGE BangPatterns      #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Test.Evaluate.Timeline where
 
-import Data.Function                   ((&))
-import Data.Model.Money                as Money (money)
-import Data.Number.Abs                 (Abs (value), absolute)
-import Data.Time.Calendar              (Day)
-import Test.Dates                      (day)
+import Data.Aeson                       as Aeson (FromJSON, ToJSON (..), Value (..), eitherDecode, encode)
+import Data.Function                    ((&))
+import Data.HashMap.Strict              as HM (lookup)
+import Data.Model.Money                 as Money (money)
+import Data.Number.Abs                  (Abs (value), absolute)
+import Data.Time.Calendar               (Day)
+import GHC.Generics                     (Generic)
+import Test.Dates                       (day)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.Monad
-import Timely.Evaluate.Health.Budget   (Budget (Budget), Scheduled(Scheduled))
-import Timely.Evaluate.Health.Daily    as Daily (Daily (..), DailyBalance (..))
-import Timely.Evaluate.Health.Timeline as Timeline
-import Timely.Evaluate.Schedule        (DayOfMonth (DayOfMonth), DayOfWeek (..), Schedule (Monthly, Weekly))
+import Timely.Evaluate.Health.Budget    (Budget (Budget))
+import Timely.Evaluate.Health.Daily     as Daily (Daily (..), DailyBalance (..))
+import Timely.Evaluate.Health.Scheduled (Scheduled (Scheduled))
+import Timely.Evaluate.Health.Timeline  as Timeline
+import Timely.Evaluate.Schedule         (DayOfMonth (DayOfMonth), DayOfWeek (..), Schedule (Monthly, Weekly))
 
 
 specTimeline = do
@@ -27,7 +32,32 @@ tests = do
   group "timeline" testTimeline
   group "daily balance" testDailyBalance
   group "lowestBalance" testLowestBalance
+  group "scheduled" testScheduled
 
+
+
+data Hello = Hello
+  { message :: String
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON Hello
+instance FromJSON Hello
+
+
+testScheduled :: Tests ()
+testScheduled = do
+  let s = Scheduled (day "2019-01-01") (Hello "hello")
+
+  test "serialize date " $ do
+    let Object o = toJSON s
+    HM.lookup "date" o @?= Just (String "2019-01-01")
+
+  test "serialize item" $ do
+    let Object o = toJSON s
+    HM.lookup "message" o @?= Just (String "hello")
+
+  test "deserialize" $ do
+    (eitherDecode $ encode s) @?= Right s
 
 
 testTimeline :: Tests ()
@@ -101,12 +131,12 @@ testTimeline = do
       billsDue (timeline day1 day5 spend0 []) @?= []
 
     test "one bill" $ do
-      billsDue (timeline day1 day5 spend0 [rent5]) @?= [Scheduled rent5 day5]
+      billsDue (timeline day1 day5 spend0 [rent5]) @?= [Scheduled day5 rent5]
 
     test "two bills" $ do
       billsDue (timeline day1 day5 spend0 [rent5, billMon]) @?=
-         [ Scheduled billMon day4
-         , Scheduled rent5 day5
+         [ Scheduled day4 billMon
+         , Scheduled day5 rent5
          ]
 
 

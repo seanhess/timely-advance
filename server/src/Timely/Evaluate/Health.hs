@@ -14,6 +14,7 @@ module Timely.Evaluate.Health
   ) where
 
 import Timely.Evaluate.Health.Budget
+import Timely.Evaluate.Health.Scheduled
 import Timely.Evaluate.Health.Daily
 import Timely.Evaluate.Health.Timeline
 import Timely.Evaluate.Health.Transaction

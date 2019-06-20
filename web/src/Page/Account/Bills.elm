@@ -25,12 +25,15 @@ type alias Model =
     { key : Nav.Key
     , accountId : Id AccountId
     , bills : Resource (List (BudgetId Budget))
+
+    -- , health : Resource AccountHealth
     }
 
 
 type Msg
-    = OnBack
+    = Back
     | OnBills (Result Http.Error (List (BudgetId Budget)))
+      -- | OnHealth (Result Http.Error AccountHealth)
     | AddBill
     | OnCreated (Result Http.Error (Id Budget))
 
@@ -40,9 +43,13 @@ init key accountId =
     ( { key = key
       , accountId = accountId
       , bills = Loading
+
+      -- , health = Loading
       }
     , Cmd.batch
         [ Api.getExpenses OnBills accountId
+
+        -- , Api.getAccountHealth OnHealth accountId
         ]
     )
 
@@ -85,13 +92,15 @@ update msg model =
             }
     in
     case msg of
-        OnBack ->
+        Back ->
             updates model
                 |> command (Route.goAccount model.key model.accountId)
 
         OnBills bs ->
             updates { model | bills = Resource.fromResult bs }
 
+        -- OnHealth r ->
+        --     updates { model | health = Resource.fromResult r }
         -- Select e ->
         --     updates model
         --         |> command (navBudget Income model.paychecks e)
@@ -113,7 +122,7 @@ view model =
     column Style.page
         [ column Style.info
             [ row [ spacing 15 ]
-                [ Components.back OnBack
+                [ Components.back Back
                 , paragraph [] [ text "Here are your bills" ]
                 ]
             ]

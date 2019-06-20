@@ -105,9 +105,13 @@ data AccountApi route = AccountApi
     } deriving (Generic)
 
 
+-- expenses.... /scheduled
 data BudgetsApi a route = BudgetsApi
     { _edit   :: route :- Capture "id" (Guid BudgetRow) :> ReqBody '[JSON] (Budget a) :> Put '[JSON] NoContent
     , _delete :: route :- Capture "id" (Guid BudgetRow) :> Delete '[JSON] NoContent
+
+    -- how can I get them scheduled?
+    -- right now BudgetMeta
     , _get    :: route :- Get '[JSON] [BudgetMeta a]
     , _create :: route :- ReqBody '[JSON] (Budget a) :> Post '[JSON] (Guid BudgetRow)
     } deriving (Generic)

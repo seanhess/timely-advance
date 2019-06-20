@@ -56,6 +56,7 @@ instance SqlType BudgetType
 
 
 
+-- a budget with a budget row!
 type BudgetMeta a = Meta "budgetId" (Guid BudgetRow) (Budget a)
 
 

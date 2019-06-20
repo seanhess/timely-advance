@@ -219,12 +219,6 @@ view model =
             viewPlaidLanding model
 
 
-
--- formPage : List (Attribute msg)
--- formPage =
---     [ height shrink, centerY, centerX, width (fill |> maximum 800), spacing 36, padding 20 ]
-
-
 viewSignupForm : Model -> Element Msg
 viewSignupForm model =
     column Style.page

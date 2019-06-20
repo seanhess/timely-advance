@@ -5,11 +5,12 @@
 module Timely.Evaluate.Health.Timeline where
 
 import Data.Function                      ((&))
-import Data.List                          as List (mapAccumL, filter, sum, concatMap, sortOn)
+import Data.List                          as List (mapAccumL, filter, sum, concatMap, sortOn, map)
 import Data.Model.Money                   (Money)
 import Data.Number.Abs                    (Abs (value), absolute)
 import Data.Time.Calendar                 (Day)
-import Timely.Evaluate.Health.Budget      as Budget (Budget (..), Scheduled (..))
+import Timely.Evaluate.Health.Budget      as Budget (Budget (..))
+import Timely.Evaluate.Health.Scheduled   as Scheduled (Scheduled (..))
 import Timely.Evaluate.Health.Daily       as Daily (Daily (..), DailyBalance (..))
 import Timely.Evaluate.Health.Transaction (Expense)
 import Timely.Evaluate.Schedule           as Schedule (until)
@@ -37,14 +38,11 @@ totalSpending =
   absolute . List.sum . fmap (value.spending)
 
 
-billsDue :: [Daily] -> [Scheduled Expense]
+billsDue :: [Daily] -> [Scheduled (Budget Expense)]
 billsDue = List.concatMap scheduledBills
   where
     scheduledBills Daily {date, bills} =
-      fmap (scheduledBill date) bills
-
-    scheduledBill date bill =
-      Scheduled bill date
+      List.map (Scheduled date) bills
 
 
 
@@ -68,11 +66,11 @@ dailyBalances balance =
 
 
 
-dailyFromScheduled :: [Scheduled Expense] -> Abs Money -> Day -> Daily
+dailyFromScheduled :: [Scheduled (Budget Expense)] -> Abs Money -> Day -> Daily
 dailyFromScheduled scheds dailySpending d = Daily
   { date = d
   , spending = dailySpending
-  , bills = fmap Budget.budget $ List.filter (\s -> Budget.date s == d) scheds
+  , bills = fmap Scheduled.item $ List.filter (\s -> Scheduled.date s == d) scheds
   }
 
 
@@ -83,12 +81,12 @@ dailyTotal Daily {spending, bills} =
 
 
 
-schedulesAll :: Day -> Day -> [Budget a] -> [Scheduled a]
+schedulesAll :: Day -> Day -> [Budget a] -> [Scheduled (Budget a)]
 schedulesAll start end bs =
-  List.concatMap (schedules start end) bs & List.sortOn Budget.date
+  List.concatMap (schedules start end) bs & List.sortOn Scheduled.date
 
 
-schedules :: Day -> Day -> Budget a -> [Scheduled a]
+schedules :: Day -> Day -> Budget a -> [Scheduled (Budget a)]
 schedules start end budget =
   Schedule.until (<= end) (schedule budget) start
-    & fmap (Scheduled budget)
+    & List.map (\d -> Scheduled d budget)
