@@ -16,7 +16,7 @@ import Timely.Style as Style
 import Timely.Types exposing (Id(..))
 import Timely.Types.AccountHealth exposing (AccountHealth)
 import Timely.Types.Advance exposing (Advance)
-import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..))
+import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..), scheduledDate)
 import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money as Money exposing (Money, formatMoney)
 import Timely.Types.Transactions exposing (Schedule(..))
@@ -163,7 +163,7 @@ viewBreakdown accountId health paycheck =
                 { url = Route.url <| Route.Account accountId <| Route.Budget Income paycheck.budgetId
                 , label = text <| "Paycheck"
                 }
-            , el [ width (px 125) ] (text <| formatDate health.paycheck.date)
+            , el [ width (px 125) ] (text <| formatDate (scheduledDate health.paycheck))
             , el [ alignRight ] (text <| formatMoney paycheck.amount)
             ]
         , Components.maybe (advanceLine accountId "-") health.advance

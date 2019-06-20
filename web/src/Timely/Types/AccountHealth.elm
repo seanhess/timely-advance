@@ -5,7 +5,7 @@ import Json.Decode.Pipeline exposing (..)
 import Json.Encode as Encode exposing (Value)
 import Time exposing (Weekday(..))
 import Timely.Types.Advance exposing (Advance, decodeAdvance)
-import Timely.Types.Budget exposing (Budget, BudgetType(..), Scheduled, decodeBudget, decodeScheduledBudget)
+import Timely.Types.Budget exposing (Budget, BudgetType(..), Scheduled, decodeBudget, decodeScheduled)
 import Timely.Types.Daily exposing (Daily, DailyBalance, decodeDaily, decodeDailyBalance)
 import Timely.Types.Date exposing (Date, decodeDate)
 import Timely.Types.Money exposing (Money, decodeMoney, encodeMoney, toCents)
@@ -35,7 +35,7 @@ decodeAccountHealth =
         |> required "spendingTotal" decodeMoney
         |> required "dailyBalances" (list decodeDailyBalance)
         |> required "advance" (nullable decodeAdvance)
-        |> required "paycheck" decodeScheduledBudget
-        |> required "bills" (list decodeScheduledBudget)
+        |> required "paycheck" (decodeScheduled decodeBudget)
+        |> required "bills" (list (decodeScheduled decodeBudget))
         |> required "billsTotal" decodeMoney
         |> required "afterPaycheck" decodeMoney
