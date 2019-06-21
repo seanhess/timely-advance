@@ -36,7 +36,7 @@ import qualified Timely.Advances                    as Advances
 import qualified Timely.App                         as App
 import           Timely.Bank                        (Access, Banks, Token)
 import qualified Timely.Bank                        as Bank
-import           Timely.Evaluate.Health.Budget      (Budget (..))
+import           Timely.Evaluate.Health.Budget      (Budget, budget, BudgetInfo(..))
 import           Timely.Evaluate.Health.Transaction (Income)
 import qualified Timely.Evaluate.Offer              as Offer
 import qualified Timely.Evaluate.Schedule           as Schedule
@@ -128,7 +128,7 @@ offerAdvance
    :: ( MonadEffects '[Log, Advances, Notify] m)
    => Day -> Guid Account -> Id TransferAccount -> Valid Phone -> Budget Income -> Abs Money -> m Advance
 offerAdvance today accountId transferId phone income amount = do
-    let dueNextPay = Schedule.next (schedule income)  today
+    let dueNextPay = Schedule.next (schedule $ budget income)  today
     advance <- Advances.create accountId transferId amount dueNextPay
     Notify.send accountId phone (Notify.Message (Advances.advanceId advance) Notify.Advance message)
     Log.debug ("advance", advance)

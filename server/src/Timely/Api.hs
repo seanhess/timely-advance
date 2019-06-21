@@ -29,7 +29,6 @@ import           Servant.Server.Generic               (AsServerT, genericServerT
 -- import           Servant.Server.StaticFiles           (serveDirectoryFileServer)
 import           Timely.Accounts                      as Accounts
 import qualified Timely.Accounts.Application          as Application
-import           Timely.Accounts.Budgets              (BudgetMeta, BudgetRow)
 import qualified Timely.Accounts.Budgets              as Budgets
 import           Timely.Accounts.Types                (AppResult, Application, TransactionRow)
 import           Timely.Actions.AccountHealth         (AccountHealth)
@@ -51,7 +50,7 @@ import           Timely.App                           (AppM, AppState (..), clie
 import qualified Timely.App                           as App
 import           Timely.Auth                          (AuthCode)
 import           Timely.Config                        (port, serveDir)
-import           Timely.Evaluate.Health.Budget        (Budget)
+import           Timely.Evaluate.Health.Budget        (Budget, BudgetInfo)
 import           Timely.Evaluate.Health.Transaction   (Expense, Income)
 import qualified Timely.Transfers                     as Transfers
 import           Timely.Types.Config
@@ -107,13 +106,11 @@ data AccountApi route = AccountApi
 
 -- expenses.... /scheduled
 data BudgetsApi a route = BudgetsApi
-    { _edit   :: route :- Capture "id" (Guid BudgetRow) :> ReqBody '[JSON] (Budget a) :> Put '[JSON] NoContent
-    , _delete :: route :- Capture "id" (Guid BudgetRow) :> Delete '[JSON] NoContent
+    { _edit      :: route :- Capture "id" (Guid (Budget a)) :> ReqBody '[JSON] (BudgetInfo a) :> Put '[JSON] NoContent
+    , _delete    :: route :- Capture "id" (Guid (Budget a)) :> Delete '[JSON] NoContent
 
-    -- how can I get them scheduled?
-    -- right now BudgetMeta
-    , _get    :: route :- Get '[JSON] [BudgetMeta a]
-    , _create :: route :- ReqBody '[JSON] (Budget a) :> Post '[JSON] (Guid BudgetRow)
+    , _get       :: route :- Get '[JSON] [Budget a]
+    , _create    :: route :- ReqBody '[JSON] (BudgetInfo a) :> Post '[JSON] (Guid (Budget a))
     } deriving (Generic)
 
 

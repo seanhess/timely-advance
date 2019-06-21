@@ -4,8 +4,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns        #-}
 module Timely.Evaluate.Health.Needed
-  ( Budget(Budget)
-  , Transaction
+  ( Transaction
   , Expense, Income
   , neededForBill
   , dueDates
@@ -19,7 +18,7 @@ import           Data.Model.Money                   (Money)
 import qualified Data.Model.Money                   as Money
 import           Data.Number.Abs                    (Abs (..))
 import           Data.Time.Calendar                 (Day)
-import           Timely.Evaluate.Health.Budget      (Budget (..))
+import           Timely.Evaluate.Health.Budget      (BudgetInfo(..))
 import           Timely.Evaluate.Health.Transaction (Expense, Income, Transaction)
 import qualified Timely.Evaluate.Health.Transaction as Trans
 import qualified Timely.Evaluate.Schedule           as Schedule
@@ -40,8 +39,8 @@ incomeSince start =
 
 
 -- where Day is the bill due date
-incomeUntil :: Day -> Day -> Budget Income -> Money
-incomeUntil today due Budget {schedule, amount} =
+incomeUntil :: Day -> Day -> BudgetInfo Income -> Money
+incomeUntil today due BudgetInfo {schedule, amount} =
   Money.fromCents $ length (Schedule.until (< due) schedule today) * Money.toCents (value amount)
 
 
@@ -54,7 +53,7 @@ incomeUntil today due Budget {schedule, amount} =
 -- this is just for the NEXT instance of the bill
 -- we just need to duplicate this for each time the bill comes due before the next paycheck. Isn't this kind of circular
 
-neededForBill :: Day -> [Transaction Income] -> Budget Income -> Budget Expense -> Money
+neededForBill :: Day -> [Transaction Income] -> BudgetInfo Income -> BudgetInfo Expense -> Money
 neededForBill today paychecks income bill =
   let lastDue = Schedule.last (schedule bill) today
       dates   = dueDates today income bill
@@ -62,7 +61,7 @@ neededForBill today paychecks income bill =
 
 
 
-dueDates :: Day -> Budget Income -> Budget Expense -> [Day]
+dueDates :: Day -> BudgetInfo Income -> BudgetInfo Expense -> [Day]
 dueDates today income bill =
   -- if nextDue is before nextPay, then keep giving due dates until the next pay
 
@@ -78,7 +77,7 @@ dueDates today income bill =
 
 
 -- oh, there is no income in this period
-neededForNextBill :: [Transaction Income] -> Budget Income -> Abs Money -> Day -> Day -> Day -> Money
+neededForNextBill :: [Transaction Income] -> BudgetInfo Income -> Abs Money -> Day -> Day -> Day -> Money
 neededForNextBill paychecks income amount today lastDue nextDue =
   let incPrev = incomeSince lastDue paychecks
       incNext = incomeUntil today   nextDue income

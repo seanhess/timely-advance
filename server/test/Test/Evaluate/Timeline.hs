@@ -6,6 +6,7 @@ module Test.Evaluate.Timeline where
 import Data.Aeson                       as Aeson (FromJSON, ToJSON (..), Value (..), eitherDecode, encode)
 import Data.Function                    ((&))
 import Data.HashMap.Strict              as HM (lookup)
+import Data.Model.Meta                  (Meta (Meta))
 import Data.Model.Money                 as Money (money)
 import Data.Number.Abs                  (Abs (value), absolute)
 import Data.Time.Calendar               (Day)
@@ -14,7 +15,7 @@ import Test.Dates                       (day)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.Monad
-import Timely.Evaluate.Health.Budget    (Budget (Budget))
+import Timely.Evaluate.Health.Budget    (Budget (Budget), BudgetInfo (..))
 import Timely.Evaluate.Health.Daily     as Daily (Daily (..), DailyBalance (..))
 import Timely.Evaluate.Health.Scheduled (Scheduled (Scheduled))
 import Timely.Evaluate.Health.Timeline  as Timeline
@@ -83,7 +84,7 @@ testTimeline = do
 
     test "two bills on the 5th" $ do
       -- 3-05 is Tuesday
-      let billT = Budget "bill" (Weekly Tuesday) (absolute billAmtWeek)
+      let billT = budget "bill" (Weekly Tuesday) (absolute billAmtWeek)
       let ![_, d5] = timeline day4 day5 spend0 [rent5, billT]
       date d5     @?= day5
       bills d5    @?= [rent5, billT]
@@ -91,7 +92,7 @@ testTimeline = do
 
     test "two bills, week and 5th" $ do
       -- 3-04 is Monday
-      let billM = Budget "bill" (Weekly Monday) (absolute billAmtWeek)
+      let billM = budget "bill" (Weekly Monday) (absolute billAmtWeek)
       let ![_, d4, d5] = timeline day3 day5 spend0 [rent5, billM]
       date d4 @?= day4
       date d5 @?= day5
@@ -224,16 +225,19 @@ day10 = day "2019-03-10" :: Day
 spend0  = absolute $ money 0.00
 spend30 = absolute $ money 30.00
 
-rent5 = Budget "rent" (Monthly (DayOfMonth 5)) (absolute rentAmt)
-pay5 = Budget "paycheck" (Monthly (DayOfMonth 5)) (absolute payAmt)
-pay1 = Budget "paycheck" (Monthly (DayOfMonth 1)) (absolute payAmt)
-payMon = Budget "paycheck mon" (Weekly Monday) (absolute payAmtWeek)
-billMon = Budget "bill mon" (Weekly Monday) (absolute billAmtWeek)
+rent5 = budget "rent" (Monthly (DayOfMonth 5)) (absolute rentAmt)
+pay5 = budget "paycheck" (Monthly (DayOfMonth 5)) (absolute payAmt)
+pay1 = budget "paycheck" (Monthly (DayOfMonth 1)) (absolute payAmt)
+payMon = budget "paycheck mon" (Weekly Monday) (absolute payAmtWeek)
+billMon = budget "bill mon" (Weekly Monday) (absolute billAmtWeek)
 
 -- Tuesday, Mar 5th
-billTue = Budget "bill tue" (Weekly Tuesday) (absolute billAmtWeek)
+billTue = budget "bill tue" (Weekly Tuesday) (absolute billAmtWeek)
 
 rentAmt = money 1000
 payAmt = money 2000
 payAmtWeek = money 500
 billAmtWeek = money 100
+
+
+budget n s a = Budget $ Meta "id" $ BudgetInfo n s a

@@ -14,21 +14,20 @@ import           Data.Function                     ((&))
 import qualified Data.List                         as List
 import           Data.Maybe                        (fromMaybe, listToMaybe)
 import           Data.Model.Guid                   (Guid)
-import qualified Data.Model.Meta                   as Meta
 import           Data.Model.Money                  as Money (Money, fromFloat)
 import           Data.Number.Abs                   (Abs (value), absolute)
 import           Data.Time.Calendar                (Day)
 import           GHC.Generics                      (Generic)
 import           Timely.Accounts                   (Accounts)
 import qualified Timely.Accounts                   as Accounts
-import           Timely.Accounts.Budgets           (BudgetMeta, Budgets)
+import           Timely.Accounts.Budgets           (Budgets)
 import qualified Timely.Accounts.Budgets           as Budgets
 import           Timely.Accounts.Types             (Account, BankAccount (..), TransactionRow)
 import qualified Timely.Accounts.Types.BankAccount as BankAccount
 import qualified Timely.Actions.Transactions       as Transactions
 import           Timely.Advances                   as Advances (Advance (..), Advances, findActive)
 import           Timely.Evaluate.Health            as Health (DailyBalance, Expense, Income)
-import           Timely.Evaluate.Health.Budget     as Budget (Budget (..))
+import           Timely.Evaluate.Health.Budget     as Budget (Budget, BudgetInfo(..), budget)
 import           Timely.Evaluate.Health.Scheduled  as Scheduled (Scheduled (..))
 import           Timely.Evaluate.Health.Timeline   as Health
 import           Timely.Evaluate.Schedule          as Schedule (next)
@@ -82,12 +81,11 @@ analyze i = do
 
 
 
-analyzeWith :: Day -> BankAccount -> Budget Income -> [BudgetMeta Expense] -> Abs Money -> [TransactionRow] -> [Advance] -> AccountHealth
-analyzeWith now BankAccount {balance} pay bms spend _ advs =
+analyzeWith :: Day -> BankAccount -> Budget Income -> [Budget Expense] -> Abs Money -> [TransactionRow] -> [Advance] -> AccountHealth
+analyzeWith now BankAccount {balance} pay bs spend _ advs =
 
-    let payday   = Schedule.next (schedule pay) now
+    let payday   = Schedule.next (schedule $ budget pay) now
         paycheck = Scheduled payday pay
-        bs    = List.map Meta.value bms
 
         -- TODO calculate this from their transactions, store it somewhere!
 
@@ -102,9 +100,9 @@ analyzeWith now BankAccount {balance} pay bms spend _ advs =
         minimum = Health.minimumBalance balance dailyBalances + advanceAmount
 
         bills = Health.billsDue dailys
-        billsTotal = absolute $ List.sum $ List.map (value . Budget.amount . Scheduled.item) bills
+        billsTotal = absolute $ List.sum $ List.map (value . Budget.amount . budget . Scheduled.item) bills
         spendingTotal = Health.totalSpending dailys
-        afterPaycheck = minimum + (value $ Budget.amount pay) - advanceAmount
+        afterPaycheck = minimum + (value $ Budget.amount $ budget pay) - advanceAmount
 
 
     -- Not using transactions for now, simplify because we can't actually
@@ -127,11 +125,10 @@ analyzeWith now BankAccount {balance} pay bms spend _ advs =
 
 primaryIncome
   :: ( MonadEffects '[Throw Error] m )
-  => Guid Account -> [BudgetMeta Income] -> m (Budget Income)
+  => Guid Account -> [Budget Income] -> m (Budget Income)
 primaryIncome accountId pays =
   pays
-    & List.map Meta.value
-    & List.sortOn (value . Budget.amount)
+    & List.sortOn (value . Budget.amount . budget)
     & listToMaybe
     & required (NoIncome accountId)
 

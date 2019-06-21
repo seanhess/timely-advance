@@ -8,7 +8,7 @@ import           Test.Dates                         (day)
 import           Test.Evaluate.History.Transactions (allTransactions, expenses, incomes, transaction)
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
-import           Timely.Evaluate.Health.Budget      (Budget (Budget))
+import           Timely.Evaluate.Health.Budget      (BudgetInfo(BudgetInfo))
 import           Timely.Evaluate.Health.Transaction (Transaction (..))
 import qualified Timely.Evaluate.Health.Transaction as Trans
 import qualified Timely.Evaluate.History            as History
@@ -28,8 +28,8 @@ testSpending = do
   let amt =  Money.fromFloat 10.00
       transStar = Trans.expense "Starbucks" amt (day "2019-01-01")
       transOther = Trans.expense "Other" amt (day "2019-01-02")
-      budStar = Budget "Starbucks" (Weekly Monday) (absolute amt)
-      budOther = Budget "Other" (Weekly Monday) (absolute amt)
+      budStar = BudgetInfo "Starbucks" (Weekly Monday) (absolute amt)
+      budOther = BudgetInfo "Other" (Weekly Monday) (absolute amt)
       allSpending  = History.spending [] [transStar, transOther]
       starSpending = History.spending [budOther] [transStar, transOther]
 
@@ -139,11 +139,3 @@ testGroups = do
 
 
 isName x g = History.name g == x
-
-
-
-
-
-
-
-

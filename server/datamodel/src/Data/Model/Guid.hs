@@ -35,23 +35,8 @@ import           Web.HttpApiData        (FromHttpApiData (..), ToHttpApiData (..
 newtype Guid s = Guid Text
   deriving (Generic, Eq)
 
-class GuidPrefix s where
-  guidPrefix :: Proxy s -> Text
-
-  default guidPrefix :: Typeable s => Proxy s -> Text
-  guidPrefix _ = Text.toLower $ Text.pack $ show $ typeOf (undefined :: s)
-
-instance GuidPrefix s => Show (Guid s) where
-  show = Text.unpack . toText
-
-instance GuidPrefix s => ToJSON (Guid s) where
-  toJSON = Aeson.String . toText
-
 instance FromJSON (Guid s) where
   parseJSON v = fromText <$> parseJSON v
-
-instance GuidPrefix s => ToHttpApiData (Guid s) where
-  toUrlPiece = toText
 
 instance FromHttpApiData (Guid s) where
   parseUrlPiece = Right . fromText
@@ -90,8 +75,27 @@ parseText = fromMaybe "" . listToMaybe . reverse . Text.splitOn "-"
 
 
 
+
 nonUuidError v = error $ "fromSql: text column with non-text value: " ++ show v
 
 
 randomId :: MonadIO m => m (Guid s)
 randomId = Guid <$> randomAZ 20
+
+
+
+
+class GuidPrefix s where
+  guidPrefix :: Proxy s -> Text
+
+  default guidPrefix :: Typeable s => Proxy s -> Text
+  guidPrefix _ = Text.toLower $ Text.pack $ show $ typeOf (undefined :: s)
+
+instance GuidPrefix s => Show (Guid s) where
+  show = Text.unpack . toText
+
+instance GuidPrefix s => ToJSON (Guid s) where
+  toJSON = Aeson.String . toText
+
+instance GuidPrefix s => ToHttpApiData (Guid s) where
+  toUrlPiece = toText

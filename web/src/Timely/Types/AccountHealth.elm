@@ -20,6 +20,13 @@ type alias AccountHealth =
     , dailyBalances : List DailyBalance
     , advance : Maybe Advance
     , paycheck : Scheduled Budget
+
+    -- these don't have ids :(
+    -- I can't really use the name, can I?
+    -- it's pretty annoying that the bills don't have an identifier
+    -- why don't I give them an identifier always?
+    -- it's dumb
+    -- I can let the objects have an identifier
     , bills : List (Scheduled Budget)
     , billsTotal : Money
     , afterPaycheck : Money

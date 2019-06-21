@@ -5,13 +5,13 @@
 module Timely.Actions.Transactions where
 
 
+import Data.Model.Money                             as Money (Money, fromFloat)
 import           Control.Effects (MonadEffects)
 import           Data.Aeson                         (ToJSON)
 import           Data.Model.Guid                    (Guid)
 import qualified Control.Effects.Time               as Time
 import           Control.Effects.Time               (Time)
 import qualified Data.List                          as List
-import Data.Model.Money                   as Money (Money, fromFloat)
 import           Data.Maybe                         (mapMaybe, fromMaybe)
 import           GHC.Generics                       (Generic)
 import           Data.Number.Abs                    (Abs(value), absolute)
@@ -19,9 +19,9 @@ import           Timely.Accounts                    (Account, Accounts, Transact
 import qualified Timely.Accounts                    as Accounts
 import           Timely.Evaluate.Health.Transaction (Expense, Income, Transaction (..))
 import qualified Timely.Evaluate.Health.Transaction as Trans
-import           Timely.Evaluate.Health.Budget (Budget(..))
+import           Timely.Evaluate.Health.Budget      (BudgetInfo(..))
 import           Timely.Evaluate.History            (Group(..))
-import           Timely.Evaluate.Schedule (scheduleDate, Schedule(Monthly))
+import           Timely.Evaluate.Schedule           (scheduleDate, Schedule(Monthly))
 import qualified Timely.Evaluate.History            as History
 import Data.Function ((&))
 
@@ -76,17 +76,17 @@ recent i = do
 
 
 
-defaultBudget :: Group a -> Budget a
+defaultBudget :: Group a -> BudgetInfo a
 defaultBudget Group {name, average, schedule, transactions} =
   let date = scheduleDate $ List.map Trans.date transactions
-  in Budget
+  in BudgetInfo
     { name
     , schedule = fromMaybe (Monthly date) schedule
     , amount = average
     }
 
 
-discretionarySpending :: Integer -> [Budget Expense] -> [TransactionRow] -> Abs Money
+discretionarySpending :: Integer -> [BudgetInfo Expense] -> [TransactionRow] -> Abs Money
 discretionarySpending numDays bs ts =
   History.spending bs (mapMaybe toExpense ts)
     & History.dailySpending numDays

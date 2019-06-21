@@ -8,6 +8,7 @@ module Timely.Evaluate.Health
   , Daily
   , DailyBalance
   , Budget
+  , BudgetInfo
   , Scheduled
   , Transaction
   , Income, Expense
@@ -21,6 +22,6 @@ import Timely.Evaluate.Health.Transaction
 
 
 
-isBudget :: forall a. Budget a -> Transaction a -> Bool
+isBudget :: forall a. BudgetInfo a -> Transaction a -> Bool
 isBudget b t =
-  name (b :: Budget a) == name (t :: Transaction a)
+  name (b :: BudgetInfo a) == name (t :: Transaction a)

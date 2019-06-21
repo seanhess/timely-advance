@@ -15,7 +15,7 @@ import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types exposing (Id(..))
 import Timely.Types.AccountHealth exposing (AccountHealth)
-import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..))
+import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..), Scheduled)
 import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money as Money exposing (Money, formatMoney)
 import Timely.Types.Transactions exposing (Schedule(..))
@@ -25,15 +25,14 @@ type alias Model =
     { key : Nav.Key
     , accountId : Id AccountId
     , bills : Resource (List (BudgetId Budget))
-
-    -- , health : Resource AccountHealth
+    , health : Resource AccountHealth
     }
 
 
 type Msg
     = Back
     | OnBills (Result Http.Error (List (BudgetId Budget)))
-      -- | OnHealth (Result Http.Error AccountHealth)
+    | OnHealth (Result Http.Error AccountHealth)
     | AddBill
     | OnCreated (Result Http.Error (Id Budget))
 
@@ -43,15 +42,23 @@ init key accountId =
     ( { key = key
       , accountId = accountId
       , bills = Loading
-
-      -- , health = Loading
+      , health = Loading
       }
     , Cmd.batch
         [ Api.getExpenses OnBills accountId
-
-        -- , Api.getAccountHealth OnHealth accountId
+        , Api.getAccountHealth OnHealth accountId
         ]
     )
+
+
+upcomingBills : AccountHealth -> List (Scheduled (BudgetId Budget))
+upcomingBills health =
+    health.bills
+
+
+
+-- otherBills : Model -> List (BudgetId Budget))
+-- otherBills = _
 
 
 update : Msg -> Model -> Updates Model Msg ()
@@ -99,8 +106,9 @@ update msg model =
         OnBills bs ->
             updates { model | bills = Resource.fromResult bs }
 
-        -- OnHealth r ->
-        --     updates { model | health = Resource.fromResult r }
+        OnHealth r ->
+            updates { model | health = Resource.fromResult r }
+
         -- Select e ->
         --     updates model
         --         |> command (navBudget Income model.paychecks e)

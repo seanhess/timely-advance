@@ -13,7 +13,7 @@ import           Data.Model.Money                   as Money (Money, fromCents, 
 import           Data.Number.Abs                    (Abs (value), absolute)
 import           Data.Text                          (Text)
 import           GHC.Generics                       (Generic)
-import           Timely.Evaluate.Health             (Budget, Expense, Transaction, isBudget)
+import           Timely.Evaluate.Health             (Expense, Transaction, isBudget, BudgetInfo)
 import qualified Timely.Evaluate.Health.Transaction as Trans
 import           Timely.Evaluate.Schedule           (Schedule)
 import qualified Timely.Evaluate.Schedule           as Schedule
@@ -80,7 +80,7 @@ groups ts =
 data Spending
 
 
-isSpending :: [Budget Expense] -> Transaction Expense -> Bool
+isSpending :: [BudgetInfo Expense] -> Transaction Expense -> Bool
 isSpending bs t =
   not $ any (\b -> isBudget b t) bs
 
@@ -91,7 +91,7 @@ toSpending t =
 
 
 
-spending :: [Budget Expense] -> [Transaction Expense] -> [Transaction Spending]
+spending :: [BudgetInfo Expense] -> [Transaction Expense] -> [Transaction Spending]
 spending bs ts =
   mapMaybe ifSpending ts
   where
