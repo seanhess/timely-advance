@@ -41,7 +41,7 @@ type Route
 type Account
     = AccountMain
     | Advance (Id AdvanceId)
-    | Budget BudgetType (Id Budget)
+    | Budget BudgetType (Id BudgetId)
     | Bills
     | Spending
 

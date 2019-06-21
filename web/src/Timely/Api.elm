@@ -10,7 +10,7 @@ import Time exposing (Month(..))
 import Timely.Types exposing (Id(..), Token, decodeId, encodeId, idValue)
 import Timely.Types.AccountHealth exposing (AccountHealth, decodeAccountHealth)
 import Timely.Types.Advance exposing (Advance, AdvanceId, decodeAdvance)
-import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..), decodeBudget, decodeBudgetId, encodeBudget)
+import Timely.Types.Budget exposing (Budget, BudgetId, BudgetInfo, BudgetType(..), decodeBudget, decodeBudgetInfo, encodeBudget)
 import Timely.Types.Date exposing (Date, decodeDate)
 import Timely.Types.Money exposing (Money, decodeMoney, encodeMoney, fromCents, toCents)
 import Timely.Types.Transactions exposing (History, Schedule, TransRow, Transaction, decodeHistory, decodeSchedule, decodeTransRow, decodeTransaction, encodeSchedule)
@@ -380,22 +380,22 @@ postAdvanceAccept toMsg (Id a) (Id adv) amt =
 -- Budgets ----------------------------
 
 
-putBudget : BudgetType -> (Result Error String -> msg) -> Id AccountId -> Id Budget -> Budget -> Cmd msg
+putBudget : BudgetType -> (Result Error String -> msg) -> Id AccountId -> Id BudgetId -> BudgetInfo -> Cmd msg
 putBudget bt toMsg (Id ai) (Id bi) b =
     requestPUT toMsg [ "", "v1", "accounts", ai, budgetTypePath bt, bi ] (encodeBudget b) string
 
 
-delBudget : BudgetType -> (Result Error String -> msg) -> Id AccountId -> Id Budget -> Cmd msg
+delBudget : BudgetType -> (Result Error String -> msg) -> Id AccountId -> Id BudgetId -> Cmd msg
 delBudget bt toMsg (Id ai) (Id bi) =
     requestDEL toMsg [ "", "v1", "accounts", ai, budgetTypePath bt, bi ] string
 
 
-getBudgets : BudgetType -> (Result Error (List (BudgetId Budget)) -> msg) -> Id AccountId -> Cmd msg
+getBudgets : BudgetType -> (Result Error (List Budget) -> msg) -> Id AccountId -> Cmd msg
 getBudgets bt toMsg (Id ai) =
-    requestGET toMsg [ "", "v1", "accounts", ai, budgetTypePath bt ] (list decodeBudgetId)
+    requestGET toMsg [ "", "v1", "accounts", ai, budgetTypePath bt ] (list decodeBudget)
 
 
-postBudget : BudgetType -> (Result Error (Id Budget) -> msg) -> Id AccountId -> Budget -> Cmd msg
+postBudget : BudgetType -> (Result Error (Id BudgetId) -> msg) -> Id AccountId -> BudgetInfo -> Cmd msg
 postBudget bt toMsg (Id a) b =
     requestPOST toMsg [ "", "v1", "accounts", a, budgetTypePath bt ] (encodeBudget b) decodeId
 

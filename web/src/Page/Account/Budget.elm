@@ -20,7 +20,7 @@ import Timely.Components as Components
 import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types exposing (Id(..))
-import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..), toBudget)
+import Timely.Types.Budget as Budget exposing (Budget, BudgetId, BudgetInfo, BudgetType(..), info)
 import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money as Money exposing (Money, formatMoney, formatMoneyNoSign)
 import Timely.Types.Transactions exposing (Group, History, Schedule(..), Transaction, formatBiweek, formatDay, formatWeekday, isMonthly, isWeekly)
@@ -30,9 +30,9 @@ import Validate exposing (Validator, validate)
 type alias Model =
     { key : Nav.Key
     , accountId : Id AccountId
-    , budgetId : Id Budget
+    , budgetId : Id BudgetId
     , budgetType : BudgetType
-    , budget : Resource (BudgetId Budget)
+    , budget : Resource BudgetInfo
 
     -- needs to be a string or it gets really confused
     , name : String
@@ -43,7 +43,7 @@ type alias Model =
 
 type Msg
     = Close
-    | OnBudgets (Result Http.Error (List (BudgetId Budget)))
+    | OnBudgets (Result Http.Error (List Budget))
     | OnDone (Result Http.Error String)
     | Save
     | Delete
@@ -52,7 +52,7 @@ type Msg
     | EditName String
 
 
-init : Nav.Key -> Id AccountId -> BudgetType -> Id Budget -> ( Model, Cmd Msg )
+init : Nav.Key -> Id AccountId -> BudgetType -> Id BudgetId -> ( Model, Cmd Msg )
 init key accountId budgetType budgetId =
     ( { key = key
       , accountId = accountId
@@ -100,7 +100,7 @@ update msg model =
         OnBudgets (Ok bs) ->
             case List.filter isBudget bs of
                 [ b ] ->
-                    updates { model | budget = Ready b, name = b.name, schedule = b.schedule, amount = formatMoneyNoSign b.amount }
+                    updates { model | budget = Ready (Budget.info b), name = b.name, schedule = b.schedule, amount = formatMoneyNoSign b.amount }
 
                 _ ->
                     updates model
@@ -146,7 +146,7 @@ view model =
                 ]
             ]
         , column Style.section
-            [ resource (viewBudget model << toBudget) model.budget
+            [ resource (viewBudget model) model.budget
             , viewActions
             ]
         ]
@@ -160,7 +160,7 @@ viewPopup model =
             [ viewEditMessage model.budgetType
             , el [ alignRight ] (Components.close Close)
             ]
-        , resource (viewBudget model << toBudget) model.budget
+        , resource (viewBudget model) model.budget
         , viewActions
         ]
 
@@ -180,7 +180,7 @@ viewEditMessage typ =
     text <| "Edit your " ++ formatBudgetType typ
 
 
-viewBudget : Model -> Budget -> Element Msg
+viewBudget : Model -> BudgetInfo -> Element Msg
 viewBudget model budget =
     column [ spacing 10, width fill ]
         [ fieldName model.name
@@ -324,7 +324,7 @@ validAmount value =
     Maybe.map (Money.fromDollars << abs) (String.toFloat value)
 
 
-validBudget : Model -> Maybe Budget
+validBudget : Model -> Maybe BudgetInfo
 validBudget model =
     validAmount model.amount
-        |> Maybe.map (Budget model.name model.schedule)
+        |> Maybe.map (BudgetInfo model.name model.schedule)

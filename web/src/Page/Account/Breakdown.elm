@@ -127,7 +127,7 @@ import Timely.Types.Transactions exposing (Schedule(..))
 --         ]
 
 
-viewBreakdown : Id AccountId -> AccountHealth -> BudgetId Budget -> Element msg
+viewBreakdown : Id AccountId -> AccountHealth -> Budget -> Element msg
 viewBreakdown accountId health paycheck =
     column [ spacing 20, width fill ]
         [ row Style.banner

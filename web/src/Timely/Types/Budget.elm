@@ -1,4 +1,4 @@
-module Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..), Scheduled, decodeBudget, decodeBudgetId, decodeScheduled, encodeBudget, scheduledDate, toBudget)
+module Timely.Types.Budget exposing (Budget, BudgetId, BudgetInfo, BudgetType(..), Scheduled, decodeBudget, decodeBudgetInfo, decodeScheduled, encodeBudget, info, scheduledDate)
 
 import Json.Decode as Decode exposing (Decoder, bool, field, int, list, nullable, string)
 import Json.Decode.Pipeline exposing (..)
@@ -9,14 +9,30 @@ import Timely.Types.Money exposing (Money, decodeMoney, encodeMoney)
 import Timely.Types.Transactions exposing (Schedule, decodeSchedule, encodeSchedule)
 
 
-type alias BudgetId a =
-    { a | budgetId : Id Budget }
+type BudgetId
+    = BudgetId
 
 
-type alias Budget =
+type alias BudgetInfo =
     { name : String
     , schedule : Schedule
     , amount : Money
+    }
+
+
+type alias Budget =
+    { budgetId : Id BudgetId
+    , name : String
+    , schedule : Schedule
+    , amount : Money
+    }
+
+
+info : Budget -> BudgetInfo
+info b =
+    { name = b.name
+    , schedule = b.schedule
+    , amount = b.amount
     }
 
 
@@ -37,16 +53,18 @@ type BudgetType
 decodeBudget : Decoder Budget
 decodeBudget =
     Decode.succeed Budget
+        |> required "budgetId" decodeId
         |> required "name" string
         |> required "schedule" decodeSchedule
         |> required "amount" decodeMoney
 
 
-decodeBudgetId : Decoder (BudgetId Budget)
-decodeBudgetId =
-    Decode.map2 budgetWithId
-        (field "budgetId" decodeId)
-        decodeBudget
+decodeBudgetInfo : Decoder BudgetInfo
+decodeBudgetInfo =
+    Decode.succeed BudgetInfo
+        |> required "name" string
+        |> required "schedule" decodeSchedule
+        |> required "amount" decodeMoney
 
 
 decodeScheduled : Decoder a -> Decoder (Scheduled a)
@@ -56,27 +74,10 @@ decodeScheduled decodeItem =
         decodeItem
 
 
-budgetWithId : Id Budget -> Budget -> BudgetId Budget
-budgetWithId budgetId { name, schedule, amount } =
-    { budgetId = budgetId
-    , name = name
-    , schedule = schedule
-    , amount = amount
-    }
-
-
-encodeBudget : Budget -> Encode.Value
+encodeBudget : BudgetInfo -> Encode.Value
 encodeBudget b =
     Encode.object
         [ ( "name", Encode.string b.name )
         , ( "schedule", encodeSchedule b.schedule )
         , ( "amount", encodeMoney b.amount )
         ]
-
-
-toBudget : BudgetId Budget -> Budget
-toBudget { name, schedule, amount } =
-    { name = name
-    , schedule = schedule
-    , amount = amount
-    }

@@ -30,7 +30,7 @@ type alias Model =
     , transactions : Resource (List TransRow)
     , banks : Resource (List BankAccount)
     , advances : Resource (List Advance)
-    , paycheck : Resource (BudgetId Budget)
+    , paycheck : Resource Budget
     }
 
 
@@ -41,7 +41,7 @@ type Msg
     | OnBanks (Result Error (List BankAccount))
     | OnTransactions (Result Error (List TransRow))
     | OnAdvances (Result Error (List Advance))
-    | OnIncomes (Result Http.Error (List (BudgetId Budget)))
+    | OnIncomes (Result Http.Error (List Budget))
     | Logout
     | LogoutDone (Result Error ())
 

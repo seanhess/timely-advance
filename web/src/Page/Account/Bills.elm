@@ -15,7 +15,7 @@ import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types exposing (Id(..))
 import Timely.Types.AccountHealth exposing (AccountHealth)
-import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..), Scheduled)
+import Timely.Types.Budget exposing (Budget, BudgetId, BudgetInfo, BudgetType(..), Scheduled)
 import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money as Money exposing (Money, formatMoney)
 import Timely.Types.Transactions exposing (Schedule(..))
@@ -24,17 +24,17 @@ import Timely.Types.Transactions exposing (Schedule(..))
 type alias Model =
     { key : Nav.Key
     , accountId : Id AccountId
-    , bills : Resource (List (BudgetId Budget))
+    , bills : Resource (List Budget)
     , health : Resource AccountHealth
     }
 
 
 type Msg
     = Back
-    | OnBills (Result Http.Error (List (BudgetId Budget)))
+    | OnBills (Result Http.Error (List Budget))
     | OnHealth (Result Http.Error AccountHealth)
     | AddBill
-    | OnCreated (Result Http.Error (Id Budget))
+    | OnCreated (Result Http.Error (Id BudgetId))
 
 
 init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
@@ -51,36 +51,34 @@ init key accountId =
     )
 
 
-upcomingBills : AccountHealth -> List (Scheduled (BudgetId Budget))
+upcomingBills : AccountHealth -> List (Scheduled Budget)
 upcomingBills health =
     health.bills
 
 
 
--- otherBills : Model -> List (BudgetId Budget))
+-- otherBills : Model -> List (Budget))
 -- otherBills = _
 
 
 update : Msg -> Model -> Updates Model Msg ()
 update msg model =
     let
-        isBudget : Budget -> BudgetId Budget -> Bool
+        isBudget : Budget -> Budget -> Bool
         isBudget b bi =
-            (b.name == bi.name)
-                && (b.schedule == bi.schedule)
-                && (b.amount == bi.amount)
+            b.budgetId == bi.budgetId
 
-        findBudget : Budget -> List (BudgetId Budget) -> Maybe (BudgetId Budget)
+        findBudget : Budget -> List Budget -> Maybe Budget
         findBudget bud bs =
             bs
                 |> List.filter (isBudget bud)
                 |> List.head
 
-        goBudget : BudgetType -> BudgetId Budget -> Cmd Msg
+        goBudget : BudgetType -> Budget -> Cmd Msg
         goBudget typ b =
             goBudgetId typ b.budgetId
 
-        goBudgetId : BudgetType -> Id Budget -> Cmd Msg
+        goBudgetId : BudgetType -> Id BudgetId -> Cmd Msg
         goBudgetId typ bid =
             Route.pushUrl model.key (Route.Account model.accountId (Route.Budget typ bid))
 
@@ -91,7 +89,7 @@ update msg model =
         --         |> Maybe.andThen (findBudget event.budget)
         --         |> Maybe.map (goBudget bt)
         --         |> Maybe.withDefault Cmd.none
-        defaultBudget : String -> Budget
+        defaultBudget : String -> BudgetInfo
         defaultBudget name =
             { name = name
             , schedule = Monthly { date = 1 }
@@ -140,7 +138,7 @@ view model =
         ]
 
 
-viewBills : Id AccountId -> List (BudgetId Budget) -> Element Msg
+viewBills : Id AccountId -> List Budget -> Element Msg
 viewBills accountId bills =
     column [ spacing 10, width fill ]
         [ el Style.banner (text "Bills")
@@ -151,7 +149,7 @@ viewBills accountId bills =
         ]
 
 
-viewBill : Id AccountId -> BudgetId Budget -> Element Msg
+viewBill : Id AccountId -> Budget -> Element Msg
 viewBill accountId bill =
     wrappedRow [ spacing 6, width fill, padding 10 ]
         [ column [ spacing 6 ]
