@@ -1,4 +1,4 @@
-module Timely.Style exposing (banner, blue, box, button, dark, darkBlue, darkGreen, destroy, dim, error, formPage, gray, green, header, info, lightBlue, lightRed, link, option, page, primary, red, secondary, section, space, success, white)
+module Timely.Style exposing (banner, blue, box, button, dark, darkBlue, darkGreen, destroy, dim, error, formPage, gray, green, header, info, lightBlue, lightGray, lightRed, link, option, page, primary, red, secondary, section, space, success, white)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -32,6 +32,10 @@ white =
 
 gray =
     Element.rgb 0.9 0.9 0.9
+
+
+lightGray =
+    Element.rgb 0.95 0.95 0.95
 
 
 dim =

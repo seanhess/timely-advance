@@ -1,4 +1,4 @@
-module Timely.Types.Budget exposing (Budget, BudgetId, BudgetInfo, BudgetType(..), Scheduled, decodeBudget, decodeBudgetInfo, decodeScheduled, encodeBudget, info, scheduledDate)
+module Timely.Types.Budget exposing (Budget, BudgetId, BudgetInfo, BudgetType(..), Scheduled, decodeBudget, decodeBudgetInfo, decodeScheduled, encodeBudget, info, scheduledDate, scheduledItem)
 
 import Json.Decode as Decode exposing (Decoder, bool, field, int, list, nullable, string)
 import Json.Decode.Pipeline exposing (..)
@@ -43,6 +43,11 @@ type Scheduled a
 scheduledDate : Scheduled a -> Date
 scheduledDate (Scheduled d _) =
     d
+
+
+scheduledItem : Scheduled a -> a
+scheduledItem (Scheduled _ a) =
+    a
 
 
 type BudgetType
