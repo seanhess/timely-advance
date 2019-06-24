@@ -149,21 +149,7 @@ viewMain model =
                     |> Resource.apply model.health
                     |> Resource.apply model.paycheck
                 )
-            , row [ Font.italic ]
-                [ el [] (text "Do we want to show any of the below information?")
-                ]
-            , resource_
-                (\_ -> Element.none)
-                identity
-                (Resource.pure accountInfo
-                    |> Resource.apply model.account
-                    |> Resource.apply model.health
-                    |> Resource.apply active
-                )
-            , resource customerView <| model.customer
 
-            -- , resource banksTable model.banks
-            -- , resource transTable model.transactions
             -- , resource (advancesView model.accountId) active
             -- , el Style.header (text "Advances")
             ]
@@ -173,15 +159,18 @@ viewMain model =
 accountHealth : Id AccountId -> AccountHealth -> Element Msg
 accountHealth accountId health =
     let
-        isHealthy =
-            toCents health.minimum >= 0
+        isHealthy amt =
+            toCents amt >= 0
 
-        healthyColor =
-            if isHealthy then
-                Style.green
+        healthyColor amt =
+            if Money.toDollars amt < 0 then
+                Style.lightRed
+
+            else if Money.toDollars amt < 200 then
+                Style.yellow
 
             else
-                Style.lightRed
+                Style.green
     in
     link [ width fill ]
         -- TODO should this do anything?
@@ -191,82 +180,13 @@ accountHealth accountId health =
                 [ spacing 4
                 , padding 20
                 , width fill
-                , Background.color healthyColor
+                , Background.color (healthyColor health.minimum)
                 , Font.color Style.white
                 , Style.box
                 ]
-                [ el [ Font.bold, centerX ] (text "Lowest Balance")
+                [ el [ Font.bold, centerX ] (text "Predicted Lowest Balance")
                 , el [ Font.bold, Font.size 40, centerX ] (text <| formatMoney health.minimum)
                 ]
-        }
-
-
-accountInfo : Account -> AccountHealth -> List Advance -> Element Msg
-accountInfo account health advances =
-    column [ spacing 20 ]
-        [ wrappedRow [ spacing 20 ]
-            [ column [ spacing 4 ]
-                [ el [ Font.bold ] (text "Balance")
-                , el [] (text <| formatMoney health.balance)
-                ]
-            , column [ spacing 4 ]
-                [ el [ Font.bold ] (text "Lowest Balance")
-                , el [] (text <| formatMoney health.minimum)
-                ]
-            , column [ spacing 4 ]
-                [ el [ Font.bold ] (text "Advances")
-                , el [] (text <| (formatMoney <| Money.total <| List.map .amount advances))
-                ]
-            , column [ spacing 4 ]
-                [ el [ Font.bold ] (text "Max Credit")
-                , el [] (text <| formatMoney account.credit)
-                ]
-            ]
-        ]
-
-
-customerView : Customer -> Element Msg
-customerView customer =
-    Element.column [ spacing 20 ]
-        [ wrappedRow [ spacing 10 ]
-            [ Element.column [ spacing 4 ]
-                [ el [ Font.bold ] (text "First Name")
-                , el [] (text customer.firstName)
-                ]
-            , Element.column [ spacing 4 ]
-                [ el [ Font.bold ] (text "Last Name")
-                , el [] (text customer.lastName)
-                ]
-            , Element.column [ spacing 4 ]
-                [ el [ Font.bold ] (text "Email")
-                , el [] (text customer.email)
-                ]
-            ]
-        ]
-
-
-transTable : List TransRow -> Element Msg
-transTable ts =
-    Element.table [ spacing 8 ]
-        { data = ts
-        , columns =
-            [ tableColumn "Amount" (\t -> text <| formatMoney t.amount)
-            , tableColumn "Source" (\t -> text t.name)
-            , tableColumn "Date" (\t -> text <| formatDate t.date)
-            , tableColumn "Category" (\t -> text t.category)
-            ]
-        }
-
-
-banksTable : List BankAccount -> Element Msg
-banksTable banks =
-    Element.table [ spacing 8 ]
-        { data = banks
-        , columns =
-            [ tableColumn "Account" (\b -> text b.name)
-            , tableColumn "Type" (\b -> text (accountType b.accountType))
-            , tableColumn "Balance" (\b -> text <| formatMoney b.balance)
-            ]
         }
 
 

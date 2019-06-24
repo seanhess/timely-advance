@@ -2,6 +2,7 @@ module Page.Account.Breakdown exposing (viewBreakdown)
 
 import Browser.Navigation as Nav
 import Element exposing (..)
+import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input exposing (button)
@@ -14,7 +15,7 @@ import Timely.Components as Components
 import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types exposing (Id(..))
-import Timely.Types.AccountHealth exposing (AccountHealth)
+import Timely.Types.AccountHealth as Health exposing (AccountHealth)
 import Timely.Types.Advance exposing (Advance)
 import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..), scheduledDate)
 import Timely.Types.Date as Date exposing (Date, formatDate)
@@ -130,7 +131,7 @@ import Timely.Types.Transactions exposing (Schedule(..))
 viewBreakdown : Id AccountId -> AccountHealth -> Budget -> Element msg
 viewBreakdown accountId health paycheck =
     column [ spacing 20, width fill ]
-        [ row Style.banner
+        [ wrappedRow Style.banner
             [ el [] (text "Current Balance")
             , el [ alignRight, Font.color (healthy health.balance) ] (text <| formatMoney health.balance)
             ]
@@ -151,23 +152,27 @@ viewBreakdown accountId health paycheck =
             , row summaryDetail
                 [ text "-", text <| formatMoney health.spendingTotal ]
             ]
-        , Components.maybe (advanceLine accountId "+") health.advance
-        , row Style.banner
+        , Components.maybe (advanceLine accountId "Scheduled Advance" "+") health.advance
+        , wrappedRow Style.banner
             [ el [] (text "Lowest Balance")
             , el [ alignRight, Font.color (healthy health.minimum) ] (text <| formatMoney health.minimum)
+            ]
+        , wrappedRow summaryLine
+            [ el [] (text "Payperiod ending balance")
+            , el [ alignRight ] (text <| formatMoney health.last)
             ]
 
         -- load their actual income, so you have the ID
         , wrappedRow [ spacing 10, width fill ]
             [ link [ Style.link ]
                 { url = Route.url <| Route.Account accountId <| Route.Budget Income paycheck.budgetId
-                , label = text <| "Paycheck"
+                , label = text "Paycheck"
                 }
-            , el [ width (px 125) ] (text <| formatDate (scheduledDate health.paycheck))
+            , el [ width (px 125) ] (text <| "- " ++ formatDate (scheduledDate health.paycheck))
             , el [ alignRight ] (text <| formatMoney paycheck.amount)
             ]
-        , Components.maybe (advanceLine accountId "-") health.advance
-        , row Style.banner
+        , Components.maybe (advanceLine accountId "Advance Payback" "-") health.advance
+        , wrappedRow [ width fill, Background.color Style.lightGray, padding 6 ]
             [ el [] (text "Balance after paycheck")
             , el [ alignRight, Font.color (healthy health.afterPaycheck) ] (text <| formatMoney health.afterPaycheck)
             ]
@@ -175,12 +180,12 @@ viewBreakdown accountId health paycheck =
         ]
 
 
-advanceLine : Id AccountId -> String -> Advance -> Element msg
-advanceLine accountId sign adv =
+advanceLine : Id AccountId -> String -> String -> Advance -> Element msg
+advanceLine accountId msg sign adv =
     wrappedRow summaryLine
         [ link [ Style.link ]
             { url = Route.url (Route.Account accountId (Route.Advance adv.advanceId))
-            , label = text "Advance"
+            , label = text msg
             }
         , row summaryDetail
             [ text sign, text <| formatMoney adv.amount ]

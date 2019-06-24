@@ -27,7 +27,8 @@ import qualified Timely.Accounts.Types.BankAccount as BankAccount
 import qualified Timely.Actions.Transactions       as Transactions
 import           Timely.Advances                   as Advances (Advance (..), Advances, findActive)
 import           Timely.Evaluate.Health            as Health (DailyBalance, Expense, Income)
-import           Timely.Evaluate.Health.Budget     as Budget (Budget, BudgetInfo(..), budget)
+import           Timely.Evaluate.Health.Budget     as Budget (Budget, BudgetInfo (..), budget)
+import           Timely.Evaluate.Health.Daily      as Daily (balance)
 import           Timely.Evaluate.Health.Scheduled  as Scheduled (Scheduled (..))
 import           Timely.Evaluate.Health.Timeline   as Health
 import           Timely.Evaluate.Schedule          as Schedule (next)
@@ -44,6 +45,7 @@ import           Timely.Types.Update               (Error (..))
 data AccountHealth = AccountHealth
   { balance       :: Money
   , minimum       :: Money
+  , last          :: Money
   , spendingDaily :: Abs Money
   , spendingTotal :: Abs Money
   , afterPaycheck :: Money
@@ -51,7 +53,6 @@ data AccountHealth = AccountHealth
   , dailyBalances :: [DailyBalance]
   , advance       :: Maybe Advance
   , paycheck      :: Scheduled (Budget Income)
-
   , bills         :: [Scheduled (Budget Expense)]
   } deriving (Show, Eq, Generic)
 
@@ -104,6 +105,8 @@ analyzeWith now BankAccount {balance} pay bs spend _ advs =
         spendingTotal = Health.totalSpending dailys
         afterPaycheck = minimum + (value $ Budget.amount $ budget pay) - advanceAmount
 
+        last = (Daily.balance $ List.last dailyBalances) + advanceAmount
+
 
     -- Not using transactions for now, simplify because we can't actually
     -- take any action if things are settling today. We can only move
@@ -119,6 +122,7 @@ analyzeWith now BankAccount {balance} pay bs spend _ advs =
         , bills
         , billsTotal
         , afterPaycheck
+        , last
         }
 
 
