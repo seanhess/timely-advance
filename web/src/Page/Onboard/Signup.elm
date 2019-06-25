@@ -3,7 +3,7 @@ port module Page.Onboard.Signup exposing (Mode(..), Model, Msg, init, subscripti
 -- import Debug
 
 import Browser.Navigation as Nav
-import Date exposing (Date)
+import Date
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
@@ -20,6 +20,7 @@ import Timely.Api as Api exposing (AccountInfo, Application, Auth, AuthCode, Ban
 import Timely.Components as Components exposing (loadingButton)
 import Timely.Style as Style
 import Timely.Types exposing (Id(..), Token, idValue)
+import Timely.Types.Date as Date exposing (Date)
 
 
 port plaidLinkOpen : Encode.Value -> Cmd msg
@@ -32,7 +33,7 @@ port plaidLinkDone : (String -> msg) -> Sub msg
 
 
 type alias Model =
-    { now : String
+    { now : Date
     , email : String
     , phone : Phone
     , dob : String
@@ -70,7 +71,7 @@ type Msg
     | EditDob String
     | EditSSN String
     | Navigate Route
-    | OnTime Time.Posix
+    | OnDate Date
     | SubmitForm
     | EditCode String
     | SubmitCode
@@ -86,7 +87,7 @@ type Msg
 
 init : Nav.Key -> Mode -> ( Model, Cmd Msg )
 init key mode =
-    ( { now = ""
+    ( { now = Date.empty
       , phone = Id ""
       , email = ""
       , ssn = ""
@@ -98,7 +99,7 @@ init key mode =
       , key = key
       , mode = mode
       }
-    , Time.now |> Task.perform OnTime
+    , Date.current OnDate
     )
 
 
@@ -122,8 +123,8 @@ update msg model =
     in
     -- Debug.log (Debug.toString msg) <|
     case msg of
-        OnTime t ->
-            updates { model | now = Date.toDateString t }
+        OnDate t ->
+            updates { model | now = t }
 
         Navigate route ->
             updates model
@@ -385,7 +386,7 @@ viewDobInput model =
     Input.text
         [ htmlAttribute (Html.type_ "date")
         , htmlAttribute (Html.min "1900-01-01")
-        , htmlAttribute (Html.max model.now)
+        , htmlAttribute (Html.max (Date.toIsoString model.now))
         , htmlAttribute (Html.style "flex-direction" "row")
         ]
         { text = model.dob

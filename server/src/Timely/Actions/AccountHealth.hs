@@ -84,11 +84,10 @@ analyze i = do
 
 analyzeWith :: Day -> BankAccount -> Budget Income -> [Budget Expense] -> Abs Money -> [TransactionRow] -> [Advance] -> AccountHealth
 analyzeWith now BankAccount {balance} pay bs spend _ advs =
+    -- TODO Move these to functions so I can test them
 
     let payday   = Schedule.next (schedule $ budget pay) now
         paycheck = Scheduled payday pay
-
-        -- TODO calculate this from their transactions, store it somewhere!
 
         dailys = Health.timeline now payday spend bs
         dailyBalances = Health.dailyBalances balance dailys

@@ -46,8 +46,9 @@ resource_ errHtml goodHtml res =
 
 
 error : Http.Error -> Element msg
-error _ =
-    el [ Style.error ] (text "Error")
+error e =
+    -- el [ Style.error ] (text "Error")
+    el [ Style.error ] (text <| Debug.toString e)
 
 
 resource : (a -> Element msg) -> Resource a -> Element msg

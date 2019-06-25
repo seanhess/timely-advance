@@ -1,11 +1,13 @@
 module Page.Account.Home exposing (Model, Msg, init, subscriptions, update, view)
 
 import Browser.Navigation as Nav
+import Date exposing (Unit(..))
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input exposing (button)
 import Http exposing (Error)
+import List.Extra as List
 import Page.Account.Breakdown as Breakdown
 import Platform.Updates exposing (Updates, command, updates)
 import Route
@@ -17,6 +19,7 @@ import Timely.Types exposing (Id, idValue)
 import Timely.Types.AccountHealth exposing (AccountHealth)
 import Timely.Types.Advance exposing (Advance)
 import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..))
+import Timely.Types.Daily as Daily exposing (DailyBalance)
 import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money as Money exposing (formatMoney, fromCents, toCents)
 import Timely.Types.Transactions exposing (TransRow)
@@ -31,6 +34,7 @@ type alias Model =
     , banks : Resource (List BankAccount)
     , advances : Resource (List Advance)
     , paycheck : Resource Budget
+    , now : Date
     }
 
 
@@ -44,6 +48,7 @@ type Msg
     | OnIncomes (Result Http.Error (List Budget))
     | Logout
     | LogoutDone (Result Error ())
+    | OnDate Date
 
 
 init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
@@ -56,6 +61,7 @@ init key id =
       , advances = Loading
       , transactions = Loading
       , paycheck = Loading
+      , now = Date.empty
       }
     , Cmd.batch
         [ Api.getAccount OnAccount id
@@ -65,6 +71,7 @@ init key id =
         , Api.getAdvances OnAdvances id
         , Api.getTransactions OnTransactions id
         , Api.getIncomes OnIncomes id
+        , Date.current OnDate
         ]
     )
 
@@ -111,6 +118,9 @@ update nav msg model =
         LogoutDone _ ->
             updates model |> command (Route.goLanding nav)
 
+        OnDate d ->
+            updates { model | now = d }
+
 
 view : Model -> Element Msg
 view =
@@ -140,7 +150,7 @@ viewMain model =
             , resource (offersView model.accountId) offers
             ]
         , column Style.section
-            [ resource (accountHealth model.accountId) model.health
+            [ resource (accountHealth model.accountId model.now) model.health
             , resource (advancesView model.accountId) collected
             , resource_
                 (\_ -> Element.none)
@@ -156,8 +166,8 @@ viewMain model =
         ]
 
 
-accountHealth : Id AccountId -> AccountHealth -> Element Msg
-accountHealth accountId health =
+accountHealth : Id AccountId -> Date -> AccountHealth -> Element Msg
+accountHealth accountId now health =
     let
         isHealthy amt =
             toCents amt >= 0
@@ -171,14 +181,25 @@ accountHealth accountId health =
 
             else
                 Style.green
+
+        overdraftDaysMessage n =
+            el [ centerX ] (text <| "Overdraft predicted in " ++ String.fromInt n ++ " days")
+
+        overdraftDate : List DailyBalance -> Maybe Date
+        overdraftDate dbs =
+            List.find (\db -> toCents db.balance < 0) dbs
+                |> Maybe.map (.daily >> .date)
+
+        daysUntil start end =
+            Date.diff Days start end
     in
     link [ width fill ]
         -- TODO should this do anything?
         { url = Route.url (Route.Account accountId Route.AccountMain)
         , label =
             column
-                [ spacing 4
-                , padding 20
+                [ spacing 10
+                , padding 14
                 , width fill
                 , Background.color (healthyColor health.minimum)
                 , Font.color Style.white
@@ -186,6 +207,7 @@ accountHealth accountId health =
                 ]
                 [ el [ Font.bold, centerX ] (text "Predicted Lowest Balance")
                 , el [ Font.bold, Font.size 40, centerX ] (text <| formatMoney health.minimum)
+                , Components.maybe overdraftDaysMessage (Maybe.map (daysUntil now) <| overdraftDate health.dailyBalances)
                 ]
         }
 
@@ -297,3 +319,10 @@ accountType t =
 
         Other ->
             "Other"
+
+
+
+-- the first negative date
+-- daysUntilOverdraft : Date -> List DailyBalance -> Maybe Int
+-- daysUntilOverdraft _ _ =
+--     Just 5

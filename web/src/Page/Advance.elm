@@ -18,7 +18,7 @@ import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types exposing (Id(..), idValue)
 import Timely.Types.Advance exposing (Advance, AdvanceId)
-import Timely.Types.Date as Date exposing (formatDate)
+import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money exposing (Money, formatDollars, fromCents, fromDollars, toCents)
 import Validate exposing (Validator)
 
@@ -212,7 +212,7 @@ viewAccepted accountId advance =
         ]
 
 
-viewCollected : Id AccountId -> Advance -> Time.Posix -> Element Msg
+viewCollected : Id AccountId -> Advance -> Date -> Element Msg
 viewCollected accountId advance collected =
     Element.column [ spacing 15, width fill ]
         [ Element.el [] (text "All paid off!")

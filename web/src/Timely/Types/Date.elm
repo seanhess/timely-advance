@@ -1,84 +1,48 @@
-module Timely.Types.Date exposing (Date, decodeDate, formatDate, formatTime)
+module Timely.Types.Date exposing (Date, current, decodeDate, empty, encodeDate, formatDate)
 
+import Date
 import Iso8601
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
+import String
 import Task
-import Time exposing (Month(..))
-
-
-
--- Dates in UTC
--- always use UTC with these
+import Time exposing (Month(..), Zone)
 
 
 type alias Date =
-    Time.Posix
+    Date.Date
 
 
-
--- type alias TimeZone =
---     Time.Zone
-
-
+decodeDate : Decoder Date
 decodeDate =
     Iso8601.decoder
+        |> Decode.map (Date.fromPosix Time.utc)
 
 
-
--- Dates ----------------------------
+encodeDate : Date -> Value
+encodeDate d =
+    Encode.string <| Date.toIsoString d
 
 
 formatDate : Date -> String
-formatDate time =
-    let
-        formatYear t =
-            String.fromInt <| Time.toYear Time.utc time
-
-        formatMonth t =
-            case Time.toMonth Time.utc t of
-                Jan ->
-                    "Jan"
-
-                Feb ->
-                    "Feb"
-
-                Mar ->
-                    "Mar"
-
-                Apr ->
-                    "Apr"
-
-                May ->
-                    "May"
-
-                Jun ->
-                    "Jun"
-
-                Jul ->
-                    "Jul"
-
-                Aug ->
-                    "Aug"
-
-                Sep ->
-                    "Sep"
-
-                Oct ->
-                    "Oct"
-
-                Nov ->
-                    "Nov"
-
-                Dec ->
-                    "Dec"
-
-        formatDay t =
-            String.fromInt <| Time.toDay Time.utc time
-    in
-    formatMonth time ++ " " ++ formatDay time ++ ", " ++ formatYear time ++ " "
+formatDate =
+    Date.format "MMM ddd, y"
 
 
-formatTime : Date -> String
-formatTime time =
-    [ Time.toHour Time.utc time, Time.toMinute Time.utc time, Time.toSecond Time.utc time ]
-        |> List.map (String.padLeft 2 '0' << String.fromInt)
-        |> String.join ":"
+empty : Date
+empty =
+    -- Only use this when using Date.current
+    Date.fromCalendarDate 1 Jan 2000
+
+
+current : (Date -> msg) -> Cmd msg
+current onTime =
+    Date.today |> Task.perform onTime
+
+
+
+-- formatTime : Date -> String
+-- formatTime time =
+--     [ Time.toHour Time.utc time, Time.toMinute Time.utc time, Time.toSecond Time.utc time ]
+--         |> List.map (String.padLeft 2 '0' << String.fromInt)
+--         |> String.join ":"
