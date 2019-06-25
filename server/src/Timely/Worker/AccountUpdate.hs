@@ -30,13 +30,14 @@ import qualified Timely.Accounts.Budgets            as Budgets
 import           Timely.Accounts.Types              (Account (..), BankAccount (bankAccountId))
 import qualified Timely.Accounts.Types.BankAccount  as BankAccount
 import qualified Timely.Accounts.Types.Transaction  as Transaction
+import           Timely.Actions.AccountHealth       (Amount (..), Minimum)
 import qualified Timely.Actions.AccountHealth       as AccountHealth
 import           Timely.Advances                    (Advance, Advances)
 import qualified Timely.Advances                    as Advances
 import qualified Timely.App                         as App
 import           Timely.Bank                        (Access, Banks, Token)
 import qualified Timely.Bank                        as Bank
-import           Timely.Evaluate.Health.Budget      (Budget, budget, BudgetInfo(..))
+import           Timely.Evaluate.Health.Budget      (Budget, BudgetInfo (..), budget)
 import           Timely.Evaluate.Health.Transaction (Income)
 import qualified Timely.Evaluate.Offer              as Offer
 import qualified Timely.Evaluate.Schedule           as Schedule
@@ -110,8 +111,8 @@ accountUpdate accountId = do
 checkAdvance
   :: ( MonadEffects '[Log, Advances, Notify] m
      )
-  => Account -> Money -> UTCTime -> Day -> Budget Income -> m ()
-checkAdvance Account {accountId, transferId, phone, credit} minimum now today pay = do
+  => Account -> Amount Minimum -> UTCTime -> Day -> Budget Income -> m ()
+checkAdvance Account {accountId, transferId, phone, credit} (Amount minimum) now today pay = do
     offer  <- Advances.findOffer  accountId
     active <- Advances.findActive accountId
 
