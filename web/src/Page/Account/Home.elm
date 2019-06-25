@@ -185,11 +185,6 @@ accountHealth accountId now health =
         overdraftDaysMessage n =
             el [ centerX ] (text <| "Overdraft predicted in " ++ String.fromInt n ++ " days")
 
-        overdraftDate : List DailyBalance -> Maybe Date
-        overdraftDate dbs =
-            List.find (\db -> toCents db.balance < 0) dbs
-                |> Maybe.map (.daily >> .date)
-
         daysUntil start end =
             Date.diff Days start end
     in
@@ -207,7 +202,7 @@ accountHealth accountId now health =
                 ]
                 [ el [ Font.bold, centerX ] (text "Predicted Lowest Balance")
                 , el [ Font.bold, Font.size 40, centerX ] (text <| formatMoney health.minimum)
-                , Components.maybe overdraftDaysMessage (Maybe.map (daysUntil now) <| overdraftDate health.dailyBalances)
+                , Components.maybe overdraftDaysMessage (Maybe.map (daysUntil now) <| health.overdraft)
                 ]
         }
 

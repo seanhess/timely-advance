@@ -28,7 +28,7 @@ import qualified Timely.Actions.Transactions       as Transactions
 import           Timely.Advances                   as Advances (Advance (..), Advances, findActive)
 import           Timely.Evaluate.Health            as Health (DailyBalance, Expense, Income)
 import           Timely.Evaluate.Health.Budget     as Budget (Budget, BudgetInfo (..), budget)
-import           Timely.Evaluate.Health.Daily      as Daily (balance)
+import           Timely.Evaluate.Health.Daily      as Daily (balance, date, daily)
 import           Timely.Evaluate.Health.Scheduled  as Scheduled (Scheduled (..))
 import           Timely.Evaluate.Health.Timeline   as Health
 import           Timely.Evaluate.Schedule          as Schedule (next)
@@ -38,14 +38,11 @@ import           Timely.Types.Update               (Error (..))
 
 
 
-
-
-
-
 data AccountHealth = AccountHealth
   { balance       :: Money
   , minimum       :: Money
   , last          :: Money
+  , overdraft     :: Maybe Day
   , spendingDaily :: Abs Money
   , spendingTotal :: Abs Money
   , afterPaycheck :: Money
@@ -94,17 +91,20 @@ analyzeWith now BankAccount {balance} pay bs spend _ advs =
 
 
         advance = listToMaybe advs
-        advanceAmount = fromMaybe (Money.fromFloat 0) $ fmap Advances.amount advance
+        advAmt = advanceAmount advance
 
         -- TODO how do we handle advances in the calculation? Let's assume we haven't sent it yet. It's promised, but not sent. But the minute we sent it we need to mark it as sent and calculate it differently, because their accoutn isn't in jeopardy yet. Or we need some way to tell if it's actually hit (Using their transactions!)
-        minimum = Health.minimumBalance balance dailyBalances + advanceAmount
+        minimum = Health.minimumBalance balance dailyBalances + advAmt
 
         bills = Health.billsDue dailys
         billsTotal = absolute $ List.sum $ List.map (value . Budget.amount . budget . Scheduled.item) bills
         spendingTotal = Health.totalSpending dailys
-        afterPaycheck = minimum + (value $ Budget.amount $ budget pay) - advanceAmount
+        afterPaycheck = minimum + (value $ Budget.amount $ budget pay) - advAmt
 
-        last = (Daily.balance $ List.last dailyBalances) + advanceAmount
+        last = (Daily.balance $ List.last dailyBalances) + advAmt
+
+        -- first date negative, including overdraft
+
 
 
     -- Not using transactions for now, simplify because we can't actually
@@ -122,7 +122,25 @@ analyzeWith now BankAccount {balance} pay bs spend _ advs =
         , billsTotal
         , afterPaycheck
         , last
+        , overdraft = predictedOverdraftDate (advanceAmount advance) dailyBalances
         }
+
+
+
+predictedOverdraftDate :: Money -> [DailyBalance] -> Maybe Day
+predictedOverdraftDate adv dbs =
+   List.find (isOverdraft adv) dbs
+     & fmap (Daily.date . Daily.daily)
+
+
+isOverdraft :: Money -> DailyBalance -> Bool
+isOverdraft adv db = (Daily.balance db + adv) < 0
+
+
+advanceAmount :: Maybe Advance -> Money
+advanceAmount advance =
+  fromMaybe (Money.fromFloat 0) $ fmap Advances.amount advance
+
 
 
 

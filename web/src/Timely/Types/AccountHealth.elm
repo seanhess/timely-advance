@@ -17,6 +17,7 @@ type alias AccountHealth =
     { balance : Money
     , minimum : Money
     , last : Money
+    , overdraft : Maybe Date
     , spendingDaily : Money
     , spendingTotal : Money
     , dailyBalances : List DailyBalance
@@ -34,6 +35,7 @@ decodeAccountHealth =
         |> required "balance" decodeMoney
         |> required "minimum" decodeMoney
         |> required "last" decodeMoney
+        |> required "overdraft" (nullable decodeDate)
         |> required "spendingDaily" decodeMoney
         |> required "spendingTotal" decodeMoney
         |> required "dailyBalances" (list decodeDailyBalance)
