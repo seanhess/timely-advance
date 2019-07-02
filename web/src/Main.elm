@@ -2,7 +2,7 @@ port module Main exposing (Model, Msg(..), Page(..), changeRouteTo, init, main, 
 
 import Browser exposing (Document)
 import Browser.Navigation as Nav
-import Element exposing (fill, height, width)
+import Element exposing (el, fill, height, moveUp, scrollbarY, width)
 import Element.Background as Background
 import Html exposing (Html, a, b, button, div, li, text, ul)
 import Html.Attributes exposing (href)
@@ -223,8 +223,12 @@ view model =
     , body =
         [ Element.layout []
             (Element.column
-                [ width fill, height fill, Element.inFront (Components.version model.loaded) ]
-                [ pageView model.page ]
+                [ width fill
+                , height fill
+                ]
+                [ pageView model.page
+                , Components.version model.loaded
+                ]
             )
         ]
     }

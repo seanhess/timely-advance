@@ -155,8 +155,8 @@ version loaded =
         [ padding 4
         , Font.size 12
         , Font.color (Element.rgb 0.7 0.7 0.7)
-        , moveUp 20
-        , alignRight
+
+        -- , alignRight
         ]
         (text <| "Loaded: " ++ loaded ++ " - Version: " ++ Version.version)
 

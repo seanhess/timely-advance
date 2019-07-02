@@ -26,7 +26,7 @@ encodeDate d =
 
 formatDate : Date -> String
 formatDate =
-    Date.format "MMM ddd, y"
+    Date.format "MMMM ddd, y"
 
 
 empty : Date
