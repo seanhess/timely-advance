@@ -1,4 +1,4 @@
-module Timely.Components exposing (Spinner(..), back, close, loadingButton, maybe, option, selectBox, spinner, spinnerDots, spinnerRing, spinnerRipple, version)
+module Timely.Components exposing (Spinner(..), back, backLink, close, loadingButton, maybe, option, selectBox, spinner, spinnerDots, spinnerRing, spinnerRipple, version)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -8,6 +8,7 @@ import Html
 import Html.Attributes as Html
 import Http exposing (Error)
 import Route exposing (Route)
+import Timely.Icons as Icons
 import Timely.Style as Style
 import Version
 
@@ -69,10 +70,15 @@ back : msg -> Element msg
 back onBack =
     Input.button []
         { onPress = Just onBack
-        , label =
-            Element.el
-                [ rotate pi, Font.size 32 ]
-                (text "➜")
+        , label = Icons.icon Icons.back Icons.Big
+        }
+
+
+backLink : Route -> Element msg
+backLink route =
+    Element.link [ Icons.back, Font.size 32 ]
+        { url = Route.url route
+        , label = text ""
         }
 
 
@@ -80,10 +86,7 @@ close : msg -> Element msg
 close onBack =
     Input.button []
         { onPress = Just onBack
-        , label =
-            Element.el
-                [ rotate pi, Font.size 32 ]
-                (text "x")
+        , label = Icons.icon Icons.cancel Icons.Big
         }
 
 

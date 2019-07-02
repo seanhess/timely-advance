@@ -1,4 +1,4 @@
-module Timely.Style exposing (banner, blue, box, button, dark, darkBlue, darkGreen, destroy, dim, error, formPage, gray, green, header, info, lightBlue, lightGray, lightRed, link, option, page, primary, red, secondary, section, space, success, white, yellow)
+module Timely.Style exposing (banner, blue, box, button, dark, darkBlue, darkGreen, destroy, dim, error, formPage, gray, green, header, heading, info, lightBlue, lightGray, lightRed, link, option, page, primary, red, secondary, section, space, success, white, yellow)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -117,8 +117,8 @@ formPage =
     [ height shrink, centerY, centerX, width (fill |> maximum 800), spacing 36, padding 20 ]
 
 
-header : List (Attribute msg)
-header =
+heading : List (Attribute msg)
+heading =
     [ Region.heading 1, Font.size 36, alignLeft ]
 
 
@@ -152,6 +152,18 @@ info =
     [ spacing 20
     , padding 20
     , height fill
+    , width fill
+    , htmlAttribute (Html.style "border-top-left-radius" "10px")
+    , htmlAttribute (Html.style "border-top-right-radius" "10px")
+    , Background.color lightBlue
+    , Font.color white
+    ]
+
+
+header : List (Attribute msg)
+header =
+    [ spacing 20
+    , padding 20
     , width fill
     , htmlAttribute (Html.style "border-top-left-radius" "10px")
     , htmlAttribute (Html.style "border-top-right-radius" "10px")

@@ -16,6 +16,8 @@ import Page.Init as Init
 import Page.Onboard.Approval as Approval
 import Page.Onboard.Landing as Landing
 import Page.Onboard.Signup as Signup
+import Page.Settings.Main as Settings
+import Page.Settings.Subscription as Subscription
 import Platform.Updates exposing (Updates)
 import Route exposing (Route)
 import Timely.Api exposing (Account)
@@ -49,6 +51,8 @@ type Page
     | Account Account.Model
     | Sudo Sudo.Model
     | Customer Customer.Model
+    | Settings Settings.Model
+    | Subscription Subscription.Model
 
 
 type Msg
@@ -62,6 +66,8 @@ type Msg
     | OnAccount Account.Msg
     | OnSudo Sudo.Msg
     | OnCustomer Customer.Msg
+    | OnSubscription Subscription.Msg
+    | OnSettings Settings.Msg
 
 
 init : String -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -129,6 +135,14 @@ update msg model =
             Customer.update model.key mg m
                 |> runUpdates (always Cmd.none) Customer OnCustomer model
 
+        ( OnSettings mg, Settings m ) ->
+            Settings.update model.key mg m
+                |> runUpdates (always Cmd.none) Settings OnSettings model
+
+        ( OnSubscription mg, Subscription m ) ->
+            Subscription.update model.key mg m
+                |> runUpdates (always Cmd.none) Subscription OnSubscription model
+
         ( OnInit ini, Init m ) ->
             Init.update ini m
                 |> updateWith Init OnInit model
@@ -186,6 +200,14 @@ changeRouteTo maybePage key maybeRoute =
             Init.init key
                 |> initWith Init OnInit
 
+        Just (Route.Settings i Route.SettingsMain) ->
+            Settings.init key i
+                |> initWith Settings OnSettings
+
+        Just (Route.Settings i Route.Subscription) ->
+            Subscription.init key i
+                |> initWith Subscription OnSubscription
+
 
 view : Model -> Browser.Document Msg
 view model =
@@ -209,6 +231,12 @@ view model =
 
                 Account a ->
                     Element.map OnAccount <| Account.view a
+
+                Settings a ->
+                    Element.map OnSettings <| Settings.view a
+
+                Subscription a ->
+                    Element.map OnSubscription <| Subscription.view a
 
                 Init m ->
                     Element.map OnInit <| Init.view m

@@ -106,7 +106,7 @@ view model =
         [ column Style.info
             [ row [ spacing 15 ]
                 [ Components.back Close
-                , el Style.header (text "Approval")
+                , el Style.heading (text "Approval")
                 ]
             ]
         , column Style.section

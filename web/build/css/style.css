@@ -128,3 +128,12 @@
   }
 }
 
+
+
+[class^="flaticon-"]:before, [class*=" flaticon-"]:before,
+[class^="flaticon-"]:after, [class*=" flaticon-"]:after {
+
+font-size: 1em;
+margin-left: auto;
+
+}

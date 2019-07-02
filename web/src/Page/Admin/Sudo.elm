@@ -139,7 +139,7 @@ viewLogin : Model -> Element Msg
 viewLogin model =
     column Style.section
         [ row [ spacing 15, width fill ]
-            [ el Style.header (text "Sudo")
+            [ el Style.heading (text "Sudo")
             , row [ alignRight ] [ Components.close OnBack ]
             ]
         , Input.text []
@@ -159,7 +159,7 @@ viewSuperuser : Model -> Session -> Element Msg
 viewSuperuser model session =
     column Style.section
         [ wrappedRow [ width fill ]
-            [ el Style.header (text "Welcome! ")
+            [ el Style.heading (text "Welcome! ")
             , Input.button [ Style.link, alignRight ] { onPress = Just Logout, label = text "Logout" }
             ]
         , paragraph [] [ text "You are as handsome as you are intelligent" ]

@@ -13,6 +13,7 @@ import Platform.Updates exposing (Updates, command, updates)
 import Route
 import Timely.Api as Api exposing (Account, AccountId, BankAccount, BankAccountType(..), Customer, advanceIsActive, advanceIsCollected, advanceIsOffer)
 import Timely.Components as Components
+import Timely.Icons as Icons
 import Timely.Resource as Resource exposing (Resource(..), resource, resource_)
 import Timely.Style as Style
 import Timely.Types exposing (Id, idValue)
@@ -46,8 +47,6 @@ type Msg
     | OnTransactions (Result Error (List TransRow))
     | OnAdvances (Result Error (List Advance))
     | OnIncomes (Result Http.Error (List Budget))
-    | Logout
-    | LogoutDone (Result Error ())
     | OnDate Date
 
 
@@ -112,12 +111,6 @@ update nav msg model =
         OnIncomes (Ok _) ->
             updates { model | paycheck = Failed (Http.BadBody "Missing income") }
 
-        Logout ->
-            updates model |> command (Api.sessionsLogout LogoutDone)
-
-        LogoutDone _ ->
-            updates model |> command (Route.goLanding nav)
-
         OnDate d ->
             updates { model | now = d }
 
@@ -142,9 +135,13 @@ viewMain model =
     column Style.page
         [ column Style.info
             [ row [ width fill ]
-                [ el Style.header (text "Account")
+                [ el Style.heading (text "Account")
                 , column [ alignRight ]
-                    [ Input.button [ Style.link ] { onPress = Just Logout, label = text "Logout" }
+                    -- [ Input.button [ Style.link ] { onPress = Just Logout, label = text "Logout" }
+                    [ link []
+                        { url = Route.url (Route.Settings model.accountId Route.SettingsMain)
+                        , label = Icons.icon Icons.profile Icons.Big
+                        }
                     ]
                 ]
             , resource (offersView model.accountId) offers
@@ -161,7 +158,7 @@ viewMain model =
                 )
 
             -- , resource (advancesView model.accountId) active
-            -- , el Style.header (text "Advances")
+            -- , el Style.heading (text "Advances")
             ]
         ]
 

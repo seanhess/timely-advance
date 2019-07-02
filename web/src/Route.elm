@@ -1,4 +1,4 @@
-module Route exposing (Account(..), Admin(..), Onboard(..), Route(..), checkUnauthorized, fromUrl, goAccount, goLanding, href, pushUrl, replaceUrl, url)
+module Route exposing (Account(..), Admin(..), Onboard(..), Route(..), Settings(..), checkUnauthorized, fromUrl, goAccount, goLanding, href, pushUrl, replaceUrl, url)
 
 -- import Article.Slug as Slug exposing (Slug)
 -- import Profile exposing (Profile)
@@ -36,6 +36,7 @@ type Route
     | Onboard Onboard
     | Account (Id AccountId) Account
     | Admin Admin
+    | Settings (Id AccountId) Settings
 
 
 type Account
@@ -44,6 +45,11 @@ type Account
     | Budget BudgetType (Id BudgetId)
     | Bills
     | Spending
+
+
+type Settings
+    = SettingsMain
+    | Subscription
 
 
 
@@ -57,6 +63,7 @@ parser =
         , Parser.map Onboard (s "onboard" </> parserOnboard)
         , Parser.map Admin (s "admin" </> parserAdmin)
         , Parser.map Account (s "accounts" </> Parser.map Id string </> parserAccount)
+        , Parser.map Settings (s "settings" </> Parser.map Id string </> parserSettings)
         ]
 
 
@@ -90,6 +97,14 @@ parserAccount =
         , Parser.map Spending (s "spending")
 
         -- , Parser.map Breakdown (s "breakdown")
+        ]
+
+
+parserSettings : Parser (Settings -> a) a
+parserSettings =
+    oneOf
+        [ Parser.map Subscription (s "subscription")
+        , Parser.map SettingsMain Parser.top
         ]
 
 
@@ -164,6 +179,12 @@ url page =
                 --     [ "accounts", s, "breakdown" ]
                 Account (Id s) (Advance (Id adv)) ->
                     [ "accounts", s, "advances", adv ]
+
+                Settings (Id a) SettingsMain ->
+                    [ "settings", a ]
+
+                Settings (Id a) Subscription ->
+                    [ "settings", a, "subscription" ]
 
                 Init ->
                     []
