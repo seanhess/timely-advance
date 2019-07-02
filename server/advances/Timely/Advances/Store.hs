@@ -27,6 +27,18 @@ import           Timely.Transfers.Account (TransferAccount)
 
 
 
+-- TODO : Refactor advances
+-- ??? -
+
+-- Types of Advances
+-- Offer - we think they need an advance. Do they want one?
+-- Scheduled - we will send them money unless they cancel or no longer need it
+-- Sent - we have sent the money to their account, it's no longer usable. But it hasn't landed yet
+-- Arrived - the money is in their account
+-- Charged - we have debited the money from their account
+-- Cleared - we got the money back
+
+
 data Advance = Advance
     { advanceId  :: Guid Advance
     , accountId  :: Guid Account

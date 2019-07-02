@@ -102,7 +102,7 @@ analyzeWith now BankAccount {balance} pay bs spend _ advs =
         advance = listToMaybe advs
         advAmt = advanceAmount advance
 
-        -- TODO how do we handle advances in the calculation? Let's assume we haven't sent it yet. It's promised, but not sent. But the minute we sent it we need to mark it as sent and calculate it differently, because their accoutn isn't in jeopardy yet. Or we need some way to tell if it's actually hit (Using their transactions!)
+        -- TODO how do we handle advances in the calculation? Let's assume we haven't sent it yet. It's promised, but not sent. But the minute we sent it we need to mark it as sent and calculate it differently, because their account isn't in jeopardy yet. Or we need some way to tell if it's actually hit (Using their transactions!)
         minimum = minBalance advAmt current dailyBalances
 
         bills = Health.billsDue dailys
