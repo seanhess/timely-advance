@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountCustomer, AccountId(..), AccountInfo, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Onboarding(..), Phone, SSN(..), Session, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, createExpense, createIncome, delBudget, delExpense, delIncome, deleteAccount, editExpense, editIncome, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getAvailableSubscriptions, getCustomer, getCustomers, getExpenses, getIncomes, getSubscription, getTransactionHistory, getTransactions, postAdvanceAccept, postApplications, putBudget, putSpending, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
+module Timely.Api exposing (Account, AccountCustomer, AccountId(..), AccountInfo, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Onboarding(..), Phone, SSN(..), Session, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, createExpense, createIncome, delBudget, delExpense, delIncome, delSubscription, deleteAccount, editExpense, editIncome, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getAvailableSubscriptions, getCustomer, getCustomers, getExpenses, getIncomes, getSubscription, getTransactionHistory, getTransactions, postAdvanceAccept, postApplications, putBudget, putSpending, putSubscription, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
 
 import Http exposing (Error, Expect)
 import Json.Decode as Decode exposing (Decoder, bool, int, list, nullable, string)
@@ -387,6 +387,16 @@ getSubscription toMsg (Id a) =
     requestGET toMsg [ "", "v1", "accounts", a, "subscription" ] Subscription.decode
 
 
+putSubscription : (Result Error String -> msg) -> Id AccountId -> Subscription.Level -> Cmd msg
+putSubscription toMsg (Id a) level =
+    requestPUT toMsg [ "", "v1", "accounts", a, "subscription" ] (Subscription.encodeLevel level) string
+
+
+delSubscription : (Result Error String -> msg) -> Id AccountId -> Cmd msg
+delSubscription toMsg (Id a) =
+    requestDEL toMsg [ "", "v1", "accounts", a, "subscription" ] string
+
+
 
 -- Budgets ----------------------------
 
@@ -520,17 +530,9 @@ sessionsGet toMsg =
     requestGET toMsg [ "", "v1", "sessions" ] decodeSession
 
 
-sessionsLogout : (Result Error () -> msg) -> Cmd msg
+sessionsLogout : (Result Error String -> msg) -> Cmd msg
 sessionsLogout toMsg =
-    Http.request
-        { method = "DELETE"
-        , headers = []
-        , url = String.join "/" [ "", "v1", "sessions" ]
-        , body = Http.emptyBody
-        , expect = Http.expectWhatever toMsg
-        , timeout = Nothing
-        , tracker = Nothing
-        }
+    requestDEL toMsg [ "", "v1", "sessions" ] string
 
 
 expectId : (Result Error (Id a) -> msg) -> Expect msg

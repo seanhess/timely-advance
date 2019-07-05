@@ -31,7 +31,7 @@ init key accountId =
 
 type Msg
     = Logout
-    | LogoutDone (Result Error ())
+    | LogoutDone (Result Error String)
 
 
 update : Nav.Key -> Msg -> Model -> Updates Model Msg ()

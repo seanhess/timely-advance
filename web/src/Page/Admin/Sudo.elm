@@ -42,7 +42,7 @@ type Msg
     | OnBack
     | OnSession (Result Http.Error Session)
     | OnLogin (Result Http.Error Session)
-    | OnLogout (Result Http.Error ())
+    | OnLogout (Result Http.Error String)
     | OnCustomers (Result Http.Error (List AccountCustomer))
     | GoCustomers
     | GoAdvances

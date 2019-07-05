@@ -19,7 +19,7 @@ instance FromJSON Subscription
 
 data Level
     = Basic
-    | Approved
+    | Premium
     deriving (Show, Eq, Generic, Bounded, Enum, Read)
 
 instance FromJSON Level
@@ -39,10 +39,10 @@ fromLevel Basic = Subscription
     , limit = Money.fromFloat 35.00
     , level = Basic
     }
-fromLevel Approved = Subscription
+fromLevel Premium = Subscription
     { cost = Money.fromFloat 4.95
     , limit = Money.fromFloat 100
-    , level = Approved
+    , level = Premium
     }
 
 levels :: [Level]
