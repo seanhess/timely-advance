@@ -22,12 +22,12 @@ import           GHC.Generics                  (Generic)
 import           Servant.API.ContentTypes.HTML (Linkable (..))
 import           Timely.Accounts.Types
 import           Timely.Bank                   (Public, Token)
-import           Timely.Underwrite             (Approval, Denial, Result (..))
+import           Timely.Underwrite             as Under (Approval, Denial, Result (..))
 
 
 instance ToJSON Result where
-    toJSON (Approved a) = toJSON a
-    toJSON (Denied d)   = toJSON d
+    toJSON (Under.Approved a) = toJSON a
+    toJSON (Under.Denied d)   = toJSON d
 
 instance ToJSON Approval
 instance ToJSON Denial

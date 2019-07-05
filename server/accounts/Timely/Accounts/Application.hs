@@ -10,18 +10,18 @@
 module Timely.Accounts.Application where
 
 
-import           Control.Effects           (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
-import           Control.Monad.Selda       (Selda, insert, query, tryCreateTable, update_)
-import           Data.Maybe                (catMaybes, listToMaybe)
-import           Data.Model.Guid           (Guid)
-import qualified Data.Model.Guid           as Guid
-import           Data.Model.Id             (Id (..))
-import qualified Data.Time.Clock           as Time
-import           Database.Selda            hiding (Result, insert, query, tryCreateTable, update_)
+import           Control.Effects         (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
+import           Control.Monad.Selda     (Selda, insert, query, tryCreateTable, update_)
+import           Data.Maybe              (catMaybes, listToMaybe)
+import           Data.Model.Guid         (Guid)
+import qualified Data.Model.Guid         as Guid
+import           Data.Model.Id           (Id (..))
+import qualified Data.Time.Clock         as Time
+import           Database.Selda          hiding (Result, insert, query, tryCreateTable, update_)
 
-import           Timely.Accounts.Types
-import qualified Timely.Bank               as Bank
-import           Timely.Underwrite.Types (Approval (..), Denial (..), Result (..))
+import           Timely.Accounts.Types   hiding (Subscription (limit))
+import qualified Timely.Bank             as Bank
+import           Timely.Underwrite.Types as Under (Approval (..), Denial (..), Result (..))
 
 
 data Applications m = ApplicationsMethods
@@ -146,11 +146,11 @@ checkHealth = query $ limit 0 1 $ select applications
 -- Underwriting results ---------------------------------
 
 saveAppResult :: (Selda m) => Guid Account -> Result -> m ()
-saveAppResult accountId (Approved (Approval {approvalAmount})) = do
+saveAppResult accountId (Under.Approved (Approval {approvalAmount})) = do
     now <- liftIO $ Time.getCurrentTime
     insert approvals [ AppApproval {accountId, approvalAmount, created = now} ]
     pure ()
-saveAppResult accountId (Denied (Denial {denial})) = do
+saveAppResult accountId (Under.Denied (Denial {denial})) = do
     now <- liftIO $ Time.getCurrentTime
     insert denials [AppDenial {accountId, denial, created = now}]
     pure ()

@@ -8,6 +8,7 @@ module Control.Monad.Selda
   , tryCreateTable
   , update
   , update_
+  , transaction
   ) where
 
 import Control.Monad.IO.Class (MonadIO)
@@ -25,3 +26,4 @@ deleteFrom t p   = withConnection $ runSeldaT $ Selda.deleteFrom t p
 update t p f     = withConnection $ runSeldaT $ Selda.update t p f
 update_ t p f    = withConnection $ runSeldaT $ Selda.update_ t p f
 tryCreateTable t = withConnection $ runSeldaT $ Selda.tryCreateTable t
+transaction x    = withConnection $ runSeldaT $ Selda.transaction x

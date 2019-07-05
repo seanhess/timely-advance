@@ -25,6 +25,9 @@ module Timely.Accounts
   , transList
   , transSince
   , transDays
+  , subSave
+  , subFind
+  , subRemove
 
   , module Timely.Accounts.Types
   ) where
@@ -43,6 +46,7 @@ import           Prelude                      hiding (all)
 import qualified Timely.Accounts.Account      as Account
 import           Timely.Accounts.Transactions (Count, Offset)
 import qualified Timely.Accounts.Transactions as Transactions
+import qualified Timely.Accounts.Subscription as Subscription
 import           Timely.Accounts.Types
 import           Timely.Bank                  (Item)
 
@@ -58,10 +62,12 @@ data Accounts m = AccountsMethods
     , _create       :: Customer -> [BankAccount] -> [TransactionRow] -> Account -> m ()
     , _findBanks    :: Guid Account -> m [BankAccount]
     , _setBanks     :: Guid Account -> [BankAccount] -> m ()
-
     , _transSave    :: Guid Account -> [TransactionRow] -> m ()
     , _transList    :: Guid Account -> Offset -> Count -> m [TransactionRow]
     , _transSince   :: Guid Account -> Day -> m [TransactionRow]
+    , _subFind      :: Guid Account -> m (Maybe Subscription)
+    , _subSave      :: Guid Account -> Subscription -> m ()
+    , _subRemove    :: Guid Account -> m ()
     } deriving (Generic)
 
 
@@ -86,7 +92,10 @@ setBanks     :: MonadEffect Accounts m => Guid Account -> [BankAccount] -> m ()
 transSave :: MonadEffect Accounts m => Guid Account -> [TransactionRow] -> m ()
 transList :: MonadEffect Accounts m => Guid Account -> Offset -> Count -> m [TransactionRow]
 transSince :: MonadEffect Accounts m => Guid Account -> Day -> m [TransactionRow]
-AccountsMethods all find findCustomer findByPhone findByBankId create findBanks setBanks transSave transList transSince = effect
+subFind      :: MonadEffect Accounts m => Guid Account -> m (Maybe Subscription)
+subSave      :: MonadEffect Accounts m => Guid Account -> Subscription -> m ()
+subRemove    :: MonadEffect Accounts m => Guid Account -> m ()
+AccountsMethods all find findCustomer findByPhone findByBankId create findBanks setBanks transSave transList transSince subFind subSave subRemove = effect
 
 
 
@@ -104,6 +113,9 @@ implementIO = implement $
     Transactions.save
     Transactions.list
     Transactions.since
+    Subscription.find
+    Subscription.save
+    Subscription.remove
   where
     createAccount cust banks trans acc@Account{accountId} = do
       Account.createAccount acc cust
@@ -113,7 +125,7 @@ implementIO = implement $
 
 empty :: Accounts m
 empty = AccountsMethods
-  undefined undefined undefined undefined undefined undefined undefined undefined undefined undefined undefined
+  undefined undefined undefined undefined undefined undefined undefined undefined undefined undefined undefined undefined undefined undefined
 
 
 

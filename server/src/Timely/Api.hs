@@ -31,6 +31,7 @@ import           Timely.Accounts                      as Accounts
 import qualified Timely.Accounts.Application          as Application
 import qualified Timely.Accounts.Budgets              as Budgets
 import           Timely.Accounts.Types                (AppResult, Application, TransactionRow)
+import qualified Timely.Accounts.Types.Subscription   as Subscription
 import           Timely.Actions.AccountHealth         (AccountHealth)
 import qualified Timely.Actions.AccountHealth         as AccountHealth
 import           Timely.Actions.Transactions          (History)
@@ -89,28 +90,30 @@ data VersionedApi route = VersionedApi
 
 -- Personal Information : Account and Application ---------------------
 data AccountApi route = AccountApi
-    { _get      :: route :- Get '[JSON, HTML] Account
-    , _banks    :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
-    , _customer :: route :- "customer" :> Get '[JSON] Customer
-    , _health   :: route :- "health"   :> Get '[JSON] (Result Update.Error AccountHealth)
-    , _trans    :: route :- "transactions" :> Get '[JSON] [TransactionRow]
-    , _history  :: route :- "transactions" :> "history" :> Get '[JSON] History
-    , _app      :: route :- "application" :> Get '[JSON] Application
-    , _result   :: route :- "application" :> "result" :> Get '[JSON] AppResult
-    , _advances :: route :- "advances" :> ToServantApi AdvanceApi
-    , _incomes  :: route :- "incomes"  :> ToServantApi (BudgetsApi Income)
-    , _expenses :: route :- "expenses" :> ToServantApi (BudgetsApi Expense)
-    , _spending :: route :- "spending" :> ReqBody '[JSON] (Abs Money) :> Put '[JSON] NoContent
+    { _get          :: route :- Get '[JSON, HTML] Account
+    , _banks        :: route :- "bank-accounts" :> Get '[JSON, HTML] [BankAccount]
+    , _customer     :: route :- "customer" :> Get '[JSON] Customer
+    , _health       :: route :- "health"   :> Get '[JSON] (Result Update.Error AccountHealth)
+    , _trans        :: route :- "transactions" :> Get '[JSON] [TransactionRow]
+    , _history      :: route :- "transactions" :> "history" :> Get '[JSON] History
+    , _app          :: route :- "application" :> Get '[JSON] Application
+    , _result       :: route :- "application" :> "result" :> Get '[JSON] AppResult
+    , _advances     :: route :- "advances" :> ToServantApi AdvanceApi
+    , _incomes      :: route :- "incomes"  :> ToServantApi (BudgetsApi Income)
+    , _expenses     :: route :- "expenses" :> ToServantApi (BudgetsApi Expense)
+    , _spending     :: route :- "spending" :> ReqBody '[JSON] (Abs Money) :> Put '[JSON] NoContent
+    , _subscription :: route :- "subscription" :> ToServantApi SubscriptionApi
     } deriving (Generic)
+
 
 
 -- expenses.... /scheduled
 data BudgetsApi a route = BudgetsApi
-    { _edit      :: route :- Capture "id" (Guid (Budget a)) :> ReqBody '[JSON] (BudgetInfo a) :> Put '[JSON] NoContent
-    , _delete    :: route :- Capture "id" (Guid (Budget a)) :> Delete '[JSON] NoContent
+    { _edit   :: route :- Capture "id" (Guid (Budget a)) :> ReqBody '[JSON] (BudgetInfo a) :> Put '[JSON] NoContent
+    , _delete :: route :- Capture "id" (Guid (Budget a)) :> Delete '[JSON] NoContent
 
-    , _get       :: route :- Get '[JSON] [Budget a]
-    , _create    :: route :- ReqBody '[JSON] (BudgetInfo a) :> Post '[JSON] (Guid (Budget a))
+    , _get    :: route :- Get '[JSON] [Budget a]
+    , _create :: route :- ReqBody '[JSON] (BudgetInfo a) :> Post '[JSON] (Guid (Budget a))
     } deriving (Generic)
 
 
@@ -119,6 +122,14 @@ data AdvanceApi route = AdvanceApi
     , _get    :: route :- Capture "id" (Guid Advance) :> Get '[JSON] Advance
     , _accept :: route :- Capture "id" (Guid Advance) :> "accept" :> ReqBody '[JSON] Amount :> Post '[JSON] Advance
     } deriving (Generic)
+
+
+data SubscriptionApi route = SubscriptionApi
+    { _get    :: route :- Get '[JSON] Subscription
+    , _cancel :: route :- Delete '[JSON] NoContent
+    , _set    :: route :- ReqBody '[JSON] SubscriptionLevelRequest :> Put '[JSON] NoContent
+    } deriving (Generic)
+
 
 
 data AppApi route = AppApi
@@ -166,7 +177,17 @@ accountApi i = genericServerT AccountApi
     , _incomes = incomesApi i
     , _expenses = expensesApi i
     , _spending = \amt -> Budgets.saveSpending i amt >> pure NoContent
+    , _subscription = subscriptionApi i
     }
+
+
+subscriptionApi :: Guid Account -> ToServant SubscriptionApi (AsServerT AppM)
+subscriptionApi i = genericServerT SubscriptionApi
+    { _cancel = Accounts.subRemove i >> pure NoContent
+    , _get    = Accounts.subFind i >>= notFound
+    , _set    = \r -> (Accounts.subSave i $ Subscription.fromLevel $ level r) >> pure NoContent
+    }
+  where
 
 
 incomesApi :: Guid Account -> ToServant (BudgetsApi Income) (AsServerT AppM)
