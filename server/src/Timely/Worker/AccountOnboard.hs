@@ -35,6 +35,7 @@ import           Timely.Accounts.Application       (Applications)
 import qualified Timely.Accounts.Application       as Apps
 import           Timely.Accounts.Budgets           (Budgets)
 import qualified Timely.Accounts.Budgets           as Budgets
+import           Timely.Accounts.Subscription      as Subscription (Level (..))
 import           Timely.Accounts.Types             as Accounts (Account (..), AppBank, Application (..), BankAccount (bankAccountId), Customer (..), Onboarding (..), isChecking, toBankAccount)
 import qualified Timely.Accounts.Types.Transaction as Transaction
 import qualified Timely.Actions.Transactions       as Transactions
@@ -99,7 +100,8 @@ accountOnboard app accountId phone = do
 
     trans                    <- loadTransactions accountId bankToken appBankId checking now
 
-    Accounts.create customer bankAccounts trans $ Account accountId phone transId bankToken bankItemId amount now
+
+    Accounts.create customer bankAccounts trans Subscription.Basic $ Account accountId phone transId bankToken bankItemId amount now
 
     createDefaultBudgets accountId trans
 

@@ -6,7 +6,16 @@
 {-# LANGUAGE NoMonomorphismRestriction  #-}
 {-# LANGUAGE OverloadedLabels           #-}
 {-# LANGUAGE OverloadedStrings          #-}
-module Timely.Accounts.Subscription where
+module Timely.Accounts.Subscription
+  ( SubscriptionRow(..)
+  , Subscription(..)
+  , Level(..)
+  , fromLevel
+  , save
+  , remove
+  , find
+  , initialize
+  ) where
 
 
 import Control.Monad.Selda                (Selda, deleteFrom, insert, query, tryCreateTable)
@@ -17,7 +26,7 @@ import Data.Time.Clock                    as Time (getCurrentTime)
 import Database.Selda                     hiding (deleteFrom, insert, limit, query, tryCreateTable)
 import Timely.Accounts.Account            (accounts)
 import Timely.Accounts.Types              (Account, Subscription (..))
-import Timely.Accounts.Types.Subscription as Subscription (Level)
+import Timely.Accounts.Types.Subscription as Subscription (Level(..), fromLevel)
 
 
 
