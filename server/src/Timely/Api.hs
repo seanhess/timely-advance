@@ -9,6 +9,7 @@
 {-# LANGUAGE TypeOperators         #-}
 module Timely.Api where
 
+import           Data.List                            as List (map)
 import           Data.Model.Guid                      as Guid
 import           Data.Model.Id                        (Token)
 import           Data.Model.Money                     (Money)
@@ -75,14 +76,15 @@ data BaseApi route = BaseApi
 
 
 data VersionedApi route = VersionedApi
-    { _info     :: route :- Get '[HTML] [Link]
-    , _account  :: route :- "accounts"      :> Auth '[Cookie] Session :> Capture "id" (Guid Account) :> ToServantApi AccountApi
-    , _app      :: route :- "applications"  :> Auth '[Cookie] Session :> ToServantApi AppApi
-    , _sessions :: route :- "sessions"     :> ToServantApi SessionsApi
-    , _config   :: route :- "config"       :> Get '[JSON] ClientConfig
-    , _config'  :: route :- "config.js"    :> Get '[JS "CONFIG"] ClientConfig
-    , _hooks    :: route :- "webhooks"     :> ToServantApi WebhooksApi
-    , _admin    :: route :- "admin"        :> Auth '[Cookie] Session :> ToServantApi AdminApi
+    { _info          :: route :- Get '[HTML] [Link]
+    , _account       :: route :- "accounts"      :> Auth '[Cookie] Session :> Capture "id" (Guid Account) :> ToServantApi AccountApi
+    , _app           :: route :- "applications"  :> Auth '[Cookie] Session :> ToServantApi AppApi
+    , _sessions      :: route :- "sessions"     :> ToServantApi SessionsApi
+    , _config        :: route :- "config"       :> Get '[JSON] ClientConfig
+    , _config'       :: route :- "config.js"    :> Get '[JS "CONFIG"] ClientConfig
+    , _hooks         :: route :- "webhooks"     :> ToServantApi WebhooksApi
+    , _admin         :: route :- "admin"        :> Auth '[Cookie] Session :> ToServantApi AdminApi
+    , _subscriptions :: route :- "subscriptions" :> Get '[JSON] [Subscription]
     } deriving (Generic)
 
 
@@ -127,7 +129,7 @@ data AdvanceApi route = AdvanceApi
 data SubscriptionApi route = SubscriptionApi
     { _get    :: route :- Get '[JSON] Subscription
     , _cancel :: route :- Delete '[JSON] NoContent
-    , _set    :: route :- ReqBody '[JSON] SubscriptionLevelRequest :> Put '[JSON] NoContent
+    , _set    :: route :- ReqBody '[JSON] Subscription.Request :> Put '[JSON] NoContent
     } deriving (Generic)
 
 
@@ -185,7 +187,7 @@ subscriptionApi :: Guid Account -> ToServant SubscriptionApi (AsServerT AppM)
 subscriptionApi i = genericServerT SubscriptionApi
     { _cancel = Accounts.subRemove i >> pure NoContent
     , _get    = Accounts.subFind i >>= notFound
-    , _set    = \r -> (Accounts.subSave i $ Subscription.fromLevel $ level r) >> pure NoContent
+    , _set    = \(Subscription.Request l) -> (Accounts.subSave i $ Subscription.fromLevel l) >> pure NoContent
     }
   where
 
@@ -266,6 +268,7 @@ versionedApi = genericServerT VersionedApi
     , _hooks    = webhooksApi
     , _info     = pure [Link "accounts" [], Link "applications" [], Link "config" []]
     , _admin    = Sessions.protectAdmin adminApi
+    , _subscriptions = pure $ List.map Subscription.fromLevel $ Subscription.levels
     }
 
 

@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountCustomer, AccountId(..), AccountInfo, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Onboarding(..), Phone, SSN(..), Session, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, createExpense, createIncome, delBudget, delExpense, delIncome, deleteAccount, editExpense, editIncome, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getCustomer, getCustomers, getExpenses, getIncomes, getTransactionHistory, getTransactions, postAdvanceAccept, postApplications, putBudget, putSpending, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
+module Timely.Api exposing (Account, AccountCustomer, AccountId(..), AccountInfo, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Onboarding(..), Phone, SSN(..), Session, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, createExpense, createIncome, delBudget, delExpense, delIncome, deleteAccount, editExpense, editIncome, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getAvailableSubscriptions, getCustomer, getCustomers, getExpenses, getIncomes, getSubscription, getTransactionHistory, getTransactions, postAdvanceAccept, postApplications, putBudget, putSpending, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
 
 import Http exposing (Error, Expect)
 import Json.Decode as Decode exposing (Decoder, bool, int, list, nullable, string)
@@ -13,6 +13,7 @@ import Timely.Types.Advance exposing (Advance, AdvanceId, decodeAdvance)
 import Timely.Types.Budget exposing (Budget, BudgetId, BudgetInfo, BudgetType(..), decodeBudget, decodeBudgetInfo, encodeBudget)
 import Timely.Types.Date exposing (Date, decodeDate)
 import Timely.Types.Money exposing (Money, decodeMoney, encodeMoney, fromCents, toCents)
+import Timely.Types.Subscription as Subscription exposing (Subscription)
 import Timely.Types.Transactions exposing (History, Schedule, TransRow, Transaction, decodeHistory, decodeSchedule, decodeTransRow, decodeTransaction, encodeSchedule)
 
 
@@ -374,6 +375,16 @@ getTransactionHistory toMsg (Id a) =
 postAdvanceAccept : (Result Error Advance -> msg) -> Id AccountId -> Id AdvanceId -> Money -> Cmd msg
 postAdvanceAccept toMsg (Id a) (Id adv) amt =
     requestPOST toMsg [ "", "v1", "accounts", a, "advances", adv, "accept" ] (encodeAmount { amount = amt }) decodeAdvance
+
+
+getAvailableSubscriptions : (Result Error (List Subscription) -> msg) -> Cmd msg
+getAvailableSubscriptions toMsg =
+    requestGET toMsg [ "", "v1", "subscriptions" ] (list Subscription.decode)
+
+
+getSubscription : (Result Error Subscription -> msg) -> Id AccountId -> Cmd msg
+getSubscription toMsg (Id a) =
+    requestGET toMsg [ "", "v1", "accounts", a, "subscription" ] Subscription.decode
 
 
 

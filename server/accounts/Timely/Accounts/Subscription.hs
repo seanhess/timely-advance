@@ -9,14 +9,15 @@
 module Timely.Accounts.Subscription where
 
 
-import Control.Monad.Selda     (Selda, deleteFrom, insert, query, tryCreateTable)
-import Data.Maybe              (listToMaybe)
-import Data.Model.Guid         (Guid)
-import Data.Model.Money        (Money)
-import Data.Time.Clock         as Time (getCurrentTime)
-import Database.Selda          hiding (deleteFrom, insert, query, tryCreateTable, limit)
-import Timely.Accounts.Account (accounts)
-import Timely.Accounts.Types   (Account, Subscription (..))
+import Control.Monad.Selda                (Selda, deleteFrom, insert, query, tryCreateTable)
+import Data.Maybe                         (listToMaybe)
+import Data.Model.Guid                    (Guid)
+import Data.Model.Money                   (Money)
+import Data.Time.Clock                    as Time (getCurrentTime)
+import Database.Selda                     hiding (deleteFrom, insert, limit, query, tryCreateTable)
+import Timely.Accounts.Account            (accounts)
+import Timely.Accounts.Types              (Account, Subscription (..))
+import Timely.Accounts.Types.Subscription as Subscription (Level)
 
 
 
@@ -28,6 +29,7 @@ import Timely.Accounts.Types   (Account, Subscription (..))
 
 data SubscriptionRow = SubscriptionRow
   { accountId :: Guid Account
+  , level     :: Subscription.Level
   , limit     :: Money
   , cost      :: Money
   , created   :: UTCTime
@@ -77,14 +79,13 @@ initialize = do
 
 
 toRow :: UTCTime -> Guid Account -> Subscription -> SubscriptionRow
-toRow created accountId Subscription {cost, limit} =
-  SubscriptionRow { accountId, cost, limit, created }
+toRow created accountId Subscription {cost, limit, level} =
+  SubscriptionRow { accountId, cost, limit, created, level }
 
 
 fromRow :: SubscriptionRow -> Subscription
-fromRow SubscriptionRow { cost, limit } =
-  Subscription { cost, limit }
-
+fromRow SubscriptionRow { cost, limit, level } =
+  Subscription { cost, limit, level }
 
 
 
