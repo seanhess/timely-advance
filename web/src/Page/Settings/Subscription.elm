@@ -21,14 +21,14 @@ import Timely.Types.Subscription exposing (Subscription, formatLevel)
 
 type alias Model =
     { accountId : Id AccountId
-    , current : Resource Subscription
+    , current : Resource (Maybe Subscription)
     , subscriptions : Resource (List Subscription)
     , isSaving : Bool
     }
 
 
 type alias Resources =
-    { current : Subscription
+    { current : Maybe Subscription
     , subscriptions : List Subscription
     }
 
@@ -48,7 +48,7 @@ init key accountId =
 
 
 type Msg
-    = OnCurrent (Result Error Subscription)
+    = OnCurrent (Result Error (Maybe Subscription))
     | OnSubscriptions (Result Error (List Subscription))
     | Save Subscription
     | OnSave (Result Error String)
@@ -75,9 +75,7 @@ update nav msg model =
 
         Cancel ->
             updates { model | isSaving = True }
-                |> command (Api.delSubscription Ignore model.accountId)
-                |> command (Api.sessionsLogout Ignore)
-                |> command (Route.goLanding nav)
+                |> command (Api.delSubscription OnSave model.accountId)
 
         Ignore _ ->
             updates model
@@ -96,12 +94,33 @@ view model =
         ]
 
 
+viewSuspended : Bool -> List Subscription -> Element Msg
+viewSuspended isSaving subs =
+    column Style.section
+        [ Components.alert
+            [ el [ Font.bold, centerX ] (text "Your account is suspended")
+            ]
+        , column [ spacing 15, width fill ]
+            (List.map (viewEither isSaving) subs)
+        ]
+
+
 viewReady : Bool -> Resources -> Element Msg
 viewReady isSaving res =
+    case res.current of
+        Just cur ->
+            viewActive isSaving cur res.subscriptions
+
+        Nothing ->
+            viewSuspended isSaving res.subscriptions
+
+
+viewActive : Bool -> Subscription -> List Subscription -> Element Msg
+viewActive isSaving current subscriptions =
     column Style.section
-        [ viewCurrent res.current
+        [ viewCurrent current
         , column [ spacing 10, width fill ]
-            (List.map (viewOther isSaving res.current) (List.filter (isOther res.current) res.subscriptions))
+            (List.map (viewOther isSaving current) (List.filter (isOther current) subscriptions))
         , button [ Style.link, Font.size 16 ]
             { onPress = Just Cancel
             , label = text "Cancel Subscription"
@@ -120,7 +139,7 @@ viewCurrent sub =
 viewOther : Bool -> Subscription -> Subscription -> Element Msg
 viewOther isSaving current sub =
     column [ spacing 15, width fill ]
-        [ el [ Font.bold ] (text <| formatLevel sub.level ++ " Level")
+        [ viewSubHeader sub
         , viewSubDetails [] sub
         , if isUpgrade current sub then
             viewUpgrade isSaving current sub
@@ -130,14 +149,19 @@ viewOther isSaving current sub =
         ]
 
 
+viewEither : Bool -> Subscription -> Element Msg
+viewEither isSaving sub =
+    column [ spacing 15, width fill ]
+        [ viewSubHeader sub
+        , viewSubDetails [] sub
+        , subscribeButton "Upgrade Now" isSaving sub
+        ]
+
+
 viewUpgrade : Bool -> Subscription -> Subscription -> Element Msg
 viewUpgrade isSaving current sub =
     column [ spacing 15, width fill ]
-        [ Components.loadingButton (Style.button Style.primary)
-            { onPress = Save sub
-            , label = text "Upgrade Now"
-            , isLoading = isSaving
-            }
+        [ subscribeButton "Upgrade Now" isSaving sub
         , paragraph [ Font.size 16, Font.italic ] [ text <| "Upgrading will increase your subscription cost from " ++ formatMoney current.cost ++ " to " ++ formatMoney sub.cost ++ " / month" ]
         ]
 
@@ -145,13 +169,18 @@ viewUpgrade isSaving current sub =
 viewDowngrade : Bool -> Subscription -> Subscription -> Element Msg
 viewDowngrade isSaving current sub =
     column [ spacing 15, width fill ]
-        [ Components.loadingButton (Style.button Style.secondary)
-            { onPress = Save sub
-            , label = text "Downgrade Now"
-            , isLoading = isSaving
-            }
+        [ subscribeButton "Downgrade Now" isSaving sub
         , paragraph [ Font.size 16, Font.italic ] [ text <| "Downgrading will decrease your subscription cost from " ++ formatMoney current.cost ++ " to " ++ formatMoney sub.cost ++ " / month" ]
         ]
+
+
+subscribeButton : String -> Bool -> Subscription -> Element Msg
+subscribeButton message isSaving sub =
+    Components.loadingButton (Style.button Style.primary)
+        { onPress = Save sub
+        , label = text message
+        , isLoading = isSaving
+        }
 
 
 viewSubDetails : List (Attribute Msg) -> Subscription -> Element Msg
@@ -166,6 +195,11 @@ viewSubDetails atts sub =
             , el [ alignRight ] (text <| formatMoney sub.limit)
             ]
         ]
+
+
+viewSubHeader : Subscription -> Element Msg
+viewSubHeader sub =
+    el [ Font.bold ] (text <| formatLevel sub.level ++ " Level")
 
 
 

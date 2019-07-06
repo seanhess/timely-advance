@@ -23,6 +23,7 @@ import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..))
 import Timely.Types.Daily as Daily exposing (DailyBalance)
 import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money as Money exposing (formatMoney, fromCents, toCents)
+import Timely.Types.Subscription exposing (Subscription)
 import Timely.Types.Transactions exposing (TransRow)
 
 
@@ -35,6 +36,7 @@ type alias Model =
     , banks : Resource (List BankAccount)
     , advances : Resource (List Advance)
     , paycheck : Resource Budget
+    , subscription : Resource (Maybe Subscription)
     , now : Date
     }
 
@@ -47,6 +49,7 @@ type Msg
     | OnTransactions (Result Error (List TransRow))
     | OnAdvances (Result Error (List Advance))
     | OnIncomes (Result Http.Error (List Budget))
+    | OnSubscription (Result Http.Error (Maybe Subscription))
     | OnDate Date
 
 
@@ -60,6 +63,7 @@ init key id =
       , advances = Loading
       , transactions = Loading
       , paycheck = Loading
+      , subscription = Loading
       , now = Date.empty
       }
     , Cmd.batch
@@ -70,6 +74,7 @@ init key id =
         , Api.getAdvances OnAdvances id
         , Api.getTransactions OnTransactions id
         , Api.getIncomes OnIncomes id
+        , Api.getSubscription OnSubscription id
         , Date.current OnDate
         ]
     )
@@ -114,10 +119,48 @@ update nav msg model =
         OnDate d ->
             updates { model | now = d }
 
+        OnSubscription r ->
+            updates { model | subscription = Resource.fromResult r }
+
+
+
+-- check to see if subscription is an error, if so, don't let them see any details
+
 
 view : Model -> Element Msg
-view =
-    viewMain
+view model =
+    case model.subscription of
+        Ready Nothing ->
+            viewSuspended model
+
+        _ ->
+            viewMain model
+
+
+viewSuspended : Model -> Element Msg
+viewSuspended model =
+    column Style.page
+        [ column Style.info
+            [ row [ width fill ]
+                [ el Style.heading (text "Account")
+                , column [ alignRight ]
+                    [ viewSettingsLink model.accountId ]
+                ]
+            ]
+        , column Style.section
+            [ Components.alert
+                [ el [ Font.bold, centerX ] (text "Your account is suspended")
+                ]
+            ]
+        ]
+
+
+viewSettingsLink : Id AccountId -> Element Msg
+viewSettingsLink accountId =
+    link []
+        { url = Route.url (Route.Settings accountId Route.SettingsMain)
+        , label = Icons.icon Icons.profile Icons.Big
+        }
 
 
 viewMain : Model -> Element Msg
@@ -137,12 +180,7 @@ viewMain model =
             [ row [ width fill ]
                 [ el Style.heading (text "Account")
                 , column [ alignRight ]
-                    -- [ Input.button [ Style.link ] { onPress = Just Logout, label = text "Logout" }
-                    [ link []
-                        { url = Route.url (Route.Settings model.accountId Route.SettingsMain)
-                        , label = Icons.icon Icons.profile Icons.Big
-                        }
-                    ]
+                    [ viewSettingsLink model.accountId ]
                 ]
             , resource (offersView model.accountId) offers
             ]

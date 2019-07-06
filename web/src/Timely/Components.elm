@@ -1,4 +1,4 @@
-module Timely.Components exposing (Spinner(..), back, backLink, close, loadingButton, maybe, option, selectBox, spinner, spinnerDots, spinnerRing, spinnerRipple, version)
+module Timely.Components exposing (Spinner(..), alert, back, backLink, close, loadingButton, maybe, option, selectBox, spinner, spinnerDots, spinnerRing, spinnerRipple, version)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -172,3 +172,15 @@ maybe view ma =
 
         Just a ->
             view a
+
+
+alert : List (Element msg) -> Element msg
+alert =
+    column
+        [ spacing 10
+        , padding 14
+        , width fill
+        , Background.color Style.red
+        , Font.color Style.white
+        , Style.box
+        ]

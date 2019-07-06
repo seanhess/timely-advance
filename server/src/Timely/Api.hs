@@ -127,7 +127,7 @@ data AdvanceApi route = AdvanceApi
 
 
 data SubscriptionApi route = SubscriptionApi
-    { _get    :: route :- Get '[JSON] Subscription
+    { _get    :: route :- Get '[JSON] (Maybe Subscription)
     , _cancel :: route :- Delete '[JSON] NoContent
     , _set    :: route :- ReqBody '[JSON] Subscription.Request :> Put '[JSON] NoContent
     } deriving (Generic)
@@ -186,7 +186,7 @@ accountApi i = genericServerT AccountApi
 subscriptionApi :: Guid Account -> ToServant SubscriptionApi (AsServerT AppM)
 subscriptionApi i = genericServerT SubscriptionApi
     { _cancel = Accounts.subRemove i >> pure NoContent
-    , _get    = Accounts.subFind i >>= notFound
+    , _get    = Accounts.subFind i
     , _set    = \(Subscription.Request l) -> (Accounts.subSave i $ Subscription.fromLevel l) >> pure NoContent
     }
   where

@@ -382,9 +382,9 @@ getAvailableSubscriptions toMsg =
     requestGET toMsg [ "", "v1", "subscriptions" ] (list Subscription.decode)
 
 
-getSubscription : (Result Error Subscription -> msg) -> Id AccountId -> Cmd msg
+getSubscription : (Result Error (Maybe Subscription) -> msg) -> Id AccountId -> Cmd msg
 getSubscription toMsg (Id a) =
-    requestGET toMsg [ "", "v1", "accounts", a, "subscription" ] Subscription.decode
+    requestGET toMsg [ "", "v1", "accounts", a, "subscription" ] (nullable Subscription.decode)
 
 
 putSubscription : (Result Error String -> msg) -> Id AccountId -> Subscription.Level -> Cmd msg
