@@ -226,17 +226,23 @@ viewSignupForm model =
         [ column Style.info
             [ row [ spacing 15 ]
                 [ Components.back <| Navigate (Route.Onboard Route.Landing)
-                , paragraph [] [ text "Start by entering your phone number" ]
+                , el Style.heading (text "What's your number?")
                 ]
+            , paragraph [] [ text "We will use your number to text you when your balance is at risk" ]
             ]
         , column Style.section
             [ viewPhoneInput model
             , Components.loadingButton (Style.button Style.primary)
                 { onPress = SubmitForm
-                , label = Element.text "Join Timely"
+                , label =
+                    column [ spacing 8, width fill ]
+                        [ el [ Font.bold, centerX ] (text "Join Timely Advance")
+                        , el [ centerX ] (text "Costs $1/month")
+                        ]
                 , isLoading = model.status == Loading
                 }
             , viewProblems model.status
+            , paragraph [ Font.size 12 ] [ text "By joining, I agree to Timely Advance's Privacy Policy, TOS, Payment Authorization & Electronic Communication Consent" ]
             ]
         ]
 
@@ -290,7 +296,7 @@ viewPhoneCode model =
         [ column Style.info
             [ row [ spacing 15 ]
                 [ Components.back (Step EditingPhone)
-                , paragraph [] [ text "We sent a message to your phone number, please enter the code below" ]
+                , paragraph [] [ text <| "We just sent you a text. Enter the 4 digit code I sent to: " ++ idValue model.phone ]
                 ]
             ]
         , column Style.section
@@ -302,7 +308,7 @@ viewPhoneCode model =
                 }
             , Components.loadingButton (Style.button Style.primary)
                 { onPress = SubmitCode
-                , label = Element.text "Check code"
+                , label = Element.text "Next"
                 , isLoading = model.status == Loading
                 }
             , viewProblems model.status
@@ -341,7 +347,7 @@ viewProblems status =
             el [ Style.error ] (text p)
 
         _ ->
-            el [] (text "")
+            Element.none
 
 
 
