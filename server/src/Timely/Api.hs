@@ -31,7 +31,7 @@ import           Servant.Server.Generic               (AsServerT, genericServerT
 import           Timely.Accounts                      as Accounts
 import qualified Timely.Accounts.Application          as Application
 import qualified Timely.Accounts.Budgets              as Budgets
-import           Timely.Accounts.Types                (AppResult, Application, TransactionRow)
+import           Timely.Accounts.Types                (Application, TransactionRow)
 import qualified Timely.Accounts.Types.Subscription   as Subscription
 import           Timely.Actions.AccountHealth         (AccountHealth)
 import qualified Timely.Actions.AccountHealth         as AccountHealth
@@ -46,7 +46,7 @@ import           Timely.Api.Combinators               (notFound)
 import qualified Timely.Api.Health                    as ApiHealth
 import           Timely.Api.Sessions                  (SetSession)
 import qualified Timely.Api.Sessions                  as Sessions
-import           Timely.Api.Types                     hiding (Result)
+import           Timely.Api.Types
 import qualified Timely.Api.Webhooks                  as Webhooks
 import           Timely.App                           (AppM, AppState (..), clientConfig, loadState, nt, runAppIO)
 import qualified Timely.App                           as App
@@ -99,7 +99,6 @@ data AccountApi route = AccountApi
     , _trans        :: route :- "transactions" :> Get '[JSON] [TransactionRow]
     , _history      :: route :- "transactions" :> "history" :> Get '[JSON] History
     , _app          :: route :- "application" :> Get '[JSON] Application
-    , _result       :: route :- "application" :> "result" :> Get '[JSON] AppResult
     , _advances     :: route :- "advances" :> ToServantApi AdvanceApi
     , _incomes      :: route :- "incomes"  :> ToServantApi (BudgetsApi Income)
     , _expenses     :: route :- "expenses" :> ToServantApi (BudgetsApi Expense)
@@ -171,7 +170,6 @@ accountApi i = genericServerT AccountApi
     , _banks   = Accounts.findBanks i
     , _customer = Accounts.findCustomer i  >>= notFound
     , _app     = Application.find i        >>= notFound
-    , _result  = Application.findResult i  >>= notFound
     , _health  = Result.handle $ AccountHealth.analyze i
     , _trans   = Transactions.recent i
     , _history  = Transactions.history <$> Transactions.recent i

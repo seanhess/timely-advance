@@ -27,7 +27,7 @@ import           Timely.Accounts                    (Accounts, TransactionRow (t
 import qualified Timely.Accounts                    as Accounts
 import           Timely.Accounts.Budgets            (Budgets)
 import qualified Timely.Accounts.Budgets            as Budgets
-import           Timely.Accounts.Types              (Account (..), BankAccount (bankAccountId))
+import           Timely.Accounts.Types              (Account (..), BankAccount (bankAccountId), Subscription(..))
 import qualified Timely.Accounts.Types.BankAccount  as BankAccount
 import qualified Timely.Accounts.Types.Transaction  as Transaction
 import           Timely.Actions.AccountHealth       (Amount (..), Minimum)
@@ -85,6 +85,7 @@ accountUpdate accountId = do
     now    <- Time.currentTime
     today  <- Time.currentDate
 
+    sub    <- Accounts.subFind accountId >>= require (NoSubscription accountId)
     check  <- bankBalances accountId bankToken now
     trans  <- updateTransactions accountId bankToken (bankAccountId check) today
 
@@ -97,7 +98,7 @@ accountUpdate accountId = do
 
     let health = AccountHealth.analyzeWith today check pay bills spend trans active
 
-    checkAdvance account (AccountHealth.minimum health) now today pay
+    checkAdvance account sub (AccountHealth.minimum health) now today pay
 
 
 
@@ -111,12 +112,12 @@ accountUpdate accountId = do
 checkAdvance
   :: ( MonadEffects '[Log, Advances, Notify] m
      )
-  => Account -> Amount Minimum -> UTCTime -> Day -> Budget Income -> m ()
-checkAdvance Account {accountId, transferId, phone, credit} (Amount minimum) now today pay = do
+  => Account -> Subscription -> Amount Minimum -> UTCTime -> Day -> Budget Income -> m ()
+checkAdvance Account {accountId, transferId, phone} Subscription {limit} (Amount minimum) now today pay = do
     offer  <- Advances.findOffer  accountId
     active <- Advances.findActive accountId
 
-    case Offer.check credit offer active minimum now of
+    case Offer.check limit offer active minimum now of
       Nothing -> pure ()
       Just amount -> do
         offerAdvance today accountId transferId phone pay amount

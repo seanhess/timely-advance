@@ -6,7 +6,6 @@ module Timely.Api.Types
   , Customer(..)
   , BankAccount(..)
   , AccountInfo(..)
-  , Result(..)
   , Amount(..)
   ) where
 
@@ -22,15 +21,6 @@ import           GHC.Generics                  (Generic)
 import           Servant.API.ContentTypes.HTML (Linkable (..))
 import           Timely.Accounts.Types
 import           Timely.Bank                   (Public, Token)
-import           Timely.Underwrite             as Under (Approval, Denial, Result (..))
-
-
-instance ToJSON Result where
-    toJSON (Under.Approved a) = toJSON a
-    toJSON (Under.Denied d)   = toJSON d
-
-instance ToJSON Approval
-instance ToJSON Denial
 
 
 data Amount = Amount

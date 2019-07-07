@@ -26,6 +26,7 @@ import qualified Data.List                         as List
 import           Data.Model.Guid                   as Guid
 import           Data.Model.Id                     (Id, Token)
 import           Data.Model.Types                  as Model (Address (..), Phone, Valid)
+import           Data.Number.Abs                   (value)
 import           Data.Text                         as Text
 import           Network.AMQP.Worker               (Queue)
 import qualified Network.AMQP.Worker               as Worker hiding (bindQueue, publish, worker)
@@ -38,17 +39,15 @@ import qualified Timely.Accounts.Budgets           as Budgets
 import           Timely.Accounts.Subscription      as Subscription (Level (..))
 import           Timely.Accounts.Types             as Accounts (Account (..), AppBank, Application (..), BankAccount (bankAccountId), Customer (..), Onboarding (..), isChecking, toBankAccount)
 import qualified Timely.Accounts.Types.Transaction as Transaction
+import           Timely.Actions.Transactions       (History (..))
 import qualified Timely.Actions.Transactions       as Transactions
 import qualified Timely.App                        as App
 import           Timely.Bank                       (Banks, Dwolla, Identity (..), Names (..))
 import qualified Timely.Bank                       as Bank
+import           Timely.Evaluate.History           as History (Group (average))
 import qualified Timely.Events                     as Events
 import           Timely.Transfers                  (AccountInfo (..), TransferAccount, Transfers)
 import qualified Timely.Transfers                  as Transfers
-import           Timely.Underwrite                 (Approval (..), Underwrite (..))
-import qualified Timely.Underwrite                 as Underwrite
-
-
 
 queue :: Queue Application
 queue = Worker.topic Events.applicationsNew "app.account.onboard"
@@ -60,7 +59,7 @@ start = App.start queue handler
 
 
 handler
-  :: ( MonadEffects '[Time, Applications, Accounts, Log, Banks, Transfers, Underwrite, Async, Budgets] m
+  :: ( MonadEffects '[Time, Applications, Accounts, Log, Banks, Transfers, Async, Budgets] m
      , MonadThrow m, MonadCatch m
      )
   => Application -> m ()
@@ -86,24 +85,27 @@ handler app@(Application { accountId, phone }) = do
 
 
 -- | accountOnboard
+-- we still need to wait for account analysis
 accountOnboard
-  :: ( MonadEffects '[Applications, Accounts, Log, Banks, Transfers, Underwrite, Throw OnboardError, Time, Early (), Async, Budgets] m)
+  :: ( MonadEffects '[Applications, Accounts, Log, Banks, Transfers, Throw OnboardError, Time, Early (), Async, Budgets] m)
   => Application -> Guid Account -> Valid Phone -> m ()
 accountOnboard app accountId phone = do
     now                      <- Time.currentTime
     (bankToken, bankItemId)  <- Bank.authenticate (publicBankToken app)
     appBankId                <- Apps.saveBank accountId bankItemId
     customer                 <- newCustomer app now bankToken
-    (Approval amount)        <- underwriting accountId phone customer
     (checking, bankAccounts) <- loadBankAccounts accountId bankToken now
     transId                  <- initTransfers customer bankToken checking
-
     trans                    <- loadTransactions accountId bankToken appBankId checking now
 
+    let history = Transactions.history trans
+    -- TODO check minimal requirements
+    -- put it somewhere other than here
+    -- is there some way to say it's "compolete"
 
-    Accounts.create customer bankAccounts trans Subscription.Basic $ Account accountId phone transId bankToken bankItemId amount now
+    Accounts.create customer bankAccounts trans Subscription.Basic $ Account accountId phone transId bankToken bankItemId now
 
-    createDefaultBudgets accountId trans
+    createDefaultBudgets accountId trans history
 
     Apps.markResultOnboarding accountId Complete
     Log.info "complete"
@@ -113,9 +115,8 @@ accountOnboard app accountId phone = do
 
 createDefaultBudgets
   :: ( MonadEffects '[Time, Accounts, Budgets, Log] m )
-  => Guid Account -> [TransactionRow] -> m ()
-createDefaultBudgets accountId trans = do
-  let history = Transactions.history trans
+  => Guid Account -> [TransactionRow] -> History -> m ()
+createDefaultBudgets accountId trans history = do
 
   let incs = List.map Transactions.defaultBudget $ Transactions.income history
   let exps = List.map Transactions.defaultBudget $ Transactions.expenses history
@@ -156,31 +157,70 @@ newCustomer app now bankToken = do
           }
 
 
-underwriting
-  :: ( MonadEffects '[Underwrite, Log, Applications, Early ()] m )
-  => Guid Account -> Valid Phone -> Customer -> m Approval
-underwriting accountId phone cust = do
-    res <- Underwrite.new $ toApplication phone cust
-    Log.debug ("underwriting", res)
-    Apps.saveResult accountId res
-    case res of
-      Underwrite.Denied  _ ->
-        Early.earlyReturn ()
-      Underwrite.Approved approval ->
-        pure approval
-  where
 
-    toApplication phone Customer { firstName, middleName, lastName, email, ssn, dateOfBirth, street1, street2, city, state, postalCode } =
-      Underwrite.Application
-        { Underwrite.phone = phone
-        , Underwrite.firstName = firstName
-        , Underwrite.middleName = middleName
-        , Underwrite.lastName = lastName
-        , Underwrite.email = email
-        , Underwrite.ssn = ssn
-        , Underwrite.dateOfBirth = dateOfBirth
-        , Underwrite.address = Address street1 street2 city state postalCode
-        }
+checkMinimalRequirements
+  :: ( MonadEffects '[Log, Applications, Early ()] m )
+  => Guid Account -> History -> m ()
+checkMinimalRequirements accountId history = do
+    case check history of
+      Just r -> do
+        Apps.markResultOnboarding accountId r
+        Early.earlyReturn ()
+
+      Nothing ->
+        pure ()
+
+  where
+    check history = do
+      checkRegular history
+      checkLow history
+
+    checkRegular history =
+      if isNotRegular (income history)
+        then Just RejectedIncomeNotRegular
+        else Nothing
+
+    checkLow history =
+      if isLow (income history) (expenses history)
+        then Just RejectedIncomeLow
+        else Nothing
+
+    isNotRegular incs =
+      List.length incs < 1
+
+    isLow incs exps =
+      -- sum up all the AVERAGES of the group
+      groupsTotal exps < groupsTotal incs
+
+    groupsTotal = List.sum . List.map (value . History.average)
+
+
+
+-- underwriting
+--   :: ( MonadEffects '[Underwrite, Log, Applications, Early ()] m )
+--   => Guid Account -> Valid Phone -> Customer -> m Approval
+-- underwriting accountId phone cust = do
+--     res <- Underwrite.new $ toApplication phone cust
+--     Log.debug ("underwriting", res)
+--     Apps.saveResult accountId res
+--     case res of
+--       Underwrite.Denied  _ ->
+--         Early.earlyReturn ()
+--       Underwrite.Approved approval ->
+--         pure approval
+--   where
+
+--     toApplication phone Customer { firstName, middleName, lastName, email, ssn, dateOfBirth, street1, street2, city, state, postalCode } =
+--       Underwrite.Application
+--         { Underwrite.phone = phone
+--         , Underwrite.firstName = firstName
+--         , Underwrite.middleName = middleName
+--         , Underwrite.lastName = lastName
+--         , Underwrite.email = email
+--         , Underwrite.ssn = ssn
+--         , Underwrite.dateOfBirth = dateOfBirth
+--         , Underwrite.address = Address street1 street2 city state postalCode
+--         }
 
 
 

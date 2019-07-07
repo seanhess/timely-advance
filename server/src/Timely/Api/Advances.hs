@@ -13,13 +13,13 @@ import           Control.Monad          (when)
 import           Data.Model.Guid        as Guid
 import           Data.Model.Money       (Money)
 import           Servant                (ServantErr (..), err400)
-import           Timely.Accounts        (Account, Accounts)
+import           Timely.Accounts        (Account, Accounts, Subscription (..))
 import qualified Timely.Accounts        as Accounts
 import           Timely.Advances        (Advance (..), Advances (..))
 import qualified Timely.Advances        as Advances
-import qualified Timely.Evaluate.Offer as Offer
 import           Timely.Api.Combinators (notFound)
 import           Timely.Api.Types       as Types (Amount (..))
+import qualified Timely.Evaluate.Offer  as Offer
 import qualified Timely.Events          as Events
 
 
@@ -43,8 +43,8 @@ checkCredit
   :: ( MonadEffects '[Throw ServantErr, Accounts, Advances] m
      ) => Guid Account -> Money -> m ()
 checkCredit a amount = do
-  account <- Accounts.find a >>= notFound
+  sub <- Accounts.subFind a >>= notFound
   advances <- Advances.findActive a
 
-  when (not $ Offer.isEnough amount (Accounts.credit account) advances) $ do
+  when (not $ Offer.isEnough amount (limit sub) advances) $ do
     throwSignal $ err400 { errBody = "Insufficient Credit" }

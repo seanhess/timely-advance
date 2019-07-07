@@ -16,12 +16,10 @@ import           Data.Maybe              (catMaybes, listToMaybe)
 import           Data.Model.Guid         (Guid)
 import qualified Data.Model.Guid         as Guid
 import           Data.Model.Id           (Id (..))
-import qualified Data.Time.Clock         as Time
 import           Database.Selda          hiding (Result, insert, query, tryCreateTable, update_)
 
 import           Timely.Accounts.Types   hiding (Subscription (limit))
 import qualified Timely.Bank             as Bank
-import           Timely.Underwrite.Types as Under (Approval (..), Denial (..), Result (..))
 
 
 data Applications m = ApplicationsMethods
@@ -29,8 +27,6 @@ data Applications m = ApplicationsMethods
   , _find                 :: Guid Account -> m (Maybe Application)
   , _all                  :: m [Application]
   , _check                :: m [Application]
-  , _saveResult           :: Guid Account -> Result -> m ()
-  , _findResult           :: Guid Account -> m (Maybe AppResult)
   , _markResultOnboarding :: Guid Account -> Onboarding -> m ()
   , _saveBank             :: Guid Account -> Id Bank.Item -> m (Id AppBank)
   , _saveTransactions     :: Id Bank.Item -> Int -> m ()
@@ -44,13 +40,11 @@ save :: MonadEffect Applications m => Application -> m ()
 find :: MonadEffect Applications m => Guid Account -> m (Maybe Application)
 all :: MonadEffect Applications m => m [Application]
 check :: MonadEffect Applications m => m [Application]
-saveResult :: MonadEffect Applications m => Guid Account -> Result -> m ()
-findResult :: MonadEffect Applications m => Guid Account -> m (Maybe AppResult)
 markResultOnboarding :: MonadEffect Applications m => Guid Account -> Onboarding -> m ()
 saveBank :: MonadEffect Applications m => Guid Account -> Id Bank.Item -> m (Id AppBank)
 saveTransactions :: MonadEffect Applications m => Id Bank.Item -> Int -> m ()
 findTransactions :: MonadEffect Applications m => Id AppBank -> m (Maybe Int)
-ApplicationsMethods save find all check saveResult findResult markResultOnboarding saveBank saveTransactions findTransactions = effect
+ApplicationsMethods save find all check markResultOnboarding saveBank saveTransactions findTransactions = effect
 
 
 
@@ -61,8 +55,6 @@ implementIO = implement $
     loadById
     checkHealth
     loadAll
-    saveAppResult
-    findAppResult
     markAppOnboarding
     saveAppBank
     saveAppTransactions
@@ -77,11 +69,11 @@ implementIO = implement $
 applications :: Table Application
 applications = table "applications" [#accountId :- primary]
 
-approvals :: Table AppApproval
-approvals = table "applications_approvals" [#accountId :- primary]
+-- approvals :: Table AppApproval
+-- approvals = table "applications_approvals" [#accountId :- primary]
 
-denials :: Table AppDenial
-denials = table "applications_denials" [#accountId :- primary]
+-- denials :: Table AppDenial
+-- denials = table "applications_denials" [#accountId :- primary]
 
 banks :: Table AppBank
 banks = table "applications_banks"
@@ -145,15 +137,15 @@ checkHealth = query $ limit 0 1 $ select applications
 
 -- Underwriting results ---------------------------------
 
-saveAppResult :: (Selda m) => Guid Account -> Result -> m ()
-saveAppResult accountId (Under.Approved (Approval {approvalAmount})) = do
-    now <- liftIO $ Time.getCurrentTime
-    insert approvals [ AppApproval {accountId, approvalAmount, created = now} ]
-    pure ()
-saveAppResult accountId (Under.Denied (Denial {denial})) = do
-    now <- liftIO $ Time.getCurrentTime
-    insert denials [AppDenial {accountId, denial, created = now}]
-    pure ()
+-- saveAppResult :: (Selda m) => Guid Account -> Result -> m ()
+-- saveAppResult accountId (Under.Approved (Approval {approvalAmount})) = do
+--     now <- liftIO $ Time.getCurrentTime
+--     insert approvals [ AppApproval {accountId, approvalAmount, created = now} ]
+--     pure ()
+-- saveAppResult accountId (Under.Denied (Denial {denial})) = do
+--     now <- liftIO $ Time.getCurrentTime
+--     insert denials [AppDenial {accountId, denial, created = now}]
+--     pure ()
 
 
 markAppOnboarding :: Selda m => Guid Account -> Onboarding -> m ()
@@ -166,20 +158,20 @@ markAppOnboarding i o = do
 
 
 -- take the first result you find, favoring denials
-findAppResult :: Selda m => Guid Account -> m (Maybe AppResult)
-findAppResult i = do
-    ds <- query $ do
-      d <- select denials
-      restrict (d ! #accountId .== literal i)
-      pure d
-    as <- query $ do
-      a <- select approvals
-      restrict (a ! #accountId .== literal i)
-      pure a
-    pure $ listToMaybe $ map fromAppDenial ds ++ map fromAppApproval as
-  where
-    fromAppDenial appDenial = AppResultDenial appDenial
-    fromAppApproval appApproval = AppResultApproval appApproval
+-- findAppResult :: Selda m => Guid Account -> m (Maybe AppResult)
+-- findAppResult i = do
+--     ds <- query $ do
+--       d <- select denials
+--       restrict (d ! #accountId .== literal i)
+--       pure d
+--     as <- query $ do
+--       a <- select approvals
+--       restrict (a ! #accountId .== literal i)
+--       pure a
+--     pure $ listToMaybe $ map fromAppDenial ds ++ map fromAppApproval as
+--   where
+--     fromAppDenial appDenial = AppResultDenial appDenial
+--     fromAppApproval appApproval = AppResultApproval appApproval
 
 
 
@@ -190,6 +182,6 @@ initialize :: (Selda m, MonadIO m) => m ()
 initialize = do
     -- drop the table / db first to run migrations
     tryCreateTable applications
-    tryCreateTable approvals
-    tryCreateTable denials
+    -- tryCreateTable approvals
+    -- tryCreateTable denials
     tryCreateTable banks

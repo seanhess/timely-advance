@@ -19,7 +19,6 @@ import           Timely.Underwrite.Types
 
 
 data Underwrite m = UnderwriteMethods
-    -- we need a lot more information than this
     -- TODO storage? Save everything
     { _new :: Application -> m Result
     } deriving (Generic)
