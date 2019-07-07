@@ -7,11 +7,11 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 module Timely.Worker.AccountOnboard where
 
-
+import           Control.Applicative               ((<|>))
 import           Control.Effects                   (MonadEffects)
 import           Control.Effects.Async             (Async)
 import qualified Control.Effects.Async             as Async
-import           Control.Effects.Early             (Early)
+import           Control.Effects.Early             (Early, earlyReturn)
 import qualified Control.Effects.Early             as Early
 import           Control.Effects.Log               (Log)
 import qualified Control.Effects.Log               as Log
@@ -67,28 +67,32 @@ handler app@(Application { accountId, phone }) = do
     Log.context (Guid.toText accountId)
     Log.info "AccountOnboard"
 
-    accountOnboard app accountId phone
+    result <- accountOnboard app accountId phone
       & Early.handleEarly
       & Signal.handleException onError
       & flip catch onException
 
+    Apps.markResultOnboarding accountId result
+    Log.info "complete"
+
   where
 
-    onError :: (MonadEffects '[Applications] m, MonadThrow m) => OnboardError -> m ()
+    onError :: (MonadEffects '[Applications] m, MonadThrow m) => OnboardError -> m Onboarding
     onError err = onException (SomeException err)
 
-    onException :: (MonadEffects '[Applications] m, MonadThrow m) => SomeException -> m ()
+    onException :: (MonadEffects '[Applications] m, MonadThrow m) => SomeException -> m Onboarding
     onException err = do
       Apps.markResultOnboarding accountId Error
       throwM err
+      pure Error
 
 
 
 -- | accountOnboard
 -- we still need to wait for account analysis
 accountOnboard
-  :: ( MonadEffects '[Applications, Accounts, Log, Banks, Transfers, Throw OnboardError, Time, Early (), Async, Budgets] m)
-  => Application -> Guid Account -> Valid Phone -> m ()
+  :: ( MonadEffects '[Applications, Accounts, Log, Banks, Transfers, Throw OnboardError, Time, Async, Budgets, Early Onboarding] m)
+  => Application -> Guid Account -> Valid Phone -> m Onboarding
 accountOnboard app accountId phone = do
     now                      <- Time.currentTime
     (bankToken, bankItemId)  <- Bank.authenticate (publicBankToken app)
@@ -98,17 +102,14 @@ accountOnboard app accountId phone = do
     transId                  <- initTransfers customer bankToken checking
     trans                    <- loadTransactions accountId bankToken appBankId checking now
 
-    let history = Transactions.history trans
-    -- TODO check minimal requirements
-    -- put it somewhere other than here
-    -- is there some way to say it's "compolete"
+    let history              = Transactions.history trans
+    sub                      <- early $ checkMinimalRequirements history
 
-    Accounts.create customer bankAccounts trans Subscription.Basic $ Account accountId phone transId bankToken bankItemId now
+    Accounts.create customer bankAccounts trans sub $ Account accountId phone transId bankToken bankItemId now
 
     createDefaultBudgets accountId trans history
 
-    Apps.markResultOnboarding accountId Complete
-    Log.info "complete"
+    pure Complete
 
 
 
@@ -128,8 +129,6 @@ createDefaultBudgets accountId trans history = do
 
   Log.debug ("BUDGETS", incs, exps, spend)
   pure ()
-
-
 
 
 
@@ -158,22 +157,20 @@ newCustomer app now bankToken = do
 
 
 
+-- it could be an either instead
 checkMinimalRequirements
-  :: ( MonadEffects '[Log, Applications, Early ()] m )
-  => Guid Account -> History -> m ()
-checkMinimalRequirements accountId history = do
+  :: History -> Either Onboarding Subscription.Level
+checkMinimalRequirements history = do
     case check history of
       Just r -> do
-        Apps.markResultOnboarding accountId r
-        Early.earlyReturn ()
+        Left r
 
       Nothing ->
-        pure ()
+        Right Subscription.Basic
 
   where
-    check history = do
-      checkRegular history
-      checkLow history
+
+    check history = checkRegular history <|> checkLow history
 
     checkRegular history =
       if isNotRegular (income history)
@@ -185,15 +182,15 @@ checkMinimalRequirements accountId history = do
         then Just RejectedIncomeLow
         else Nothing
 
-    isNotRegular incs =
-      List.length incs < 1
-
     isLow incs exps =
-      -- sum up all the AVERAGES of the group
-      groupsTotal exps < groupsTotal incs
+      primary incs <= groupsTotal exps
 
     groupsTotal = List.sum . List.map (value . History.average)
 
+    primary = List.maximum . List.map (value . History.average)
+
+    isNotRegular incs =
+      List.length incs < 1
 
 
 -- underwriting
@@ -308,3 +305,8 @@ instance Exception OnboardError
 require :: MonadEffects '[Throw OnboardError] m => OnboardError -> (Maybe a) -> m a
 require err Nothing = throwSignal err
 require _ (Just a)  = pure a
+
+
+early :: MonadEffects '[Early Onboarding] m => Either Onboarding a -> m a
+early (Left r)  = earlyReturn r
+early (Right a) = pure a

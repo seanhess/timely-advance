@@ -1,19 +1,71 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings     #-}
 module Test.OnboardAccount where
 
-import Test.Tasty.HUnit
-import Test.Tasty.Monad
-
-import           Timely.Bank as Bank
-import           Timely.Accounts.Types (BankAccount(..))
-import qualified Timely.Accounts.Types as Account
-import qualified Data.Model.Money as Money
-import Data.Time.Clock (getCurrentTime)
+import qualified Data.Model.Money                   as Money
+import           Data.Number.Abs                    (absolute)
+import           Data.Time.Clock                    (getCurrentTime)
+import           Test.Tasty
+import           Test.Tasty.HUnit
+import           Test.Tasty.Monad
+import           Timely.Accounts.Types              (BankAccount (..))
+import qualified Timely.Accounts.Types              as Account
+import           Timely.Accounts.Types.Application  (Onboarding (..))
+import           Timely.Accounts.Types.Subscription (Level (..))
+import           Timely.Actions.Transactions        as Trans (History (..))
+import           Timely.Bank                        as Bank
+import           Timely.Evaluate.History            (Group (..))
+import           Timely.Worker.AccountOnboard       as Onboard
 
 tests :: Tests ()
 tests = do
     group "bank-accounts" testBankAccounts
+    group "minimal-requirements" testMinimalRequirements
+
+
+specOnboard = do
+  ts <- runTests tests
+  defaultMain $ testGroup "tests" ts
+
+
+testMinimalRequirements :: Tests ()
+testMinimalRequirements = do
+    let lowAmt = (absolute (Money.fromFloat 100))
+    let highAmt = (absolute (Money.fromFloat 150))
+    let low = Group "low" lowAmt lowAmt Nothing []
+    let high = Group "high" highAmt highAmt Nothing []
+
+    let billAmt = (absolute (Money.fromFloat 60))
+    let payAmt = (absolute (Money.fromFloat 200))
+    let bill = Group "bill" billAmt billAmt Nothing []
+    let pay = Group "pay" payAmt payAmt Nothing []
+
+    test "should fail if no income" $ do
+      Onboard.checkMinimalRequirements (History [] []) @?= Left RejectedIncomeNotRegular
+
+    test "should fail if income is low" $ do
+      Onboard.checkMinimalRequirements (History [low] [high]) @?= Left RejectedIncomeLow
+
+    test "should pass if no exp" $ do
+      Onboard.checkMinimalRequirements (History [low] []) @?= Right Basic
+
+    test "should pass if high" $ do
+      Onboard.checkMinimalRequirements (History [high] [low]) @?= Right Basic
+
+    group "multiples" $ do
+
+      test "three bills" $ do
+        Onboard.checkMinimalRequirements (History [pay] [bill, bill, bill]) @?= Right Basic
+
+      test "four bills" $ do
+        Onboard.checkMinimalRequirements (History [pay] [bill, bill, bill, bill]) @?= Left RejectedIncomeLow
+
+    group "primary income" $ do
+      test "ok if first is enough" $ do
+        Onboard.checkMinimalRequirements (History [low, pay] [high]) @?= Right Basic
+
+      test "fails not counting second" $ do
+        Onboard.checkMinimalRequirements (History [low, pay] [high, bill]) @?= Left RejectedIncomeLow
 
 
 testBankAccounts :: Tests ()
