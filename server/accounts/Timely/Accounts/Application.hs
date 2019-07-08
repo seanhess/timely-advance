@@ -10,27 +10,27 @@
 module Timely.Accounts.Application where
 
 
-import           Control.Effects         (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
-import           Control.Monad.Selda     (Selda, insert, query, tryCreateTable, update_)
-import           Data.Maybe              (catMaybes, listToMaybe)
-import           Data.Model.Guid         (Guid)
-import qualified Data.Model.Guid         as Guid
-import           Data.Model.Id           (Id (..))
-import           Database.Selda          hiding (Result, insert, query, tryCreateTable, update_)
+import           Control.Effects       (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
+import           Control.Monad.Selda   (Selda, insert, query, tryCreateTable, update_)
+import           Data.Maybe            (catMaybes, listToMaybe)
+import           Data.Model.Guid       (Guid)
+import qualified Data.Model.Guid       as Guid
+import           Data.Model.Id         (Id (..))
+import           Database.Selda        hiding (Result, insert, query, tryCreateTable, update_)
 
-import           Timely.Accounts.Types   hiding (Subscription (limit))
-import qualified Timely.Bank             as Bank
+import           Timely.Accounts.Types hiding (Subscription (limit))
+import qualified Timely.Bank           as Bank
 
 
 data Applications m = ApplicationsMethods
-  { _save                 :: Application -> m ()
-  , _find                 :: Guid Account -> m (Maybe Application)
-  , _all                  :: m [Application]
-  , _check                :: m [Application]
-  , _markResultOnboarding :: Guid Account -> Onboarding -> m ()
-  , _saveBank             :: Guid Account -> Id Bank.Item -> m (Id AppBank)
-  , _saveTransactions     :: Id Bank.Item -> Int -> m ()
-  , _findTransactions     :: Id AppBank   -> m (Maybe Int)
+  { _save             :: Application -> m ()
+  , _find             :: Guid Account -> m (Maybe Application)
+  , _all              :: m [Application]
+  , _check            :: m [Application]
+  , _updateOnboarding :: Guid Account -> Onboarding -> m ()
+  , _saveBank         :: Guid Account -> Id Bank.Item -> m (Id AppBank)
+  , _saveTransactions :: Id Bank.Item -> Int -> m ()
+  , _findTransactions :: Id AppBank   -> m (Maybe Int)
   } deriving (Generic)
 
 instance Effect Applications
@@ -40,11 +40,11 @@ save :: MonadEffect Applications m => Application -> m ()
 find :: MonadEffect Applications m => Guid Account -> m (Maybe Application)
 all :: MonadEffect Applications m => m [Application]
 check :: MonadEffect Applications m => m [Application]
-markResultOnboarding :: MonadEffect Applications m => Guid Account -> Onboarding -> m ()
+updateOnboarding :: MonadEffect Applications m => Guid Account -> Onboarding -> m ()
 saveBank :: MonadEffect Applications m => Guid Account -> Id Bank.Item -> m (Id AppBank)
 saveTransactions :: MonadEffect Applications m => Id Bank.Item -> Int -> m ()
 findTransactions :: MonadEffect Applications m => Id AppBank -> m (Maybe Int)
-ApplicationsMethods save find all check markResultOnboarding saveBank saveTransactions findTransactions = effect
+ApplicationsMethods save find all check updateOnboarding saveBank saveTransactions findTransactions = effect
 
 
 

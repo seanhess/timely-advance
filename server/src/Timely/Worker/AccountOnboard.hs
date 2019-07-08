@@ -37,7 +37,7 @@ import qualified Timely.Accounts.Application       as Apps
 import           Timely.Accounts.Budgets           (Budgets)
 import qualified Timely.Accounts.Budgets           as Budgets
 import           Timely.Accounts.Subscription      as Subscription (Level (..))
-import           Timely.Accounts.Types             as Accounts (Account (..), AppBank, Application (..), BankAccount (bankAccountId), Customer (..), Onboarding (..), isChecking, toBankAccount)
+import           Timely.Accounts.Types             as Accounts (Account (..), AppBank, Application (..), BankAccount (bankAccountId), Customer (..), Onboarding (..), Pending(..), Rejected(..), isChecking, toBankAccount)
 import qualified Timely.Accounts.Types.Transaction as Transaction
 import           Timely.Actions.Transactions       (History (..))
 import qualified Timely.Actions.Transactions       as Transactions
@@ -72,7 +72,7 @@ handler app@(Application { accountId, phone }) = do
       & Signal.handleException onError
       & flip catch onException
 
-    Apps.markResultOnboarding accountId result
+    Apps.updateOnboarding accountId result
     Log.info "complete"
 
   where
@@ -82,7 +82,7 @@ handler app@(Application { accountId, phone }) = do
 
     onException :: (MonadEffects '[Applications] m, MonadThrow m) => SomeException -> m Onboarding
     onException err = do
-      Apps.markResultOnboarding accountId Error
+      Apps.updateOnboarding accountId Error
       throwM err
       pure Error
 
@@ -94,17 +94,24 @@ accountOnboard
   :: ( MonadEffects '[Applications, Accounts, Log, Banks, Transfers, Throw OnboardError, Time, Async, Budgets, Early Onboarding] m)
   => Application -> Guid Account -> Valid Phone -> m Onboarding
 accountOnboard app accountId phone = do
+
+    Apps.updateOnboarding accountId (Pending Bank)
     now                      <- Time.currentTime
     (bankToken, bankItemId)  <- Bank.authenticate (publicBankToken app)
     appBankId                <- Apps.saveBank accountId bankItemId
     customer                 <- newCustomer app now bankToken
     (checking, bankAccounts) <- loadBankAccounts accountId bankToken now
+
+    Apps.updateOnboarding accountId (Pending Transfers)
     transId                  <- initTransfers customer bankToken checking
+
+    Apps.updateOnboarding accountId (Pending Transactions)
     trans                    <- loadTransactions accountId bankToken appBankId checking now
 
     let history              = Transactions.history trans
     sub                      <- early $ checkMinimalRequirements history
 
+    Apps.updateOnboarding accountId (Pending Creation)
     Accounts.create customer bankAccounts trans sub $ Account accountId phone transId bankToken bankItemId now
 
     createDefaultBudgets accountId trans history
@@ -163,7 +170,7 @@ checkMinimalRequirements
 checkMinimalRequirements history = do
     case check history of
       Just r -> do
-        Left r
+        Left $ Rejected r
 
       Nothing ->
         Right Subscription.Basic
@@ -174,12 +181,12 @@ checkMinimalRequirements history = do
 
     checkRegular history =
       if isNotRegular (income history)
-        then Just RejectedIncomeNotRegular
+        then Just $ IncomeNotRegular
         else Nothing
 
     checkLow history =
       if isLow (income history) (expenses history)
-        then Just RejectedIncomeLow
+        then Just IncomeLow
         else Nothing
 
     isLow incs exps =

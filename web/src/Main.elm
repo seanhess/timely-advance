@@ -20,7 +20,7 @@ import Page.Settings.Main as Settings
 import Page.Settings.Subscription as Subscription
 import Platform.Updates exposing (Updates)
 import Route exposing (Route)
-import Timely.Api exposing (Account)
+import Timely.Api
 import Timely.Components as Components
 import Timely.Style as Style
 import Url exposing (Url)

@@ -15,11 +15,12 @@ import Platform.Updates exposing (Updates, command, modify, updates)
 import Result.Cat as Result
 import Route
 import Time exposing (Weekday(..))
-import Timely.Api as Api exposing (AccountId)
+import Timely.Api as Api
 import Timely.Components as Components
 import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types exposing (Id(..))
+import Timely.Types.Account exposing (AccountId)
 import Timely.Types.Budget as Budget exposing (Budget, BudgetId, BudgetInfo, BudgetType(..), info)
 import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money as Money exposing (Money, formatMoney, formatMoneyNoSign)

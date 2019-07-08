@@ -23,7 +23,7 @@ import           Data.String.Conversions     (cs)
 import           Servant                     (ServantErr)
 import           Servant.Auth.Server         (CookieSettings, JWTSettings)
 import           Timely.Accounts.Application as Application
-import           Timely.Accounts.Types       (Account, Application (..), Onboarding (..))
+import           Timely.Accounts.Types       (Account, Application (..), Onboarding(Pending), Pending(New))
 import           Timely.Api.Sessions         as Sessions
 import           Timely.Api.Types            (AccountInfo (..))
 import           Timely.Events               as Events
@@ -71,10 +71,12 @@ createNewApplication phone info accountId = do
 
 
 fromAccountInfo :: Guid Account -> UTCTime -> Valid Phone -> AccountInfo -> Application
-fromAccountInfo i now phone AccountInfo { email, ssn, dateOfBirth, publicBankToken } =
+fromAccountInfo i now phone AccountInfo { publicBankToken, dateOfBirth, email, ssn } =
   Application
     { accountId = i
     , created = now
-    , onboarding = Pending
-    , phone , email , ssn , dateOfBirth , publicBankToken
+    , onboarding = Pending New
+    , phone
+    , publicBankToken
+    , dateOfBirth, email, ssn
     }

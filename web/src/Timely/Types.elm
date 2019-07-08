@@ -1,4 +1,4 @@
-module Timely.Types exposing (Id(..), Token, decodeId, encodeId, idValue)
+module Timely.Types exposing (Id(..), Token, Valid(..), decodeId, decodeValid, encodeId, encodeValid, idValue)
 
 import Json.Decode as Decode exposing (Decoder, bool, int, list, nullable, string)
 import Json.Encode as Encode
@@ -25,3 +25,17 @@ encodeId (Id s) =
 decodeId : Decoder (Id a)
 decodeId =
     Decode.map Id Decode.string
+
+
+type Valid a
+    = Valid String
+
+
+decodeValid : Decoder (Valid a)
+decodeValid =
+    Decode.map Valid string
+
+
+encodeValid : Valid a -> Encode.Value
+encodeValid (Valid t) =
+    Encode.string t

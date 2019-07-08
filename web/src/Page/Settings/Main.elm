@@ -10,10 +10,11 @@ import Element.Region as Region
 import Http exposing (Error)
 import Platform.Updates exposing (Updates, command, set, updates)
 import Route exposing (Onboard(..), Route(..))
-import Timely.Api as Api exposing (AccountId)
+import Timely.Api as Api
 import Timely.Components as Components
 import Timely.Style as Style
 import Timely.Types exposing (Id(..))
+import Timely.Types.Account exposing (AccountId)
 
 
 type alias Model =

@@ -14,9 +14,10 @@ import Platform.Updates exposing (Updates, command, initWith, updates)
 import Process
 import Route exposing (Route)
 import Task
-import Timely.Api exposing (AccountId)
+import Timely.Api
 import Timely.Style as Style
 import Timely.Types exposing (Id, idValue)
+import Timely.Types.Account exposing (AccountId)
 import Url exposing (Url)
 
 

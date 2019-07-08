@@ -1,4 +1,4 @@
-module Timely.Api exposing (Account, AccountCustomer, AccountId(..), AccountInfo, Amount, Application, Approval, ApprovalResult(..), Auth(..), AuthCode(..), Bank(..), BankAccount, BankAccountType(..), Customer, Denial, Onboarding(..), Phone, SSN(..), Session, Valid(..), advanceIsActive, advanceIsCollected, advanceIsOffer, createExpense, createIncome, delBudget, delExpense, delIncome, delSubscription, deleteAccount, editExpense, editIncome, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getAvailableSubscriptions, getCustomer, getCustomers, getExpenses, getIncomes, getSubscription, getTransactionHistory, getTransactions, postAdvanceAccept, postApplications, putBudget, putSpending, putSubscription, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
+module Timely.Api exposing (AccountCustomer, Amount, Approval, ApprovalResult(..), Auth(..), AuthCode(..), BankAccount, BankAccountType(..), Customer, Denial, Phone, Session, advanceIsActive, advanceIsCollected, advanceIsOffer, createExpense, createIncome, delBudget, delExpense, delIncome, delSubscription, deleteAccount, editExpense, editIncome, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getAvailableSubscriptions, getCustomer, getCustomers, getExpenses, getIncomes, getSubscription, getTransactionHistory, getTransactions, postAdvanceAccept, postApplications, putBudget, putSpending, putSubscription, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
 
 import Http exposing (Error, Expect)
 import Json.Decode as Decode exposing (Decoder, bool, int, list, nullable, string)
@@ -7,43 +7,16 @@ import Json.Encode as Encode
 import String
 import Task
 import Time exposing (Month(..))
-import Timely.Types exposing (Id(..), Token, decodeId, encodeId, idValue)
+import Timely.Types exposing (Id(..), Token, Valid(..), decodeId, decodeValid, encodeId, encodeValid, idValue)
+import Timely.Types.Account exposing (Account, AccountId)
 import Timely.Types.AccountHealth exposing (AccountHealth, decodeAccountHealth)
 import Timely.Types.Advance exposing (Advance, AdvanceId, decodeAdvance)
+import Timely.Types.Application as Application exposing (AccountInfo, Application, SSN)
 import Timely.Types.Budget exposing (Budget, BudgetId, BudgetInfo, BudgetType(..), decodeBudget, decodeBudgetInfo, encodeBudget)
 import Timely.Types.Date exposing (Date, decodeDate)
 import Timely.Types.Money exposing (Money, decodeMoney, encodeMoney, fromCents, toCents)
 import Timely.Types.Subscription as Subscription exposing (Subscription)
 import Timely.Types.Transactions exposing (History, Schedule, TransRow, Transaction, decodeHistory, decodeSchedule, decodeTransRow, decodeTransaction, encodeSchedule)
-
-
-type Bank
-    = Bank
-
-
-type AccountId
-    = AccountId
-
-
-type alias Account =
-    { accountId : Id AccountId
-    , phone : String
-    , credit : Money
-    }
-
-
-type alias AccountInfo =
-    { email : String
-    , ssn : Valid SSN
-    , dateOfBirth : String
-    , publicBankToken : Id Bank
-    }
-
-
-type alias Application =
-    { accountId : Id AccountId
-    , onboarding : Onboarding
-    }
 
 
 type alias Session =
@@ -85,23 +58,9 @@ type alias AccountCustomer =
     }
 
 
-type SSN
-    = SSN
-
-
-type Valid a
-    = Valid String
-
-
 type ApprovalResult
     = Approved Approval
     | Denied Denial
-
-
-type Onboarding
-    = Pending
-    | Complete
-    | Error
 
 
 type alias Approval =
@@ -121,16 +80,6 @@ type alias Amount =
 
 
 -- |> required "budgetId" decodeId
-
-
-encodeAccountInfo : AccountInfo -> Encode.Value
-encodeAccountInfo x =
-    Encode.object
-        [ ( "email", Encode.string x.email )
-        , ( "ssn", encodeValid x.ssn )
-        , ( "dateOfBirth", Encode.string x.dateOfBirth )
-        , ( "publicBankToken", encodeId x.publicBankToken )
-        ]
 
 
 encodeAmount : Amount -> Encode.Value
@@ -160,21 +109,11 @@ decodeApproval =
         |> required "approvalAmount" int
 
 
-decodeAccountInfo : Decoder AccountInfo
-decodeAccountInfo =
-    Decode.succeed AccountInfo
-        |> required "email" string
-        |> required "ssn" decodeValid
-        |> required "dateOfBirth" string
-        |> required "publicBankToken" decodeId
-
-
 decodeAccount : Decoder Account
 decodeAccount =
     Decode.succeed Account
         |> required "accountId" decodeId
         |> required "phone" string
-        |> required "credit" decodeMoney
 
 
 
@@ -216,13 +155,6 @@ decodeCustomer =
         |> required "dateOfBirth" decodeDate
 
 
-decodeApplication : Decoder Application
-decodeApplication =
-    Decode.succeed Application
-        |> required "accountId" decodeId
-        |> required "onboarding" decodeOnboarding
-
-
 decodeSession : Decoder Session
 decodeSession =
     Decode.succeed Session
@@ -252,36 +184,6 @@ decodeBankAccountType =
                     _ ->
                         Decode.fail ("Invalid BankAccountType, " ++ string)
             )
-
-
-decodeOnboarding : Decoder Onboarding
-decodeOnboarding =
-    Decode.string
-        |> Decode.andThen
-            (\string ->
-                case string of
-                    "Pending" ->
-                        Decode.succeed Pending
-
-                    "Error" ->
-                        Decode.succeed Error
-
-                    "Complete" ->
-                        Decode.succeed Complete
-
-                    _ ->
-                        Decode.fail ("Invalid Onboarding, " ++ string)
-            )
-
-
-decodeValid : Decoder (Valid a)
-decodeValid =
-    Decode.map Valid string
-
-
-encodeValid : Valid a -> Encode.Value
-encodeValid (Valid t) =
-    Encode.string t
 
 
 request : String -> Http.Body -> (Result Error a -> msg) -> List String -> Decoder a -> Cmd msg
@@ -319,7 +221,7 @@ requestDEL =
 
 postApplications : (Result Error Application -> msg) -> AccountInfo -> Cmd msg
 postApplications toMsg body =
-    requestPOST toMsg [ "", "v1", "applications" ] (encodeAccountInfo body) decodeApplication
+    requestPOST toMsg [ "", "v1", "applications" ] (Application.encodeAccountInfo body) Application.decode
 
 
 getAccount : (Result Error Account -> msg) -> Id AccountId -> Cmd msg
@@ -344,7 +246,7 @@ getAccountHealth toMsg (Id a) =
 
 getApplication : (Result Error Application -> msg) -> Id AccountId -> Cmd msg
 getApplication toMsg (Id a) =
-    requestGET toMsg [ "", "v1", "accounts", a, "application" ] decodeApplication
+    requestGET toMsg [ "", "v1", "accounts", a, "application" ] Application.decode
 
 
 getApplicationResult : (Result Error ApprovalResult -> msg) -> Id AccountId -> Cmd msg

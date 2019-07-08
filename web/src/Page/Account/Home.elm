@@ -11,12 +11,13 @@ import List.Extra as List
 import Page.Account.Breakdown as Breakdown
 import Platform.Updates exposing (Updates, command, updates)
 import Route
-import Timely.Api as Api exposing (Account, AccountId, BankAccount, BankAccountType(..), Customer, advanceIsActive, advanceIsCollected, advanceIsOffer)
+import Timely.Api as Api exposing (BankAccount, BankAccountType(..), Customer, advanceIsActive, advanceIsCollected, advanceIsOffer)
 import Timely.Components as Components
 import Timely.Icons as Icons
 import Timely.Resource as Resource exposing (Resource(..), resource, resource_)
 import Timely.Style as Style
 import Timely.Types exposing (Id, idValue)
+import Timely.Types.Account exposing (AccountId)
 import Timely.Types.AccountHealth exposing (AccountHealth)
 import Timely.Types.Advance exposing (Advance)
 import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..))
@@ -29,7 +30,6 @@ import Timely.Types.Transactions exposing (TransRow)
 
 type alias Model =
     { accountId : Id AccountId
-    , account : Resource Account
     , customer : Resource Customer
     , health : Resource AccountHealth
     , transactions : Resource (List TransRow)
@@ -42,8 +42,7 @@ type alias Model =
 
 
 type Msg
-    = OnAccount (Result Error Account)
-    | OnCustomer (Result Error Customer)
+    = OnCustomer (Result Error Customer)
     | OnHealth (Result Error AccountHealth)
     | OnBanks (Result Error (List BankAccount))
     | OnTransactions (Result Error (List TransRow))
@@ -57,7 +56,6 @@ init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
 init key id =
     ( { accountId = id
       , customer = Loading
-      , account = Loading
       , health = Loading
       , banks = Loading
       , advances = Loading
@@ -67,8 +65,7 @@ init key id =
       , now = Date.empty
       }
     , Cmd.batch
-        [ Api.getAccount OnAccount id
-        , Api.getAccountHealth OnHealth id
+        [ Api.getAccountHealth OnHealth id
         , Api.getCustomer OnCustomer id
         , Api.getAccountBanks OnBanks id
         , Api.getAdvances OnAdvances id
@@ -88,12 +85,9 @@ subscriptions _ =
 update : Nav.Key -> Msg -> Model -> Updates Model Msg ()
 update nav msg model =
     case msg of
-        OnAccount ra ->
-            updates { model | account = Resource.fromResult ra }
-                |> command (Route.checkUnauthorized nav ra)
-
         OnHealth rh ->
             updates { model | health = Resource.fromResult rh }
+                |> command (Route.checkUnauthorized nav rh)
 
         OnCustomer rc ->
             updates { model | customer = Resource.fromResult rc }

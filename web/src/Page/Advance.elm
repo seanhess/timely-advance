@@ -12,14 +12,16 @@ import Process
 import Route
 import Task
 import Time
-import Timely.Api as Api exposing (Account, AccountId, Application, ApprovalResult(..), advanceIsActive)
+import Timely.Api as Api exposing (ApprovalResult(..), advanceIsActive)
 import Timely.Components as Components
 import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types exposing (Id(..), idValue)
+import Timely.Types.Account exposing (Account, AccountId)
 import Timely.Types.Advance exposing (Advance, AdvanceId)
 import Timely.Types.Date as Date exposing (Date, formatDate)
 import Timely.Types.Money exposing (Money, formatDollars, fromCents, fromDollars, toCents)
+import Timely.Types.Subscription exposing (Subscription)
 import Validate exposing (Validator)
 
 
@@ -29,14 +31,14 @@ type alias Model =
     , advanceId : Id AdvanceId
     , acceptAmount : String
     , advance : Resource Advance
-    , account : Resource Account
+    , subscription : Resource (Maybe Subscription)
     , advances : Resource (List Advance)
     }
 
 
 type Msg
     = OnAdvance (Result Http.Error Advance)
-    | OnAccount (Result Http.Error Account)
+    | OnSubscription (Result Http.Error (Maybe Subscription))
     | OnAdvances (Result Http.Error (List Advance))
     | OnBack
     | Edit String
@@ -50,13 +52,13 @@ init key accountId advanceId =
       , advanceId = advanceId
       , advance = Loading
       , advances = Loading
-      , account = Loading
+      , subscription = Loading
       , acceptAmount = ""
       , key = key
       }
     , Cmd.batch
         [ Api.getAdvance OnAdvance accountId advanceId
-        , Api.getAccount OnAccount accountId
+        , Api.getSubscription OnSubscription accountId
         , Api.getAdvances OnAdvances accountId
         ]
     )
@@ -73,8 +75,8 @@ update msg model =
         OnAdvance ra ->
             updates { model | advance = Resource.fromResult ra }
 
-        OnAccount ra ->
-            updates { model | account = Resource.fromResult ra }
+        OnSubscription ra ->
+            updates { model | subscription = Resource.fromResult ra }
                 |> command (Route.checkUnauthorized model.key ra)
 
         OnAdvances ra ->
@@ -114,7 +116,7 @@ view model =
 
 viewStatus : Model -> Element Msg
 viewStatus model =
-    case ( model.account, model.advance, model.advances ) of
+    case ( model.subscription, model.advance, model.advances ) of
         ( Failed _, _, _ ) ->
             viewProblem "Account error"
 
@@ -124,7 +126,10 @@ viewStatus model =
         ( _, _, Failed _ ) ->
             viewProblem "Advances error"
 
-        ( Ready account, Ready advance, Ready advances ) ->
+        ( Ready Nothing, _, _ ) ->
+            viewProblem "No Subscription"
+
+        ( Ready (Just sub), Ready advance, Ready advances ) ->
             case ( advance.activated, advance.collected ) of
                 ( Just _, Nothing ) ->
                     viewAccepted model.accountId advance
@@ -133,21 +138,21 @@ viewStatus model =
                     viewCollected model.accountId advance c
 
                 _ ->
-                    viewForm model account advance advances
+                    viewForm model sub advance advances
 
         _ ->
             Components.spinner
 
 
-viewForm : Model -> Account -> Advance -> List Advance -> Element Msg
-viewForm model account advance advances =
+viewForm : Model -> Subscription -> Advance -> List Advance -> Element Msg
+viewForm model sub advance advances =
     let
         valid =
-            Validate.validate (amountValidator advance account advances) model.acceptAmount
+            Validate.validate (amountValidator advance sub advances) model.acceptAmount
     in
     Element.column [ spacing 15, width fill ]
         [ paragraph [] [ text "We predict that you will need some money before your next paycheck. How much would you like?" ]
-        , Element.el [] (text <| "Credit Used: $" ++ formatDollars (Api.usedCredit advances) ++ " / $" ++ formatDollars account.credit)
+        , Element.el [] (text <| "Credit Used: $" ++ formatDollars (Api.usedCredit advances) ++ " / $" ++ formatDollars sub.limit)
         , Element.el [] (text <| "Suggested: $" ++ formatDollars advance.offer)
         , Input.text [ htmlAttribute (Html.type_ "number") ]
             { text = model.acceptAmount
@@ -235,8 +240,8 @@ type Invalid
     | BadAmount String
 
 
-amountValidator : Advance -> Account -> List Advance -> Validator Invalid String
-amountValidator advance account advances =
+amountValidator : Advance -> Subscription -> List Advance -> Validator Invalid String
+amountValidator advance sub advances =
     let
         intOrEmpty s =
             case s of
@@ -256,16 +261,16 @@ amountValidator advance account advances =
     in
     Validate.all
         [ Validate.ifNotInt intOrEmpty BadAmount
-        , Validate.ifFalse (isEnoughCredit advance account advances) NoCredit
+        , Validate.ifFalse (isEnoughCredit advance sub advances) NoCredit
         , Validate.ifFalse moreThan0 (BadAmount "Greater than 0")
         ]
 
 
-isEnoughCredit : Advance -> Account -> List Advance -> String -> Bool
-isEnoughCredit advance account advances value =
+isEnoughCredit : Advance -> Subscription -> List Advance -> String -> Bool
+isEnoughCredit advance sub advances value =
     let
         remaining =
-            toCents account.credit - toCents (Api.usedCredit advances)
+            toCents sub.limit - toCents (Api.usedCredit advances)
     in
     toCents (advanceAmount advance.offer value) <= remaining
 

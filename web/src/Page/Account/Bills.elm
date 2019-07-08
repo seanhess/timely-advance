@@ -11,11 +11,12 @@ import List.Extra as List
 import Page.Account.Budget exposing (formatSchedule)
 import Platform.Updates exposing (Updates, command, modify, updates)
 import Route
-import Timely.Api as Api exposing (AccountId)
+import Timely.Api as Api
 import Timely.Components as Components
 import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types exposing (Id(..), idValue)
+import Timely.Types.Account exposing (AccountId)
 import Timely.Types.AccountHealth exposing (AccountHealth)
 import Timely.Types.Budget exposing (Budget, BudgetId, BudgetInfo, BudgetType(..), Scheduled(..), scheduledDate, scheduledItem)
 import Timely.Types.Date as Date exposing (Date, formatDate)

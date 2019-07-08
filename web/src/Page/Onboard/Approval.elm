@@ -10,18 +10,19 @@ import Platform.Updates exposing (Updates, command, set, updates)
 import Process
 import Route
 import Task
-import Timely.Api as Api exposing (Account, AccountId, Application, ApprovalResult(..), Onboarding(..))
+import Timely.Api as Api exposing (ApprovalResult(..))
 import Timely.Components as Components exposing (spinnerRipple)
-import Timely.Resource as Resource exposing (Resource(..))
+import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types exposing (Id(..))
+import Timely.Types.Account exposing (AccountId)
+import Timely.Types.Application exposing (Application, Onboarding(..), Pending(..), Rejected(..))
 
 
 type alias Model =
     { key : Nav.Key
     , accountId : Id AccountId
     , application : Resource Application
-    , result : Resource ApprovalResult
     }
 
 
@@ -36,7 +37,6 @@ type alias Problem =
 type Msg
     = OnApplication (Result Http.Error Application)
     | OnWaited ()
-    | OnResult (Result Http.Error ApprovalResult)
     | Close
 
 
@@ -44,7 +44,6 @@ init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
 init key accountId =
     ( { accountId = accountId
       , application = Loading
-      , result = Loading
       , key = key
       }
     , Api.getApplication OnApplication accountId
@@ -61,17 +60,17 @@ update msg model =
     let
         pollApplication app =
             if isComplete app.onboarding then
-                Api.getApplicationResult OnResult model.accountId
+                Cmd.none
 
             else
                 Process.sleep 1000 |> Task.perform OnWaited
 
         isComplete onboarding =
             case onboarding of
-                Api.Complete ->
+                Complete ->
                     True
 
-                Api.Error ->
+                Error ->
                     True
 
                 _ ->
@@ -87,9 +86,6 @@ update msg model =
         OnApplication (Ok app) ->
             updates { model | application = Ready app }
                 |> command (pollApplication app)
-
-        OnResult rr ->
-            updates { model | result = Resource.fromResult rr }
 
         OnWaited () ->
             updates model
@@ -110,55 +106,62 @@ view model =
                 ]
             ]
         , column Style.section
-            [ viewStatus model.accountId model.application model.result
+            [ resource (viewStatus model.accountId) model.application
             ]
         ]
 
 
-viewStatus : Id AccountId -> Resource Application -> Resource ApprovalResult -> Element Msg
-viewStatus accountId rapp rres =
-    case ( rapp, rres ) of
-        ( Failed e, _ ) ->
-            viewProblem e
-
-        ( _, Failed e ) ->
-            viewProblem e
-
-        ( Loading, _ ) ->
-            spinnerRipple
-
-        ( _, Loading ) ->
-            spinnerRipple
-
-        ( Ready app, Ready res ) ->
-            viewApplication accountId app.onboarding res
+viewStatus : Id AccountId -> Application -> Element Msg
+viewStatus accountId app =
+    viewApplication accountId app.onboarding
 
 
-viewApplication : Id AccountId -> Onboarding -> ApprovalResult -> Element Msg
-viewApplication accountId onboarding res =
-    case res of
-        Denied _ ->
-            Element.el [] (text "Denied")
+viewApplication : Id AccountId -> Onboarding -> Element Msg
+viewApplication accountId onboarding =
+    Element.column [ spacing 10, width fill ]
+        [ Element.el [] (text "Approved!")
+        , Element.column [ width fill ]
+            [ case onboarding of
+                Error ->
+                    Element.el [ Style.error ] (text "There was an error!")
 
-        Approved a ->
-            Element.column [ spacing 10, width fill ]
-                [ Element.el [] (text "Approved!")
-                , Element.el [] (text <| String.fromInt a.approvalAmount)
-                , Element.column [ width fill ]
-                    [ case onboarding of
-                        Api.Pending ->
-                            Element.el [] (text "Creating your account...")
+                Pending p ->
+                    viewPending p
 
-                        Api.Error ->
-                            Element.el [ Style.error ] (text "There was an error!")
+                Rejected r ->
+                    viewRejected r
 
-                        Api.Complete ->
-                            Element.link (Style.button Style.primary)
-                                { url = Route.url <| Route.Account accountId <| Route.AccountMain
-                                , label = Element.text "My Account"
-                                }
-                    ]
-                ]
+                Complete ->
+                    Element.link (Style.button Style.primary)
+                        { url = Route.url <| Route.Account accountId <| Route.AccountMain
+                        , label = Element.text "My Account"
+                        }
+            ]
+        ]
+
+
+viewPending : Pending -> Element Msg
+viewPending p =
+    case p of
+        New ->
+            text "Initializing"
+
+        Bank ->
+            text "Loading your bank details"
+
+        Transfers ->
+            text "Loading your transfer account"
+
+        Transactions ->
+            text "Analyzing your transactions"
+
+        Creation ->
+            text "Creating your Account"
+
+
+viewRejected : Rejected -> Element Msg
+viewRejected r =
+    el [] (text "REJECTED")
 
 
 viewProblem : Http.Error -> Element Msg

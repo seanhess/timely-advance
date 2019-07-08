@@ -10,21 +10,12 @@ import Http
 import Json.Encode as Encode
 import Platform.Updates exposing (Updates, command, set, updates)
 import Route exposing (Admin(..), Route(..))
-import Timely.Api as Api exposing (AccountCustomer, AccountInfo, Application, Auth, AuthCode, Bank, Customer, Phone, Session)
+import Timely.Api as Api exposing (AccountCustomer, Auth, AuthCode, Customer, Phone, Session)
 import Timely.Components as Components exposing (loadingButton)
 import Timely.Resource as Resource exposing (Resource(..))
 import Timely.Style as Style
 import Timely.Types exposing (Id(..), Token)
-
-
-
--- TODO click to see
---   TODO recent advances (click to see customer info?)
---   TODO recent customers (Ctrl-F to search)
---   TODO recent transactions (click to see customer info?)
---   TODO admin view of individual customer, with recent transactions
--- Or just show all of everything?
--- Everything links to the
+import Timely.Types.Account exposing (AccountId)
 
 
 type alias Model =

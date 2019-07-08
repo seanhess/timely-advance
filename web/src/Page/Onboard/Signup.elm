@@ -16,10 +16,11 @@ import Platform.Updates exposing (Updates, command, set, updates)
 import Route exposing (Route)
 import Task
 import Time
-import Timely.Api as Api exposing (AccountInfo, Application, Auth, AuthCode, Bank, Phone, SSN, Session, Valid(..))
+import Timely.Api as Api exposing (Auth, AuthCode, Phone, Session)
 import Timely.Components as Components exposing (loadingButton)
 import Timely.Style as Style
-import Timely.Types exposing (Id(..), Token, idValue)
+import Timely.Types exposing (Id(..), Token, Valid(..), idValue)
+import Timely.Types.Application exposing (AccountInfo, Application, Bank)
 import Timely.Types.Date as Date exposing (Date)
 
 
@@ -121,7 +122,6 @@ update msg model =
             , publicBankToken = token
             }
     in
-    -- Debug.log (Debug.toString msg) <|
     case msg of
         OnDate t ->
             updates { model | now = t }

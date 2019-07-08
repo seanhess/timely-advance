@@ -10,10 +10,11 @@ import Element.Region as Region
 import Http
 import Platform.Updates exposing (Updates, command, set, updates)
 import Route exposing (Onboard(..), Route(..))
-import Timely.Api as Api exposing (AccountId, Customer, Valid(..))
+import Timely.Api as Api exposing (Customer)
 import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
-import Timely.Types exposing (Id)
+import Timely.Types exposing (Id, Valid(..))
+import Timely.Types.Account exposing (AccountId)
 import Timely.Types.Date exposing (formatDate)
 
 
