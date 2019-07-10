@@ -119,8 +119,7 @@ viewStatus accountId app =
 viewApplication : Id AccountId -> Onboarding -> Element Msg
 viewApplication accountId onboarding =
     Element.column [ spacing 10, width fill ]
-        [ Element.el [] (text "Approved!")
-        , Element.column [ width fill ]
+        [ Element.column [ width fill ]
             [ case onboarding of
                 Error ->
                     Element.el [ Style.error ] (text "There was an error!")

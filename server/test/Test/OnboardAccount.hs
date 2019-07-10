@@ -10,7 +10,7 @@ import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
 import           Timely.Accounts.Types              (BankAccount (..))
 import qualified Timely.Accounts.Types              as Account
-import           Timely.Accounts.Types.Application  (Onboarding (..))
+import           Timely.Accounts.Types.Application  (Onboarding (..), Rejected(..))
 import           Timely.Accounts.Types.Subscription (Level (..))
 import           Timely.Actions.Transactions        as Trans (History (..))
 import           Timely.Bank                        as Bank
@@ -41,10 +41,10 @@ testMinimalRequirements = do
     let pay = Group "pay" payAmt payAmt Nothing []
 
     test "should fail if no income" $ do
-      Onboard.checkMinimalRequirements (History [] []) @?= Left RejectedIncomeNotRegular
+      Onboard.checkMinimalRequirements (History [] []) @?= Left (Rejected IncomeNotRegular)
 
     test "should fail if income is low" $ do
-      Onboard.checkMinimalRequirements (History [low] [high]) @?= Left RejectedIncomeLow
+      Onboard.checkMinimalRequirements (History [low] [high]) @?= Left (Rejected IncomeLow)
 
     test "should pass if no exp" $ do
       Onboard.checkMinimalRequirements (History [low] []) @?= Right Basic
@@ -58,14 +58,14 @@ testMinimalRequirements = do
         Onboard.checkMinimalRequirements (History [pay] [bill, bill, bill]) @?= Right Basic
 
       test "four bills" $ do
-        Onboard.checkMinimalRequirements (History [pay] [bill, bill, bill, bill]) @?= Left RejectedIncomeLow
+        Onboard.checkMinimalRequirements (History [pay] [bill, bill, bill, bill]) @?= Left (Rejected IncomeLow)
 
     group "primary income" $ do
       test "ok if first is enough" $ do
         Onboard.checkMinimalRequirements (History [low, pay] [high]) @?= Right Basic
 
       test "fails not counting second" $ do
-        Onboard.checkMinimalRequirements (History [low, pay] [high, bill]) @?= Left RejectedIncomeLow
+        Onboard.checkMinimalRequirements (History [low, pay] [high, bill]) @?= Left (Rejected IncomeLow)
 
 
 testBankAccounts :: Tests ()

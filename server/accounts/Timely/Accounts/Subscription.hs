@@ -15,6 +15,7 @@ module Timely.Accounts.Subscription
   , remove
   , find
   , initialize
+  , subscriptions
   ) where
 
 

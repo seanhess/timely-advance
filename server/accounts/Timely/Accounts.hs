@@ -142,3 +142,4 @@ initialize = do
     tryCreateTable Account.customers
     tryCreateTable Account.banks
     tryCreateTable Transactions.transactions
+    tryCreateTable Subscription.subscriptions
