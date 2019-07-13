@@ -71,12 +71,12 @@ createNewApplication phone info accountId = do
 
 
 fromAccountInfo :: Guid Account -> UTCTime -> Valid Phone -> AccountInfo -> Application
-fromAccountInfo i now phone AccountInfo { publicBankToken, dateOfBirth, email, ssn } =
+fromAccountInfo i now phone AccountInfo { publicBankToken, email } =
   Application
     { accountId = i
     , created = now
     , onboarding = Pending New
     , phone
     , publicBankToken
-    , dateOfBirth, email, ssn
+    , email
     }

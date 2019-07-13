@@ -8,11 +8,10 @@ import Data.Aeson                    (FromJSON (..), ToJSON (..), Value (..), wi
 import Data.Maybe                    (fromMaybe)
 import Data.Model.Guid               (Guid)
 import Data.Model.Id                 (Id (..), Token)
-import Data.Model.Types              (Phone, SSN)
+import Data.Model.Types              (Phone)
 import Data.Model.Valid              (Valid (..))
 import Data.String.Conversions       (cs)
 import Data.Text                     as Text
-import Data.Time.Calendar            (Day)
 import Data.Time.Clock               (UTCTime)
 import Database.Selda                (SqlRow (..))
 import Database.Selda.SqlType        (Lit (..), SqlType (..), SqlTypeRep (..), SqlValue (..))
@@ -32,14 +31,8 @@ data Application = Application
     , created         :: UTCTime
     , onboarding      :: Onboarding
     , email           :: Text
-    , ssn             :: Valid SSN
-    , dateOfBirth     :: Day
     } deriving (Generic, Show)
 
-
-    -- , email           :: Text
-    -- , ssn             :: Valid SSN
-    -- , dateOfBirth     :: Day
 
 instance SqlRow Application
 instance ToJSON Application

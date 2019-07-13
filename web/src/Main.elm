@@ -14,6 +14,7 @@ import Page.Admin.Customer as Customer
 import Page.Admin.Sudo as Sudo
 import Page.Init as Init
 import Page.Onboard.Approval as Approval
+import Page.Onboard.Bank as Bank
 import Page.Onboard.Landing as Landing
 import Page.Onboard.Signup as Signup
 import Page.Settings.Main as Settings
@@ -46,6 +47,7 @@ type Page
     = NotFound
     | Init Init.Model
     | Landing Landing.Model
+    | Bank Bank.Model
     | Signup Signup.Model
     | Approval Approval.Model
     | Account Account.Model
@@ -62,6 +64,7 @@ type Msg
     | OnInit Init.Msg
     | OnLanding Landing.Msg
     | OnSignup Signup.Msg
+    | OnBank Bank.Msg
     | OnApproval Approval.Msg
     | OnAccount Account.Msg
     | OnSudo Sudo.Msg
@@ -116,8 +119,12 @@ update msg model =
                 |> updateWith Landing OnLanding model
 
         ( OnSignup sub, Signup m ) ->
-            Signup.update sub m
+            Signup.update model.key sub m
                 |> runUpdates (always Cmd.none) Signup OnSignup model
+
+        ( OnBank mg, Bank m ) ->
+            Bank.update model.key mg m
+                |> runUpdates (always Cmd.none) Bank OnBank model
 
         ( OnApproval app, Approval m ) ->
             Approval.update model.key app m
@@ -172,16 +179,20 @@ changeRouteTo maybePage key maybeRoute =
                 |> initWith Landing OnLanding
 
         Just (Route.Onboard Route.Signup) ->
-            Signup.init key Signup.Signup
+            Signup.init Signup.Signup
                 |> initWith Signup OnSignup
 
         Just (Route.Onboard Route.Login) ->
-            Signup.init key Signup.Login
+            Signup.init Signup.Login
                 |> initWith Signup OnSignup
 
         Just (Route.Onboard (Route.Approval i)) ->
             Approval.init i
                 |> initWith Approval OnApproval
+
+        Just (Route.Onboard (Route.Bank e)) ->
+            Bank.init e
+                |> initWith Bank OnBank
 
         Just (Route.Admin Route.Sudo) ->
             Sudo.init key
@@ -226,6 +237,9 @@ view model =
                 Signup s ->
                     Element.map OnSignup <| Signup.view s
 
+                Bank s ->
+                    Element.map OnBank <| Bank.view s
+
                 Approval a ->
                     Element.map OnApproval <| Approval.view a
 
@@ -267,6 +281,9 @@ subscriptions model =
     case model.page of
         Signup mod ->
             Sub.map OnSignup (Signup.subscriptions mod)
+
+        Bank mod ->
+            Sub.map OnBank (Bank.subscriptions mod)
 
         Account mod ->
             Sub.map OnAccount (Account.subscriptions mod)

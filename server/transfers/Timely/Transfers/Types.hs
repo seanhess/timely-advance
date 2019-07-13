@@ -6,7 +6,7 @@ import           Control.Exception     (Exception)
 import           Data.Model.Guid       (Guid)
 import           Data.Model.Id         (Token)
 import           Data.Model.Money      as Money
-import           Data.Model.Types      (Address (..), SSN, Valid (..))
+import           Data.Model.Types      (Address (..))
 import           Data.Typeable         (Typeable)
 import           Database.Selda        hiding (insert, query, tryCreateTable, update_)
 import           GHC.Generics          (Generic)
@@ -38,8 +38,6 @@ data AccountInfo = AccountInfo
   , lastName       :: Text
   , email          :: Text
   , address        :: Address
-  , dateOfBirth    :: Day
-  , ssn            :: Valid SSN
   , processorToken :: Token Dwolla
   } deriving (Show, Eq, Generic)
 

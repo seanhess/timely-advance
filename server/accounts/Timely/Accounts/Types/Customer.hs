@@ -6,10 +6,9 @@ module Timely.Accounts.Types.Customer where
 
 import           Data.Aeson                    (ToJSON (..))
 import           Data.Model.Guid               (Guid)
-import           Data.Model.Types              (PostalCode, SSN, State)
+import           Data.Model.Types              (PostalCode, State)
 import           Data.Model.Valid              (Valid (..))
 import           Data.Text                     as Text
-import           Data.Time.Calendar            (Day)
 import           Data.Time.Clock               (UTCTime)
 import           Database.Selda                (SqlRow (..))
 import           GHC.Generics                  (Generic)
@@ -37,8 +36,6 @@ data Customer = Customer
     , middleName  :: Maybe Text
     , lastName    :: Text
     , email       :: Text
-    , ssn         :: Valid SSN
-    , dateOfBirth :: Day
     , street1     :: Text
     , street2     :: Maybe Text
     , city        :: Text

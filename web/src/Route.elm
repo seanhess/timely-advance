@@ -7,7 +7,7 @@ import Browser.Navigation as Nav
 import Html exposing (Attribute)
 import Html.Attributes as Attr
 import Http exposing (Error(..))
-import Timely.Types exposing (Id(..))
+import Timely.Types exposing (Email, Id(..), Phone)
 import Timely.Types.Account exposing (AccountId)
 import Timely.Types.Advance exposing (AdvanceId)
 import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..))
@@ -23,6 +23,7 @@ type Onboard
     = Landing
     | Signup
     | Login
+    | Bank Email
     | Approval (Id AccountId)
 
 
@@ -73,6 +74,7 @@ parserOnboard =
         [ Parser.map Landing Parser.top
         , Parser.map Signup (s "signup")
         , Parser.map Login (s "login")
+        , Parser.map Bank (s "bank" </> string)
         , Parser.map Approval (s "approval" </> Parser.map Id string)
         ]
 
@@ -150,6 +152,9 @@ url page =
 
                 Onboard Login ->
                     [ "onboard", "login" ]
+
+                Onboard (Bank e) ->
+                    [ "onboard", "bank", e ]
 
                 Onboard (Approval (Id s)) ->
                     [ "onboard", "approval", s ]

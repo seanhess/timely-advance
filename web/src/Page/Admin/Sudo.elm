@@ -10,11 +10,11 @@ import Http
 import Json.Encode as Encode
 import Platform.Updates exposing (Updates, command, set, updates)
 import Route exposing (Admin(..), Route(..))
-import Timely.Api as Api exposing (AccountCustomer, Auth, AuthCode, Customer, Phone, Session)
+import Timely.Api as Api exposing (AccountCustomer, Customer, Session)
 import Timely.Components as Components exposing (loadingButton)
 import Timely.Resource as Resource exposing (Resource(..))
 import Timely.Style as Style
-import Timely.Types exposing (Id(..), Token)
+import Timely.Types exposing (Auth, AuthCode, Id(..), Token)
 import Timely.Types.Account exposing (AccountId)
 
 

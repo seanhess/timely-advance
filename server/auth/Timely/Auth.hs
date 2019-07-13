@@ -69,6 +69,14 @@ implementIO =
       verifyCheck
 
 
+implementTestOffline :: (MonadIO m, MonadConfig AuthConfig m) => RuntimeImplemented Auth m a -> m a
+implementTestOffline =
+  implement $
+    AuthMethods
+      (\_ -> pure ())
+      (\(Valid p) (AuthCode c) -> pure (p == c))
+
+
 
 data AuthConfig = AuthConfig
     { manager :: Manager

@@ -12,10 +12,8 @@ module Timely.Api.Types
 import Data.Aeson                    (FromJSON, ToJSON (..))
 import Data.Model.Guid               as Guid (toText)
 import Data.Model.Money              (Money)
-import Data.Model.Types              (SSN, Valid)
 import Data.String.Conversions       (cs)
 import Data.Text                     (Text)
-import Data.Time.Calendar            (Day)
 import GHC.Generics                  (Generic)
 import Servant.API.ContentTypes.HTML (Linkable (..))
 import Timely.Accounts.Types
@@ -33,8 +31,6 @@ instance FromJSON Amount
 data AccountInfo = AccountInfo
     { publicBankToken :: Token Public
     , email           :: Text
-    , ssn             :: Valid SSN
-    , dateOfBirth     :: Day
     } deriving (Generic, Show)
 
 instance FromJSON AccountInfo

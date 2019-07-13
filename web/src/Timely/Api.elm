@@ -1,4 +1,4 @@
-module Timely.Api exposing (AccountCustomer, Amount, Approval, ApprovalResult(..), Auth(..), AuthCode(..), BankAccount, BankAccountType(..), Customer, Denial, Phone, Session, advanceIsActive, advanceIsCollected, advanceIsOffer, createExpense, createIncome, delBudget, delExpense, delIncome, delSubscription, deleteAccount, editExpense, editIncome, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getAvailableSubscriptions, getCustomer, getCustomers, getExpenses, getIncomes, getSubscription, getTransactionHistory, getTransactions, postAdvanceAccept, postApplications, putBudget, putSpending, putSubscription, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
+module Timely.Api exposing (AccountCustomer, Amount, Approval, ApprovalResult(..), BankAccount, BankAccountType(..), Customer, Denial, Session, advanceIsActive, advanceIsCollected, advanceIsOffer, createExpense, createIncome, delBudget, delExpense, delIncome, delSubscription, deleteAccount, editExpense, editIncome, expectId, getAccount, getAccountBanks, getAccountHealth, getAdvance, getAdvances, getApplication, getApplicationResult, getAvailableSubscriptions, getCustomer, getCustomers, getExpenses, getIncomes, getSubscription, getTransactionHistory, getTransactions, postAdvanceAccept, postApplications, putBudget, putSpending, putSubscription, request, requestGET, requestPOST, sessionsAuthAdmin, sessionsCheckCode, sessionsCreateCode, sessionsGet, sessionsLogout, usedCredit)
 
 import Http exposing (Error, Expect)
 import Json.Decode as Decode exposing (Decoder, bool, int, list, nullable, string)
@@ -7,7 +7,7 @@ import Json.Encode as Encode
 import String
 import Task
 import Time exposing (Month(..))
-import Timely.Types exposing (Id(..), Token, Valid(..), decodeId, decodeValid, encodeId, encodeValid, idValue)
+import Timely.Types exposing (Auth, AuthCode, Id(..), Phone, Token, Valid(..), decodeId, decodeValid, encodeId, encodeValid, idValue)
 import Timely.Types.Account exposing (Account, AccountId)
 import Timely.Types.AccountHealth exposing (AccountHealth, decodeAccountHealth)
 import Timely.Types.Advance exposing (Advance, AdvanceId, decodeAdvance)
@@ -382,22 +382,6 @@ getCustomers toMsg =
 deleteAccount : (Result Error String -> msg) -> Id AccountId -> Cmd msg
 deleteAccount toMsg (Id a) =
     requestDEL toMsg [ "", "v1", "admin", "accounts", a ] string
-
-
-
--- Common -----------------
-
-
-type alias Phone =
-    Id ()
-
-
-type AuthCode
-    = AuthCode
-
-
-type Auth
-    = Auth
 
 
 

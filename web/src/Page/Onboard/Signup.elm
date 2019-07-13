@@ -1,4 +1,4 @@
-port module Page.Onboard.Signup exposing (Mode(..), Model, Msg, init, subscriptions, update, view)
+module Page.Onboard.Signup exposing (Mode(..), Model, Msg, init, subscriptions, update, view)
 
 -- import Debug
 
@@ -16,36 +16,33 @@ import Platform.Updates exposing (Updates, command, set, updates)
 import Route exposing (Route)
 import Task
 import Time
-import Timely.Api as Api exposing (Auth, AuthCode, Phone, Session)
+import Timely.Api as Api exposing (Session)
 import Timely.Components as Components exposing (loadingButton)
+import Timely.Resource as Resource exposing (Resource(..))
 import Timely.Style as Style
-import Timely.Types exposing (Id(..), Token, Valid(..), idValue)
+import Timely.Types exposing (Auth, AuthCode, Email, Id(..), Phone, Token, Valid(..), idValue)
+import Timely.Types.Account exposing (AccountId)
 import Timely.Types.Application exposing (AccountInfo, Application, Bank)
 import Timely.Types.Date as Date exposing (Date)
 
 
-port plaidLinkOpen : Encode.Value -> Cmd msg
-
-
-port plaidLinkExit : (Encode.Value -> msg) -> Sub msg
-
-
-port plaidLinkDone : (String -> msg) -> Sub msg
-
-
 type alias Model =
     { now : Date
-    , email : String
+    , email : Email
     , phone : Phone
-    , dob : String
-    , ssn : String
     , code : Token AuthCode
-    , plaidToken : Token Bank
-    , key : Nav.Key
-    , step : Step
-    , status : Status
     , mode : Mode
+    , step : Step
     }
+
+
+
+-- what are the states?
+
+
+type Step
+    = StepPhone (Resource ())
+    | StepCode (Resource (Maybe (Id AccountId)))
 
 
 type Mode
@@ -53,52 +50,27 @@ type Mode
     | Login
 
 
-type Step
-    = EditingPhone
-    | EditingCode
-    | EditingIdentity
-    | Plaid
-
-
-type Status
-    = Loading
-    | Ready
-    | Failed String Http.Error
-
-
 type Msg
-    = EditPhone String
-    | EditEmail String
-    | EditDob String
-    | EditSSN String
-    | Navigate Route
+    = Back
+    | BackPhone
     | OnDate Date
-    | SubmitForm
+    | EditPhone String
+    | EditEmail String
+    | SubmitPhone
     | EditCode String
     | SubmitCode
-    | SubmitIdentity
-    | Step Step
-    | PlaidOpen
-    | PlaidExited
-    | PlaidDone String
-    | CompletedCheckCode (Result Http.Error Session)
-    | CompletedCreateCode (Result Http.Error ())
-    | CompletedSignup (Result Http.Error Application)
+    | OnCheckCode (Result Http.Error Session)
+    | OnCreateCode (Result Http.Error ())
 
 
-init : Nav.Key -> Mode -> ( Model, Cmd Msg )
-init key mode =
+init : Mode -> ( Model, Cmd Msg )
+init mode =
     ( { now = Date.empty
       , phone = Id ""
       , email = ""
-      , ssn = ""
-      , dob = "2000-01-01"
       , code = Id ""
-      , plaidToken = Id ""
-      , step = EditingPhone
-      , status = Ready
-      , key = key
       , mode = mode
+      , step = StepPhone Init
       }
     , Date.current OnDate
     )
@@ -106,19 +78,15 @@ init key mode =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        [ plaidLinkExit (always PlaidExited)
-        , plaidLinkDone PlaidDone
-        ]
+    Sub.none
 
 
-update : Msg -> Model -> Updates Model Msg ()
-update msg model =
+update : Nav.Key -> Msg -> Model -> Updates Model Msg ()
+update key msg model =
     let
+        newApplication : Id Bank -> AccountInfo
         newApplication token =
             { email = model.email
-            , ssn = Valid model.ssn
-            , dateOfBirth = model.dob
             , publicBankToken = token
             }
     in
@@ -126,12 +94,12 @@ update msg model =
         OnDate t ->
             updates { model | now = t }
 
-        Navigate route ->
+        Back ->
             updates model
-                |> command (Route.pushUrl model.key route)
+                |> command (Route.pushUrl key <| Route.Onboard Route.Landing)
 
-        Step step ->
-            updates { model | step = step }
+        BackPhone ->
+            updates { model | step = StepPhone Init }
 
         EditPhone s ->
             updates { model | phone = Id s }
@@ -139,133 +107,105 @@ update msg model =
         EditEmail s ->
             updates { model | email = s }
 
-        EditSSN s ->
-            updates { model | ssn = s }
+        SubmitPhone ->
+            updates { model | step = StepPhone Loading }
+                |> command (Api.sessionsCreateCode OnCreateCode model.phone)
 
-        EditDob d ->
-            updates { model | dob = d }
+        OnCreateCode (Err e) ->
+            updates { model | step = StepPhone <| Failed e }
 
-        SubmitForm ->
-            updates { model | status = Loading }
-                |> command (Api.sessionsCreateCode CompletedCreateCode model.phone)
-
-        CompletedCreateCode (Err e) ->
-            updates { model | status = Failed "Could not create code" e }
-
-        CompletedCreateCode (Ok _) ->
-            updates { model | status = Ready, step = EditingCode }
+        OnCreateCode (Ok _) ->
+            updates { model | step = StepCode Init }
 
         EditCode s ->
             updates { model | code = Id s }
 
         SubmitCode ->
-            updates { model | status = Loading }
-                |> command (Api.sessionsCheckCode CompletedCheckCode model.phone model.code)
+            updates { model | step = StepCode Loading }
+                |> command (Api.sessionsCheckCode OnCheckCode model.phone model.code)
 
-        CompletedCheckCode (Err e) ->
-            updates { model | status = Failed "Invalid code" e }
+        OnCheckCode (Err e) ->
+            updates { model | step = StepCode <| Failed e }
 
-        CompletedCheckCode (Ok session) ->
-            case session.accountId of
-                Nothing ->
-                    updates { model | status = Ready, step = Plaid }
-                        |> command (plaidLinkOpen Encode.null)
+        OnCheckCode (Ok session) ->
+            updates { model | step = StepCode <| Ready session.accountId }
+                |> command
+                    (case session.accountId of
+                        Just id ->
+                            -- If they have an accountId, redirect them to their account, even if they were trying to sign up
+                            Route.pushUrl key (Route.Account id <| Route.AccountMain)
 
-                Just id ->
-                    updates model
-                        |> command (Route.pushUrl model.key (Route.Account id <| Route.AccountMain))
+                        Nothing ->
+                            case model.mode of
+                                -- If they were signing up, continue to bank
+                                Signup ->
+                                    Route.pushUrl key <| Route.Onboard <| Route.Bank model.email
 
-        PlaidOpen ->
-            updates model
-                |> command (plaidLinkOpen Encode.null)
-
-        PlaidExited ->
-            -- Leave this here. Elm throws an error if there are no subscribers for a subscription!
-            updates model
-
-        PlaidDone token ->
-            -- TODO validation
-            updates { model | plaidToken = Id token, step = EditingIdentity }
-
-        SubmitIdentity ->
-            updates model
-                |> command (Api.postApplications CompletedSignup <| newApplication model.plaidToken)
-
-        CompletedSignup (Err e) ->
-            updates { model | status = Failed "Signup server error" e }
-
-        CompletedSignup (Ok a) ->
-            updates model
-                |> command (Nav.pushUrl model.key (Route.url <| Route.Onboard <| Route.Approval <| a.accountId))
+                                Login ->
+                                    Cmd.none
+                    )
 
 
 view : Model -> Element Msg
 view model =
     case model.step of
-        EditingPhone ->
+        StepPhone genCode ->
             case model.mode of
                 Signup ->
-                    viewSignupForm model
+                    viewSignupForm model genCode
 
                 Login ->
-                    viewLoginForm model
+                    viewLoginForm model genCode
 
-        EditingCode ->
-            viewPhoneCode model
-
-        EditingIdentity ->
-            viewIdentityForm model
-
-        Plaid ->
-            viewPlaidLanding model
+        StepCode accountId ->
+            viewPhoneCode model accountId
 
 
-viewSignupForm : Model -> Element Msg
-viewSignupForm model =
+viewSignupForm : Model -> Resource () -> Element Msg
+viewSignupForm model genCode =
     column Style.page
         [ column Style.info
             [ row [ spacing 15 ]
-                [ Components.back <| Navigate (Route.Onboard Route.Landing)
+                [ Components.back Back
                 , el Style.heading (text "What's your number?")
                 ]
             , paragraph [] [ text "We will use your number to text you when your balance is at risk" ]
             ]
         , column Style.section
-            [ viewPhoneInput model
+            [ viewEmailInput model
+            , viewPhoneInput model
             , Components.loadingButton (Style.button Style.primary)
-                { onPress = SubmitForm
+                { onPress = SubmitPhone
                 , label =
                     column [ spacing 8, width fill ]
                         [ el [ Font.bold, centerX ] (text "Join Timely Advance")
                         , el [ centerX ] (text "Costs $1/month")
                         ]
-                , isLoading = model.status == Loading
+                , isLoading = Resource.isLoading genCode
                 }
-            , viewProblems model.status
+            , viewProblems "Could not generate code" genCode
             , paragraph [ Font.size 12 ] [ text "By joining, I agree to Timely Advance's Privacy Policy, TOS, Payment Authorization & Electronic Communication Consent" ]
             ]
         ]
 
 
-viewLoginForm : Model -> Element Msg
-viewLoginForm model =
+viewLoginForm : Model -> Resource () -> Element Msg
+viewLoginForm model genCode =
     column Style.page
         [ column Style.info
             [ row [ spacing 15 ]
-                [ Components.back <| Navigate (Route.Onboard Route.Landing)
+                [ Components.back Back
                 , paragraph [] [ text "Welcome back! Please enter your phone number" ]
                 ]
             ]
-
-        -- only clickable if they aren't loading
         , column Style.section
             [ viewPhoneInput model
             , Components.loadingButton (Style.button Style.primary)
-                { onPress = SubmitForm
+                { onPress = SubmitPhone
                 , label = Element.text "Login"
-                , isLoading = model.status == Loading
+                , isLoading = Resource.isLoading genCode
                 }
-            , viewProblems model.status
+            , viewProblems "Could not generate code" genCode
             ]
         ]
 
@@ -274,9 +214,9 @@ viewPhoneInput : Model -> Element Msg
 viewPhoneInput model =
     Input.text [ htmlAttribute (Html.type_ "tel") ]
         { text = idValue model.phone
-        , placeholder = Just <| Input.placeholder [] (text "Enter your mobile number")
+        , placeholder = Nothing
         , onChange = EditPhone
-        , label = Input.labelHidden "Phone"
+        , label = label "Mobile number"
         }
 
 
@@ -290,14 +230,19 @@ viewEmailInput model =
         }
 
 
-viewPhoneCode : Model -> Element Msg
-viewPhoneCode model =
+
+-- when they click back here, we need to go back a step
+
+
+viewPhoneCode : Model -> Resource (Maybe (Id AccountId)) -> Element Msg
+viewPhoneCode model accountId =
     column Style.page
         [ column Style.info
             [ row [ spacing 15 ]
-                [ Components.back (Step EditingPhone)
-                , paragraph [] [ text <| "We just sent you a text. Enter the 4 digit code I sent to: " ++ idValue model.phone ]
+                [ Components.back BackPhone
+                , paragraph [] [ text "We just sent you a text" ]
                 ]
+            , paragraph [] [ text <| "Enter the 4 digit code I sent to: " ++ idValue model.phone ]
             ]
         , column Style.section
             [ Input.text [ htmlAttribute (Html.type_ "tel") ]
@@ -309,28 +254,15 @@ viewPhoneCode model =
             , Components.loadingButton (Style.button Style.primary)
                 { onPress = SubmitCode
                 , label = Element.text "Next"
-                , isLoading = model.status == Loading
+                , isLoading = Resource.isLoading accountId
                 }
-            , viewProblems model.status
-            ]
-        ]
+            , viewProblems "Could not validate code" accountId
+            , case accountId of
+                Ready Nothing ->
+                    el [ Style.error ] (text "User not found")
 
-
-viewPlaidLanding : Model -> Element Msg
-viewPlaidLanding model =
-    column Style.page
-        [ column Style.info
-            [ row [ spacing 15 ]
-                [ Components.back (Step EditingCode)
-                , paragraph [] [ text "Connect your bank" ]
-                ]
-            ]
-        , column Style.section
-            [ Input.button (Style.button Style.primary)
-                { onPress = Just PlaidOpen
-                , label = Element.text "Connect Bank"
-                }
-            , viewProblems model.status
+                _ ->
+                    Element.none
             ]
         ]
 
@@ -340,11 +272,11 @@ label t =
     Input.labelAbove [ Font.size 14 ] (text t)
 
 
-viewProblems : Status -> Element Msg
-viewProblems status =
-    case status of
-        Failed p _ ->
-            el [ Style.error ] (text p)
+viewProblems : String -> Resource a -> Element Msg
+viewProblems message resource =
+    case resource of
+        Failed _ ->
+            el [ Style.error ] (text message)
 
         _ ->
             Element.none
@@ -352,51 +284,45 @@ viewProblems status =
 
 
 -- Identity ---------------------
-
-
-viewIdentityForm : Model -> Element Msg
-viewIdentityForm model =
-    column Style.page
-        [ column Style.info
-            [ row [ spacing 15 ]
-                [ Components.back (Step Plaid)
-                , paragraph [] [ text "Please give us a few more details" ]
-                ]
-            ]
-        , column Style.section
-            [ viewEmailInput model
-            , viewSSNInput model
-            , viewDobInput model
-            , Components.loadingButton (Style.button Style.primary)
-                { onPress = SubmitIdentity
-                , label = Element.text "Finish"
-                , isLoading = model.status == Loading
-                }
-            , viewProblems model.status
-            ]
-        ]
-
-
-viewSSNInput : Model -> Element Msg
-viewSSNInput model =
-    Input.text []
-        { text = model.ssn
-        , placeholder = Nothing
-        , onChange = EditSSN
-        , label = label "SSN (9 digits)"
-        }
-
-
-viewDobInput : Model -> Element Msg
-viewDobInput model =
-    Input.text
-        [ htmlAttribute (Html.type_ "date")
-        , htmlAttribute (Html.min "1900-01-01")
-        , htmlAttribute (Html.max (Date.toIsoString model.now))
-        , htmlAttribute (Html.style "flex-direction" "row")
-        ]
-        { text = model.dob
-        , placeholder = Nothing
-        , onChange = EditDob
-        , label = label "Date of Birth"
-        }
+-- viewIdentityForm : Model -> Element Msg
+-- viewIdentityForm model =
+--     column Style.page
+--         [ column Style.info
+--             [ row [ spacing 15 ]
+--                 [ Components.back (Step Plaid)
+--                 , paragraph [] [ text "Please give us a few more details" ]
+--                 ]
+--             ]
+--         , column Style.section
+--             [ viewEmailInput model
+--             , viewSSNInput model
+--             , viewDobInput model
+--             , Components.loadingButton (Style.button Style.primary)
+--                 { onPress = SubmitIdentity
+--                 , label = Element.text "Finish"
+--                 , isLoading = model.status == Loading
+--                 }
+--             , viewProblems model.status
+--             ]
+--         ]
+-- viewSSNInput : Model -> Element Msg
+-- viewSSNInput model =
+--     Input.text []
+--         { text = model.ssn
+--         , placeholder = Nothing
+--         , onChange = EditSSN
+--         , label = label "SSN (9 digits)"
+--         }
+-- viewDobInput : Model -> Element Msg
+-- viewDobInput model =
+--     Input.text
+--         [ htmlAttribute (Html.type_ "date")
+--         , htmlAttribute (Html.min "1900-01-01")
+--         , htmlAttribute (Html.max (Date.toIsoString model.now))
+--         , htmlAttribute (Html.style "flex-direction" "row")
+--         ]
+--         { text = model.dob
+--         , placeholder = Nothing
+--         , onChange = EditDob
+--         , label = label "Date of Birth"
+--         }

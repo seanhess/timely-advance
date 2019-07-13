@@ -206,7 +206,7 @@ runApp s x =
         & Accounts.implementIO
         & Bank.implementBankIO
         & Advances.implementAdvancesSelda
-        & Auth.implementIO
+        & Auth.implementTestOffline
         & Transfers.implementIO
         & Notify.implementIO
         & Underwrite.implementMock

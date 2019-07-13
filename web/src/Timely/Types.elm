@@ -1,4 +1,4 @@
-module Timely.Types exposing (Id(..), Token, Valid(..), decodeId, decodeValid, encodeId, encodeValid, idValue)
+module Timely.Types exposing (Auth, AuthCode, Email, Id(..), Phone, Token, Valid(..), decodeId, decodeValid, encodeId, encodeValid, idValue)
 
 import Json.Decode as Decode exposing (Decoder, bool, int, list, nullable, string)
 import Json.Encode as Encode
@@ -39,3 +39,23 @@ decodeValid =
 encodeValid : Valid a -> Encode.Value
 encodeValid (Valid t) =
     Encode.string t
+
+
+
+-- Common -----------------
+
+
+type alias Phone =
+    Id ()
+
+
+type alias Email =
+    String
+
+
+type AuthCode
+    = AuthCode
+
+
+type Auth
+    = Auth

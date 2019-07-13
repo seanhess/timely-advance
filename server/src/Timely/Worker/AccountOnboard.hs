@@ -151,13 +151,13 @@ newCustomer app now bankToken = do
 
   where
     toNewCustomer :: UTCTime -> Application -> Identity -> Customer
-    toNewCustomer now Application {accountId, email, dateOfBirth, ssn} Identity {names, address} =
+    toNewCustomer now Application {accountId, email} Identity {names, address} =
       let Address {street1, street2, city, state, postalCode } = address
           Names {firstName, middleName, lastName} = names
       in Customer
           { accountId
           , firstName, middleName, lastName
-          , email, ssn, dateOfBirth
+          , email
           , street1, street2, city, state, postalCode
           , created = now
           }
@@ -277,11 +277,10 @@ numDaysHistory = 365
 
 
 toTransferAccountInfo :: Token Dwolla -> Customer -> Transfers.AccountInfo
-toTransferAccountInfo processorToken Customer { accountId, firstName, lastName, email, dateOfBirth, ssn, street1, street2, city, state, postalCode } =
+toTransferAccountInfo processorToken Customer { accountId, firstName, lastName, email, street1, street2, city, state, postalCode } =
   AccountInfo
     { accountId, email
     , firstName, lastName
-    , dateOfBirth, ssn
     , processorToken
     , address = Address { street1, street2, city, state, postalCode }
     }

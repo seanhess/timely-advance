@@ -36,8 +36,6 @@ type Rejected
 
 type alias AccountInfo =
     { email : String
-    , ssn : Valid SSN
-    , dateOfBirth : String
     , publicBankToken : Id Bank
     }
 
@@ -84,11 +82,10 @@ toOnboarding s =
             Error
 
 
+encodeAccountInfo : AccountInfo -> Value
 encodeAccountInfo x =
     Encode.object
         [ ( "email", Encode.string x.email )
-        , ( "ssn", encodeValid x.ssn )
-        , ( "dateOfBirth", Encode.string x.dateOfBirth )
         , ( "publicBankToken", encodeId x.publicBankToken )
         ]
 

@@ -50,19 +50,11 @@ authenticate p c = do
   Log.context "Authenticate"
   liftIO $ print ("Authenticate", p, c)
 
-  -- check hacked pass first
-  if hackPassAuth p c
+  res <- Auth.codeCheck p c
+  if res
     then session p
-    else do
-      res <- Auth.codeCheck p c
-      if res
-        then session p
-        else throwSignal err401
+    else throwSignal err401
 
-
-hackPassAuth :: Valid Phone -> AuthCode -> Bool
-hackPassAuth _ (AuthCode t) = do
-  t == "9999"
 
 
 

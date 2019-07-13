@@ -1,4 +1,4 @@
-module Timely.Resource exposing (Resource(..), apply, error, fromResult, map, map2, map3, pure, resource, resource_, toMaybe)
+module Timely.Resource exposing (Resource(..), apply, error, fromResult, isLoading, map, map2, map3, pure, resource, resource_, toMaybe)
 
 import Element exposing (Element, el, text)
 import Http exposing (Error)
@@ -7,9 +7,20 @@ import Timely.Style as Style
 
 
 type Resource a
-    = Loading
+    = Init
+    | Loading
     | Failed Http.Error
     | Ready a
+
+
+isLoading : Resource a -> Bool
+isLoading r =
+    case r of
+        Loading ->
+            True
+
+        _ ->
+            False
 
 
 fromResult : Result Error a -> Resource a
@@ -35,6 +46,9 @@ toMaybe res =
 resource_ : (Error -> Element msg) -> (a -> Element msg) -> Resource a -> Element msg
 resource_ errHtml goodHtml res =
     case res of
+        Init ->
+            Element.none
+
         Loading ->
             Components.spinner
 
@@ -88,6 +102,9 @@ map3 f ra rb rc =
 andThen : (a -> Resource b) -> Resource a -> Resource b
 andThen f ra =
     case ra of
+        Init ->
+            Init
+
         Loading ->
             Loading
 
