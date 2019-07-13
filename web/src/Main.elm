@@ -120,7 +120,7 @@ update msg model =
                 |> runUpdates (always Cmd.none) Signup OnSignup model
 
         ( OnApproval app, Approval m ) ->
-            Approval.update app m
+            Approval.update model.key app m
                 |> runUpdates (always Cmd.none) Approval OnApproval model
 
         ( OnAccount acc, Account m ) ->
@@ -180,7 +180,7 @@ changeRouteTo maybePage key maybeRoute =
                 |> initWith Signup OnSignup
 
         Just (Route.Onboard (Route.Approval i)) ->
-            Approval.init key i
+            Approval.init i
                 |> initWith Approval OnApproval
 
         Just (Route.Admin Route.Sudo) ->

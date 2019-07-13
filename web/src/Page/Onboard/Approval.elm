@@ -22,8 +22,7 @@ import Timely.Types.Application exposing (Application, Onboarding(..), Pending(.
 
 
 type alias Model =
-    { key : Nav.Key
-    , accountId : Id AccountId
+    { accountId : Id AccountId
     , application : Resource Application
     }
 
@@ -42,11 +41,10 @@ type Msg
     | Back
 
 
-init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
-init key accountId =
+init : Id AccountId -> ( Model, Cmd Msg )
+init accountId =
     ( { accountId = accountId
       , application = Loading
-      , key = key
       }
     , Api.getApplication OnApplication accountId
     )
@@ -57,40 +55,33 @@ subscriptions _ =
     Sub.none
 
 
-update : Msg -> Model -> Updates Model Msg ()
-update msg model =
+update : Nav.Key -> Msg -> Model -> Updates Model Msg ()
+update key msg model =
     let
-        pollApplication app =
-            if isComplete app.onboarding then
-                Cmd.none
+        poll =
+            Process.sleep 1000 |> Task.perform OnWaited
 
-            else
-                Process.sleep 1000 |> Task.perform OnWaited
-
-        isComplete onboarding =
-            case onboarding of
+        checkApplication app =
+            case app.onboarding of
                 Complete ->
-                    True
+                    Route.goAccount key app.accountId
 
                 Error ->
-                    True
+                    Cmd.none
 
                 Rejected _ ->
-                    True
+                    Cmd.none
 
                 _ ->
-                    False
+                    poll
     in
     case msg of
-        -- OnApplication (Err (Http.BadStatus 404)) ->
-        --     updates
-        --         |> command (Process.sleep 1000 |> Task.perform OnWaited)
         OnApplication (Err e) ->
             updates { model | application = Failed e }
 
         OnApplication (Ok app) ->
             updates { model | application = Ready app }
-                |> command (pollApplication app)
+                |> command (checkApplication app)
 
         OnWaited () ->
             updates model
@@ -98,7 +89,7 @@ update msg model =
 
         Back ->
             updates model
-                |> command (Route.pushUrl model.key (Route.Onboard Route.Landing))
+                |> command (Route.pushUrl key (Route.Onboard Route.Landing))
 
 
 view : Model -> Element Msg
