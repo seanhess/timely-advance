@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes     #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE FlexibleContexts     #-}
 module Timely.App.Worker where
@@ -13,13 +14,13 @@ import           Data.Text                       (Text)
 import           Network.AMQP.Worker             (Queue (Queue), WorkerException(..), def)
 -- import qualified Network.AMQP.Worker             as Worker hiding (bindQueue, publish, worker)
 import qualified Network.AMQP.Worker             as Worker
-import           Timely.App.AppM                 (AppT, loadState, runApp, AppState(amqpConn))
+import           Timely.App.AppM                 (AppT, loadState, AppState(amqpConn))
 
 
 
 
-start :: forall a. (FromJSON a) => Queue a -> (a -> AppT IO ()) -> IO ()
-start queue handler = do
+start :: forall a. (FromJSON a) => (forall a. AppState -> AppT IO a -> IO  a) -> Queue a -> (a -> AppT IO ()) -> IO ()
+start run queue handler = do
   state <- loadState
   let conn = amqpConn state
   putStrLn $ "Worker: " ++ cs (queueName queue)
@@ -27,8 +28,8 @@ start queue handler = do
   -- it needs the connection, forget the stupid MonadWorker
   Worker.bindQueue conn queue
   Worker.worker conn def queue
-    (\e -> runApp state $ onError (queueName queue) e)
-    (\m -> runApp state $ onMessage m)
+    (\e -> run state $ onError (queueName queue) e)
+    (\m -> run state $ onMessage m)
 
   where
     queueName queue = let (Queue _ name) = queue in name

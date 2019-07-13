@@ -22,9 +22,9 @@ import           Network.Plaid.Identity      (AddressInfo (..))
 import qualified Network.Plaid.Identity      as Identity
 import           Network.Plaid.Transactions  (Options)
 import qualified Network.Plaid.Transactions  as Transactions
-import           Network.Plaid.Types         (Access, Account, Item, Public, Transaction)
+import           Network.Plaid.Types         as Plaid (Access, Item, Public, Transaction)
 import           Servant.Client              (ClientEnv, ClientM, mkClientEnv, runClientM)
-import           Timely.Bank.Types           (BankError (..), Config (..), Identity (..), Names (..))
+import           Timely.Bank.Types           as Bank (Account, BankError (..), Config (..), Identity (..), Names (..), toAccount, fromId)
 
 
 
@@ -49,7 +49,7 @@ loadAccounts :: (MonadIO m, MonadConfig Config m) => Token Access -> m [Account]
 loadAccounts tok = do
     creds <- configs credentials
     res <- runPlaid $ Plaid.reqAccounts creds tok
-    pure $ Accounts.accounts res
+    pure $ List.map toAccount $ Accounts.accounts res
 
 
 
@@ -58,7 +58,7 @@ loadAccounts tok = do
 loadTransactions :: (MonadIO m, MonadConfig Config m) => Token Access -> Id Account -> Options -> m [Transaction]
 loadTransactions tok aid options = do
     creds <- configs credentials
-    res <- runPlaid $ Plaid.reqTransactions creds tok aid options
+    res <- runPlaid $ Plaid.reqTransactions creds tok (fromId aid) options
     pure $ Transactions.transactions res
 
 
@@ -73,7 +73,7 @@ loadTransactions tok aid options = do
 getACH :: (MonadIO m, MonadConfig Config m) => Token Access -> Id Account -> m (Token Dwolla)
 getACH tok aid = do
     creds <- configs credentials
-    res <- runPlaid $ Plaid.reqDwolla creds tok aid
+    res <- runPlaid $ Plaid.reqDwolla creds tok (fromId aid)
     pure $ Dwolla.processor_token res
 
 

@@ -4,6 +4,7 @@
 {-# LANGUAGE MonoLocalBinds        #-}
 {-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 module Timely.Worker.AccountOnboard where
 
@@ -37,11 +38,11 @@ import qualified Timely.Accounts.Application       as Apps
 import           Timely.Accounts.Budgets           (Budgets)
 import qualified Timely.Accounts.Budgets           as Budgets
 import           Timely.Accounts.Subscription      as Subscription (Level (..))
-import           Timely.Accounts.Types             as Accounts (Account (..), AppBank, Application (..), BankAccount (bankAccountId), Customer (..), Onboarding (..), Pending(..), Rejected(..), isChecking, toBankAccount)
+import           Timely.Accounts.Types             as Accounts (Account (..), AppBank, Application (..), BankAccount (bankAccountId), Customer (..), Onboarding (..), Pending (..), Rejected (..), isChecking, toBankAccount)
 import qualified Timely.Accounts.Types.Transaction as Transaction
 import           Timely.Actions.Transactions       (History (..))
 import qualified Timely.Actions.Transactions       as Transactions
-import qualified Timely.App                        as App
+import           Timely.App                        as App (AppState, AppT, runApp, start)
 import           Timely.Bank                       (Banks, Dwolla, Identity (..), Names (..))
 import qualified Timely.Bank                       as Bank
 import           Timely.Evaluate.History           as History (Group (average))
@@ -54,7 +55,10 @@ queue = Worker.topic Events.applicationsNew "app.account.onboard"
 
 
 start :: IO ()
-start = App.start queue handler
+start = start' runApp
+
+start' :: (forall a. AppState -> AppT IO a -> IO a) -> IO ()
+start' run = App.start run queue handler
 
 
 

@@ -27,14 +27,14 @@ import           Timely.Accounts                    (Accounts, TransactionRow (t
 import qualified Timely.Accounts                    as Accounts
 import           Timely.Accounts.Budgets            (Budgets)
 import qualified Timely.Accounts.Budgets            as Budgets
-import           Timely.Accounts.Types              (Account (..), BankAccount (bankAccountId), Subscription(..))
+import           Timely.Accounts.Types              (Account (..), BankAccount (bankAccountId), Subscription (..))
 import qualified Timely.Accounts.Types.BankAccount  as BankAccount
 import qualified Timely.Accounts.Types.Transaction  as Transaction
 import           Timely.Actions.AccountHealth       (Amount (..), Minimum)
 import qualified Timely.Actions.AccountHealth       as AccountHealth
 import           Timely.Advances                    (Advance, Advances)
 import qualified Timely.Advances                    as Advances
-import qualified Timely.App                         as App
+import           Timely.App                         as App (runApp, start)
 import           Timely.Bank                        (Access, Banks, Token)
 import qualified Timely.Bank                        as Bank
 import           Timely.Evaluate.Health.Budget      (Budget, BudgetInfo (..), budget)
@@ -53,7 +53,7 @@ queue = Worker.topic Events.transactionsUpdate "app.account.update"
 
 
 start :: IO ()
-start = App.start queue handler
+start = App.start runApp queue handler
 
 
 handler

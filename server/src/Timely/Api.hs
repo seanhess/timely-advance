@@ -48,7 +48,7 @@ import           Timely.Api.Sessions                  (SetSession)
 import qualified Timely.Api.Sessions                  as Sessions
 import           Timely.Api.Types
 import qualified Timely.Api.Webhooks                  as Webhooks
-import           Timely.App                           (AppM, AppState (..), clientConfig, loadState, nt, runAppIO)
+import           Timely.App                           (AppM, AppState (..), clientConfig, loadState, runApp, appIO)
 import qualified Timely.App                           as App
 import           Timely.Auth                          (AuthCode)
 import           Timely.Config                        (port, serveDir)
@@ -275,22 +275,22 @@ apiProxy :: Proxy Api
 apiProxy = Proxy
 
 
-server :: AppState -> Server Api
-server st = hoistServerWithContext apiProxy context (nt st) (baseApi $ filesDir st)
+server :: (forall x. AppM x -> Handler x) -> FilePath -> ServerT Api Handler
+server run filesDir = hoistServerWithContext apiProxy context run (baseApi filesDir)
   where
     context :: Proxy '[CookieSettings, JWTSettings]
     context = Proxy
 
-    filesDir = serveDir . App.env
-
 -- https://haskell-servant.readthedocs.io/en/stable/cookbook/jwt-and-basic-auth/JWTAndBasicAuth.html
 -- https://github.com/haskell-servant/servant-auth#readme
-application :: AppState -> Servant.Application
-application st =
-    logger $ serveWithContext apiProxy context $ server st
+application :: (forall x. AppM x -> Handler x) -> AppState -> Servant.Application
+application run st =
+    logger $ serveWithContext apiProxy context $ server run (filesDir st)
   where
     logger = RequestLogger.logStdout
     context = (jwtSettings st) :. (cookieSettings st) :. EmptyContext
+
+    filesDir = serveDir . App.env
 
 
 
@@ -300,7 +300,7 @@ initialize :: IO ()
 initialize = do
     putStrLn "Initializing"
 
-    runAppIO $ do
+    appIO $ do
       Accounts.initialize
       Application.initialize
       Advances.initialize
@@ -311,11 +311,15 @@ initialize = do
 
 
 start :: IO ()
-start = do
+start = start' runApp
+
+
+start' :: (forall x. AppState -> AppM x -> Handler x) -> IO ()
+start' run = do
     -- Load state
     putStrLn "API"
     state <- loadState
     let p = port $ App.env state
 
     putStrLn $ "API | Running on " ++ show p
-    Warp.run p (application state)
+    Warp.run p (application (run state) state)

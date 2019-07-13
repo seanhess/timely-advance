@@ -4,16 +4,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Timely.Worker.AdvanceSend where
 
-import           Control.Effects       (MonadEffects)
-import           Control.Effects.Log   as Log
-import           Data.Model.Guid       as Guid
-import qualified Network.AMQP.Worker   as Worker hiding (publish)
+import           Control.Effects     (MonadEffects)
+import           Control.Effects.Log as Log
+import           Data.Model.Guid     as Guid
+import qualified Network.AMQP.Worker as Worker hiding (publish)
 
-import           Timely.Advances       (Advance (..))
-import           Timely.Events         as Events
-import           Timely.Transfers      (Transfers)
-import qualified Timely.App                    as App
-import qualified Timely.Transfers      as Transfers
+import           Timely.Advances     (Advance (..))
+import           Timely.App          as App (runApp, start)
+import           Timely.Events       as Events
+import           Timely.Transfers    (Transfers)
+import qualified Timely.Transfers    as Transfers
 
 
 
@@ -22,7 +22,7 @@ queue = Worker.topic Events.advancesActive "app.advances.send"
 
 
 start :: IO ()
-start = App.start queue handler
+start = App.start runApp queue handler
 
 
 

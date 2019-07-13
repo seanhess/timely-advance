@@ -2,18 +2,21 @@
 {-# LANGUAGE OverloadedStrings     #-}
 module Test.OnboardAccount where
 
+import           Data.Model.Id                      (Id (..))
 import qualified Data.Model.Money                   as Money
 import           Data.Number.Abs                    (absolute)
 import           Data.Time.Clock                    (getCurrentTime)
+import           Network.Plaid.Types                as Plaid (Account (..), Balances (..), CurrencyCode(..), AccountType(..), AccountSubType(..))
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
-import           Timely.Accounts.Types              (BankAccount (..))
+import           Timely.Accounts.Types              (BankAccount (..), BankAccountType (..))
 import qualified Timely.Accounts.Types              as Account
-import           Timely.Accounts.Types.Application  (Onboarding (..), Rejected(..))
+import           Timely.Accounts.Types.Application  (Onboarding (..), Rejected (..))
 import           Timely.Accounts.Types.Subscription (Level (..))
 import           Timely.Actions.Transactions        as Trans (History (..))
-import           Timely.Bank                        as Bank
+import           Timely.Bank                        as Bank (Currency (..))
+import qualified Timely.Bank.Types                  as Bank
 import           Timely.Evaluate.History            (Group (..))
 import           Timely.Worker.AccountOnboard       as Onboard
 
@@ -72,23 +75,23 @@ testBankAccounts :: Tests ()
 testBankAccounts = do
     test "should convert savings account" $ do
       now <- getCurrentTime
-      let ba = Account.toBankAccount "1234" now savings
-      accountType ba @?= Account.Savings
+      let ba = Account.toBankAccount "1234" now $ Bank.toAccount savings
+      accountType ba @?= BankAccountType Account.Savings
       accountId ba @?= "1234"
       balance ba @?= Money.fromFloat 210.0
 
     test "should convert checking account" $ do
       now <- getCurrentTime
-      let ba = Account.toBankAccount "1234" now checking
-      accountType ba @?= Account.Checking
+      let ba = Account.toBankAccount "1234" now $ Bank.toAccount checking
+      accountType ba @?= BankAccountType Account.Checking
 
 
-savings :: Account
-savings = Account {account_id = Id "KEERg7Mdw9Iv7Me36RPvhw43JkXkjXTVQAbpr", balances = Balances {current = Currency 210.0, available = Just (Currency 200.0), iso_currency_code = Just (CurrencyCode "USD"), unofficial_currency_code = Nothing}, mask = "1111", name = "Plaid Saving", official_name = Just "Plaid Silver Standard 0.1% Interest Saving", subtype = Savings, _type = Depository}
+savings :: Plaid.Account
+savings = Plaid.Account {account_id = Id "KEERg7Mdw9Iv7Me36RPvhw43JkXkjXTVQAbpr", balances = Plaid.Balances {current = Currency 210.0, available = Just (Currency 200.0), iso_currency_code = Just (CurrencyCode "USD"), unofficial_currency_code = Nothing}, mask = "1111", name = "Plaid Saving", official_name = Just "Plaid Silver Standard 0.1% Interest Saving", subtype = Plaid.Savings, _type = Plaid.Depository}
 
 
-checking :: Account
-checking = Account {account_id = Id "J88kojZxdRs81ZEnmkV8Fb8NKpapGaudPgq6Z", balances = Balances {current = Currency 110.0, available = Just (Currency 100.0), iso_currency_code = Just (CurrencyCode "USD"), unofficial_currency_code = Nothing}, mask = "0000", name = "Plaid Checking", official_name = Just "Plaid Gold Standard 0% Interest Checking", subtype = Checking, _type = Depository}
+checking :: Plaid.Account
+checking = Plaid.Account {account_id = Id "J88kojZxdRs81ZEnmkV8Fb8NKpapGaudPgq6Z", balances = Balances {current = Currency 110.0, available = Just (Currency 100.0), iso_currency_code = Just (CurrencyCode "USD"), unofficial_currency_code = Nothing}, mask = "0000", name = "Plaid Checking", official_name = Just "Plaid Gold Standard 0% Interest Checking", subtype = Plaid.Checking, _type = Plaid.Depository}
 
 
 -- , Account {account_id = Id "KEERg7Mdw9Iv7Me36RPvhw43JkXkjXTVQAbpr", balances = Balances {current = Currency 210.0, available = Just (Currency 200.0), iso_currency_code = Just (CurrencyCode "USD"), unofficial_currency_code = Nothing}, mask = "1111", name = "Plaid Saving", official_name = "Plaid Silver Standard 0.1% Interest Saving", subtype = Savings, _type = Depository}

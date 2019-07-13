@@ -15,10 +15,7 @@ module Timely.Bank
     , Public
     , Account(..)
     , Currency(..)
-    , CurrencyCode(..)
-    , Balances(..)
     , AccountType(..)
-    , AccountSubType(..)
     , Identity(..)
     , Names(..)
     , Identity.Address(..)
@@ -38,27 +35,27 @@ module Timely.Bank
     , loadTransactionsRange
     , loadTransactionsDays
     , getACH
-    , implementBankIO
-    -- , runPlaid
+    , implementIO
+    , implementOfflineMock
     ) where
 
-import           Control.Effects            (Effect (..), MonadEffect (..), MonadEffects, RuntimeImplemented, effect,
-                                             implement)
+import           Control.Effects            (Effect (..), MonadEffect (..), MonadEffects, RuntimeImplemented, effect, implement)
 import           Control.Monad.Catch        (MonadThrow)
 import           Control.Monad.Config       (MonadConfig)
 import           Control.Monad.IO.Class     (MonadIO)
 import qualified Control.Monad.Loops        as Loops
 import qualified Data.List                  as List
 import           Data.Model.Id              (Id (..), Token (..))
+import           Data.Model.Types           (Address (..), Valid (..))
 import           Data.Time.Calendar         (Day)
 import qualified Data.Time.Calendar         as Day
 import           GHC.Generics               (Generic)
 import           Network.Plaid.Dwolla       (Dwolla)
 import qualified Network.Plaid.Identity     as Identity
 import           Network.Plaid.Transactions (Options (..))
-import           Network.Plaid.Types
+import           Network.Plaid.Types        as Plaid (Access, Category (..), Currency (..), Item, Public, Transaction (..))
 import qualified Timely.Bank.Actions        as Actions
-import           Timely.Bank.Types          (Config (..), Identity (..), Names (..))
+import           Timely.Bank.Types          (Account (..), AccountType (..), Config (..), Identity (..), Names (..))
 
 -- Bank Service
 
@@ -113,10 +110,8 @@ loadTransactionsDays tok aid days today = do
 
 
 
--- this makes it so you can mock out each individual effect
--- if you replace it with mocking runPlaid, it's harder to mock for tests
-implementBankIO :: (MonadIO m, MonadThrow m, MonadConfig Config m) => RuntimeImplemented Banks m a -> m a
-implementBankIO =
+implementIO :: (MonadIO m, MonadThrow m, MonadConfig Config m) => RuntimeImplemented Banks m a -> m a
+implementIO =
   implement $
     BanksMethods
       Actions.authenticate
@@ -125,3 +120,14 @@ implementBankIO =
       Actions.loadTransactions
       Actions.getACH
 
+implementOfflineMock :: (MonadIO m, MonadThrow m, MonadConfig Config m) => RuntimeImplemented Banks m a -> m a
+implementOfflineMock = do
+  let accountId = Id "bank-mock-id"
+      accessToken = Token "bank-mock-access"
+  implement $
+    BanksMethods
+      (\_ -> pure (accessToken, accountId))
+      (\_ -> pure $ Identity (Names "Mock" Nothing "Person") (Address "1234 West Mock St" Nothing "Bigtown" (Valid "CA") (Valid "12345")))
+      (\_ -> pure [Account accountId (Currency 125.00) "Mock Checking" Checking])
+      Actions.loadTransactions
+      Actions.getACH

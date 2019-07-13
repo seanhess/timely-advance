@@ -6,7 +6,7 @@
 {-# LANGUAGE NamedFieldPuns             #-}
 module Timely.Accounts.Types.BankAccount where
 
-import           Data.Aeson                    (ToJSON (..))
+import           Data.Aeson                    (ToJSON (..), genericToJSON, defaultOptions)
 import           Data.Model.Guid               (Guid)
 import           Data.Model.Id                 (Id (..))
 import           Data.Model.Money              as Money
@@ -21,15 +21,12 @@ import qualified Timely.Bank                   as Bank
 
 
 
-data BankAccountType
-    = Checking
-    | Savings
-    | Credit
-    | Other
+newtype BankAccountType = BankAccountType { bankAccountType :: Bank.AccountType }
     deriving (Generic, Eq, Show, Bounded, Enum, Read, Typeable)
 
 instance SqlType BankAccountType
-instance ToJSON BankAccountType
+instance ToJSON BankAccountType where
+  toJSON (BankAccountType t) = genericToJSON defaultOptions t
 
 
 
@@ -53,25 +50,17 @@ toBankAccount :: Guid Account -> UTCTime -> Bank.Account -> BankAccount
 toBankAccount accountId now acc =
   BankAccount
     { created = now
-    , accountId
-    , accountType = accountType acc
+    , accountId = accountId
+    , accountType = BankAccountType $ Bank.accountType acc
     , name = Bank.name (acc :: Bank.Account)
-    , balance = toBalance $ Bank.current $ Bank.balances acc
-    , bankAccountId = Bank.account_id (acc :: Bank.Account)
+    , balance = toBalance $ Bank.balance acc
+    , bankAccountId = Bank.accountId (acc :: Bank.Account)
     }
 
   where
 
     toBalance (Bank.Currency d) = Money.fromFloat d
 
-    accountType a
-      | Bank.subtype a == Bank.Checking = Checking
-      | Bank.subtype a == Bank.Savings = Savings
-      | Bank._type a == Bank.Credit = Credit
-      | Bank._type a == Bank.Depository = Savings
-      | Bank._type a == Bank.Loan = Credit
-      | otherwise = Other
-
 
 isChecking :: BankAccount -> Bool
-isChecking acc = accountType acc == Checking
+isChecking acc = bankAccountType (accountType acc) == Bank.Checking

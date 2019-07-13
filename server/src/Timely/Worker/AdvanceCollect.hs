@@ -21,7 +21,7 @@ import qualified Network.AMQP.Worker     as Worker hiding (publish)
 import           Timely.Advances         (Advance (..), Advances)
 import qualified Timely.Advances         as Advances
 import qualified Timely.Advances.Collect as Collect
-import qualified Timely.App              as App
+import           Timely.App              as App (runApp, start, appIO)
 import           Timely.Events           as Events
 import           Timely.Transfers        (Transfers)
 import qualified Timely.Transfers        as Transfers
@@ -32,10 +32,10 @@ queue :: Worker.Queue Advance
 queue = Worker.topic Events.advancesDue "app.advances.collect"
 
 start :: IO ()
-start = App.start queue handler
+start = App.start runApp queue handler
 
 startSchedule :: IO ()
-startSchedule = App.runAppIO schedule
+startSchedule = App.appIO schedule
 
 
 -- | Scans for due advances and queues them. Run this every hour, or every day at UTC midnight (or just after)

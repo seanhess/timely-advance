@@ -6,13 +6,15 @@
 {-# LANGUAGE UndecidableInstances  #-}
 module Timely.App.AppM
   ( AppState(..)
+  , Handler
   , loadState
-  , nt
   , debug
   , AppM, AppT
   , clientConfig
   , runApp
-  , runAppIO
+  , runAppOffline
+  , appIO
+  , appIO'
   ) where
 
 
@@ -204,9 +206,9 @@ runApp s x =
         & Worker.implementAMQP (amqpConn s)
         & Applications.implementIO
         & Accounts.implementIO
-        & Bank.implementBankIO
+        & Bank.implementIO
         & Advances.implementAdvancesSelda
-        & Auth.implementTestOffline
+        & Auth.implementIO
         & Transfers.implementIO
         & Notify.implementIO
         & Underwrite.implementMock
@@ -215,15 +217,44 @@ runApp s x =
   in runReaderT action s
 
 
+runAppOffline
+  :: ( MonadIO m
+     , MonadBaseControl IO m
+     , MonadMask m
+     )
+  => AppState -> AppT m a -> m a
+runAppOffline s x =
+  let action = x
+        & Log.implementStdout
+        & Time.implementIO
+        & Worker.implementAMQP (amqpConn s)
+        & Applications.implementIO
+        & Accounts.implementIO
+        & Bank.implementOfflineMock
+        & Advances.implementAdvancesSelda
+        & Auth.implementOfflineMock
+        & Transfers.implementIO
+        & Notify.implementIO
+        & Underwrite.implementMock
+        & Async.implementIO
+        & Budgets.implementIO
+  in runReaderT action s
 
-runAppIO :: AppM a -> IO a
-runAppIO x = do
+
+appIO :: AppM a -> IO a
+appIO = appIO' runApp
+
+
+appIO' :: (AppState -> AppM a -> Handler a) -> AppM a -> IO a
+appIO' run x = do
   s <- loadState
-  res <- runHandler $ runApp s x
+  runIO $ run s x
+
+
+
+runIO :: Handler a -> IO a
+runIO h = do
+  res <- runHandler h
   case res of
     Left err -> Prelude.error $ show err
     Right r  -> pure r
-
-
-nt :: AppState -> AppM a -> Handler a
-nt s x = runApp s x
