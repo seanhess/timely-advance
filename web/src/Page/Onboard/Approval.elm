@@ -2,8 +2,10 @@ module Page.Onboard.Approval exposing (Model, Msg, init, subscriptions, update, 
 
 import Browser.Navigation as Nav
 import Element exposing (..)
+import Element.Background as Background
+import Element.Border as Border
 import Element.Font as Font
-import Element.Input as Input
+import Element.Input as Input exposing (button)
 import Http
 import Json.Encode as Encode
 import Platform.Updates exposing (Updates, command, set, updates)
@@ -37,7 +39,7 @@ type alias Problem =
 type Msg
     = OnApplication (Result Http.Error Application)
     | OnWaited ()
-    | Close
+    | Back
 
 
 init : Nav.Key -> Id AccountId -> ( Model, Cmd Msg )
@@ -73,6 +75,9 @@ update msg model =
                 Error ->
                     True
 
+                Rejected _ ->
+                    True
+
                 _ ->
                     False
     in
@@ -91,7 +96,7 @@ update msg model =
             updates model
                 |> command (Api.getApplication OnApplication model.accountId)
 
-        Close ->
+        Back ->
             updates model
                 |> command (Route.pushUrl model.key (Route.Onboard Route.Landing))
 
@@ -101,7 +106,7 @@ view model =
     column Style.page
         [ column Style.info
             [ row [ spacing 15 ]
-                [ Components.back Close
+                [ Components.back Back
                 , el Style.heading (text "Approval")
                 ]
             ]
@@ -160,7 +165,36 @@ viewPending p =
 
 viewRejected : Rejected -> Element Msg
 viewRejected r =
-    el [] (text "REJECTED")
+    let
+        item msg isNope =
+            row [ width fill, spacing 10 ]
+                [ paragraph [ width fill ] [ text msg ]
+                , el [ alignRight ]
+                    (if isNope then
+                        nope
+
+                     else
+                        check
+                    )
+                ]
+
+        check =
+            el [] (text "√")
+
+        nope =
+            el [ Font.color Style.red ] (text "X")
+    in
+    column [ spacing 15, width fill ]
+        [ paragraph Style.heading [ text "We can't set up your account at this time" ]
+        , paragraph [] [ text "You must meet all the following requirements" ]
+        , el [ Border.widthXY 0 1, width fill, height (px 1) ] (text "")
+
+        -- they can't get this far without having a bank account
+        , item "Active account at a supported bank" False
+        , item "Reliable source of income" (r == IncomeNotRegular)
+        , item "Income that exceeds recurring bills" (r == IncomeLow)
+        , button (Style.button Style.primary) { onPress = Just Back, label = text "Go Back" }
+        ]
 
 
 viewProblem : Http.Error -> Element Msg
