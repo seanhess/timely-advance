@@ -47,8 +47,6 @@ type alias Customer =
     , middleName : Maybe String
     , lastName : String
     , email : String
-    , ssn : Valid SSN
-    , dateOfBirth : Date
     }
 
 
@@ -151,8 +149,6 @@ decodeCustomer =
         |> required "middleName" (nullable string)
         |> required "lastName" string
         |> required "email" string
-        |> required "ssn" decodeValid
-        |> required "dateOfBirth" decodeDate
 
 
 decodeSession : Decoder Session

@@ -96,8 +96,9 @@ update key msg model =
             updates model
 
         OnPlaidDone token ->
+            -- it hasn't saved yet
             updates { model | plaidToken = Id token, application = Loading }
-                |> command (Api.postApplications OnSignup <| newApplication model.plaidToken)
+                |> command (Api.postApplications OnSignup <| newApplication (Id token))
 
         OnSignup (Err e) ->
             updates { model | application = Failed e }

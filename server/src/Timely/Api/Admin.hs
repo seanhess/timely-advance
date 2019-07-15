@@ -7,6 +7,7 @@ import           Data.Model.Guid              (Guid)
 import qualified Timely.Accounts.Account      as Accounts
 import qualified Timely.Accounts.Budgets      as Budgets
 import qualified Timely.Accounts.Transactions as Transactions
+import qualified Timely.Accounts.Subscription as Subscription
 import           Timely.Accounts.Types        (Account)
 
 
@@ -17,6 +18,7 @@ deleteAccount
   => Guid Account -> m ()
 deleteAccount i = do
   Transactions.deleteAccount i
+  Subscription.deleteAccount i
   Budgets.deleteAccount i
   Accounts.deleteAccount i
   pure ()

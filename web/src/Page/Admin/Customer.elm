@@ -11,6 +11,7 @@ import Http
 import Platform.Updates exposing (Updates, command, set, updates)
 import Route exposing (Onboard(..), Route(..))
 import Timely.Api as Api exposing (Customer)
+import Timely.Icons as Icons exposing (Size(..))
 import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types exposing (Id, Valid(..))
@@ -73,7 +74,7 @@ viewCustomer model cust =
             \(Valid v) -> v
     in
     column [ spacing 10, width fill ]
-        [ link [ Style.link ] { url = Route.url (Route.Admin Route.Sudo), label = text "Close" }
+        [ link [] { url = Route.url (Route.Admin Route.Sudo), label = Icons.icon Icons.back Icons.Big }
         , el [ Font.bold ]
             (text <|
                 String.join " "
@@ -83,8 +84,9 @@ viewCustomer model cust =
                     ]
             )
         , el [] (text cust.email)
-        , el [] (text <| fromValid cust.ssn)
-        , el [] (text <| formatDate cust.dateOfBirth)
+
+        -- , el [] (text <| fromValid cust.ssn)
+        -- , el [] (text <| formatDate cust.dateOfBirth)
         , link (Style.button Style.primary)
             { url = Route.url (Route.Account cust.accountId Route.AccountMain)
             , label = text "Account"

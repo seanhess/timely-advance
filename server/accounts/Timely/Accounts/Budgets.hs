@@ -234,7 +234,8 @@ initialize = do
 
 deleteAccount :: (Selda m, MonadIO m) => Guid Account -> m ()
 deleteAccount i = do
-  deleteFrom budgets (\b -> b ! #accountId .== literal i)
+  deleteFrom budgets (\r -> r ! #accountId .== literal i)
+  deleteFrom spendings (\r -> r ! #accountId .== literal i)
   pure ()
 
 

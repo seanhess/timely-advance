@@ -16,6 +16,7 @@ module Timely.Accounts.Subscription
   , find
   , initialize
   , subscriptions
+  , deleteAccount
   ) where
 
 
@@ -84,6 +85,12 @@ find i = do
 initialize :: (Selda m, MonadIO m) => m ()
 initialize = do
     tryCreateTable subscriptions
+
+
+deleteAccount :: (Selda m) => Guid Account -> m ()
+deleteAccount i = do
+  deleteFrom subscriptions (\x -> x ! #accountId .== literal i)
+  pure ()
 
 
 
