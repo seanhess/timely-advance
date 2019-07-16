@@ -27,7 +27,7 @@ import           Timely.Accounts.Types       (Account, Application (..), Onboard
 import           Timely.Api.Sessions         as Sessions
 import           Timely.Api.Types            (AccountInfo (..))
 import           Timely.Events               as Events
-import           Timely.Types.Session        (Session (..))
+import           Timely.Types.Session        as Session (Session (..))
 
 
 
@@ -37,11 +37,11 @@ newApplication
      , MonadConfig JWTSettings m
      , MonadEffects '[Log, Throw ServantErr, Time, Publish, Applications] m
      )
-  => Valid Phone -> AccountInfo -> m (SetSession Application)
-newApplication phone info = do
+  => Session -> AccountInfo -> m (SetSession Application)
+newApplication session info = do
     accountId <- Guid.randomId
-    app <- createNewApplication phone info accountId
-    Sessions.setSession (Session phone (Just accountId) False) app
+    app <- createNewApplication (Session.phone session) info accountId
+    Sessions.setSession (session { accountId = Just accountId }) app
 
 
 

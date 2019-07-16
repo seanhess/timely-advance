@@ -218,9 +218,9 @@ advanceApi i = genericServerT AdvanceApi
 
 -- the ONLY route that needs to authenticate via phone only is newApplication
 -- EVERY other route uses an accountId, including applications
-applicationApi :: Valid Phone -> ToServant AppApi (AsServerT AppM)
-applicationApi p = genericServerT AppApi
-    { _post   = Applications.newApplication p
+applicationApi :: Session -> ToServant AppApi (AsServerT AppM)
+applicationApi s = genericServerT AppApi
+    { _post   = Applications.newApplication s
     }
 
 
@@ -259,7 +259,7 @@ baseApi _ = genericServerT BaseApi
 versionedApi :: ToServant VersionedApi (AsServerT AppM)
 versionedApi = genericServerT VersionedApi
     { _account  = Sessions.protectAccount accountApi
-    , _app      = Sessions.protectPhone applicationApi
+    , _app      = Sessions.protectSession applicationApi
     , _sessions = sessionsApi
     , _config   = clientConfig
     , _config'  = clientConfig

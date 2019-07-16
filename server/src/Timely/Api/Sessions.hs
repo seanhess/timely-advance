@@ -25,7 +25,7 @@ import qualified Servant.Auth.Server           as Servant
 import           Timely.Accounts               (Account, Accounts)
 import qualified Timely.Accounts               as Accounts
 import qualified Timely.Accounts.Types.Account as Account
-import           Timely.Auth                   (Auth, AuthCode(..))
+import           Timely.Auth                   (Auth, AuthCode (..))
 import qualified Timely.Auth                   as Auth
 import           Timely.Types.Session          (Admin, Session (..))
 
@@ -138,16 +138,16 @@ secretKey = Servant.fromSecret
 
 
 
-protectPhone :: ThrowAll api => (Valid Phone -> api) -> AuthResult Session -> api
-protectPhone api (Authenticated (Session p _ _)) = api p
-protectPhone _ _                                 = throwAll err401
+protectSession :: ThrowAll api => (Session -> api) -> AuthResult Session -> api
+protectSession api (Authenticated s) = api s
+protectSession _ _                   = throwAll err401
 
 
 protectAccount :: ThrowAll api => ((Guid Account) -> api) -> AuthResult Session -> Guid Account -> api
+protectAccount api (Authenticated (Session _ _ True)) a2 = api a2
 protectAccount api (Authenticated (Session _ (Just a) _)) a2
   | a == a2 = api a
   | otherwise = throwAll err401
-protectAccount api (Authenticated (Session _ _ True)) a2 = api a2
 protectAccount _ _ _ = throwAll err401
 
 

@@ -19,8 +19,10 @@ import Timely.Resource as Resource exposing (Resource(..), resource)
 import Timely.Style as Style
 import Timely.Types exposing (Id(..), Valid(..))
 import Timely.Types.Account exposing (AccountId)
+import Timely.Types.AccountHealth exposing (AccountHealth)
 import Timely.Types.Application exposing (Application, Onboarding(..))
 import Timely.Types.Date exposing (formatDate)
+import Timely.Types.Money exposing (formatMoney)
 
 
 type alias Model =
@@ -41,10 +43,8 @@ init =
 
 
 
--- it already has all the historical transactions, so you can just go for it
--- but you have to let the system know it's ready
--- so send the webhook?
--- yeah we're going to need to be able to send webhooks here
+-- Ok what does "Step" mean. It's the current state of the thing
+-- I think this makes sense
 
 
 type Step
@@ -52,17 +52,20 @@ type Step
     | Aborted Http.Error
     | Init
     | Application Application
-    | Approved Application
+    | Account (Id AccountId) AccountHealth
 
 
 type Msg
     = Step Step
     | OnApplication (Result Http.Error Application)
-    | OnWaited (Cmd Msg) ()
+    | OnAccountHealth (Id AccountId) (Result Http.Error AccountHealth)
+    | Run (Cmd Msg) ()
+    | Delete (Id AccountId)
+    | OnDeleted (Result Http.Error String)
 
 
-runStep : Model -> Step -> Cmd Msg
-runStep model step =
+nextStep : Model -> Step -> Cmd Msg
+nextStep model step =
     case step of
         Aborted _ ->
             Cmd.none
@@ -71,18 +74,24 @@ runStep model step =
             Cmd.none
 
         Init ->
-            -- you have to think about the next step here
             Api.postApplications OnApplication { email = model.email, publicBankToken = Id "test-bank-token" }
 
         Application app ->
             case app.onboarding of
                 Pending _ ->
-                    Approval.poll (OnWaited <| Api.getApplication OnApplication app.accountId)
+                    Approval.poll (Run <| Api.getApplication OnApplication app.accountId)
+
+                Complete ->
+                    Api.getAccountHealth (OnAccountHealth app.accountId) app.accountId
 
                 _ ->
+                    -- now it's "Approved"
+                    -- but I can't actually do that
+                    -- because I'm not in my update method :(
+                    -- and this has no facility of providing the next step
                     Cmd.none
 
-        Approved _ ->
+        Account _ _ ->
             Cmd.none
 
 
@@ -97,19 +106,28 @@ update key msg model =
                 Ok a ->
                     next a
 
-        step s =
+        runNext s =
             updates { model | step = s, history = model.history ++ [ s ] }
-                |> command (runStep model s)
+                |> command (nextStep model s)
     in
     case msg of
         Step s ->
-            step s
+            runNext s
 
         OnApplication r ->
-            onStep r <| \app -> step (Application app)
+            onStep r <| \app -> runNext (Application app)
 
-        OnWaited cmd _ ->
+        OnAccountHealth id r ->
+            onStep r <| \health -> runNext (Account id health)
+
+        Run cmd _ ->
             updates model |> command cmd
+
+        Delete accountId ->
+            updates model |> command (Api.deleteAccount OnDeleted accountId)
+
+        OnDeleted _ ->
+            updates { model | history = [] }
 
 
 view : Model -> Element Msg
@@ -118,7 +136,7 @@ view model =
         [ link [] { url = Route.url (Route.Admin Route.Sudo), label = Icons.icon Icons.back Icons.Big }
         , el Style.heading (text "TESTS")
         , button (Style.button Style.primary) { onPress = Just (Step Init), label = text "Run Tests" }
-        , column [ Border.widthXY 0 1, spacing 10 ] (List.map viewStep model.history)
+        , column [ Border.widthXY 0 1, spacing 10, padding 10, width fill ] (List.map viewStep model.history)
         ]
 
 
@@ -152,26 +170,14 @@ viewStep step =
                         text "Error"
                 ]
 
-        Approved app ->
-            text "Approved"
-
-
-
--- Webhooks ------------------------------------
--- type BankItem
---     = BankItemEmpty
--- -- but then you need the item id
--- -- I don't know the webook :(
--- type alias PlaidWebhook =
---     { item_id : Id BankItem
---     , webhook_code : TransactionsCode
---     , new_transactions : Int
---     }
--- type TransactionsCode
---     = INITIAL_UPDATE
---     | HISTORICAL_UPDATE
---     | DEFAULT_UPDATE
--- postWebhook : (Result Http.Error String -> msg) -> PlaidWebhook -> Cmd msg
--- postWebhook toMsg body =
---     Api.requestPOST toMsg [ "", "v1", "webhooks", "plaid" ] (encodeWebhook body) Application.decode
--- -- we need to look them up by item id, unfortunately
+        Account id health ->
+            column [ spacing 10 ]
+                [ el [ Font.bold ] (text "Account")
+                , wrappedRow [ spacing 10 ]
+                    -- just include a link to the account :)
+                    [ text <| "Balance:" ++ formatMoney health.balance
+                    , text <| "Minimum:" ++ formatMoney health.minimum
+                    , text <| "Spending:" ++ formatMoney health.spendingDaily
+                    ]
+                , button (Style.button Style.destroy) { onPress = Just (Delete id), label = text "Delete Account" }
+                ]
