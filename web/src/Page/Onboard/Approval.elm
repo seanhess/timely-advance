@@ -1,4 +1,4 @@
-module Page.Onboard.Approval exposing (Model, Msg, init, subscriptions, update, view)
+module Page.Onboard.Approval exposing (Model, Msg, checkApplication, init, poll, subscriptions, update, view, viewPending)
 
 import Browser.Navigation as Nav
 import Element exposing (..)
@@ -55,33 +55,36 @@ subscriptions _ =
     Sub.none
 
 
+poll : (() -> msg) -> Cmd msg
+poll onWaited =
+    Process.sleep 1000 |> Task.perform onWaited
+
+
+checkApplication : (() -> msg) -> Cmd msg -> Application -> Cmd msg
+checkApplication onWaited complete app =
+    case app.onboarding of
+        Complete ->
+            complete
+
+        Error ->
+            Cmd.none
+
+        Rejected _ ->
+            Cmd.none
+
+        _ ->
+            poll onWaited
+
+
 update : Nav.Key -> Msg -> Model -> Updates Model Msg ()
 update key msg model =
-    let
-        poll =
-            Process.sleep 1000 |> Task.perform OnWaited
-
-        checkApplication app =
-            case app.onboarding of
-                Complete ->
-                    Route.goAccount key app.accountId
-
-                Error ->
-                    Cmd.none
-
-                Rejected _ ->
-                    Cmd.none
-
-                _ ->
-                    poll
-    in
     case msg of
         OnApplication (Err e) ->
             updates { model | application = Failed e }
 
         OnApplication (Ok app) ->
             updates { model | application = Ready app }
-                |> command (checkApplication app)
+                |> command (checkApplication OnWaited (Route.goAccount key app.accountId) app)
 
         OnWaited () ->
             updates model
@@ -135,7 +138,7 @@ viewApplication accountId onboarding =
         ]
 
 
-viewPending : Pending -> Element Msg
+viewPending : Pending -> Element msg
 viewPending p =
     case p of
         New ->

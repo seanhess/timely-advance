@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE UndecidableInstances  #-}
 module Timely.App.AppM
@@ -13,12 +14,13 @@ module Timely.App.AppM
   , clientConfig
   , runApp
   , runAppOffline
+  , runAppTest
   , appIO
   , appIO'
   ) where
 
 
-import           Control.Effects             (MonadEffect (..), RuntimeImplemented (..))
+import           Control.Effects             (MonadEffect (..), RuntimeImplemented (..), implement)
 import           Control.Effects.Async       (Async)
 import qualified Control.Effects.Async       as Async
 import           Control.Effects.Log         (Log (..), LogT)
@@ -38,7 +40,7 @@ import           Control.Monad.Trans.Control (MonadBaseControl)
 import           Control.Monad.Trans.Except  (throwE)
 import qualified Control.Monad.Trans.Reader  as Reader
 import           Data.Function               ((&))
-import           Data.Model.Id               (Token (..))
+import           Data.Model.Id               (Id (..), Token (..))
 import           Data.Pool                   (Pool)
 import qualified Data.Pool                   as Pool
 import           Data.String.Conversions     (cs)
@@ -57,7 +59,7 @@ import           Servant.Auth.Server         (CookieSettings (..), JWTSettings)
 import qualified Text.Show.Pretty            as Pretty
 import           Timely.Accounts             (Accounts)
 import qualified Timely.Accounts             as Accounts
-import           Timely.Accounts.Application (Applications)
+import           Timely.Accounts.Application (Applications(..))
 import qualified Timely.Accounts.Application as Applications
 import           Timely.Accounts.Budgets     (Budgets)
 import qualified Timely.Accounts.Budgets     as Budgets
@@ -68,7 +70,7 @@ import           Timely.App.Retry            (retry)
 import           Timely.Auth                 (AuthConfig)
 import           Timely.Auth                 (Auth)
 import qualified Timely.Auth                 as Auth
-import           Timely.Bank                 (Banks)
+import           Timely.Bank                 (Banks(..))
 import qualified Timely.Bank                 as Bank
 import           Timely.Config               (Env (..), loadEnv, version)
 import           Timely.Notify               (Notify)
@@ -204,9 +206,9 @@ runApp s x =
         & Log.implementStdout
         & Time.implementIO
         & Worker.implementAMQP (amqpConn s)
-        & Applications.implementIO
+        & implement (Applications.methods)
         & Accounts.implementIO
-        & Bank.implementIO
+        & implement (Bank.methods)
         & Advances.implementAdvancesSelda
         & Auth.implementIO
         & Transfers.implementIO
@@ -228,11 +230,44 @@ runAppOffline s x =
         & Log.implementStdout
         & Time.implementIO
         & Worker.implementAMQP (amqpConn s)
-        & Applications.implementIO
+        & implement (Applications.methods)
         & Accounts.implementIO
-        & Bank.implementOfflineMock
+        & implement (Bank.methodsOffline)
         & Advances.implementAdvancesSelda
         & Auth.implementOfflineMock
+        & Transfers.implementIO
+        & Notify.implementIO
+        & Underwrite.implementMock
+        & Async.implementIO
+        & Budgets.implementIO
+  in runReaderT action s
+
+
+runAppTest
+  :: ( MonadIO m
+     , MonadBaseControl IO m
+     , MonadMask m
+     )
+  => AppState -> AppT m a -> m a
+runAppTest s x =
+  let action = x
+        & Log.implementStdout
+        & Time.implementIO
+        & Worker.implementAMQP (amqpConn s)
+        & (implement $
+            Applications.methods
+              -- pretend they're already loaded
+              { _findTransactions = \_ -> pure (Just 100)
+              }
+          )
+        & Accounts.implementIO
+        & (implement $ Bank.methods
+             -- automatically authenticate them with a sandbox token liften from our database
+             { _authenticate = \_ -> pure (Token "access-sandbox-af0f6c2c-fadd-462f-b3ab-c448737578cf", Id "agPdBeopjvFWjnD8JegzTWMejpgkQVu79M37r")
+             }
+          )
+        & Advances.implementAdvancesSelda
+        & Auth.implementIO
         & Transfers.implementIO
         & Notify.implementIO
         & Underwrite.implementMock

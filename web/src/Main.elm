@@ -12,6 +12,7 @@ import Json.Encode as Encode
 import Page.Account as Account
 import Page.Admin.Customer as Customer
 import Page.Admin.Sudo as Sudo
+import Page.Admin.Test as Test
 import Page.Init as Init
 import Page.Onboard.Approval as Approval
 import Page.Onboard.Bank as Bank
@@ -52,6 +53,7 @@ type Page
     | Approval Approval.Model
     | Account Account.Model
     | Sudo Sudo.Model
+    | Test Test.Model
     | Customer Customer.Model
     | Settings Settings.Model
     | Subscription Subscription.Model
@@ -68,6 +70,7 @@ type Msg
     | OnApproval Approval.Msg
     | OnAccount Account.Msg
     | OnSudo Sudo.Msg
+    | OnTest Test.Msg
     | OnCustomer Customer.Msg
     | OnSubscription Subscription.Msg
     | OnSettings Settings.Msg
@@ -138,6 +141,10 @@ update msg model =
             Sudo.update mg m
                 |> runUpdates (always Cmd.none) Sudo OnSudo model
 
+        ( OnTest mg, Test m ) ->
+            Test.update model.key mg m
+                |> runUpdates (always Cmd.none) Test OnTest model
+
         ( OnCustomer mg, Customer m ) ->
             Customer.update model.key mg m
                 |> runUpdates (always Cmd.none) Customer OnCustomer model
@@ -198,6 +205,10 @@ changeRouteTo maybePage key maybeRoute =
             Sudo.init key
                 |> initWith Sudo OnSudo
 
+        Just (Route.Admin Route.Test) ->
+            Test.init
+                |> initWith Test OnTest
+
         Just (Route.Admin (Route.Customer i)) ->
             Customer.init i
                 |> initWith Customer OnCustomer
@@ -257,6 +268,9 @@ view model =
 
                 Sudo m ->
                     Element.map OnSudo <| Sudo.view m
+
+                Test m ->
+                    Element.map OnTest <| Test.view m
 
                 Customer m ->
                     Element.map OnCustomer <| Customer.view m

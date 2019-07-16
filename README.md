@@ -2,15 +2,27 @@ Timely Advance
 ==============
 
 
+
+Integration Tests
+-----------------
+
+   $ stack ghci
+   > Api.start' runAppTest
+   > AccountOnboard.start' runAppTest
+
+Then run them from admin
+
+
+Server
+------
+
+
 Ok, if I use an nginx-ingress-controller, the platform neutral version, it'll port across to a different host. It'll create an EBL instance. That should work. I can follow a generic guide, I think
 
 * https://medium.com/devopslinks/learning-kubernetes-on-eks-by-doing-part-4-ingress-on-eks-6c5e5a34920b
 * https://gist.github.com/camilb/69008e4dddeb5d663e2e6699b3a93283 - example
 * https://www.sumologic.com/blog/amazon-web-services/aws-elb-alb/ - but ALBs are better and more flexible. Should I even configure one with k8? Not really, because it's not platform neutral. What if I set it up manually? It's not something I need to change often. And a web interface sounds nice. Let's get an echo server going
 
-    
-
-Nope, I can't find the exposed service when setting it up manually. Time to follow some auto configuration directions. ALB it is!
 
 AWS EKS Setup
 -------------

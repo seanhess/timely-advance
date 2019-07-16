@@ -10,7 +10,7 @@
 module Timely.Accounts.Application where
 
 
-import           Control.Effects       (Effect (..), MonadEffect (..), RuntimeImplemented, effect, implement)
+import           Control.Effects       (Effect (..), MonadEffect (..), effect)
 import           Control.Monad.Selda   (Selda, insert, query, tryCreateTable, update_)
 import           Data.Maybe            (catMaybes, listToMaybe)
 import           Data.Model.Guid       (Guid)
@@ -48,8 +48,10 @@ ApplicationsMethods save find all check updateOnboarding saveBank saveTransactio
 
 
 
-implementIO :: Selda m => RuntimeImplemented Applications m a -> m a
-implementIO = implement $
+
+
+methods :: Selda m => Applications m
+methods =
   ApplicationsMethods
     saveApp
     loadById

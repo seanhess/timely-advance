@@ -35,11 +35,11 @@ module Timely.Bank
     , loadTransactionsRange
     , loadTransactionsDays
     , getACH
-    , implementIO
-    , implementOfflineMock
+    , methods
+    , methodsOffline
     ) where
 
-import           Control.Effects            (Effect (..), MonadEffect (..), MonadEffects, RuntimeImplemented, effect, implement)
+import           Control.Effects            (Effect (..), MonadEffect (..), MonadEffects, effect)
 import           Control.Monad.Catch        (MonadThrow)
 import           Control.Monad.Config       (MonadConfig)
 import           Control.Monad.IO.Class     (MonadIO)
@@ -108,11 +108,8 @@ loadTransactionsDays tok aid days today = do
 
 
 
-
-
-implementIO :: (MonadIO m, MonadThrow m, MonadConfig Config m) => RuntimeImplemented Banks m a -> m a
-implementIO =
-  implement $
+methods :: (MonadIO m, MonadThrow m, MonadConfig Config m) => Banks m
+methods =
     BanksMethods
       Actions.authenticate
       Actions.loadIdentity
@@ -120,12 +117,13 @@ implementIO =
       Actions.loadTransactions
       Actions.getACH
 
-implementOfflineMock :: (MonadIO m, MonadThrow m, MonadConfig Config m) => RuntimeImplemented Banks m a -> m a
-implementOfflineMock = do
+
+
+methodsOffline :: (MonadIO m, MonadThrow m, MonadConfig Config m) => Banks m
+methodsOffline = do
   let accountId = Id "bank-mock-id"
       accessToken = Token "bank-mock-access"
-  implement $
-    BanksMethods
+  BanksMethods
       (\_ -> pure (accessToken, accountId))
       (\_ -> pure $ Identity (Names "Mock" Nothing "Person") (Address "1234 West Mock St" Nothing "Bigtown" (Valid "CA") (Valid "12345")))
       (\_ -> pure [Account accountId (Currency 125.00) "Mock Checking" Checking])

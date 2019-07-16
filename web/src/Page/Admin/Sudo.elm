@@ -156,6 +156,7 @@ viewSuperuser model session =
         , paragraph [] [ text "You are as handsome as you are intelligent" ]
         , wrappedRow [ spacing 10 ]
             [ Input.button [ Style.link ] { onPress = Just GoCustomers, label = text "Customers" }
+            , link [ Style.link ] { url = Route.url <| Route.Admin Route.Test, label = text "Test" }
 
             -- , Input.button [ Style.link ] { onPress = Just GoTransactions, label = text "Transactions" }
             -- , Input.button [ Style.link ] { onPress = Just GoAdvances, label = text "Advances" }

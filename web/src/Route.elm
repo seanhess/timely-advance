@@ -30,6 +30,7 @@ type Onboard
 type Admin
     = Sudo
     | Customer (Id AccountId)
+    | Test
 
 
 type Route
@@ -85,6 +86,7 @@ parserAdmin =
         [ Parser.map Sudo Parser.top
         , Parser.map Sudo (s "sudo")
         , Parser.map Customer (s "customers" </> Parser.map Id string)
+        , Parser.map Test (s "test")
         ]
 
 
@@ -161,6 +163,9 @@ url page =
 
                 Admin Sudo ->
                     [ "admin", "sudo" ]
+
+                Admin Test ->
+                    [ "admin", "test" ]
 
                 Admin (Customer (Id s)) ->
                     [ "admin", "customers", s ]
