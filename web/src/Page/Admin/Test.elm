@@ -171,13 +171,5 @@ viewStep step =
                 ]
 
         Account id health ->
-            column [ spacing 10 ]
-                [ el [ Font.bold ] (text "Account")
-                , wrappedRow [ spacing 10 ]
-                    -- just include a link to the account :)
-                    [ text <| "Balance:" ++ formatMoney health.balance
-                    , text <| "Minimum:" ++ formatMoney health.minimum
-                    , text <| "Spending:" ++ formatMoney health.spendingDaily
-                    ]
-                , button (Style.button Style.destroy) { onPress = Just (Delete id), label = text "Delete Account" }
-                ]
+            link [ Style.link ]
+                { url = Route.url <| Route.Admin <| Route.Customer id, label = text "Account" }
