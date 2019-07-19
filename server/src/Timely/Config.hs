@@ -85,7 +85,7 @@ instance DefConfig Env where
     , plaidPublicKey    = Id "447ab26f3980c45b7202e2006dd9bf"
     , plaidClientId     = Id "5c1a663c5eca930011ff67ee"
     , plaidProducts     = PlaidProducts [ "transactions", "auth" ]
-    , plaidWebhook      = "https://ena2mvh1hglir.x.pipedream.net/"
+    , plaidWebhook      = "http://timely.ngrok.io/v1/webhooks/plaid"
     , authyApiKey       = "bmGKSWu6xZ8vGEhtfvsIBZKcxLarHs64"
     , authyBaseUrl      = BaseUrl Https "api.authy.com" 443 ""
     , twilioAccountId   = Twilio.AccountSID "ACea89d7047fbce75c97607b517303f27a"
