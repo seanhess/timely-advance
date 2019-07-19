@@ -13,8 +13,8 @@ module Timely.App.AppM
   , AppM, AppT
   , clientConfig
   , runApp
-  , runAppOffline
-  , runAppTest
+  , runOffline
+  , runTest
   , appIO
   , appIO'
   ) where
@@ -219,13 +219,13 @@ runApp s x =
   in runReaderT action s
 
 
-runAppOffline
+runOffline
   :: ( MonadIO m
      , MonadBaseControl IO m
      , MonadMask m
      )
   => AppState -> AppT m a -> m a
-runAppOffline s x =
+runOffline s x =
   let action = x
         & Log.implementStdout
         & Time.implementIO
@@ -243,13 +243,13 @@ runAppOffline s x =
   in runReaderT action s
 
 
-runAppTest
+runTest
   :: ( MonadIO m
      , MonadBaseControl IO m
      , MonadMask m
      )
   => AppState -> AppT m a -> m a
-runAppTest s x =
+runTest s x =
   let action = x
         & Log.implementStdout
         & Time.implementIO

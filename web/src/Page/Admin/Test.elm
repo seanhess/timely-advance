@@ -1,5 +1,7 @@
 module Page.Admin.Test exposing (Model, Msg(..), init, update, view)
 
+-- Client -> Server Integration tests
+
 import Browser.Navigation as Nav
 import Element exposing (..)
 import Element.Background as Background
@@ -7,7 +9,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input exposing (button)
 import Element.Region as Region
-import Http
+import Http exposing (Error(..))
 import Page.Onboard.Approval as Approval
 import Platform.Updates exposing (Updates, command, set, updates)
 import Process
@@ -82,13 +84,12 @@ nextStep model step =
                     Approval.poll (Run <| Api.getApplication OnApplication app.accountId)
 
                 Complete ->
+                    -- also, there's a bunch of stuff
+                    -- not easy to tie together into one thing
+                    -- but we should do ONE request at a time
                     Api.getAccountHealth (OnAccountHealth app.accountId) app.accountId
 
                 _ ->
-                    -- now it's "Approved"
-                    -- but I can't actually do that
-                    -- because I'm not in my update method :(
-                    -- and this has no facility of providing the next step
                     Cmd.none
 
         Account _ _ ->
@@ -167,9 +168,29 @@ viewStep step =
                         text "Rejected"
 
                     Error ->
-                        text "Error"
+                        row [ spacing 10 ]
+                            [ text "Error, check logs" ]
                 ]
 
         Account id health ->
             link [ Style.link ]
                 { url = Route.url <| Route.Admin <| Route.Customer id, label = text "Account" }
+
+
+formatError : Http.Error -> String
+formatError e =
+    case e of
+        BadStatus i ->
+            "BadStatus: " ++ String.fromInt i
+
+        BadBody s ->
+            "BadBody: " ++ s
+
+        Timeout ->
+            "Timeout"
+
+        NetworkError ->
+            "NetworkError"
+
+        BadUrl s ->
+            "BadUrl: " ++ s

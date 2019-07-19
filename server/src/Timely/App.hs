@@ -5,10 +5,11 @@ module Timely.App
   , AppM, AppT
   , clientConfig
   , runApp
-  , runAppOffline
   , appIO
   , appIO'
   , start
+  , runTest
+  , runOffline
   ) where
 
 import Timely.App.AppM

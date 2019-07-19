@@ -1,16 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Main
-  ( main
-  , printVersion
-  , startAll
-  , appIO
-  ) where
+{-# LANGUAGE RankNTypes        #-}
+module Main where
 
 import qualified Control.Concurrent.Async     as Async
 import qualified System.Environment           as Environment
 import qualified System.IO                    as IO
 import qualified Timely.Api                   as Api
-import           Timely.App
+-- import           Timely.App
 import qualified Timely.Worker.AccountOnboard as AccountOnboard
 import qualified Timely.Worker.AccountUpdate  as AccountUpdate
 import qualified Timely.Worker.AdvanceCollect as AdvanceCollect
@@ -38,8 +34,6 @@ main = do
 printVersion :: IO ()
 printVersion =
   putStrLn $ Version.version
-
-
 
 
 
