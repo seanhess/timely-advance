@@ -157,7 +157,7 @@ view model =
         , column Style.section
             [ resource (viewUpcomingBills model.accountId) (Resource.map .bills model.health)
             , resource (viewOtherBills model.accountId) (Resource.map2 other model.health model.bills)
-            , button (Style.button Style.secondary) { onPress = Just AddBill, label = text "Add a Bill" }
+            , button (Style.button Style.secondary) { onPress = Just AddBill, label = Style.label "Add a Bill" }
             , row [] []
             ]
         ]

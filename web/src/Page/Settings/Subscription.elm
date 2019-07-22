@@ -124,7 +124,7 @@ viewActive isSaving current subscriptions =
             (List.map (viewOther isSaving current) (List.filter (isOther current) subscriptions))
         , button [ Style.link, Font.size 16 ]
             { onPress = Just Cancel
-            , label = text "Cancel Subscription"
+            , label = Style.label "Cancel Subscription"
             }
         ]
 
@@ -179,7 +179,7 @@ subscribeButton : String -> Bool -> Subscription -> Element Msg
 subscribeButton message isSaving sub =
     Components.loadingButton (Style.button Style.primary)
         { onPress = Save sub
-        , label = text message
+        , label = Style.label message
         , isLoading = isSaving
         }
 

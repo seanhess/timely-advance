@@ -173,7 +173,7 @@ viewValid : Advance -> Element Msg
 viewValid advance =
     Input.button (Style.button Style.success)
         { onPress = Just (Submit advance)
-        , label = Element.text "Accept"
+        , label = Style.label "Accept"
         }
 
 
@@ -182,7 +182,7 @@ viewInvalids err =
     Element.column [ spacing 10 ]
         [ Input.button (Style.button Style.primary)
             { onPress = Nothing
-            , label = Element.text "Accept"
+            , label = Style.label "Accept"
             }
         , Element.column [ spacing 10 ] (List.map viewInvalid err)
         ]
@@ -212,7 +212,7 @@ viewAccepted accountId advance =
         , Element.el [] (text <| "Due: " ++ formatDate advance.due)
         , Element.link (Style.button Style.secondary)
             { url = Route.url <| Route.Account accountId <| Route.AccountMain
-            , label = Element.text "My Account"
+            , label = Style.label "My Account"
             }
         ]
 
@@ -225,7 +225,7 @@ viewCollected accountId advance collected =
         , Element.el [] (text <| "Paid: " ++ formatDate collected)
         , Element.link (Style.button Style.secondary)
             { url = Route.url <| Route.Account accountId <| Route.AccountMain
-            , label = Element.text "My Account"
+            , label = Style.label "My Account"
             }
         ]
 

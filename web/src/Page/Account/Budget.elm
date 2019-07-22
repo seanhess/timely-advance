@@ -170,9 +170,9 @@ viewActions : Element Msg
 viewActions =
     row [ spacing 10, width fill ]
         [ button (Style.button Style.primary)
-            { onPress = Just Save, label = el [] (text "Save") }
+            { onPress = Just Save, label = el [] (Style.label "Save") }
         , button (Style.button Style.destroy)
-            { onPress = Just Delete, label = el [] (text "Delete") }
+            { onPress = Just Delete, label = el [] (Style.label "Delete") }
         ]
 
 

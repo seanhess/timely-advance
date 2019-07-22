@@ -123,7 +123,7 @@ viewSpending accountId amount =
             , onChange = Edit
             , label = Input.labelAbove [ Font.size 14 ] (text "Amount (USD)")
             }
-        , button (Style.button Style.primary) { onPress = Just Save, label = text "Save" }
+        , button (Style.button Style.primary) { onPress = Just Save, label = Style.label "Save" }
         ]
 
 
