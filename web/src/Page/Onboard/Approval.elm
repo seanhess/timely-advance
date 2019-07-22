@@ -140,21 +140,25 @@ viewApplication accountId onboarding =
 
 viewPending : Pending -> Element msg
 viewPending p =
-    case p of
-        New ->
-            text "Initializing"
+    row [ spacing 20, width fill ]
+        [ Components.spinnerRipple
+        , el [ padding 10 ] <|
+            case p of
+                New ->
+                    text "Initializing"
 
-        Bank ->
-            text "Loading your bank details"
+                Bank ->
+                    text "Loading your bank details"
 
-        Transfers ->
-            text "Loading your transfer account"
+                Transfers ->
+                    text "Loading your transfer account"
 
-        Transactions ->
-            text "Analyzing your transactions"
+                Transactions ->
+                    text "Analyzing your transactions"
 
-        Creation ->
-            text "Creating your Account"
+                Creation ->
+                    text "Creating your Account"
+        ]
 
 
 viewRejected : Rejected -> Element Msg
