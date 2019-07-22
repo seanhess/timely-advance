@@ -143,7 +143,7 @@ viewSuspended model =
             ]
         , column Style.section
             [ Components.alert
-                [ el [ Font.bold, centerX ] (text "Your account is suspended")
+                [ paragraph [ Font.bold, centerX ] [ text "Your account is suspended" ]
                 ]
             ]
         ]
@@ -212,7 +212,7 @@ accountHealth accountId now health =
                 Style.green
 
         overdraftDaysMessage n =
-            el [ centerX ] (text <| "Overdraft predicted in " ++ String.fromInt n ++ " days")
+            paragraph [ centerX ] [ text <| "Overdraft predicted in " ++ String.fromInt n ++ " days" ]
 
         daysUntil start end =
             Date.diff Days start end

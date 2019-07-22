@@ -107,7 +107,7 @@ view model =
         [ column Style.info
             [ row [ spacing 15 ]
                 [ Components.back OnBack
-                , el Style.heading (text "Advance")
+                , paragraph Style.heading [ text "Advance" ]
                 ]
             ]
         , column Style.section [ viewStatus model ]

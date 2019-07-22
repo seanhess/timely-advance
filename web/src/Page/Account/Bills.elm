@@ -166,7 +166,7 @@ view model =
 viewUpcomingBills : Id AccountId -> List (Scheduled Budget) -> Element Msg
 viewUpcomingBills accountId bills =
     column [ spacing 10, width fill ]
-        [ el Style.banner (text "Bills due by next paycheck")
+        [ paragraph Style.banner [ text "Bills due by next paycheck" ]
         , column [ width fill ]
             (List.map (\( d, bs ) -> viewUpcomingByDate accountId d bs) <| billsGroupedByDate bills)
         ]
@@ -219,7 +219,7 @@ viewUpcomingBill accountId s =
 viewOtherBills : Id AccountId -> List Budget -> Element Msg
 viewOtherBills accountId bills =
     column [ spacing 10, width fill ]
-        [ el Style.banner (text "Other Bills")
+        [ paragraph Style.banner [ text "Other Bills" ]
         , column [ width fill ]
             (List.map (viewBill accountId) bills)
         ]

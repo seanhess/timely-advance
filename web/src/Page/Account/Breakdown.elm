@@ -19,7 +19,7 @@ import Timely.Types.Account exposing (AccountId)
 import Timely.Types.AccountHealth as Health exposing (AccountHealth)
 import Timely.Types.Advance exposing (Advance)
 import Timely.Types.Budget exposing (Budget, BudgetId, BudgetType(..), scheduledDate)
-import Timely.Types.Date as Date exposing (Date, formatDate)
+import Timely.Types.Date as Date exposing (Date, formatDateShort)
 import Timely.Types.Money as Money exposing (Money, formatMoney)
 import Timely.Types.Transactions exposing (Schedule(..))
 
@@ -155,7 +155,7 @@ viewBreakdown accountId health paycheck =
             ]
         , Components.maybe (advanceLine accountId "Scheduled Advance" "+") health.advance
         , wrappedRow Style.banner
-            [ el [] (text "Lowest Balance")
+            [ paragraph [] [ text "Lowest Balance" ]
             , el [ alignRight, Font.color (healthy health.minimum) ] (text <| formatMoney health.minimum)
             ]
         , wrappedRow summaryLine
@@ -164,17 +164,17 @@ viewBreakdown accountId health paycheck =
             ]
 
         -- load their actual income, so you have the ID
-        , wrappedRow [ spacing 10, width fill ]
+        , wrappedRow summaryLine
             [ link [ Style.link ]
                 { url = Route.url <| Route.Account accountId <| Route.Budget Income paycheck.budgetId
                 , label = text "Paycheck"
                 }
-            , el [ width (px 125) ] (text <| "- " ++ formatDate (scheduledDate health.paycheck))
+            , el [ width (px 125) ] (text <| "- " ++ formatDateShort (scheduledDate health.paycheck))
             , el [ alignRight ] (text <| formatMoney paycheck.amount)
             ]
         , Components.maybe (advanceLine accountId "Advance Payback" "-") health.advance
-        , wrappedRow [ width fill, Background.color Style.lightGray, padding 6 ]
-            [ el [] (text "Balance after paycheck")
+        , wrappedRow Style.banner
+            [ paragraph [] [ text "Final Balance" ]
             , el [ alignRight, Font.color (healthy health.afterPaycheck) ] (text <| formatMoney health.afterPaycheck)
             ]
         , row [] []
@@ -195,12 +195,12 @@ advanceLine accountId msg sign adv =
 
 summaryLine : List (Attribute msg)
 summaryLine =
-    [ spacing 10, width fill ]
+    [ spacing 10, width fill, Font.size 18 ]
 
 
 summaryDetail : List (Attribute msg)
 summaryDetail =
-    [ alignRight, spacing 5 ]
+    [ alignRight, spacing 5, Font.size 18 ]
 
 
 

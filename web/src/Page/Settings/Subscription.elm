@@ -88,7 +88,7 @@ view model =
         [ column Style.header
             [ row [ spacing 15 ]
                 [ Components.backLink (Route.Settings model.accountId Route.SettingsMain)
-                , el Style.heading (text "Modify Subscription")
+                , paragraph Style.heading [ text "Modify Subscription" ]
                 ]
             ]
         , resource (viewReady model.isSaving) <| Resource.map2 Resources model.current model.subscriptions

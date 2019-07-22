@@ -124,12 +124,12 @@ formPage =
 
 heading : List (Attribute msg)
 heading =
-    [ Region.heading 1, Font.size 36, alignLeft ]
+    [ Region.heading 1, Font.size 28, alignLeft ]
 
 
 banner : List (Attribute msg)
 banner =
-    [ Region.heading 2, Font.size 28, alignLeft, Background.color gray, width fill, padding 10 ]
+    [ Region.heading 2, Font.size 20, alignLeft, Background.color gray, width fill, padding 10 ]
 
 
 error : Attribute msg

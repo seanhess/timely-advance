@@ -51,7 +51,7 @@ view model =
         [ column Style.header
             [ row [ spacing 15 ]
                 [ Components.backLink (Route.Account model.accountId Route.AccountMain)
-                , el Style.heading (text "Account Settings")
+                , paragraph Style.heading [ text "Account Settings" ]
                 ]
             ]
         , column Style.section

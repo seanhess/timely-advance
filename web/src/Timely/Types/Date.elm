@@ -1,4 +1,4 @@
-module Timely.Types.Date exposing (Date, current, decodeDate, empty, encodeDate, formatDate)
+module Timely.Types.Date exposing (Date, current, decodeDate, empty, encodeDate, formatDate, formatDateShort)
 
 import Date
 import Iso8601
@@ -27,6 +27,11 @@ encodeDate d =
 formatDate : Date -> String
 formatDate =
     Date.format "MMMM ddd, y"
+
+
+formatDateShort : Date -> String
+formatDateShort =
+    Date.format "MMM dd"
 
 
 empty : Date
