@@ -237,56 +237,50 @@ view model =
         viewLink path =
             li [] [ a [ href path ] [ text path ] ]
 
-        pageView page =
+        layout toMsg pageView =
+            Components.layout model.loaded [] <| Element.map toMsg <| pageView
+
+        pageLayout page =
             case page of
                 NotFound ->
-                    Element.text "Not Found"
+                    Components.layout model.loaded [] <| Element.text "Not Found"
 
                 Landing o ->
-                    Element.map OnLanding <| Landing.view o
+                    layout OnLanding <| Landing.view o
 
                 Signup s ->
-                    Element.map OnSignup <| Signup.view s
+                    layout OnSignup <| Signup.view s
 
                 Bank s ->
-                    Element.map OnBank <| Bank.view s
+                    layout OnBank <| Bank.view s
 
                 Approval a ->
-                    Element.map OnApproval <| Approval.view a
+                    layout OnApproval <| Approval.view a
 
                 Account a ->
-                    Element.map OnAccount <| Account.view a
+                    Html.map OnAccount <| Account.layout model.loaded a
 
                 Settings a ->
-                    Element.map OnSettings <| Settings.view a
+                    layout OnSettings <| Settings.view a
 
                 Subscription a ->
-                    Element.map OnSubscription <| Subscription.view a
+                    layout OnSubscription <| Subscription.view a
 
                 Init m ->
-                    Element.map OnInit <| Init.view m
+                    layout OnInit <| Init.view m
 
                 Sudo m ->
-                    Element.map OnSudo <| Sudo.view m
+                    layout OnSudo <| Sudo.view m
 
                 Test m ->
-                    Element.map OnTest <| Test.view m
+                    layout OnTest <| Test.view m
 
                 Customer m ->
-                    Element.map OnCustomer <| Customer.view m
+                    layout OnCustomer <| Customer.view m
     in
     { title = "Timely Advance"
     , body =
-        [ Element.layout []
-            (Element.column
-                [ width fill
-                , height fill
-                ]
-                [ pageView model.page
-                , Components.version model.loaded
-                ]
-            )
-        ]
+        [ pageLayout model.page ]
     }
 
 

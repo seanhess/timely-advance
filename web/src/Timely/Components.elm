@@ -1,10 +1,10 @@
-module Timely.Components exposing (Spinner(..), alert, back, backLink, close, loadingButton, maybe, option, selectBox, spinner, spinnerDots, spinnerRing, spinnerRipple, version)
+module Timely.Components exposing (Spinner(..), alert, back, backLink, close, layout, loadingButton, maybe, option, selectBox, spinner, spinnerDots, spinnerRing, spinnerRipple, version)
 
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
-import Html
+import Html exposing (Html)
 import Html.Attributes as Html
 import Http exposing (Error)
 import Route exposing (Route)
@@ -184,3 +184,16 @@ alert =
         , Font.color Style.white
         , Style.box
         ]
+
+
+layout : String -> List (Attribute msg) -> Element msg -> Html msg
+layout loaded atts pageView =
+    Element.layout atts
+        (Element.column
+            [ width fill
+            , height fill
+            ]
+            [ pageView
+            , version loaded
+            ]
+        )

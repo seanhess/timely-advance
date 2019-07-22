@@ -1,8 +1,9 @@
-module Page.Account exposing (Model, Msg(..), Page(..), changeRouteTo, init, subscriptions, update, view)
+module Page.Account exposing (Model, Msg(..), Page(..), changeRouteTo, init, layout, subscriptions, update)
 
 import Browser.Navigation as Nav
 import Element exposing (Element, centerY, fill, height, htmlAttribute, padding, width)
 import Element.Background as Background
+import Html exposing (Html)
 import Html.Attributes exposing (style)
 import Page.Account.Bills as Bills
 import Page.Account.Breakdown as Breakdown
@@ -15,6 +16,7 @@ import Process
 import Route exposing (Route)
 import Task
 import Timely.Api
+import Timely.Components as Components
 import Timely.Style as Style
 import Timely.Types exposing (Id, idValue)
 import Timely.Types.Account exposing (AccountId)
@@ -122,45 +124,43 @@ changeRouteTo i key oldPage route =
 
 
 -- maybe I should ALWAYS have an offscreen modal ready to go
+-- layout : String -> Model -> Html Msg
+-- layout loaded model =
+--     Components.layout loaded [] <|
+--         view model
 
 
-view : Model -> Element Msg
-view model =
+layout : String -> Model -> Html Msg
+layout loaded model =
     case model.page of
         Spending h a ->
-            Element.column
-                [ width fill
-                , height fill
-                , Element.inFront
+            Components.layout loaded
+                [ Element.inFront
                     (modal model.loading (Element.map OnSpending <| Spending.view a))
                 ]
-                [ Element.map OnHome <| Home.view h
-                ]
+                (Element.map OnHome <| Home.view h)
 
         Home a ->
             case model.oldPage of
                 Just (Spending _ s) ->
-                    Element.column
-                        [ width fill
-                        , height fill
-                        , Element.inFront
+                    Components.layout loaded
+                        [ Element.inFront
                             -- same as normal budget, but direction is reversed
                             (modal (not model.loading) (Element.map OnSpending <| Spending.view s))
                         ]
-                        [ Element.map OnHome <| Home.view a
-                        ]
+                        (Element.map OnHome <| Home.view a)
 
                 _ ->
-                    Element.map OnHome <| Home.view a
+                    Components.layout loaded [] <| Element.map OnHome <| Home.view a
 
         Bills a ->
-            Element.map OnBills <| Bills.view a
+            Components.layout loaded [] <| Element.map OnBills <| Bills.view a
 
         Budget a ->
-            Element.map OnBudget <| Budget.view a
+            Components.layout loaded [] <| Element.map OnBudget <| Budget.view a
 
         Advance a ->
-            Element.map OnAdvance <| Advance.view a
+            Components.layout loaded [] <| Element.map OnAdvance <| Advance.view a
 
 
 
