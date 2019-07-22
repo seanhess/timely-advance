@@ -1,4 +1,4 @@
-module Timely.Style exposing (banner, blue, box, button, dark, darkBlue, darkGreen, destroy, dim, error, formPage, gray, green, header, heading, info, lightBlue, lightGray, lightRed, link, option, page, primary, red, secondary, section, space, success, white, yellow)
+module Timely.Style exposing (banner, blue, box, button, dark, darkBlue, darkGreen, destroy, dim, error, formPage, gray, green, header, heading, info, label, lightBlue, lightGray, lightRed, link, option, page, primary, red, secondary, section, space, success, white, yellow)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -70,6 +70,11 @@ button styles =
            , Border.rounded 3
            , width fill
            ]
+
+
+label : String -> Element msg
+label msg =
+    el [ centerX ] (text msg)
 
 
 primary : List (Attribute msg)

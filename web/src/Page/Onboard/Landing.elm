@@ -36,11 +36,11 @@ view : Model -> Element Msg
 view model =
     column Style.page
         [ column Style.info
-            [ el Style.heading (text "Welcome to Timely Advance") ]
+            [ paragraph Style.heading [ text "Welcome to Timely Advance" ] ]
         , column Style.section
             [ paragraph [ centerX ] [ text "Get up to $500 worry free and put an end to overdrafts and tight spots while waiting for payday" ]
-            , link (Style.button Style.primary) { url = Route.url (Onboard Signup), label = text "Get Started" }
-            , el [ centerX ] (text "Already have an account?")
+            , link (Style.button Style.primary) { url = Route.url (Onboard Signup), label = Style.label "Get Started" }
+            , paragraph [ centerX ] [ text "Already have an account?" ]
             , link [ Style.link, centerX ] { url = Route.url (Onboard Login), label = text "Log in" }
             ]
         ]

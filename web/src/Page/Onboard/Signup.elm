@@ -167,13 +167,15 @@ viewSignupForm model genCode =
         [ column Style.info
             [ row [ spacing 15 ]
                 [ Components.back Back
-                , el Style.heading (text "What's your number?")
+                , paragraph Style.heading [ text "Let's get started!" ]
                 ]
-            , paragraph [] [ text "We will use your number to text you when your balance is at risk" ]
             ]
         , column Style.section
-            [ viewEmailInput model
+            [ paragraph [] [ text "What's your number?" ]
+            , paragraph [ Font.size 16 ] [ text "We will use your number to text you when your balance is at risk" ]
             , viewPhoneInput model
+            , paragraph [] [ text "What's your email?" ]
+            , viewEmailInput model
             , Components.loadingButton (Style.button Style.primary)
                 { onPress = SubmitPhone
                 , label =
@@ -195,14 +197,15 @@ viewLoginForm model genCode =
         [ column Style.info
             [ row [ spacing 15 ]
                 [ Components.back Back
-                , paragraph [] [ text "Welcome back! Please enter your phone number" ]
+                , paragraph Style.heading [ text "Welcome back!" ]
                 ]
             ]
         , column Style.section
-            [ viewPhoneInput model
+            [ paragraph [] [ text "Please enter your phone number" ]
+            , viewPhoneInput model
             , Components.loadingButton (Style.button Style.primary)
                 { onPress = SubmitPhone
-                , label = Element.text "Login"
+                , label = Style.label "Login"
                 , isLoading = Resource.isLoading genCode
                 }
             , viewProblems "Could not generate code" genCode
@@ -214,9 +217,9 @@ viewPhoneInput : Model -> Element Msg
 viewPhoneInput model =
     Input.text [ htmlAttribute (Html.type_ "tel") ]
         { text = idValue model.phone
-        , placeholder = Nothing
+        , placeholder = Just (Input.placeholder [] (text "Enter Mobile Number"))
         , onChange = EditPhone
-        , label = label "Mobile number"
+        , label = Input.labelHidden "Mobile Number"
         }
 
 
@@ -224,9 +227,9 @@ viewEmailInput : Model -> Element Msg
 viewEmailInput model =
     Input.email []
         { text = model.email
-        , placeholder = Nothing
+        , placeholder = Just (Input.placeholder [] (text "Personal Email Address"))
         , onChange = EditEmail
-        , label = label "Email"
+        , label = Input.labelHidden "Email"
         }
 
 
@@ -242,7 +245,7 @@ viewPhoneCode model accountId =
                 [ Components.back BackPhone
                 , paragraph [] [ text "We just sent you a text" ]
                 ]
-            , paragraph [] [ text <| "Enter the 4 digit code I sent to: " ++ idValue model.phone ]
+            , paragraph [] [ text <| "Enter the 4 digit code we sent to: " ++ idValue model.phone ]
             ]
         , column Style.section
             [ Input.text [ htmlAttribute (Html.type_ "tel") ]
@@ -253,7 +256,7 @@ viewPhoneCode model accountId =
                 }
             , Components.loadingButton (Style.button Style.primary)
                 { onPress = SubmitCode
-                , label = Element.text "Next"
+                , label = Style.label "Next"
                 , isLoading = Resource.isLoading accountId
                 }
             , viewProblems "Could not validate code" accountId
@@ -265,11 +268,6 @@ viewPhoneCode model accountId =
                     Element.none
             ]
         ]
-
-
-label : String -> Input.Label Msg
-label t =
-    Input.labelAbove [ Font.size 14 ] (text t)
 
 
 viewProblems : String -> Resource a -> Element Msg

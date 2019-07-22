@@ -125,7 +125,7 @@ viewPlaidLanding model =
         , column Style.section
             [ Input.button (Style.button Style.primary)
                 { onPress = Just PlaidOpen
-                , label = Element.text "Connect Bank"
+                , label = Style.label "Connect Bank"
                 }
             , viewProblems model.application
             ]
