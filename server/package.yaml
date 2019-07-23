@@ -30,6 +30,8 @@ dependencies:
 - base64-bytestring
 - bytestring
 - containers
+- cryptonite
+- memory
 - data-default
 - datamodel
 - envy
