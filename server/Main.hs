@@ -7,6 +7,7 @@ import qualified System.Environment           as Environment
 import qualified System.IO                    as IO
 import qualified Timely.Api                   as Api
 -- import           Timely.App
+import           Spec                         (spec)
 import qualified Timely.Worker.AccountOnboard as AccountOnboard
 import qualified Timely.Worker.AccountUpdate  as AccountUpdate
 import qualified Timely.Worker.AdvanceCollect as AdvanceCollect
@@ -28,6 +29,7 @@ main = do
     ["work-advance-collect"]     -> AdvanceCollect.start
     ["schedule-advance-collect"] -> AdvanceCollect.startSchedule
     ["initialize"]               -> Api.initialize
+    ["test"]                     -> spec
     _                            -> putStrLn "please enter a command"
 
 

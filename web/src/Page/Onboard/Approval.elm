@@ -189,6 +189,7 @@ viewRejected r =
         -- they can't get this far without having a bank account
         , item "Active account at a supported bank" False
         , item "Reliable source of income" (r == IncomeNotRegular)
+        , item "Income history long enough" (r == IncomeTooShort)
         , item "Income that exceeds recurring bills" (r == IncomeLow)
         , button (Style.button Style.primary) { onPress = Just Back, label = text "Go Back" }
         ]

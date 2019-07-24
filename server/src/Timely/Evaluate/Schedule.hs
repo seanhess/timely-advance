@@ -17,6 +17,8 @@ module Timely.Evaluate.Schedule
   , dayOfWeek
   , dayOfMonth
   , nextWeekday
+  , intervals
+  , monthlyFactor
   ) where
 
 -- import Debug.Trace (traceShow)
@@ -70,6 +72,16 @@ data Biweek
 
 instance ToJSON Biweek
 instance FromJSON Biweek
+
+
+
+monthlyFactor :: Schedule -> Float
+monthlyFactor (Weekly _)   = 4.3333
+monthlyFactor (Biweekly _ _) = 2.1666
+monthlyFactor (Monthly _) = 1
+monthlyFactor (Semimonthly _ _) = 2
+
+
 
 
 
@@ -185,9 +197,6 @@ average xs = sum (map fromIntegral xs) / fromIntegral (length xs)
 
 
 
-
-
-
 type DiffDays = Integer
 
 
@@ -283,3 +292,5 @@ dayOfMonth :: Day -> DayOfMonth
 dayOfMonth d =
   let (_, _, day) = toGregorian d
   in DayOfMonth day
+
+

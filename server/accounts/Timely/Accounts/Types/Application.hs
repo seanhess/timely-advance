@@ -59,6 +59,7 @@ instance ToJSON Pending
 data Rejected
     = IncomeLow
     | IncomeNotRegular
+    | IncomeTooShort
     deriving (Read, Show, Eq, Generic)
 instance ToJSON Rejected
 

@@ -44,6 +44,19 @@ transTotal =
   absolute . sum . map (abs . Trans.amount)
 
 
+transSpansDays :: [Transaction a] -> Integer
+transSpansDays = List.sum . Schedule.intervals . List.map Trans.date
+
+
+monthlyAverage :: Group a -> Abs Money
+monthlyAverage (Group {schedule, average}) =
+  case schedule of
+    Nothing -> average
+    Just s ->
+      absolute $ Money.fromFloat $ (Schedule.monthlyFactor s * (Money.toFloat $ value average))
+
+
+
 
 
 groups :: [Transaction a] -> [Group a]

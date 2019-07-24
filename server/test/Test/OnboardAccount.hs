@@ -6,7 +6,8 @@ import           Data.Model.Id                      (Id (..))
 import qualified Data.Model.Money                   as Money
 import           Data.Number.Abs                    (absolute)
 import           Data.Time.Clock                    (getCurrentTime)
-import           Network.Plaid.Types                as Plaid (Account (..), Balances (..), CurrencyCode(..), AccountType(..), AccountSubType(..))
+import           Network.Plaid.Types                as Plaid (Account (..), AccountSubType (..), AccountType (..), Balances (..), CurrencyCode (..))
+import           Test.Dates                         (day)
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.Monad
@@ -17,7 +18,9 @@ import           Timely.Accounts.Types.Subscription (Level (..))
 import           Timely.Actions.Transactions        as Trans (History (..))
 import           Timely.Bank                        as Bank (Currency (..))
 import qualified Timely.Bank.Types                  as Bank
+import           Timely.Evaluate.Health.Transaction as Transaction (any)
 import           Timely.Evaluate.History            (Group (..))
+import           Timely.Evaluate.Schedule           as Schedule (DayOfWeek(..), untilLE, Schedule(..), DayOfMonth(DayOfMonth))
 import           Timely.Worker.AccountOnboard       as Onboard
 
 tests :: Tests ()
@@ -33,15 +36,17 @@ specOnboard = do
 
 testMinimalRequirements :: Tests ()
 testMinimalRequirements = do
+    let trans d = Transaction.any "name" (Money.fromFloat 0) d
     let lowAmt = (absolute (Money.fromFloat 100))
     let highAmt = (absolute (Money.fromFloat 150))
-    let low = Group "low" lowAmt lowAmt Nothing []
-    let high = Group "high" highAmt highAmt Nothing []
+    let history = [trans (day "2019-01-01"), trans (day "2019-02-01"), trans (day "2019-03-01")]
+    let low = Group "low" lowAmt lowAmt Nothing history
+    let high = Group "high" highAmt highAmt Nothing history
 
     let billAmt = (absolute (Money.fromFloat 60))
     let payAmt = (absolute (Money.fromFloat 200))
-    let bill = Group "bill" billAmt billAmt Nothing []
-    let pay = Group "pay" payAmt payAmt Nothing []
+    let bill = Group "bill" billAmt billAmt Nothing history
+    let pay = Group "pay" payAmt payAmt Nothing history
 
     test "should fail if no income" $ do
       Onboard.checkMinimalRequirements (History [] []) @?= Left (Rejected IncomeNotRegular)
@@ -54,6 +59,28 @@ testMinimalRequirements = do
 
     test "should pass if high" $ do
       Onboard.checkMinimalRequirements (History [high] [low]) @?= Right Basic
+
+    group "weekly income" $ do
+      test "not enough for single bill" $ do
+        let low'  = low { schedule = Just $ Weekly Monday }
+        let high' = high { schedule = Just $ Weekly Monday }
+        Onboard.checkMinimalRequirements (History [low'] [high']) @?= Left (Rejected IncomeLow)
+
+
+      test "work up to single bill" $ do
+        let low'  = low { schedule = Just $ Weekly Monday }
+        let high' = high { schedule = Just $ Monthly (DayOfMonth 1) }
+        Onboard.checkMinimalRequirements (History [low'] [high']) @?= Right Basic
+
+      test "multiple bills, low" $ do
+        let low'  = low { schedule = Just $ Weekly Monday }
+        let high' = high { schedule = Just $ Monthly (DayOfMonth 1) }
+        Onboard.checkMinimalRequirements (History [low'] [high', high', high', high', high']) @?= Left (Rejected IncomeLow)
+
+      test "multiple bills, enough" $ do
+        let low'  = low { schedule = Just $ Weekly Monday }
+        let high' = high { schedule = Just $ Monthly (DayOfMonth 1) }
+        Onboard.checkMinimalRequirements (History [low'] [high', high', high', high']) @?= Left (Rejected IncomeLow)
 
     group "multiples" $ do
 
@@ -69,6 +96,22 @@ testMinimalRequirements = do
 
       test "fails not counting second" $ do
         Onboard.checkMinimalRequirements (History [low, pay] [high, bill]) @?= Left (Rejected IncomeLow)
+
+    group "minimum two months" $ do
+      test "exactly three months is long enough" $ do
+        let pay3Months = Group "pay" payAmt payAmt Nothing [trans (day "2019-01-01"), trans (day "2019-02-01"), trans (day "2019-03-01")]
+        Onboard.checkMinimalRequirements (History [pay3Months] []) @?= Right Basic
+
+      test "if income history is too short" $ do
+        let pay2Months = Group "pay" payAmt payAmt Nothing [trans (day "2019-01-01"), trans (day "2019-02-01")]
+        Onboard.checkMinimalRequirements (History [pay2Months] []) @?= Left (Rejected IncomeTooShort)
+
+      test "10 weeks is enough" $ do
+        let history = Schedule.untilLE (day "2019-03-12") (Weekly Tuesday) (day "2019-01-01")
+        length history @?= 10
+        let pay' = Group "pay" payAmt payAmt Nothing (map trans history)
+        Onboard.checkMinimalRequirements (History [pay'] []) @?= Right Basic
+
 
 
 testBankAccounts :: Tests ()

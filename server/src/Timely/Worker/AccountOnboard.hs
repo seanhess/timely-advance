@@ -45,7 +45,7 @@ import qualified Timely.Actions.Transactions       as Transactions
 import           Timely.App                        as App (AppState, AppT, runApp, start)
 import           Timely.Bank                       (Banks, Dwolla, Identity (..), Names (..))
 import qualified Timely.Bank                       as Bank
-import           Timely.Evaluate.History           as History (Group (average))
+import           Timely.Evaluate.History           as History (transSpansDays, Group(..), monthlyAverage)
 import qualified Timely.Events                     as Events
 import           Timely.Transfers                  (AccountInfo (..), TransferAccount, Transfers)
 import qualified Timely.Transfers                  as Transfers
@@ -117,6 +117,7 @@ accountOnboard app accountId phone = do
 
     Apps.updateOnboarding accountId (Pending Creation)
     Accounts.create customer bankAccounts trans sub $ Account accountId phone transId bankToken bankItemId now
+    -- we need to collect the first subscription here? Or queue it for collection?
 
     createDefaultBudgets accountId trans history
 
@@ -181,11 +182,16 @@ checkMinimalRequirements history = do
 
   where
 
-    check history = checkRegular history <|> checkLow history
+    check history = checkRegular history <|> checkLow history <|> checkShort history
 
     checkRegular history =
       if isNotRegular (income history)
         then Just $ IncomeNotRegular
+        else Nothing
+
+    checkShort history =
+      if isTooShort (income history)
+        then Just $ IncomeTooShort
         else Nothing
 
     checkLow history =
@@ -196,12 +202,17 @@ checkMinimalRequirements history = do
     isLow incs exps =
       primary incs <= groupsTotal exps
 
-    groupsTotal = List.sum . List.map (value . History.average)
+    groupsTotal = List.sum . List.map (value . History.monthlyAverage)
 
-    primary = List.maximum . List.map (value . History.average)
+    primary = List.maximum . List.map (value . History.monthlyAverage)
 
     isNotRegular incs =
       List.length incs < 1
+
+    isTooShort []      = True
+    isTooShort (inc:_) =
+      -- if it's less than two months, say no. 28d + 31d = 59 days
+      (History.transSpansDays $ History.transactions inc) < 59
 
 
 -- underwriting

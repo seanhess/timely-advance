@@ -119,16 +119,6 @@ executables:
     main:                Main.hs
     source-dirs:
     - .
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - timely
-
-  timely-test:
-    main:                Spec.hs
-    source-dirs:
     - test
     ghc-options:
     - -threaded
@@ -136,6 +126,8 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - timely
+
+    # test dependencies, only using one executable and loading into main
     - tasty
     - tasty-hunit
     - random-strings

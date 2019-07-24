@@ -32,6 +32,7 @@ type Pending
 type Rejected
     = IncomeLow
     | IncomeNotRegular
+    | IncomeTooShort
 
 
 type alias AccountInfo =
@@ -68,6 +69,9 @@ toOnboarding s =
 
         "Rejected IncomeLow" ->
             Rejected IncomeLow
+
+        "Rejected IncomeTooShort" ->
+            Rejected IncomeTooShort
 
         "Rejected IncomeNotRegular" ->
             Rejected IncomeNotRegular
