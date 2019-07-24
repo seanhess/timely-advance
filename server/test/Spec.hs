@@ -1,4 +1,3 @@
-module Spec where
 import           Test.Tasty
 -- import Test.Tasty.HUnit
 import           Test.Tasty.Monad
@@ -16,8 +15,8 @@ import qualified Test.XML
 
 
 
-spec :: IO ()
-spec = do
+main :: IO ()
+main = do
     ts <- runTests allTests
     defaultMain $ testGroup "tests" ts
 

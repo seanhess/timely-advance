@@ -5,7 +5,7 @@
 # NOTE: don't comment out the scripts, because it removes the cache
 
 variables:
-  VERSION: "0.9"
+  VERSION: "0.10"
   # STACK_ROOT:   "${CI_PROJECT_DIR}/.stack"
   RELEASE:      "$VERSION.$CI_COMMIT_SHORT_SHA"
   IMAGE_SERVER: "$CI_REGISTRY/timely-advance/timely"
@@ -69,7 +69,7 @@ test:
   stage: test
   script:
     - cd server
-    - docker run $IMAGE_SERVER:$RELEASE /usr/local/bin/timely test
+    - docker run $IMAGE_SERVER:$RELEASE /usr/local/bin/timely-test
 
 
 deploy:
