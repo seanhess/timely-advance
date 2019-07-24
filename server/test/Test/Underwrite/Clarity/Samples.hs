@@ -872,11 +872,11 @@ response = [here|
         </check-cashing>
     </clear-bank-behavior>
     <clear-credit-risk>
-        <action>Approve</action>
+        <action>Deny</action>
         <deny-codes>111</deny-codes>
         <deny-descriptions>(111) You did so well</deny-descriptions>
         <exception-descriptions nil="true"/>
-        <clarity-seen nil="true"/>
+        <clarity-seen>true</clarity-seen>
         <error-code nil="true"/>
         <error-description nil="true"/>
         <hit nil="true"/>
@@ -884,9 +884,87 @@ response = [here|
         <too-many-inquiries nil="true"/>
         <too-many-tradelines nil="true"/>
         <full-name>FENCE, JOHN </full-name>
-        <product-date>2019-05-23T22:32:00Z</product-date>
+        <product-date>2019-07-24T16:37:04Z</product-date>
         <filter-codes>111</filter-codes>
         <filter-descriptions>(111) You did so well</filter-descriptions>
+        <non-scorable-reason-code nil="true"/>
+        <non-scorable-reason-description nil="true"/>
+        <reason-code-description nil="true"/>
+        <score>400</score>
+        <amount-of-loans-current-and-open nil="true"/>
+        <amount-of-loans-paid-off nil="true"/>
+        <amount-of-loans-past-due nil="true"/>
+        <amount-of-loans nil="true"/>
+        <current-inquiry-cluster-position nil="true"/>
+        <days-since-first-bank-account-first-seen nil="true"/>
+        <days-since-first-bank-account-previously-seen nil="true"/>
+        <days-since-first-loan-opened nil="true"/>
+        <days-since-first-loan-paid-off nil="true"/>
+        <days-since-first-ontime-payment nil="true"/>
+        <days-since-inquiry-first-seen nil="true"/>
+        <days-since-inquiry-previously-seen nil="true"/>
+        <days-since-last-loan-charged-off nil="true"/>
+        <days-since-last-loan-in-collections nil="true"/>
+        <days-since-last-loan-opened nil="true"/>
+        <days-since-last-loan-paid-off nil="true"/>
+        <days-since-last-loan-payment nil="true"/>
+        <days-since-last-ontime-payment nil="true"/>
+        <days-since-previous-bank-account-first-seen nil="true"/>
+        <days-since-previous-bank-account-previously-seen nil="true"/>
+        <days-since-reported-income-previously-seen nil="true"/>
+        <highest-number-of-days-past-due nil="true"/>
+        <inquiry-seen-excluding-484d nil="true"/>
+        <inquiry-seen-including-48 nil="true"/>
+        <number-of-bank-accounts nil="true"/>
+        <number-of-employers-last-six-months nil="true"/>
+        <number-of-loans-current-and-open nil="true"/>
+        <number-of-loans-paid-off nil="true"/>
+        <number-of-loans-past-due nil="true"/>
+        <number-of-loans nil="true"/>
+        <reported-net-monthly-income-previously-seen nil="true"/>
+        <worst-payment-rating nil="true"/>
+        <reason-codes nil="true"/>
+        <experian-attribute>
+            <all7360 nil="true"/>
+            <all7936 nil="true"/>
+            <all8221 nil="true"/>
+            <all9120 nil="true"/>
+            <all9121 nil="true"/>
+            <all9122 nil="true"/>
+            <all9123 nil="true"/>
+            <all9124 nil="true"/>
+            <all9125 nil="true"/>
+            <all9128 nil="true"/>
+            <als2000 nil="true"/>
+            <aua6280 nil="true"/>
+            <bcc2688 nil="true"/>
+            <bcc6160 nil="true"/>
+            <bcc7216 nil="true"/>
+            <bcx7110 nil="true"/>
+            <brc5747 nil="true"/>
+            <brc7140 nil="true"/>
+            <brc7160 nil="true"/>
+            <col3210 nil="true"/>
+            <fip1380 nil="true"/>
+            <fip6200 nil="true"/>
+            <iln6230 nil="true"/>
+            <iln7150 nil="true"/>
+            <rev0300>9</rev0300>
+            <rev4080 nil="true"/>
+            <rev7432 nil="true"/>
+            <rev8151 nil="true"/>
+            <rtr5038 nil="true"/>
+            <tbca0455 nil="true"/>
+            <tbca2624 nil="true"/>
+            <tbca3283 nil="true"/>
+            <tbcc2303 nil="true"/>
+            <tbcc2351 nil="true"/>
+            <tbcc3203 nil="true"/>
+            <tcol3553 nil="true"/>
+            <tpil2712 nil="true"/>
+            <trtr3752 nil="true"/>
+            <trtr4280 nil="true"/>
+        </experian-attribute>
         <stabilities>
             <stability>
                 <name>C1.inq</name>

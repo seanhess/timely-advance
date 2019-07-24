@@ -7,8 +7,6 @@ import Data.ByteArray          (ByteArrayAccess)
 import Data.ByteArray.Encoding (Base (Base64), convertToBase)
 import Data.ByteString         (ByteString)
 
--- {"key":"value"}
-
 newtype HMACSecret = HMACSecret ByteString
   deriving (ByteArrayAccess)
 
