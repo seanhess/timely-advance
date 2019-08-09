@@ -1,6 +1,7 @@
 # https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/tasks/ssl_redirect/apiVersion: extensions/v1beta1
 # https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/tasks/ssl_redirect/
 # https://medium.com/devopslinks/aws-eks-and-tls-terminated-load-balancer-18c152536f33
+# https://medium.com/@ManagedKube/kubernetes-troubleshooting-ingress-and-services-traffic-flows-547ea867b120
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -19,36 +20,25 @@ metadata:
       alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-2:575625783736:certificate/f0dce948-18f5-495b-a4c3-233cf39281b0
       alb.ingress.kubernetes.io/actions.ssl-redirect: '{"Type": "redirect", "RedirectConfig": { "Protocol": "HTTPS", "Port": "443", "StatusCode": "HTTP_301"}}'
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+      alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS-1-2-2017-01
 spec:
   rules:
-    - host: timelyadvance.com
-      http:
-        paths:
-          - path: /*
-            backend:
-              serviceName: homepage
-              servicePort: 80
-    - host: www.timelyadvance.com
-      http:
-        paths:
-          - path: /*
-            backend:
-              serviceName: homepage
-              servicePort: 80
-    - host: echo1.timelyadvance.com
+    - host: echo.timelyadvance.com
       http:
         paths:
           - path: /
             backend:
               serviceName: echo1
               servicePort: 80
+
+     # test.timelyadvance.com and anything will redirect here, as it has no host
     - http:
         paths:
          - path: /*
            backend:
              serviceName: ssl-redirect
              servicePort: use-annotation
-         - path: /echo/*
+         - path: /echo2/*
            backend:
              serviceName: echo1
              servicePort: 80
